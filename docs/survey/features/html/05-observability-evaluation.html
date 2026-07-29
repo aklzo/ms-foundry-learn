@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="05-オブザーバビリティ・評価">05. オブザーバビリティ・評価</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#機能一覧">機能一覧</a></li><li><a href="#補足ノート">補足ノート</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要">概要</h2>
 <p>トレーシング・評価・モニタリングを統合した観測基盤を扱う。領域別のステータスは混在しており、<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a>(2026-07-22 更新)の記載が最も体系的:</p>
 <ul>
@@ -188,7 +188,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(evals API、<code>builtin.task_adherence</code> 等)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/agent-evaluators" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/agent-evaluators">agent-evaluators</a></td>
-<td>Bing Grounding / Azure AI Search / Code Interpreter 等のツール呼び出しを含む会話ではツール系評価器のサポートが限定的</td>
+<td><strong>⚠ 使ってはいけない組合せが明記されている(2026-07-30 に正確な記述へ修正)</strong>: 「<strong><code>tool_call_accuracy</code> / <code>tool input accuracy</code> / <code>tool_output_utilization</code> / <code>tool_call_success</code> / <code>groundedness</code> の各評価器は、エージェントの会話に次のツール呼び出しが含まれる場合は使うな</strong>」— <strong>Azure AI Search / Bing Grounding / Bing Custom Search / SharePoint Grounding / Code Interpreter / Fabric Data Agent / Web Search</strong>。<strong>完全サポートは File Search / Function Tool / MCP / Knowledge-based MCP の4つのみ。</strong><code>groundedness</code>(ツール系ではなく RAG 評価器)が対象に含まれる点に注意</td>
 </tr>
 <tr>
 <td>Rubric 評価器 / カスタム評価器</td>

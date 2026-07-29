@@ -2,7 +2,7 @@
 
 [← 機能一覧 TOP](./README.md)
 
-> **最終更新:** 2026-07-29(learn.microsoft.com、PyPI / NuGet / npm / Maven の現行ページ確認)
+> **最終更新:** 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は [TOP の更新履歴](./README.md#更新履歴)参照)
 
 ## 概要
 
@@ -22,7 +22,7 @@ API は「**推論系 = v1 API(月次 `api-version` 廃止、OpenAI SDK 直結)*
 | Python: `azure-ai-projects` 2.x | Foundry プロジェクトの統合クライアント(Agents 作成・実行、認証済み OpenAI クライアント取得、toolbox、fine-tuning、デプロイ/接続の列挙) | GA(2.4.0、2026-07-27、Production/Stable) | 1.x は Foundry classic 用として並存。プレビュー機能はクライアント構築時 `allow_preview=True` で明示 opt-in | https://pypi.org/project/azure-ai-projects/ ・ https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/sdk-overview | 4言語の中で最も更新頻度が高い |
 | Python: `azure-ai-agents` | Agent Service 単体クライアント | GA(1.1.0、2025-08-05)だが更新停滞・実質集約 | 公式に「`azure-ai-projects` の利用を推奨」と明記 | https://pypi.org/project/azure-ai-agents/ | 非推奨表記はないが実質 `azure-ai-projects` 2.x へ |
 | Python: `azure-ai-inference` | 旧・モデル推論統一クライアント | 非推奨 → **2026-08-26 廃止予定**(beta のまま GA せず。最終版 1.0.0b9) | Python / C#(`Azure.AI.Inference`)/ JS(`@azure/ai-inference`)/ Java 全言語対象。移行先は OpenAI SDK + v1 API | https://learn.microsoft.com/en-us/azure/foundry-classic/foundry-models/supported-languages ・ https://pypi.org/project/azure-ai-inference/ | 「deprecated and will be retired on August 26, 2026」と明記。移行ガイド: /azure/foundry/how-to/model-inference-to-openai-migration |
-| Python: `azure-ai-evaluation` | 評価 SDK(ローカル評価。詳細は [05-observability-evaluation](./05-observability-evaluation.md)) | GA(1.18.2、2026-07-22、Production/Stable) | Python 中心 | https://pypi.org/project/azure-ai-evaluation/ | ドキュメントは classic 配下に移動済み(新 Foundry は projects SDK の evals へ) |
+| Python: `azure-ai-evaluation` | 評価 SDK(ローカル評価。詳細は [05-observability-evaluation](./05-observability-evaluation.md)) | GA(**1.18.3**、Production/Stable。2026-07-30 に PyPI で再確認) | Python 中心 | https://pypi.org/project/azure-ai-evaluation/ | ドキュメントは classic 配下に移動済み(新 Foundry は projects SDK の evals へ) |
 | `openai` パッケージ(プロジェクトエンドポイント利用) | Foundry での本番推論の公式推奨ルート。v1 API で Entra ID トークン自動リフレッシュ対応(`AzureOpenAI` クライアント不要に) | GA(v1 API 経由) | Python / JS / Java / Go / C#(OpenAI .NET)全対応 | https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle | `AzureOpenAI()` ではなく素の `OpenAI()` + `base_url` が新標準 |
 | C#: `Azure.AI.Projects` | .NET 統合プロジェクトクライアント | GA(2.0.1、2026-04-23。プレリリース 2.1.0-beta.4) | .NET は3パッケージ構成: `Azure.AI.Projects` + `Azure.AI.Projects.Agents` + `Azure.AI.Extensions.OpenAI`(GA)。`Azure.AI.Projects.OpenAI`(preview)と `Azure.AI.Extensions.OpenAI`(GA)は同居不可(型重複) | https://www.nuget.org/packages/Azure.AI.Projects | 1.1.0 GA は classic 用として並存 |
 | JS/TS: `@azure/ai-projects` | JS/TS 統合プロジェクトクライアント | GA(2.3.1、npm latest、stable) | docs 上の対応表は 2.0.1(新 Foundry)/ 1.0.1(classic) | https://www.npmjs.com/package/@azure/ai-projects | リリース日は要確認(npm ページ 403 のためレジストリ API で版のみ確認) |
@@ -53,4 +53,5 @@ API は「**推論系 = v1 API(月次 `api-version` 廃止、OpenAI SDK 直結)*
 2. **`azure-ai-inference` の廃止が確定日付付き**(2026-08-26)。一度も GA せず beta のまま終了し、全言語で OpenAI SDK + v1 API へ移行する構図。既存資産の棚卸しが必要。
 3. **CLI は3系統に分裂**: (a) `az cognitiveservices`(リソース/プロジェクト/デプロイ管理、GA)、(b) azd の Foundry 拡張群(エージェント開発ライフサイクル、プレビュー)、(c) `az ml`(classic ハブ専用に格下げ)。**独立した `az foundry` コマンド群は存在しない** — 「Foundry の CLI」は azd 側に寄っている。
 4. **MAF が Foundry ネイティブのコードファースト経路として GA**。ビジュアル Workflows 廃止(2026-12-01)の公式移行先でもあり、「portal(prompt agents)vs MAF(コードファースト)vs LangGraph(サードパーティ、hosted agents として持ち込み可)」という技術選定の3経路が明確化した。
-5. 検索結果中の「`azure-ai-inference` 2026-05-30 リタイア」説は learn 本文の 2026-08-26 と食い違うため、learn 明記の 8/26 を採用(揺れとして記録)。
+5. **`azure-ai-inference` のリタイア日は 2026-08-26 で確定(2026-07-30 に一次情報で再確認)**。supported-languages ページの Important に「Azure AI Inference beta SDK is deprecated and will be retired on **August 26, 2026**. Switch to the generally available OpenAI/v1 API with a stable OpenAI SDK.」と明記され、**同ページに他の日付は存在しない**。初版が「揺れ」として記録した 2026-05-30 説は検索結果由来で、公式ページには根拠がなかった。
+6. **パッケージ版を 2026-07-30 にレジストリで再確認した結果**: `azure-ai-projects` 2.4.0(Production/Stable)/ `azure-ai-agents` 1.1.0(同)/ `azure-ai-inference` 1.0.0b9(Beta)/ `agent-framework` 1.12.1(同)/ npm `@azure/ai-projects` latest 2.3.1 / NuGet `Azure.AI.Projects` は安定版 2.0.1 + プレリリース 2.1.0-beta.4 — **いずれも初版の記載どおり**。`azure-ai-evaluation` のみ 1.18.2 → 1.18.3 に進んでいた。

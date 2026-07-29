@@ -183,14 +183,14 @@ footer {
 <td>Foundry リソース必須。<code>2026-06-06</code> API と組み合わせて利用</td>
 </tr>
 <tr>
-<td>Vision — Image Analysis 4.0/3.2</td>
+<td>Vision — Image Analysis(4.0)/ OCR</td>
 <td>画像からのタグ/キャプション/OCR 抽出</td>
-<td><span class="badge deprecated">非推奨</span> — <strong>2028-09-25 廃止</strong>(overview で「Image Analysis (legacy)」「OCR (legacy)」表記)</td>
+<td><span class="badge deprecated">非推奨</span> — <strong>2028-09-25 廃止</strong>(overview の Caution に「The <strong>Image Analysis 4.0</strong> service … is deprecated and will be retired on September 25, 2028, after which calls made to the service will fail」。表では「Image Analysis (legacy)」「OCR (legacy)」表記)。<strong>⚠ overview が名指しするのは 4.0 のみで 3.2 への言及はない</strong>(初版は「4.0/3.2」と記載。3.2 の扱いは migration-options 側で要再確認)</td>
 <td><span class="badge na">記載なし</span>(移行先として Foundry のモデルを案内)</td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview">overview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/migration-options" title="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/migration-options">migration-options</a></td>
-<td>移行先の公式推奨: OCR→Document Intelligence、顔→Face API、埋め込み→Cohere Embed (Foundry)、汎用→GPT 系 Foundry Models / Content Understanding。「2026-09-25 までに移行計画を」と記載</td>
+<td>移行先の公式推奨: OCR→Document Intelligence、顔→Face API、埋め込み→Cohere Embed (Foundry)、汎用→GPT 系 Foundry Models / Content Understanding。<strong>⚠「2026-09-25 までに移行計画を」は overview には記載がない</strong>(migration-options 側の記述と思われる。出典を確定できるまで引用しない)</td>
 </tr>
 <tr>
 <td>Face</td>

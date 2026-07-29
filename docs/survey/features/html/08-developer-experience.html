@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="08-開発者サーフェス-sdk-cli-api-フレームワーク">08. 開発者サーフェス(SDK / CLI / API / フレームワーク)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#api">API</a></li><li><a href="#sdk-言語別">SDK(言語別)</a></li><li><a href="#cli-iac">CLI / IaC</a></li><li><a href="#開発ツール・フレームワーク">開発ツール・フレームワーク</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com、PyPI / NuGet / npm / Maven の現行ページ確認)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要">概要</h2>
 <p>API は「<strong>推論系 = v1 API(月次 <code>api-version</code> 廃止、OpenAI SDK 直結)</strong>」と「<strong>プロジェクト操作系 = Foundry SDK(<code>azure-ai-projects</code> 2.x)+ Microsoft Foundry REST API(v1 / v1-preview)</strong>」の二層構造に整理された。SDK overview では接続先として Foundry SDK(<code>services.ai.azure.com/api/projects/...</code>)、OpenAI SDK(<code>/openai/v1</code>)、<strong>Anthropic SDK</strong>(<code>services.ai.azure.com/anthropic</code>)、Agent Framework の4系統が明示されている(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/sdk-overview" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/sdk-overview">sdk-overview</a> )。</p>
 <h2 id="api">API</h2>
@@ -152,7 +152,7 @@ footer {
 <tr>
 <td>Python: <code>azure-ai-evaluation</code></td>
 <td>評価 SDK(ローカル評価。詳細は <a href="05-observability-evaluation.html">05-observability-evaluation</a>)</td>
-<td><span class="badge ga">GA</span>(1.18.2、2026-07-22、Production/Stable)</td>
+<td><span class="badge ga">GA</span>(<strong>1.18.3</strong>、Production/Stable。2026-07-30 に PyPI で再確認)</td>
 <td>Python 中心</td>
 <td><a href="https://pypi.org/project/azure-ai-evaluation/" title="https://pypi.org/project/azure-ai-evaluation/">azure-ai-evaluation</a></td>
 <td>ドキュメントは classic 配下に移動済み(新 Foundry は projects SDK の evals へ)</td>
@@ -288,7 +288,8 @@ footer {
 <li><strong><code>azure-ai-inference</code> の廃止が確定日付付き</strong>(2026-08-26)。一度も GA せず beta のまま終了し、全言語で OpenAI SDK + v1 API へ移行する構図。既存資産の棚卸しが必要。</li>
 <li><strong>CLI は3系統に分裂</strong>: (a) <code>az cognitiveservices</code>(リソース/プロジェクト/デプロイ管理、GA)、(b) azd の Foundry 拡張群(エージェント開発ライフサイクル、プレビュー)、(c) <code>az ml</code>(classic ハブ専用に格下げ)。<strong>独立した <code>az foundry</code> コマンド群は存在しない</strong> — 「Foundry の CLI」は azd 側に寄っている。</li>
 <li><strong>MAF が Foundry ネイティブのコードファースト経路として GA</strong>。ビジュアル Workflows 廃止(2026-12-01)の公式移行先でもあり、「portal(prompt agents)vs MAF(コードファースト)vs LangGraph(サードパーティ、hosted agents として持ち込み可)」という技術選定の3経路が明確化した。</li>
-<li>検索結果中の「<code>azure-ai-inference</code> 2026-05-30 リタイア」説は learn 本文の 2026-08-26 と食い違うため、learn 明記の 8/26 を採用(揺れとして記録)。</li>
+<li><strong><code>azure-ai-inference</code> のリタイア日は 2026-08-26 で確定(2026-07-30 に一次情報で再確認)</strong>。supported-languages ページの Important に「Azure AI Inference beta SDK is deprecated and will be retired on <strong>August 26, 2026</strong>. Switch to the generally available OpenAI/v1 API with a stable OpenAI SDK.」と明記され、<strong>同ページに他の日付は存在しない</strong>。初版が「揺れ」として記録した 2026-05-30 説は検索結果由来で、公式ページには根拠がなかった。</li>
+<li><strong>パッケージ版を 2026-07-30 にレジストリで再確認した結果</strong>: <code>azure-ai-projects</code> 2.4.0(Production/Stable)/ <code>azure-ai-agents</code> 1.1.0(同)/ <code>azure-ai-inference</code> 1.0.0b9(Beta)/ <code>agent-framework</code> 1.12.1(同)/ npm <code>@azure/ai-projects</code> latest 2.3.1 / NuGet <code>Azure.AI.Projects</code> は安定版 2.0.1 + プレリリース 2.1.0-beta.4 — <strong>いずれも初版の記載どおり</strong>。<code>azure-ai-evaluation</code> のみ 1.18.2 → 1.18.3 に進んでいた。</li>
 </ol>
 </main>
 <footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

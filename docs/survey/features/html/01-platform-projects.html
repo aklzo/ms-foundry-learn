@@ -283,9 +283,9 @@ footer {
 <td><span class="badge ga">GA</span>(ただしロール名を旧名〈Azure AI User 等〉から改名ロールアウト中。ロール ID・権限は不変)</td>
 <td>新ポータル(Operate &gt; Admin)+Azure portal IAM</td>
 <td><span class="badge ok">対応</span> <code>az role assignment create</code>(改名中は GUID 指定を推奨)</td>
-<td><span class="badge no">未対応</span>(ロール割り当ては SDK 非対応と明記)</td>
+<td><strong>記載なし</strong>(ロール割り当てのサーフェスとして記載があるのは Foundry ポータルの Admin ページ / Azure ポータル IAM / Azure CLI。<strong>「SDK 非対応」と明記されているわけではない</strong> — 2026-07-30 訂正)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/rbac-foundry" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/rbac-foundry">rbac-foundry</a></td>
-<td>fine-tune には data+control 両権限が必要(単独では Foundry Owner のみ)。classic の hub 向け RBAC は別ページ(foundry-classic/concepts/hub-rbac-foundry)</td>
+<td>fine-tune には data+control 両権限が必要(単独で両方持つのは <strong>Foundry Owner</strong> のみ。分離するなら Foundry User〈data〉+ Foundry Account Owner〈control〉)。<strong>ロール ID(改称中はこれを使う)</strong>: Foundry User <code>53ca6127-db72-4b80-b1b0-d745d6d5456d</code> / Foundry Owner <code>c883944f-8b7b-4483-af10-35834be79c4a</code> / Foundry Account Owner <code>e47c6f54-e4a2-4754-9501-8e0985b135e1</code> / Foundry Project Manager <code>eadc314b-1a2d-4efa-be10-5d325db5065e</code> / Foundry Agent Consumer <code>eed3b665-ab3a-47b6-8f48-c9382fb1dad6</code>。<strong>⚠ 使ってはいけないロール</strong>: 「Cognitive Services」で始まる組み込みロールと <strong><code>Azure AI Developer</code></strong>(名前に反して Azure ML ワークスペース / Foundry ハブ用で、Foundry プロジェクトにも hosted agent にも適用されない)。<strong>agent スコープの割り当ては現時点でエージェントエンドポイントへのアクセスのみ評価</strong>され、コントロールプレーン権限は付与しない。<strong>ポータル UI からのデプロイ時のみ Foundry User が自動割り当てされ、SDK / CLI からのデプロイでは行われない。</strong>classic の hub 向け RBAC は別ページ</td>
 </tr>
 <tr>
 <td>Microsoft Entra 認証 / キーレス</td>

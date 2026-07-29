@@ -349,6 +349,10 @@ footer {
 <td>2026-07-30</td>
 <td><strong>記載内容の検証と訂正。</strong>引用 URL 165 件の生存確認(161 件が 200)、Agent Service の固定上限 8 項目・モデルのリタイア日約 20 件を一次情報と突合(いずれも一致)。<strong>訂正:</strong> managed compute を GA → <strong>パブリックプレビュー</strong>、かつ「classic 必須」を撤回(新ポータル対応済み)/ Voice Live を「GA 相当」→ <strong>プレビュー</strong>(GA 一覧表の明示表記)/ Toolbox の「要確認」→ <strong>GA</strong> 確定 / Agent optimizer を <strong>限定プレビュー</strong> に / ガードレール枠組みをモデル=GA・エージェント=プレビュー・コントロールと介入=プレビューの 3 分割に。<strong>追記:</strong> prompt flow の 2027-04-20 廃止、On Your Data の非推奨、hosted agent のツール直付け不可、Agent Applications の廃止予告、managed compute での Content Safety 非適用、Fireworks の 15 日予告、tsuzumi-7b と gpt-4.1-nano のリタイア日</td>
 </tr>
+<tr>
+<td>2026-07-30</td>
+<td><strong>未検証範囲の追加検証(全8カテゴリの検証を完了)。</strong><strong>訂正:</strong> 01 の「ロール割り当ては SDK 非対応と明記」は出典にその記述がなく「記載なし」に修正(記載サーフェスはポータル / Azure ポータル IAM / Azure CLI)/ 05 の評価器×ツール制約を公式の正確な記述に差し替え(<strong><code>groundedness</code> も対象</strong>、対象ツールは 7 種、完全サポートは 4 種のみ)/ 07 の Image Analysis は overview が名指しするのは <strong>4.0 のみ</strong>(3.2 の記載なし)で、「2026-09-25 までに移行計画を」も overview には存在しないため出典未確定として扱う / 08 の <code>azure-ai-evaluation</code> を 1.18.2 → 1.18.3。<strong>追記:</strong> 01 に組み込みロールの GUID 5 件・使ってはいけないロール(<code>Cognitive Services*</code> と <code>Azure AI Developer</code>)・agent スコープの評価範囲・SDK/CLI デプロイ時は Foundry User が自動割り当てされない点 / 08 に <code>azure-ai-inference</code> 2026-08-26 の一次情報確認とパッケージ版の再確認結果。<strong>正しかった項目:</strong> 05 のエージェント評価器 11 種の GA/プレビュー区分は完全一致、07 の Language のコア/レガシー分類も完全一致、Vision の 2028-09-25 と Content Understanding の Foundry リソース必須・BYO モデル・新ポータル coming soon も一致</td>
+</tr>
 </tbody></table></div>
 </main>
 <footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>
