@@ -2,7 +2,7 @@
 
 [← 機能一覧 TOP](./README.md)
 
-> **最終更新:** 2026-07-29(learn.microsoft.com 現行ページ確認)
+> **最終更新:** 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は [TOP の更新履歴](./README.md#更新履歴)参照)
 
 ## 概要
 
@@ -15,7 +15,7 @@
 | 機能名 | 説明 | ステータス | ポータル | CLI | Python SDK | 出典 | 備考 |
 |---|---|---|---|---|---|---|---|
 | Speech(Azure Speech in Foundry Tools) | STT / TTS / 翻訳 / 話者認識。「Microsoft Foundry リソース経由で提供」と overview に明記 | GA(サービス全体) | Foundry(新)で STT / TTS / アバター / Voice Live / Speech MCP server 提供。Speech Studio も継続 | Speech CLI (spx) あり | Speech SDK あり | https://learn.microsoft.com/en-us/azure/ai-services/speech-service/overview ・ https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-features-foundry | REST API もあり。コンテナ/ソブリンクラウド対応 |
-| Voice Live API | 音声エージェント向けフルマネージド speech-to-speech 統合 API(STT+生成 AI+TTS+アバターを単一 WebSocket IF で提供) | GA相当・要確認(安定版 API `2025-10-01`・`2026-04-10` が存在〈-preview なし〉だが「GA」の明文は未発見。最新プレビューは `2026-06-01-preview`) | Foundry(新)playground あり。classic の Speech playground にも Voice Live あり | 記載なし | SDK: Python / C# は安定版、Java / JS はプレビュー(FAQ 明記) | https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live ・ https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2026-06-01-preview ・ https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-faq | 「Foundry リソースに最適化。Speech リソースでは Foundry Agent Service 統合と BYOM 不可」と明記。モデルは GPT-Realtime / GPT-5 系 / Phi 等マネージド提供。BYOM はプレビュー。MCP は Foundry(新)エージェントで対応。SIP 非対応 |
+| Voice Live API | 音声エージェント向けフルマネージド speech-to-speech 統合 API(STT+生成 AI+TTS+アバターを単一 WebSocket IF で提供) | **プレビュー**(GA 一覧表に「Build > Agents — Voice Live = Preview」と明記)。ただし安定版 API `2025-10-01`・`2026-04-10` が存在し、Voice Live 自身のページには preview バナーも GA 宣言もない — **表記が一致していない** | Foundry(新)playground あり。classic の Speech playground にも Voice Live あり | 記載なし | SDK: Python / C# は安定版、Java / JS はプレビュー(FAQ 明記) | https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live ・ https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2026-06-01-preview ・ https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-faq | 「Foundry リソースに最適化。Speech リソースでは Foundry Agent Service 統合と BYOM 不可」と明記。モデルは GPT-Realtime / GPT-5 系 / Phi 等マネージド提供。BYOM はプレビュー。MCP は Foundry(新)エージェントで対応。SIP 非対応 |
 | Fast transcription | 録音済み音声をリアルタイム超の速度で同期文字起こし | GA(プレビュー表記なし) | Foundry(新)ポータルに playground あり。**classic は非対応**(新ポータルへ誘導) | 記載なし | `azure-ai-transcription` (Python) / `Azure.AI.Speech.Transcription` (.NET) | https://learn.microsoft.com/en-us/azure/ai-services/speech-service/fast-transcription-create | REST `2025-10-15`。SDK 前提条件は「Microsoft Foundry リソース」 |
 | LLM speech | LLM 強化の transcribe / translate(fast transcription 同等の高速推論) | パブリックプレビュー(overview に「LLM speech (preview)」) | 記載なし | 記載なし | 記載なし | https://learn.microsoft.com/en-us/azure/ai-services/speech-service/overview | プロンプトチューニング可 |
 | Language(Azure Language in Foundry Tools) | NLP 全般。**「コア機能」= PII 検出・言語検出・NER・Text analytics for health のみ。CLU・要約・感情分析・QA・キーフレーズ等は「legacy capabilities」に降格** | GA(サービス)。PII 匿名化(synthetic replacement)はプレビュー。Document PII playground は Foundry で GA と明記 | 「Microsoft Foundry でほとんどの機能をノーコード利用可」と明記 | 記載なし | `azure-ai-textanalytics`(C#/Java/JS/Python) | https://learn.microsoft.com/en-us/azure/ai-services/language-service/overview | **Language MCP server(プレビュー)**が Foundry Tool Catalog に登場。**Intent Routing agent / Exact Question Answering agent(いずれもプレビュー)**のプレビルトエージェントも提供。新規開発はコア機能推奨 |
@@ -38,4 +38,6 @@
 - **世代交代が進行中**: Image Analysis→Content Understanding / Foundry Models、Document Intelligence→Content Understanding と併存(決定論的抽出は DI、LLM 分析は CU)、Language の CLU / 要約系は「legacy」化(エージェント時代は MCP server+プレビルトエージェントへ)、Translator は NMT v3→LLM ベース `2026-06-06` へ。
 - **エージェント統合の形**: 各 Foundry Tool は「MCP server / Tool Catalog / プレビルトエージェント」経由で Foundry Agent Service に接続する方向(Speech MCP server、Language MCP server、Voice Live のエージェント統合)。
 - **standard setup(BYO ストレージ)**のバリアントが Speech / Language / Vision / Content Understanding 向けにあり(Speech / Language の Storage Account オプションはプレビュー)。
-- **要確認**: Voice Live の GA 明文表記(安定版 API の存在から実質 GA と判断できるが「generally available」の文言自体は未確認。確認 URL: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2025-10-01 )。
+- **Voice Live のステータス(2026-07-30 に更新)**: 初版は「安定版 API の存在から実質 GA」と読んだが、[GA 一覧表](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability)に **「Build > Agents — Voice Live = Preview」** と明記されているのを確認した。**提案では Preview として扱うのが安全。**なお Voice Live 自身のページには preview バナーも GA 宣言も無く、安定版 API(`2025-10-01` / `2026-04-10`)が存在し課金も 2025-07-01 に開始済みという状態で、**ドキュメント間で表記が一致していない**。SLA を論点にする案件では Microsoft への個別確認が必要。
+  - 個別機能で明示的にプレビューなのは **WebRTC 接続**、`phi4-*` モデル、`mai-transcribe`、`MAI-Voice-2-Flash`、BYOM の Anthropic プロファイル。**本番設計では WebRTC を外し WebSocket に寄せる。**
+  - **SIP は非対応**(FAQ に明記)。テレフォニー接続は Azure Communication Services の Call Automation(双方向オーディオストリーミング)か Twilio / Infobip / Genesys 経由。詳細は [architecture/08 章](../architecture/08-usecase-specialized.md)。

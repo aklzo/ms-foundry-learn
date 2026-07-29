@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="04-エージェントツール・ナレッジ-rag">04. エージェントツール・ナレッジ(RAG)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#ツールカタログ掲載ツールとステータス-カタログ表記ベース">ツールカタログ掲載ツールとステータス(カタログ表記ベース)</a></li><li><a href="#ツール個別詳細">ツール個別詳細</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認。ツールカタログページの更新日: 2026-07-11)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要">概要</h2>
 <p>Foundry Agent Service のツール群とナレッジ(RAG)機構を扱う。ツールカタログのページ冒頭に「<strong>The Foundry tool catalog and the core tools framework are generally available. Some individual tools are still in preview</strong>」と明記されており、<strong>カタログとコアツール基盤は GA、個別ツールは一部プレビュー</strong>という構図(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/tool-catalog" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/tool-catalog">tool-catalog</a> )。</p>
 <p>カタログのエントリ種別は Remote MCP server / Local MCP server / Custom(Logic Apps コネクタから変換した MCP サーバー)の3種。組織限定の Private tool catalog あり。ポータル操作は新ポータルの Build &gt; Tools。</p>
@@ -175,7 +175,7 @@ footer {
 <tr>
 <td>Custom</td>
 <td>Toolbox</td>
-<td>表記なし(下記「Toolbox のステータスの読み方」参照)</td>
+<td><strong>GA</strong>(カタログ表に preview ラベルなし。GA 一覧表でも「Toolboxes = GA」と明記)</td>
 </tr>
 </tbody></table></div>
 <p>※ 旧来の「Grounding with Bing Search」は built-in 表から外れ <strong>Web search が推奨経路</strong>。高度シナリオ向けに「Grounding with Bing tools」ページが別途存在。<strong>Deep Research と Logic Apps 専用ツールはカタログに存在しない</strong>(後述)。</p>
@@ -354,7 +354,7 @@ footer {
 <tr>
 <td>Toolbox(intent-based toolbox)</td>
 <td>複数ツールを1つの MCP 互換エンドポイントに束ね、バージョニング・集中認証を提供。MAF / LangGraph / GitHub Copilot SDK 等の外部ランタイムからも消費可</td>
-<td><span class="badge unknown">要確認</span>(GA 相当の記載だが完全な GA 宣言なし。ページに preview バナーなし・「Available today」表記の一方、REST 例は <code>Foundry-Features: Toolboxes=V1Preview</code> ヘッダーを要求)</td>
+<td><strong>GA</strong>(GA 一覧表に「Build &gt; Toolboxes = GA」と明記。ツールカタログ表にも preview ラベルなし)</td>
 <td><span class="badge ok">対応</span>(Build &gt; Tools &gt; Create a toolbox。作成手順は VS Code Foundry Toolkit 中心)</td>
 <td><strong>azd</strong>(<code>microsoft.foundry</code> 拡張)対応。Azure CLI 記載なし</td>
 <td><span class="badge ok">対応</span>(<code>client.beta.toolboxes.create_version</code> — beta 名前空間)</td>
@@ -415,7 +415,9 @@ footer {
 <h2 id="補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</h2>
 <p><strong>(a) Deep Research の廃止と後継</strong> 「Deep Research をツールとして使う」構成は今後組めない。web-search ページが「This approach replaces the deprecated Deep Research tool」と明言し、<code>o3-deep-research</code> モデル + Web search ツール(Responses API)への移行コードを掲載。</p>
 <p><strong>(b) Web search と Grounding with Bing の関係</strong> Web search(GA)が推奨経路で、Bing リソース接続不要のシンプル構成。市場フィルタ等の細かい制御が要るときのみ Grounding with Bing Search(GA)/ Bing Custom Search(プレビュー)。<strong>いずれも DPA 対象外・コンプライアンス境界外へのデータ送信・別課金</strong>という制約は共通で、規制業種の SI では要注意。</p>
-<p><strong>(c) Toolbox のステータスの読み方(重要な曖昧さ)</strong> ドキュメント上は preview バナーなし・「Available today」表記だが、REST/MCP 検証例に <code>Foundry-Features: Toolboxes=V1Preview</code> ヘッダーが残り、SDK も <code>client.beta.toolboxes</code> 名前空間。「明確な GA 宣言は確認できず」が正確な状態。</p>
+<p><strong>(c) Toolbox は GA(2026-07-30 に確定)</strong> 初版では「明確な GA 宣言が確認できない」としていたが、<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">GA 一覧表</a>に <strong>「Build &gt; Toolboxes = GA」</strong> と明記されているのを確認した。ツールカタログ表にも preview ラベルはない。ただし <strong>REST/MCP の検証例に <code>Foundry-Features: Toolboxes=V1Preview</code> ヘッダーが残り、Python SDK も <code>client.beta.toolboxes</code> 名前空間</strong>という実装上のねじれは残っている(GA 宣言と SDK の成熟度は別物として扱う)。</p>
+<p>なお <strong>hosted agent はエージェント定義にツールを直付けできず、Toolbox 経由が前提</strong>になる(<a href="03-agent-service.html">03-agent-service</a>)。コードファーストを選ぶ案件では Toolbox が必須要素になる。</p>
+<p><strong>(c-2) ⚠ Azure OpenAI On Your Data は非推奨でリタイア間近</strong> Azure Architecture Center の Secure Multitenant RAG 記事に Important として「<strong>Azure OpenAI On Your Data is deprecated and approaching retirement.</strong> We recommend that you migrate Azure OpenAI On Your Data workloads to <strong>Foundry Agent Service</strong> with <strong>Foundry IQ</strong> to retrieve content and generate grounded answers from your data.」と明記されている(具体的なリタイア日は未公表)。 <strong>含意:</strong> 「オーケストレーターを挟まず、モデルが直接データストアを読む」構成は新規設計で選べない。下記(d)の3層はいずれもオーケストレーター型(エージェントまたは自前アプリ)を前提にする。既存の On Your Data ベースの提案書・PoC は棚卸しが必要。 出典: <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/secure-multitenant-rag" title="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/secure-multitenant-rag">secure-multitenant-rag</a></p>
 <p><strong>(d) ナレッジ(RAG)の3層構造</strong></p>
 <ol>
 <li><strong>File search + ベクトルストア</strong>(GA)— 手軽なマネージド RAG。1ストア/エージェント制限あり。</li>

@@ -2,7 +2,7 @@
 
 [← 機能一覧 TOP](./README.md)
 
-> **最終更新:** 2026-07-29(learn.microsoft.com 現行ページ確認)
+> **最終更新:** 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は [TOP の更新履歴](./README.md#更新履歴)参照)
 
 ## 概要
 
@@ -16,7 +16,7 @@ Foundry リソース・プロジェクトのモデル、新旧ポータルの関
 | Upgrade Azure OpenAI → Foundry resource | AOAI リソースをエンドポイント・キー・状態(fine-tune、batch 等)を保持したまま Foundry リソースへ変換(kind: `OpenAI`→`AIServices` + `allowProjectManagement: true`) | GA(「Both services are generally available and supported before and after the upgrade」。opt-in) | classic ポータル+Azure portal(新ポータルの手順は記載なし) | 記載なし(Bicep/Terraform 推奨) | 記載なし | https://learn.microsoft.com/en-us/azure/foundry/how-to/upgrade-azure-openai | ロールバック可(プロジェクト等の削除が前提)。CMK 利用リソースは申請フォーム経由のみ。既存 Private Endpoint 付きはポータル経由不可(削除→再作成 or IaC)。`previousKind` プロパティで判別可 |
 | Auto-upgrade(AOAI→Foundry 自動アップグレード) | Microsoft が適格な AOAI リソースを自動アップグレード。`foundryAutoUpgrade` プロパティ(API `2026-01-15-preview`)で状態確認、延期(Defer)・ロールバック可 | 要確認(段階的ロールアウト中。ページに preview/GA ラベルなし) | Azure portal(「Resource upgrade」ブレード) | Bicep/Terraform で `foundryAutoUpgrade.mode: Deferred` 設定可 | 記載なし | https://learn.microsoft.com/en-us/azure/foundry/how-to/upgrade-azure-openai-auto | Private networking / CMK / W&B 利用リソースは初期波では対象外。事前通知あり |
 | Foundry project | Foundry リソース配下の子リソース(`accounts/projects`)。アクセス制御・データ分離の単位。親のネットワーク/セキュリティ設定を継承 | GA(「Fully supported at GA with end-to-end coverage」) | 新ポータル(Operate > Admin)+classic+Azure portal | 対応 `az cognitiveservices account project create` | 対応 `azure-mgmt-cognitiveservices` | https://learn.microsoft.com/en-us/azure/foundry/how-to/create-projects ・ https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability | 最初の「default」プロジェクトのみ OpenAI Batch / Fine-tuning / Stored completions、Speech fine-tuning 等に対応(非 default プロジェクトは機能制限あり) |
-| Hub-based project(ハブベース) | Azure ML ワークスペース基盤(`Microsoft.MachineLearningServices/workspaces`)の旧型プロジェクト。classic ポータルでのみ利用可 | 非推奨予定(正式な廃止日は**未発表**のレガシー扱い。「New investments are focused on Foundry projects」「Not supported in the new Foundry portal」) | classic のみ(新ポータルでは非表示) | 対応(AML CLI/SDK 経由で継続利用可) | 対応(同左) | https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry ・ https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry | 残す理由: prompt flow、マネージドコンピュートのモデルデプロイ、Azure Language リソース等が未対応のため。Agents は hub-based だと「Preview only」 |
+| Hub-based project(ハブベース) | Azure ML ワークスペース基盤(`Microsoft.MachineLearningServices/workspaces`)の旧型プロジェクト。classic ポータルでのみ利用可 | 非推奨予定(正式な廃止日は**未発表**のレガシー扱い。「New investments are focused on Foundry projects」「Not supported in the new Foundry portal」) | classic のみ(新ポータルでは非表示) | 対応(AML CLI/SDK 経由で継続利用可) | 対応(同左) | https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry ・ https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry | 残す理由: prompt flow(**2027-04-20 廃止予定**。新規開発は非推奨で Microsoft Agent Framework への移行を要求)、Azure Language リソース等が未対応のため。**マネージドコンピュートは新ポータルの Foundry プロジェクトに対応済み**(パブリックプレビュー)なので、classic を残す理由には当たらない → [02-models](./02-models.md)。Agents は hub-based だと「Preview only」 |
 | Migrate hub-based → Foundry project | ハブベースから Foundry プロジェクトへの移行ガイド(手動、5–10分想定)。移行対象: モデルデプロイ、データファイル、fine-tuned モデル、Assistants、vector store | 提供中(移行自体に preview 表記なし) | classic ポータル+Azure portal | Bicep 例あり | SDK 移行ガイドあり | https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/migrate-project | 自動移行ツールはなし(新規プロジェクト作成+接続再作成方式)。プレビュー Agent の state、OSS モデルデプロイは移行対象外 |
 
 ## ポータル・移行
@@ -24,7 +24,7 @@ Foundry リソース・プロジェクトのモデル、新旧ポータルの関
 | 機能名 | 説明 | ステータス | ポータル | CLI | Python SDK | 出典 | 備考 |
 |---|---|---|---|---|---|---|---|
 | Foundry portal(新) | ai.azure.com の新体験。Home / Discover / Build / Operate / Docs の5セクション構成。Foundry プロジェクトのみ表示 | GA(コアシナリオ。一部機能は preview — 詳細は Feature readiness 表) | — | — | — | https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability | 「New Foundry」トグルで classic と相互切替。sovereign cloud は https://ai.azure.us/ (US Gov Virginia/Arizona) |
-| Foundry (classic) portal | 旧ポータル。hub-based プロジェクト、スタンドアロン AOAI リソース、prompt flow、マネージドコンピュート等、新ポータル未対応機能の受け皿 | 継続提供(廃止日**未発表**。「legacy hub-based project workflows」の位置づけ) | — | — | — | https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry | classic の what-is ページは NOINDEX 設定。ドキュメント更新周期も classic は 365 日(新は 90 日)で投資差が明確 |
+| Foundry (classic) portal | 旧ポータル。hub-based プロジェクト、スタンドアロン AOAI リソース、prompt flow、serverless API デプロイ等、新ポータル未対応機能の受け皿 | 継続提供(廃止日**未発表**。「legacy hub-based project workflows」の位置づけ) | — | — | — | https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry | classic の what-is ページは NOINDEX 設定。ドキュメント更新周期も classic は 365 日(新は 90 日)で投資差が明確 |
 | Navigate from classic(移行ガイド) | 用語・機能・SDK・ポータルナビの新旧対応表。Assistants API→Responses API、Threads→Conversations 等 | 提供中 | — | — | — | https://learn.microsoft.com/en-us/azure/foundry/how-to/navigate-from-classic | 重要日程: Assistants API 廃止 2026-08-26 / Workflows 廃止 2026-12-01(詳細は [TOP の期限表](./README.md)) |
 
 ## コントロールプレーン・ガバナンス
@@ -72,6 +72,6 @@ Foundry リソース・プロジェクトのモデル、新旧ポータルの関
 ## 補足ノート(SI 判断に効く要点)
 
 - **リソースモデルは連続性重視**: 改称・新ポータル化されても ARM 上は `Microsoft.CognitiveServices/accounts` のままで、既存の Azure Policy / RBAC / ネットワーク構成資産がそのまま効く。AOAI からのアップグレードは kind 変更のパッチ操作(非破壊)で、ロールバック手段も提供。
-- **ハブベースの終息は「投資停止」段階**: 廃止日は未発表だが、新規投資は Foundry プロジェクトに集中と明言され、classic ドキュメントは NOINDEX・更新周期 365 日。一方 prompt flow・マネージドコンピュート・Azure Language 等はまだハブ側にしかない。
+- **ハブベースの終息は「投資停止」段階**: 廃止日は未発表だが、新規投資は Foundry プロジェクトに集中と明言され、classic ドキュメントは NOINDEX・更新周期 365 日。classic 側にしか無いのは **prompt flow(2027-04-20 廃止予定)**・serverless API デプロイ・Azure Language 等で、**マネージドコンピュートは新ポータル側に移った**(2026-07 時点でパブリックプレビュー)。「classic を残さないと機能が足りない」という論拠は年々弱くなっている。
 - **表記揺れへの注意**: hosted agents は navigate-from-classic で「GA」、configure-private-link 内では「hosted (preview) agents」と記載が混在。RBAC ロール名も改名ロールアウト中のため、IaC/スクリプトではロール ID(GUID)指定が公式推奨。
 - **要確認として残る項目**: (1) Managed VNet のライフサイクルラベル(ページに明記なし・ポータル UI 未対応)、(2) Auto-upgrade プログラム自体のラベル、(3) custom-policy-definition ページの内容(存在のみ確認: https://learn.microsoft.com/en-us/azure/foundry/how-to/custom-policy-definition )。

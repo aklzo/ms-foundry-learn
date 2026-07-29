@@ -1,6 +1,6 @@
 # Microsoft Foundry 機能一覧・ステータス調査
 
-> **最終更新:** 2026-07-29(learn.microsoft.com 現行ページを直接確認)/ **版:** 初版
+> **最終更新:** 2026-07-30(初版を一次情報に当てて検証・訂正)/ **版:** 第2版
 > 本ドキュメント群は SI の技術選定・アーキテクチャ選定基準の構築を目的に、Microsoft Foundry の機能と GA / プレビューのステータスを整理したものです。**定期更新を前提**としています(更新手順は本ページ末尾)。
 
 **関連ドキュメント:** 本ページ群は「**その機能は使えるのか**」を引くためのもの。「**どう組むか**」は [アーキテクチャ設計ガイド](../architecture/README.md) を参照。
@@ -57,7 +57,7 @@
 
 - **新ポータルは GA、ただし機能単位で GA / プレビューが混在。** [Feature readiness at GA](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability) の表が唯一の体系的な一覧。Operate(コントロールプレーン)の大半・Monitoring・Workflows・Memory 等はプレビュー継続。
 - **Agent Service はサービスとして GA**(Responses API ベースの v2)。ただし hosted agents は 2026-08-20 に初期プレビュー基盤のサポート終了(再デプロイ必要)、ビジュアル Workflows は**プレビューのまま 2026-12-01 廃止**で Microsoft Agent Framework へ誘導、という「GA だが足元が動いている」状態。
-- **ハブベースプロジェクト(classic)は廃止日未発表のレガシー扱い。** 新規投資は Foundry プロジェクトに集中と明言。ただし prompt flow・マネージドコンピュート・serverless API デプロイ等は classic にしか残っていない。
+- **ハブベースプロジェクト(classic)は廃止日未発表のレガシー扱い。** 新規投資は Foundry プロジェクトに集中と明言。classic にしか残っていないのは **prompt flow(2027-04-20 廃止予定)**・serverless API デプロイ・Azure Language 等で、**マネージドコンピュートは新ポータルに対応済み**(パブリックプレビュー)。
 - **CLI は一級市民ではない。** 専用の `az foundry` は存在せず、リソース管理は `az cognitiveservices`(GA)、エージェント開発は azd 拡張(プレビュー)、それ以外の多くの機能は「ポータル + SDK/REST のみ」でドキュメントに CLI 手順がない。
 - **Claude(Anthropic)が 2026 年に本格参入。** 「Hosted on Azure」形態の claude-opus-5 / sonnet-5 等は GA + Data Zone (US) 対応。ただし Anthropic SDK + Marketplace 課金 + Foundry 組み込みコンテンツフィルター非適用という独自制約あり。
 - **確定済みの廃止日程が多数**(下表)。移行設計を伴う提案では必読。
@@ -73,6 +73,12 @@
 | 2027-03-31 | Agents (classic)(v1、Threads/Runs) | 廃止。Agents v2 へ移行(状態データは自動移行されない) | https://learn.microsoft.com/en-us/azure/foundry-classic/agents/whats-new |
 | 2026-10-01 前後 | gpt-4o / o1 / o3 / o4-mini 等の旧モデル群 | リタイア(詳細は [02-models](./02-models.md)) | https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule |
 | 2028-09-25 | Azure AI Vision Image Analysis 4.0/3.2 | 廃止。Document Intelligence / Content Understanding / Foundry Models へ移行 | https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview |
+| **2026-08-31** | NTT Data `tsuzumi-7b`(Legacy) | 廃止。後継 `tsuzumi2` へ。**日本語特化モデルを検討する案件で効く** | https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule |
+| **2026-10-14** | `gpt-4.1-nano` | リタイア。**gpt-4.1 / gpt-4.1-mini(2027-04-14)より約半年早い**ので混同しない | 同上 |
+| **2027-04-20** | prompt flow | 廃止。**新規開発に非推奨**でランタイムコンテナのセキュリティ更新も停止済み。Microsoft Agent Framework へ移行 | https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/prompt-flow |
+| **日付未公表(間近と明記)** | **Azure OpenAI On Your Data** | 「モデルが直接データを読む」構成が終わる。Foundry Agent Service + Foundry IQ へ移行 | https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/secure-multitenant-rag |
+| **日付未公表(Planned/TBD)** | Agent Applications(旧 publishing モデル)/ コンテナプロトコル 1.0.0 | 詳細は [03-agent-service](./03-agent-service.md) | https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-agent-applications |
+| 予告 **15 日**のみ | **Fireworks 系モデル(`FW-*`)** | 標準の 60 日前通知ではなく **15 日前通知**。本番の必須経路に置かない | https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule |
 
 ## 更新運用ガイド(定期更新の手順)
 
@@ -94,3 +100,4 @@
 | 日付 | 内容 |
 | --- | --- |
 | 2026-07-29 | 初版作成(全8カテゴリ、learn.microsoft.com 現行ページを確認) |
+| 2026-07-30 | **記載内容の検証と訂正。**引用 URL 165 件の生存確認(161 件が 200)、Agent Service の固定上限 8 項目・モデルのリタイア日約 20 件を一次情報と突合(いずれも一致)。**訂正:** managed compute を GA → **パブリックプレビュー**、かつ「classic 必須」を撤回(新ポータル対応済み)/ Voice Live を「GA 相当」→ **プレビュー**(GA 一覧表の明示表記)/ Toolbox の「要確認」→ **GA** 確定 / Agent optimizer を **限定プレビュー** に / ガードレール枠組みをモデル=GA・エージェント=プレビュー・コントロールと介入=プレビューの 3 分割に。**追記:** prompt flow の 2027-04-20 廃止、On Your Data の非推奨、hosted agent のツール直付け不可、Agent Applications の廃止予告、managed compute での Content Safety 非適用、Fireworks の 15 日予告、tsuzumi-7b と gpt-4.1-nano のリタイア日 |

@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="01-プラットフォーム基盤・プロジェクト・コントロールプレーン">01. プラットフォーム基盤・プロジェクト・コントロールプレーン</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#リソース・プロジェクト">リソース・プロジェクト</a></li><li><a href="#ポータル・移行">ポータル・移行</a></li><li><a href="#コントロールプレーン・ガバナンス">コントロールプレーン・ガバナンス</a></li><li><a href="#rbac・認証">RBAC・認証</a></li><li><a href="#ネットワーク・暗号化">ネットワーク・暗号化</a></li><li><a href="#接続・iac">接続・IaC</a></li><li><a href="#ステータスを横断確認できる公式ページ">ステータスを横断確認できる公式ページ</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要">概要</h2>
 <p>Foundry リソース・プロジェクトのモデル、新旧ポータルの関係、コントロールプレーン(Operate)、RBAC・ネットワーク・暗号化・ポリシーなどのガバナンス機能を扱う。<strong>新 Microsoft Foundry ポータルは GA 宣言済み</strong>(「The new Microsoft Foundry portal is generally available (GA).」)だが、GA はコアシナリオ範囲であり、Operate(コントロールプレーン)の大半など一部機能はプレビュー継続である(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">general-availability</a> )。</p>
 <h2 id="リソース・プロジェクト">リソース・プロジェクト</h2>
@@ -149,7 +149,7 @@ footer {
 <td><span class="badge ok">対応</span>(AML CLI/SDK 経由で継続利用可)</td>
 <td><span class="badge ok">対応</span>(同左)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry" title="https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry">what-is-foundry</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry" title="https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry">what-is-foundry</a></td>
-<td>残す理由: prompt flow、マネージドコンピュートのモデルデプロイ、Azure Language リソース等が未対応のため。Agents は hub-based だと「Preview only」</td>
+<td>残す理由: prompt flow(<strong>2027-04-20 廃止予定</strong>。新規開発は非推奨で Microsoft Agent Framework への移行を要求)、Azure Language リソース等が未対応のため。<strong>マネージドコンピュートは新ポータルの Foundry プロジェクトに対応済み</strong>(パブリックプレビュー)なので、classic を残す理由には当たらない → <a href="02-models.html">02-models</a>。Agents は hub-based だと「Preview only」</td>
 </tr>
 <tr>
 <td>Migrate hub-based → Foundry project</td>
@@ -185,7 +185,7 @@ footer {
 </tr>
 <tr>
 <td>Foundry (classic) portal</td>
-<td>旧ポータル。hub-based プロジェクト、スタンドアロン AOAI リソース、prompt flow、マネージドコンピュート等、新ポータル未対応機能の受け皿</td>
+<td>旧ポータル。hub-based プロジェクト、スタンドアロン AOAI リソース、prompt flow、serverless API デプロイ等、新ポータル未対応機能の受け皿</td>
 <td>継続提供(廃止日<strong>未発表</strong>。「legacy hub-based project workflows」の位置づけ)</td>
 <td>—</td>
 <td>—</td>
@@ -412,7 +412,7 @@ footer {
 <h2 id="補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</h2>
 <ul>
 <li><strong>リソースモデルは連続性重視</strong>: 改称・新ポータル化されても ARM 上は <code>Microsoft.CognitiveServices/accounts</code> のままで、既存の Azure Policy / RBAC / ネットワーク構成資産がそのまま効く。AOAI からのアップグレードは kind 変更のパッチ操作(非破壊)で、ロールバック手段も提供。</li>
-<li><strong>ハブベースの終息は「投資停止」段階</strong>: 廃止日は未発表だが、新規投資は Foundry プロジェクトに集中と明言され、classic ドキュメントは NOINDEX・更新周期 365 日。一方 prompt flow・マネージドコンピュート・Azure Language 等はまだハブ側にしかない。</li>
+<li><strong>ハブベースの終息は「投資停止」段階</strong>: 廃止日は未発表だが、新規投資は Foundry プロジェクトに集中と明言され、classic ドキュメントは NOINDEX・更新周期 365 日。classic 側にしか無いのは <strong>prompt flow(2027-04-20 廃止予定)</strong>・serverless API デプロイ・Azure Language 等で、<strong>マネージドコンピュートは新ポータル側に移った</strong>(2026-07 時点でパブリックプレビュー)。「classic を残さないと機能が足りない」という論拠は年々弱くなっている。</li>
 <li><strong>表記揺れへの注意</strong>: hosted agents は navigate-from-classic で「GA」、configure-private-link 内では「hosted (preview) agents」と記載が混在。RBAC ロール名も改名ロールアウト中のため、IaC/スクリプトではロール ID(GUID)指定が公式推奨。</li>
 <li><strong>要確認として残る項目</strong>: (1) Managed VNet のライフサイクルラベル(ページに明記なし・ポータル UI 未対応)、(2) Auto-upgrade プログラム自体のラベル、(3) custom-policy-definition ページの内容(存在のみ確認: <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/custom-policy-definition" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/custom-policy-definition">custom-policy-definition</a> )。</li>
 </ul>

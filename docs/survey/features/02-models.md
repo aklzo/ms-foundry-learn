@@ -2,7 +2,7 @@
 
 [← 機能一覧 TOP](./README.md)
 
-> **最終更新:** 2026-07-29(learn.microsoft.com 現行ページ確認)
+> **最終更新:** 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は [TOP の更新履歴](./README.md#更新履歴)参照)
 
 ## 概要
 
@@ -14,7 +14,7 @@
 |---|---|---|---|---|---|---|---|
 | Model catalog (Foundry Models) | 1,900+ モデル(基盤/推論/SLM/マルチモーダル/業界特化)。2区分制 | GA(カタログ自体) | 新/classic 両対応 | 記載なし | 記載なし | https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-models-overview | 用語は "sold directly by Azure" から「Models sold by Azure(Azure Direct)」表記に統一されつつある |
 | Models sold by Azure (Azure Direct) | MS がホスト・販売。OpenAI / xAI / DeepSeek / Meta / Mistral / Cohere / BFL / Moonshot / Microsoft 等 | GA(枠組み) | 新ポータル「Discover > Models」 | 記載なし | 記載なし | https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure | 一部モデルで PTU が fungible(モデル間流用可) |
-| Models from partners and community | 第三者提供。Azure Marketplace 課金。**Anthropic Claude はこちら**(Azure Direct ではない)。Hugging Face は managed compute | GA(枠組み) | HF / managed compute 系は **classic(hub-based project)必須** | 記載なし | 記載なし | https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners | — |
+| Models from partners and community | 第三者提供。Azure Marketplace 課金。**Anthropic Claude はこちら**(Azure Direct ではない)。Hugging Face は managed compute | GA(枠組み) | 新ポータル対応。**Hugging Face / managed compute 系も新ポータルの Foundry プロジェクトで利用可**(managed compute 自体はパブリックプレビュー) | 記載なし | 記載なし | https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners ・ https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview | 初版は「classic 必須」と記載していたが誤り(2026-07-30 訂正) |
 | Model leaderboards / benchmarks | カタログ内で品質・安全性・コスト・性能のリーダーボード比較 | パブリックプレビュー | Foundry ポータル | 記載なし | 記載なし | https://learn.microsoft.com/en-us/azure/foundry/concepts/model-benchmarks | 品質指標は bigbench_hard, GPQA, MMLU-Pro 等 |
 | Instant access (instant models) | **デプロイ不要**でモデル名指定だけで推論。新モデルは既定で instant 対応 | パブリックプレビュー | 新ポータル(playground 対応) | `az rest` で列挙可 | `azure-ai-projects` 対応(C#/TS/Java/REST も) | https://learn.microsoft.com/en-us/azure/foundry/concepts/instant-models | プレビュー中は **West US 3 のみ**。fine-tuned モデル・カスタム guardrails 不可。グローバルクォータ消費 |
 
@@ -26,7 +26,7 @@
 | GPT-5.5 / 5.4 / 5.3-codex / 5.2 / 5.1 / 5 | GA 世代群 | GA(`*-chat` 系はプレビュー扱い) | 同上 | `gpt-5-chat`〜`gpt-5.3-chat` は 2026-05〜06 に**リタイア済**、後継は `gpt-chat-latest` |
 | `gpt-chat-latest` | 継続更新型チャットモデル(OpenAI の chat-latest 相当) | パブリックプレビュー | 同上 | Preview ライフサイクル(随時更新) |
 | o-series (o1 / o3 / o3-mini / o4-mini 等) | 旧 reasoning 系 | 非推奨(大半) | https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule | o1/o3→2026-10-21(後継 gpt-5.6-sol)、o3-mini→2026-10-01、o4-mini→2026-10-16 |
-| GPT-4o / GPT-4.1 | 旧世代 | 非推奨 | 同上 | gpt-4o(2024-05-13)は 2026-10-01 リタイア→gpt-5.1 へ自動アップグレード。gpt-4.1 は 2027-04-14 |
+| GPT-4o / GPT-4.1 | 旧世代 | 非推奨 | 同上 | gpt-4o(2024-05-13)は 2026-10-01 リタイア→gpt-5.1。gpt-4o(2024-08-06 / 2024-11-20)・gpt-4.1・gpt-4.1-mini は 2027-04-14。**⚠ `gpt-4.1-nano` のみ 2026-10-14** で本体より約半年早い(ファインチューニング対象に選ぶ際は特に注意) |
 | gpt-image 系 | 画像生成: `gpt-image-1`(プレビュー)、`gpt-image-1-mini` / `gpt-image-1.5` / `gpt-image-2` | GA(gpt-image-2 は 2026-04-21 GA。gpt-image-1 のみプレビュー) | 同上 | gpt-image-1 は 2026-10-23、gpt-image-1.5 は 2026-12-16 リタイア予定 |
 | Sora / Sora 2(動画生成) | テキスト/画像/動画→動画。音声付き生成・Remix 対応。非同期ジョブ API | パブリックプレビュー | https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/video-generation | API は `api-version=preview`(v1 API)。sora-2 (2025-10-06) は 2026-07-15 リタイア→sora-2 (2025-12-08、retire 2026-09-15) へ |
 | 音声系(realtime / audio / transcribe / tts) | `gpt-realtime`(GA)、`gpt-realtime-1.5` GA、`gpt-realtime-2`/`2.1` プレビュー、`gpt-audio` GA、`gpt-4o-transcribe` 系プレビュー、`tts`/`tts-hd` プレビュー | モデル別に混在 | https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure | whisper / tts / tts-hd は 2026-12-15 リタイア予定。`gpt-realtime-translate` / `-whisper` は時間課金 |
@@ -62,7 +62,7 @@
 | Standard (Regional) | 単一リージョン処理・従量課金 | GA | 対応 | — | — | 同上 | 旧モデルのリタイアに伴い提供順は最後 |
 | Developer (`DeveloperTier`) | **fine-tuned モデル評価専用**。SLA・データ所在保証なし | GA(用途限定) | 対応 | — | — | 同上 | **24時間で自動削除** |
 | Serverless API deployments(旧 MaaS) | hub-based プロジェクトでのサーバーレスエンドポイント | 非推奨予定(明示的な deprecated 表記はないが **classic 限定+「Foundry resources へのデプロイを推奨」と明記** → 実質レガシー) | classic のみ | `az ml serverless-endpoint` | `azure-ai-ml` (ServerlessEndpoint) | https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/deploy-models-serverless | 新規設計では Foundry リソース + Global Standard / Data Zone を選ぶのが現行ガイダンス |
-| Managed compute | モデル重みを専用 VM にデプロイ(HF 等) | GA | **classic(hub-based project)必須** | 対応 | 対応 | https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-models-overview | pay-go 課金の managed compute もあり(classic 文書) |
+| Managed compute | オープンソース/コミュニティモデル(Hugging Face Collection、`azure-huggingface` レジストリ)を専用 GPU にデプロイ。VM のプロビジョニング・K8s 運用・コンテナイメージ作成は不要 | **パブリックプレビュー**(「Managed compute in Foundry is currently in preview. … we don't recommend it for production workloads」) | **新ポータルの Foundry プロジェクトで利用可**(classic 必須ではない) | 対応 | 対応 | https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview | SKU `GlobalManagedCompute`、**現時点は Global スコープのみ**。課金は**アクセラレータ単位の時間課金**(A100 80GB / H100 80GB / MI300X)。クォータはアクセラレータファミリ×リージョンで **Azure VM クォータとは別枠**。ランタイムは vLLM / SGLang / TensorRT-LLM / NIM / TEI / llama.cpp / hf-serve から自動選択。**組み込み Content Safety がデータパスに入らない**(自前で Content Safety API を呼ぶ)。モデル重みは事前ステージング済みで **Hugging Face Hub への外向き通信が不要**(完全閉域でデプロイ可) |
 | Spillover(PTU→Standard 溢れ処理) | PTU 枯渇時(429/400/500/503)に同一リソースの standard デプロイへ自動転送 | GA | 新ポータル対応(Traffic spillover トグル) | REST (`spilloverDeploymentName`) | ヘッダー `x-ms-spillover-deployment` で per-request 制御 | https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/spillover-traffic-management | PTU 対応の Azure OpenAI モデルは全対応。DeepSeek / Llama は非対応。Agent Service とも併用可 |
 
 ## Model router
@@ -97,6 +97,8 @@
 
 ## 補足ノート(SI 判断に効く要点)
 
+- **⚠ Fireworks 系モデルは予告期間が 15 日しかない**: リタイアスケジュールに Important として「**Fireworks models on Standard (Per-Token) inference offerings are subject to a 15-day notice period prior to model retirement**」と明記。標準ライフサイクル(GA は 60 日前通知)と比べて極端に短く、`FW-*` 系(GLM / Kimi / Qwen / MiniMax / DeepSeek の Fireworks 版)を本番の必須経路に置くとガバナンス上のリスクになる。掲載上のリタイア日は 2027-07-01 だが、この予告条項が優先する。
+- **日本語モデル**: **NTT Data の `tsuzumi-7b` は Legacy で 2026-08-31 リタイア(後継 `tsuzumi2`)**。SFT(教師ありファインチューニング)の対応モデルとしても挙げられているため、日本語特化モデルを検討する案件では後継への切替を前提にする。
 - **Claude の位置づけ**: Claude は「Models sold by Azure」ではなく Marketplace 経由のパートナーモデル。ただし「Hosted on Azure」形態が登場し opus-5 / opus-4-8 / sonnet-5 / haiku-4-5 は Azure 基盤で GA + Data Zone (US) 対応まで来ており、「パートナーモデルはデータ所在が弱い」という従来の前提が変わっている。SDK は Azure OpenAI SDK ではなく **Anthropic SDK(AnthropicFoundry)+ Entra ID** という点が実装上の分岐点。
 - **serverless API deployments は実質レガシー**: classic 専用記事となり「Foundry resources への standard deployment を推奨」と明記。新規設計では選ばない。
 - **ドキュメント間の齟齬**: Claude 各モデルのライフサイクルは concepts ページ(GA 表記)とリタイアスケジュール(Preview 表記+リタイア日)で食い違いあり。本番採用時は retirement schedule 側の日付を確認する。

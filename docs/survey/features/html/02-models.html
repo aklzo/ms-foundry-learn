@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="02-foundry-models-モデルカタログ・デプロイ・ファインチューニング">02. Foundry Models(モデルカタログ・デプロイ・ファインチューニング)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#モデルカタログ全体像">モデルカタログ全体像</a></li><li><a href="#azure-openai-モデルファミリ">Azure OpenAI モデルファミリ</a></li><li><a href="#anthropic-claude-パートナーモデル">Anthropic Claude(パートナーモデル)</a></li><li><a href="#その他モデルファミリ-azure-direct-パートナー">その他モデルファミリ(Azure Direct / パートナー)</a></li><li><a href="#デプロイタイプ">デプロイタイプ</a></li><li><a href="#model-router">Model router</a></li><li><a href="#モデルライフサイクル・リタイアメント">モデルライフサイクル・リタイアメント</a></li><li><a href="#ファインチューニング">ファインチューニング</a></li><li><a href="#foundry-local-オンデバイス">Foundry Local(オンデバイス)</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要">概要</h2>
 <p>モデルカタログ(1,900+ モデル)、モデルファミリ別の提供状況、デプロイタイプ、Model router、モデルライフサイクル、ファインチューニング、Foundry Local を扱う。カタログは「<strong>Models sold by Azure(Azure Direct)</strong>」(Microsoft がホスト・販売、MS サポート・SLA・Responsible AI 審査付き)と「<strong>Models from partners and community</strong>」(第三者提供、Azure Marketplace 課金)の2区分で整理される。</p>
 <h2 id="モデルカタログ全体像">モデルカタログ全体像</h2>
@@ -125,11 +125,11 @@ footer {
 <td>Models from partners and community</td>
 <td>第三者提供。Azure Marketplace 課金。<strong>Anthropic Claude はこちら</strong>(Azure Direct ではない)。Hugging Face は managed compute</td>
 <td><span class="badge ga">GA</span>(枠組み)</td>
-<td>HF / managed compute 系は <strong>classic(hub-based project)必須</strong></td>
+<td>新ポータル対応。<strong>Hugging Face / managed compute 系も新ポータルの Foundry プロジェクトで利用可</strong>(managed compute 自体はパブリックプレビュー)</td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span></td>
-<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners">models-from-partners</a></td>
-<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners">models-from-partners</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview">managed-compute-overview</a></td>
+<td>初版は「classic 必須」と記載していたが誤り(2026-07-30 訂正)</td>
 </tr>
 <tr>
 <td>Model leaderboards / benchmarks</td>
@@ -193,7 +193,7 @@ footer {
 <td>旧世代</td>
 <td><span class="badge deprecated">非推奨</span></td>
 <td>同上</td>
-<td>gpt-4o(2024-05-13)は 2026-10-01 リタイア→gpt-5.1 へ自動アップグレード。gpt-4.1 は 2027-04-14</td>
+<td>gpt-4o(2024-05-13)は 2026-10-01 リタイア→gpt-5.1。gpt-4o(2024-08-06 / 2024-11-20)・gpt-4.1・gpt-4.1-mini は 2027-04-14。<strong>⚠ <code>gpt-4.1-nano</code> のみ 2026-10-14</strong> で本体より約半年早い(ファインチューニング対象に選ぶ際は特に注意)</td>
 </tr>
 <tr>
 <td>gpt-image 系</td>
@@ -403,13 +403,13 @@ footer {
 </tr>
 <tr>
 <td>Managed compute</td>
-<td>モデル重みを専用 VM にデプロイ(HF 等)</td>
-<td><span class="badge ga">GA</span></td>
-<td><strong>classic(hub-based project)必須</strong></td>
+<td>オープンソース/コミュニティモデル(Hugging Face Collection、<code>azure-huggingface</code> レジストリ)を専用 GPU にデプロイ。VM のプロビジョニング・K8s 運用・コンテナイメージ作成は不要</td>
+<td><strong>パブリックプレビュー</strong>(「Managed compute in Foundry is currently in preview. … we don't recommend it for production workloads」)</td>
+<td><strong>新ポータルの Foundry プロジェクトで利用可</strong>(classic 必須ではない)</td>
 <td><span class="badge ok">対応</span></td>
 <td><span class="badge ok">対応</span></td>
-<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-models-overview" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-models-overview">foundry-models-overview</a></td>
-<td>pay-go 課金の managed compute もあり(classic 文書)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview">managed-compute-overview</a></td>
+<td>SKU <code>GlobalManagedCompute</code>、<strong>現時点は Global スコープのみ</strong>。課金は<strong>アクセラレータ単位の時間課金</strong>(A100 80GB / H100 80GB / MI300X)。クォータはアクセラレータファミリ×リージョンで <strong>Azure VM クォータとは別枠</strong>。ランタイムは vLLM / SGLang / TensorRT-LLM / NIM / TEI / llama.cpp / hf-serve から自動選択。<strong>組み込み Content Safety がデータパスに入らない</strong>(自前で Content Safety API を呼ぶ)。モデル重みは事前ステージング済みで <strong>Hugging Face Hub への外向き通信が不要</strong>(完全閉域でデプロイ可)</td>
 </tr>
 <tr>
 <td>Spillover(PTU→Standard 溢れ処理)</td>
@@ -557,6 +557,8 @@ footer {
 </tbody></table></div>
 <h2 id="補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</h2>
 <ul>
+<li><strong>⚠ Fireworks 系モデルは予告期間が 15 日しかない</strong>: リタイアスケジュールに Important として「<strong>Fireworks models on Standard (Per-Token) inference offerings are subject to a 15-day notice period prior to model retirement</strong>」と明記。標準ライフサイクル(GA は 60 日前通知)と比べて極端に短く、<code>FW-*</code> 系(GLM / Kimi / Qwen / MiniMax / DeepSeek の Fireworks 版)を本番の必須経路に置くとガバナンス上のリスクになる。掲載上のリタイア日は 2027-07-01 だが、この予告条項が優先する。</li>
+<li><strong>日本語モデル</strong>: <strong>NTT Data の <code>tsuzumi-7b</code> は Legacy で 2026-08-31 リタイア(後継 <code>tsuzumi2</code>)</strong>。SFT(教師ありファインチューニング)の対応モデルとしても挙げられているため、日本語特化モデルを検討する案件では後継への切替を前提にする。</li>
 <li><strong>Claude の位置づけ</strong>: Claude は「Models sold by Azure」ではなく Marketplace 経由のパートナーモデル。ただし「Hosted on Azure」形態が登場し opus-5 / opus-4-8 / sonnet-5 / haiku-4-5 は Azure 基盤で GA + Data Zone (US) 対応まで来ており、「パートナーモデルはデータ所在が弱い」という従来の前提が変わっている。SDK は Azure OpenAI SDK ではなく <strong>Anthropic SDK(AnthropicFoundry)+ Entra ID</strong> という点が実装上の分岐点。</li>
 <li><strong>serverless API deployments は実質レガシー</strong>: classic 専用記事となり「Foundry resources への standard deployment を推奨」と明記。新規設計では選ばない。</li>
 <li><strong>ドキュメント間の齟齬</strong>: Claude 各モデルのライフサイクルは concepts ページ(GA 表記)とリタイアスケジュール(Preview 表記+リタイア日)で食い違いあり。本番採用時は retirement schedule 側の日付を確認する。</li>

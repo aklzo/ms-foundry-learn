@@ -2,7 +2,7 @@
 
 [← 機能一覧 TOP](./README.md)
 
-> **最終更新:** 2026-07-29(learn.microsoft.com 現行ページ確認。ツールカタログページの更新日: 2026-07-11)
+> **最終更新:** 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は [TOP の更新履歴](./README.md#更新履歴)参照)
 
 ## 概要
 
@@ -29,7 +29,7 @@ Foundry Agent Service のツール群とナレッジ(RAG)機構を扱う。ツ�
 | Custom | Model Context Protocol (MCP) | GA(表記なし) |
 | Custom | OpenAPI tool | GA(表記なし) |
 | Custom | Agent-to-Agent (A2A) | プレビュー |
-| Custom | Toolbox | 表記なし(下記「Toolbox のステータスの読み方」参照) |
+| Custom | Toolbox | **GA**(カタログ表に preview ラベルなし。GA 一覧表でも「Toolboxes = GA」と明記) |
 
 ※ 旧来の「Grounding with Bing Search」は built-in 表から外れ **Web search が推奨経路**。高度シナリオ向けに「Grounding with Bing tools」ページが別途存在。**Deep Research と Logic Apps 専用ツールはカタログに存在しない**(後述)。
 
@@ -55,7 +55,7 @@ Foundry Agent Service のツール群とナレッジ(RAG)機構を扱う。ツ�
 | Computer Use | スクリーンショットを解釈しクリック/入力等の UI 操作を提案 | パブリックプレビュー(`computer-use-preview` モデル必須) | 記載なし | 記載なし | 対応 | https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/computer-use | **限定アクセス(登録申請制、o3 アクセス済みでも要申請)**。対応リージョン限定(モデル配置に依存)。safety checks 内蔵 |
 | Deep Research | Web ベースの多段リサーチ(旧ツール) | 非推奨(「The Deep Research tool is deprecated. We recommend that you use the `o3-deep-research` model with web search or an MCP tool instead.」) | classic のみ(コードオンリー) | — | 対応(旧 SDK) | https://learn.microsoft.com/en-us/azure/foundry-classic/agents/how-to/tools-classic/deep-research | 新パス(/azure/foundry/agents/how-to/tools/deep-research)は 404。`2025-05-15-preview` API 限定。後継 = Web search ツール + `o3-deep-research` モデル(web-search ページに移行例あり) |
 | MCP ツール(リモート MCP サーバー接続) | MCP サーバーエンドポイント上のツールにエージェントを接続 | GA | 対応(カタログから構成) | 記載なし | 対応(basic/standard 両対応) | https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol | 認証: キー / Entra(マネージド ID)/ OAuth ID パススルー。**長時間実行(long-running operations)はプレビュー**。カタログ個別サーバーにプレビューあり(例: Azure DevOps MCP Server)。classic 版 MCP ページは「(Preview) (classic)」のまま |
-| Toolbox(intent-based toolbox) | 複数ツールを1つの MCP 互換エンドポイントに束ね、バージョニング・集中認証を提供。MAF / LangGraph / GitHub Copilot SDK 等の外部ランタイムからも消費可 | 要確認(GA 相当の記載だが完全な GA 宣言なし。ページに preview バナーなし・「Available today」表記の一方、REST 例は `Foundry-Features: Toolboxes=V1Preview` ヘッダーを要求) | 対応(Build > Tools > Create a toolbox。作成手順は VS Code Foundry Toolkit 中心) | **azd**(`microsoft.foundry` 拡張)対応。Azure CLI 記載なし | 対応(`client.beta.toolboxes.create_version` — beta 名前空間) | https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox | バージョン作成→バージョン別エンドポイントでテスト→default へ昇格。Code Interpreter / File Search を toolbox 経由で使うと**ユーザー分離なし**。unnamed ツールは各タイプ1個まで |
+| Toolbox(intent-based toolbox) | 複数ツールを1つの MCP 互換エンドポイントに束ね、バージョニング・集中認証を提供。MAF / LangGraph / GitHub Copilot SDK 等の外部ランタイムからも消費可 | **GA**(GA 一覧表に「Build > Toolboxes = GA」と明記。ツールカタログ表にも preview ラベルなし) | 対応(Build > Tools > Create a toolbox。作成手順は VS Code Foundry Toolkit 中心) | **azd**(`microsoft.foundry` 拡張)対応。Azure CLI 記載なし | 対応(`client.beta.toolboxes.create_version` — beta 名前空間) | https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox | バージョン作成→バージョン別エンドポイントでテスト→default へ昇格。Code Interpreter / File Search を toolbox 経由で使うと**ユーザー分離なし**。unnamed ツールは各タイプ1個まで |
 | Tool search(`toolbox_search`) | Toolbox 内ツールを隠し、`tool_search` / `call_tool` の2メタツールで意図ベース発見(BM25) | Toolbox に準ずる(対応表で「Available」・preview 表記なしだが、Toolbox 本体と同じ V1Preview フィーチャーヘッダー配下) | VS Code Foundry Toolkit 対応(「Tool search」チェックボックス) | azd 対応 | 対応 | https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/tool-search | `pin` / `additional_search_text` / 自動ピン(利用頻度ベース)で調整可。limit 既定5・最大10。Responses API 版の tool search は別ページ(/azure/foundry/openai/how-to/tool-search) |
 | Work IQ | M365(メール・会議・ファイル・チャット)を横断するインテリジェンス層に A2A で委任。全リクエストがサインインユーザー文脈で実行 | パブリックプレビュー(`work_iq_preview`) | 接続作成はポータル(Settings > Connections > Work IQ)。ツール追加は VS Code Toolkit / コード | 記載なし | 対応(C#/JS/REST 対応、Java 非対応) | https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/work-iq | **M365 Copilot ライセンス必須**(エンドユーザーも)。BYO Entra アプリ + `WorkIQAgent.Ask` 委任権限 + Global Admin の同意が必須。**VNet 統合非対応**。データは M365 テナント内・モデル学習に不使用 |
 | Fabric IQ | Fabric のオントロジー/データエージェント/PBI セマンティックモデルに MCP で接続し、業務語彙(NL2Ontology)でデータ推論 | パブリックプレビュー(`fabric_iq_preview`。Fabric IQ ワークロード自体もプレビュー) | VS Code Toolkit 対応(OneLake Catalog 接続はポータルで作成)+ ポータル playground 手順あり | azd で接続作成例あり | 対応(C#/JS/REST 対応、Java 非対応) | https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric-iq | Fabric ライセンス必須。OBO のみ(app-only 不可)。data agent エンドポイントのみ background mode(長時間実行)対応。VNet 対応はアイテム種別で異なる |
@@ -70,8 +70,15 @@ Foundry Agent Service のツール群とナレッジ(RAG)機構を扱う。ツ�
 **(b) Web search と Grounding with Bing の関係**
 Web search(GA)が推奨経路で、Bing リソース接続不要のシンプル構成。市場フィルタ等の細かい制御が要るときのみ Grounding with Bing Search(GA)/ Bing Custom Search(プレビュー)。**いずれも DPA 対象外・コンプライアンス境界外へのデータ送信・別課金**という制約は共通で、規制業種の SI では要注意。
 
-**(c) Toolbox のステータスの読み方(重要な曖昧さ)**
-ドキュメント上は preview バナーなし・「Available today」表記だが、REST/MCP 検証例に `Foundry-Features: Toolboxes=V1Preview` ヘッダーが残り、SDK も `client.beta.toolboxes` 名前空間。「明確な GA 宣言は確認できず」が正確な状態。
+**(c) Toolbox は GA(2026-07-30 に確定)**
+初版では「明確な GA 宣言が確認できない」としていたが、[GA 一覧表](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability)に **「Build > Toolboxes = GA」** と明記されているのを確認した。ツールカタログ表にも preview ラベルはない。ただし **REST/MCP の検証例に `Foundry-Features: Toolboxes=V1Preview` ヘッダーが残り、Python SDK も `client.beta.toolboxes` 名前空間**という実装上のねじれは残っている(GA 宣言と SDK の成熟度は別物として扱う)。
+
+なお **hosted agent はエージェント定義にツールを直付けできず、Toolbox 経由が前提**になる([03-agent-service](./03-agent-service.md))。コードファーストを選ぶ案件では Toolbox が必須要素になる。
+
+**(c-2) ⚠ Azure OpenAI On Your Data は非推奨でリタイア間近**
+Azure Architecture Center の Secure Multitenant RAG 記事に Important として「**Azure OpenAI On Your Data is deprecated and approaching retirement.** We recommend that you migrate Azure OpenAI On Your Data workloads to **Foundry Agent Service** with **Foundry IQ** to retrieve content and generate grounded answers from your data.」と明記されている(具体的なリタイア日は未公表)。
+**含意:** 「オーケストレーターを挟まず、モデルが直接データストアを読む」構成は新規設計で選べない。下記(d)の3層はいずれもオーケストレーター型(エージェントまたは自前アプリ)を前提にする。既存の On Your Data ベースの提案書・PoC は棚卸しが必要。
+出典: https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/secure-multitenant-rag
 
 **(d) ナレッジ(RAG)の3層構造**
 1. **File search + ベクトルストア**(GA)— 手軽なマネージド RAG。1ストア/エージェント制限あり。

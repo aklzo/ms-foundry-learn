@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="03-foundry-agent-service">03. Foundry Agent Service</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#機能一覧">機能一覧</a></li><li><a href="#廃止・移行期限-このカテゴリ分">廃止・移行期限(このカテゴリ分)</a></li><li><a href="#補足ノート">補足ノート</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要">概要</h2>
 <p>Foundry Agent Service は Responses API を単一エントリポイントとするエージェント構築・実行のマネージドプラットフォーム。<strong>サービス本体は GA</strong>(「Foundry Agent Service is generally available (GA). Some sub-features are in public preview.」)。ただし旧世代(Agents v1 / Assistants API)の廃止と、Memory・Routines 等の新プレビュー機能の追加が同時進行しており、<strong>「GA だが足元が動いている」状態</strong>である点に注意。</p>
 <p><strong>用語マッピング(v1 → v2)</strong>(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate">migrate</a> ):</p>
@@ -176,7 +176,7 @@ footer {
 <td><strong>azd</strong> <code>microsoft.foundry</code> 拡張(<code>az cognitiveservices agent</code> は廃止)</td>
 <td><span class="badge ok">対応</span>(<code>create_version_from_code</code> 等)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents">hosted-agents</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/quickstarts/quickstart-hosted-agent" title="https://learn.microsoft.com/en-us/azure/foundry/agents/quickstarts/quickstart-hosted-agent">quickstart-hosted-agent</a></td>
-<td><strong>初期プレビュー基盤は 2026-08-20 でサポート終了(要再デプロイ)</strong>。Python / C# のみ。31 リージョン。コンテナプロトコル 1.0.0 は非推奨(2.0.0 へ)</td>
+<td><strong>初期プレビュー基盤は 2026-08-20 でサポート終了(要再デプロイ)</strong>。Python / C# のみ。31 リージョン。コンテナプロトコル 1.0.0 は非推奨(2.0.0 へ)。<strong>⚠ hosted agent はエージェント定義にツールを直付けできない</strong>(「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」。<code>create_version</code> の <code>tools</code> パラメータは削除済み)→ <strong>Toolbox 経由が前提</strong></td>
 </tr>
 <tr>
 <td>Multi-agent workflows(ビジュアル)</td>
@@ -231,7 +231,7 @@ footer {
 <tr>
 <td>Agent optimizer</td>
 <td>評価データセットに対して hosted agent の instructions / skills / tool 説明 / モデル選定を自動改善</td>
-<td><span class="badge preview">プレビュー</span></td>
+<td><strong>限定プレビュー(Limited preview)</strong> — GA 一覧表の表記。単なる public preview ではなく利用可否が絞られる</td>
 <td><span class="badge ok">対応</span>(Agents &gt; Optimize タブで結果閲覧)</td>
 <td><strong>azd</strong>(<code>azd ai agent optimize</code>)</td>
 <td><span class="badge na">記載なし</span>(azd 中心)</td>
@@ -294,6 +294,16 @@ footer {
 <td>2027-03-31</td>
 <td>Agents (classic)</td>
 <td>Agents v2 へ移行</td>
+</tr>
+<tr>
+<td><strong>日付未公表(Planned / TBD)</strong></td>
+<td><strong>Agent Applications(旧 publishing モデル)</strong></td>
+<td>新オブジェクトモデル(Agent に統合。作成時点で安定エンドポイント・プロトコル構成・エージェント ID・agent card を持つ)へ移行。<strong>レガシー ID のエージェント(<code>agent.identity == null</code>)はインプレース昇格不可で作り直しが必要。</strong>旧モデルはステートレスな <code>POST /responses</code> のみ利用可で <code>/conversations</code>・<code>/files</code>・<code>/vector_stores</code>・<code>/containers</code> にアクセスできない( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-agent-applications" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-agent-applications">migrate-agent-applications</a> )</td>
+</tr>
+<tr>
+<td><strong>日付未公表(猶予期間あり)</strong></td>
+<td>コンテナプロトコル 1.0.0</td>
+<td>2.0.0 へ。猶予期間後は 1.0.0 のエージェントへのリクエストがブロックされる。2.0.0 でないと 1 セッション内の複数ユーザー多重化(<code>x-agent-user-id</code>)ができない</td>
 </tr>
 </tbody></table></div>
 <h2 id="補足ノート">補足ノート</h2>

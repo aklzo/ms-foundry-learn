@@ -87,9 +87,9 @@ footer {
 <main>
 <h1 id="06-安全性・ガードレール-trustworthy-ai">06. 安全性・ガードレール(Trustworthy AI)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要-ignite-2025-以降の再編">概要(Ignite 2025 以降の再編)</a></li><li><a href="#機能一覧">機能一覧</a></li><li><a href="#補足ノート">補足ノート</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要-ignite-2025-以降の再編">概要(Ignite 2025 以降の再編)</h2>
-<p>旧「コンテンツフィルター」は「<strong>Guardrails and controls</strong>」枠組みに再編された。新ドキュメントは <a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/">guardrails</a> 配下。ガードレール=コントロールの名前付きコレクションで、各コントロールは「リスク × 介入ポイント × アクション」で定義される。</p>
+<p>旧「コンテンツフィルター」は「<strong>Guardrails and controls</strong>」枠組みに再編された。新ドキュメントは <a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guardrails-overview"><code>/azure/foundry/guardrails/</code> 配下</a>(※パス自体の <code>.../guardrails/</code> は 404。個別記事を参照する)。ガードレール=コントロールの名前付きコレクションで、各コントロールは「リスク × 介入ポイント × アクション」で定義される。</p>
 <ul>
 <li><strong>介入ポイントは4つ</strong>: User input / Tool call(プレビュー・エージェントのみ)/ Tool response(プレビュー・エージェントのみ)/ Output</li>
 <li><strong>アクションは2つ</strong>: Annotate(モデルのみ)/ Annotate and block</li>
@@ -113,7 +113,7 @@ footer {
 <tr>
 <td>Guardrails and controls(枠組み)</td>
 <td>リスク検出・介入ポイント・アクションを定義するコントロールの集合をモデル/エージェントに割当てる新枠組み</td>
-<td>モデル向け: GA相当(プレビュー表記なし・既定適用)/ エージェント向け: パブリックプレビュー</td>
+<td><strong>モデル向け: GA / エージェント向け: プレビュー / コントロールと介入(Controls and intervention): プレビュー</strong>(いずれも GA 一覧表の明示表記)</td>
 <td>新ポータル: Build &gt; Guardrails(作成・割当・Playground テスト)</td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span>(注釈読取は OpenAI SDK 経由のみ例示)</td>
@@ -273,10 +273,12 @@ footer {
 </tbody></table></div>
 <h2 id="補足ノート">補足ノート</h2>
 <p><strong>1. エージェント/デプロイ単位の適用と継承ルール</strong> 1つのガードレールを複数のモデルデプロイ・複数のエージェントに割当て可能。エージェントに明示割当てがない場合は基盤モデルデプロイのガードレールを継承し、明示割当てがあればモデル側設定を<strong>完全に上書き</strong>(Tool call / Tool response にコントロールがなければその経路は未スキャンになる点に注意)。Spotlighting と Groundedness はエージェント未対応で、割当てても無効化される。ガードレール処理のレイテンシは介入ポイントあたり約 50〜100ms と明記。エージェント向けのガイド付きセットアップ: <a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up">guided-set-up</a></p>
+<p><strong>1-2. GA 一覧表の 3 分割(2026-07-30 追記)</strong> <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">GA 一覧表</a>はガードレールを <strong>Guardrails — Models = GA / Guardrails — Agents = Preview / Guardrails — Controls and intervention = Preview</strong> の 3 行に分けている。初版は「モデル向けは GA 相当(プレビュー表記なし)」と控えめに書いていたが、<strong>モデル向けは明示的に GA</strong>。一方で「コントロールと介入」という枠組み全体がプレビュー行として別立てされているため、<strong>Tool call / Tool response の介入点だけでなく、コントロールの構成・介入の仕組みそのものをプレビューとして扱う</strong>のが安全。</p>
 <p><strong>2. サードパーティモデルへの適用(SI 判断上の重要点)</strong></p>
 <ul>
 <li>ガードレールが自動適用されるのは「<strong>Foundry Models sold by Azure</strong>」(Azure OpenAI、DeepSeek、Grok 等の Azure 直販モデル。Whisper 等音声モデル除く)。</li>
 <li>serverless API のパートナーモデルは Content Safety の既定フィルター(テキスト Medium)が適用され、デプロイ単位でオン/オフ可・Content Safety 料金が別課金( <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/model-catalog-content-safety" title="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/model-catalog-content-safety">model-catalog-content-safety</a> )。</li>
+<li><strong>Managed compute(パブリックプレビュー)は例外</strong>: 「<strong>Built-in Azure AI Content Safety filters aren't part of the managed compute data path in public preview.</strong> If you need request-level or response-level filtering, call the Azure AI Content Safety APIs directly from your application.」と明記。OSS モデルを専用 GPU で動かす構成では、ガードレールは自前で噛ませる( <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview">managed-compute-overview</a> )。</li>
 <li><strong>Claude は例外</strong>: Claude モデルのページに「<strong>Foundry doesn't provide built-in content filtering for Claude models at deployment time</strong>」と明記(推論時に AI Content Safety を自分で構成する)。Claude は Anthropic 自身の安全システムに依存( <a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models">claude-models</a> )。</li>
 </ul>
 <p><strong>3. サーフェスの全体傾向</strong> 構成サーフェスは「新 Foundry ポータル(Build &gt; Guardrails)」と「REST(ARM の RAI policy / raiBlocklists)」の2本柱。<strong>Azure CLI・Python SDK 専用の管理コマンド/クラスは現行ドキュメントに記載なし</strong>(Python は注釈の読取・Content Safety データプレーン呼出しの例のみ)。Risks &amp; safety モニタリングだけは classic ポータル専用のまま新ポータル未移植という非対称がある。</p>

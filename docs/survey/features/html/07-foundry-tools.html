@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="07-foundry-tools-旧-azure-ai-services">07. Foundry Tools(旧 Azure AI Services)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#サービス別ステータス">サービス別ステータス</a></li><li><a href="#プレイグラウンド提供状況-foundry-新ポータル">プレイグラウンド提供状況(Foundry 新ポータル)</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要">概要</h2>
 <p>旧 Azure AI Services は「<strong>Foundry Tools</strong>」に正式改称済み(ページタイトル「What are Foundry Tools?」。各サービスも「Azure Speech in Foundry Tools」等に改称)。ただし<strong>ドキュメント URL は <code>/azure/ai-services/</code> 配下に残存</strong>している。</p>
 <p><strong>リソースモデル</strong>: Foundry リソース(kind = <code>AIServices</code>)1つで、<strong>1エンドポイント・1キーにより Azure OpenAI + Foundry Tools に到達可能</strong>。バンドル対象として公式表に明記されているのは Content Safety / Document Intelligence / Language / Speech / Translator / Agent Service / Model Inference。Content Understanding も Foundry リソースの一部として利用可能と明記。<strong>例外は Face(個別リソース+limited access 申請制)と Custom Translator(専用ポータル)</strong>。</p>
@@ -115,7 +115,7 @@ footer {
 <tr>
 <td>Voice Live API</td>
 <td>音声エージェント向けフルマネージド speech-to-speech 統合 API(STT+生成 AI+TTS+アバターを単一 WebSocket IF で提供)</td>
-<td>GA相当・要確認(安定版 API <code>2025-10-01</code>・<code>2026-04-10</code> が存在〈-preview なし〉だが「GA」の明文は未発見。最新プレビューは <code>2026-06-01-preview</code>)</td>
+<td><strong>プレビュー</strong>(GA 一覧表に「Build &gt; Agents — Voice Live = Preview」と明記)。ただし安定版 API <code>2025-10-01</code>・<code>2026-04-10</code> が存在し、Voice Live 自身のページには preview バナーも GA 宣言もない — <strong>表記が一致していない</strong></td>
 <td>Foundry(新)playground あり。classic の Speech playground にも Voice Live あり</td>
 <td><span class="badge na">記載なし</span></td>
 <td>SDK: Python / C# は安定版、Java / JS はプレビュー(FAQ 明記)</td>
@@ -243,7 +243,11 @@ footer {
 <li><strong>世代交代が進行中</strong>: Image Analysis→Content Understanding / Foundry Models、Document Intelligence→Content Understanding と併存(決定論的抽出は DI、LLM 分析は CU)、Language の CLU / 要約系は「legacy」化(エージェント時代は MCP server+プレビルトエージェントへ)、Translator は NMT v3→LLM ベース <code>2026-06-06</code> へ。</li>
 <li><strong>エージェント統合の形</strong>: 各 Foundry Tool は「MCP server / Tool Catalog / プレビルトエージェント」経由で Foundry Agent Service に接続する方向(Speech MCP server、Language MCP server、Voice Live のエージェント統合)。</li>
 <li><strong>standard setup(BYO ストレージ)</strong>のバリアントが Speech / Language / Vision / Content Understanding 向けにあり(Speech / Language の Storage Account オプションはプレビュー)。</li>
-<li><strong>要確認</strong>: Voice Live の GA 明文表記(安定版 API の存在から実質 GA と判断できるが「generally available」の文言自体は未確認。確認 URL: <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2025-10-01" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2025-10-01">voice-live-api-reference-2025-10-01</a> )。</li>
+<li><strong>Voice Live のステータス(2026-07-30 に更新)</strong>: 初版は「安定版 API の存在から実質 GA」と読んだが、<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">GA 一覧表</a>に <strong>「Build &gt; Agents — Voice Live = Preview」</strong> と明記されているのを確認した。<strong>提案では Preview として扱うのが安全。</strong>なお Voice Live 自身のページには preview バナーも GA 宣言も無く、安定版 API(<code>2025-10-01</code> / <code>2026-04-10</code>)が存在し課金も 2025-07-01 に開始済みという状態で、<strong>ドキュメント間で表記が一致していない</strong>。SLA を論点にする案件では Microsoft への個別確認が必要。</li>
+<ul>
+<li>個別機能で明示的にプレビューなのは <strong>WebRTC 接続</strong>、<code>phi4-*</code> モデル、<code>mai-transcribe</code>、<code>MAI-Voice-2-Flash</code>、BYOM の Anthropic プロファイル。<strong>本番設計では WebRTC を外し WebSocket に寄せる。</strong></li>
+<li><strong>SIP は非対応</strong>(FAQ に明記)。テレフォニー接続は Azure Communication Services の Call Automation(双方向オーディオストリーミング)か Twilio / Infobip / Genesys 経由。詳細は <a href="../../architecture/html/08-usecase-specialized.html">architecture/08 章</a>。</li>
+</ul>
 </ul>
 </main>
 <footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>
