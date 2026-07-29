@@ -357,16 +357,116 @@ MCSB v1.0 ベースで「古いガイダンスを含む可能性がある」と�
 
 ## 9. エッジ・オンプレ・ハイブリッド
 
-> **注意:** この節は本調査で担当したエージェントが完了せず、[features/02-models](../features/02-models.md) と [features/07-foundry-tools](../features/07-foundry-tools.md) の記載および他エージェントの断片情報に基づく。**次回更新時の重点確認項目。**
+**「オンプレで Foundry を動かす」には 3 つの別物がある。**名前が似ているので最初に切り分ける。
 
-| 選択肢 | 用途 | 状態・制約 |
+| 選択肢 | 何か | ライフサイクル |
 |---|---|---|
-| **Foundry Local** | オンデバイス AI 実行(ONNX Runtime、約 20MB ランタイム)。OpenAI 互換 API | **要確認**(現行ページに preview / GA の明記なし)。Windows / macOS / Linux。Azure サブスクリプション不要。**サーバー用途は非推奨**(vLLM 等を案内)。モデルは最適化カタログに限定 |
-| **Foundry Local on Azure Local** | 企業向け(Arc 対応 K8s) | 別製品として存在 |
-| **Document Intelligence コンテナ** | オンプレ / エアギャップ環境での文書処理 | **公式に「現時点で唯一の選択肢」と明記** |
-| Foundry Tools の切断コンテナ | Speech / Language 等 | コンテナ / ソブリンクラウド対応の記載あり |
+| **Foundry Local** | **エンドユーザー端末上**でアプリに AI を埋め込むための SDK + ランタイム | **ラベルなし**(GA とも preview とも書かれていない) |
+| **Foundry Local on Azure Local** | **オンプレ K8s 上のエンタープライズ推論基盤**(Arc 拡張) | **プレビュー、かつ申請制** |
+| **Foundry Tools の切断コンテナ** | Speech / Language / Vision / Document Intelligence 等を**エアギャップで動かす** | サービスごとに GA / preview が異なる |
 
-**エッジ案件の判断軸:** 「完全にオフラインで推論する」なら Foundry Local か切断コンテナで、**Foundry のエージェント機能・ガードレール・観測性は一切使えない。**「基本はクラウド、通信断時のみローカル」というハイブリッドなら、アプリ側にフォールバック経路を持たせる設計になる。
+### 9.1 Foundry Local(端末上)
+
+「ユーザーのデバイス上で完全に動作するアプリケーションを出荷するための、エンドツーエンドのローカル AI ソリューション」と定義されている。
+
+- **ライフサイクル表記が存在しない。**概要ページにも入門ページにも GA / preview のラベル・バナーが一切ない。**「Microsoft は GA と明言していない」と正確に伝えるのが安全。**(なお「Foundry Local is available in preview」という記述は **Azure Local 版の記事内にのみ**存在する。同名製品の混同に注意。)
+- **Windows / macOS(Apple silicon)/ Linux。Azure サブスクリプション不要。**ランタイムは ONNX Runtime で、アプリへの追加サイズは約 20MB。
+- **ハードウェアアクセラレーションは自動。**「利用可能なハードウェアを検出し最良の実行プロバイダーを選ぶ。**GPU と NPU** で高速化し、無ければ CPU にシームレスにフォールバックする。ハードウェア検出コードは不要」。Windows 向けには専用パッケージがあり、Windows ML ランタイムと統合して「同じ API サーフェスでより広いハードウェアアクセラレーション」を提供する。
+- **モデルカタログは意図的に絞られている。**対象は**チャット補完(GPT OSS / Qwen / DeepSeek / Mistral / Phi)と音声書き起こし(Whisper)の 2 系統のみ。**「Foundry Local は**汎用のモデル実験用ではなく本番アプリの出荷用**に設計されている」と明記。**埋め込みモデル・ビジョンモデルの記載はない。**
+- **API は OpenAI 互換**で、「**Responses API のフォーマットを含む**」。ただし「フォーマットをサポート」であり、クラウド版 Responses API のステートフル機能まで再現するとは書かれていない。SDK は C# / JavaScript / Rust / Python。
+- **ローカル HTTP サーバーはオプション扱い。**「多くの組み込みアプリシナリオでは SDK を直接使え。別サーバーのオーバーヘッドなしでインプロセス推論する」。FAQ でも「これは Web サーバーと CLI ツールか? → **いいえ**」と明言している。
+
+> **⚠ サーバー用途は明確に否定されている(逐語):**
+> 「Foundry Local は**一度に単一ユーザーがモデルにアクセスする、ハードウェア制約のあるデバイス向けに最適化されている。**サーバーハードウェアに technically インストールして動かすことはできるが、**サーバー推論スタックとして設計されていない。**vLLM や Triton Inference Server のようなサーバー志向のランタイムは、同時リクエストのキューイング、継続的バッチング、多数の同時クライアント間での効率的な GPU 共有のために作られている。**Foundry Local はこれらの機能を提供しない。**……**複数の同時ユーザーにモデルを提供する必要があるなら、専用のサーバー推論フレームワークを使え。**」
+
+推論はローカル完結で、ネットワークを使うのはモデル / 実行プロバイダーの初回ダウンロードと、任意の診断ログ共有のみ。
+
+### 9.2 Foundry Local on Azure Local(オンプレ K8s)
+
+**別 SKU で、ドキュメントも `azure-sovereign-clouds` 配下の別セット。**「Arc 対応 Kubernetes クラスター上に AI モデルをデプロイして実行し、Kubernetes ネイティブな運用を行う」もの。
+
+**⚠ プレビューかつ申請制。**「Foundry Local on Azure Local のデプロイは**プレビュー期間中はリクエストベースでのみ利用可能**」と明記され、専用の申請フォームが用意されている。**GA 時期の記載は見つからなかった。**
+
+| 項目 | 内容 |
+|---|---|
+| 形態 | Azure Arc 拡張としてインストール。inference operator が状態を調停し、`Model` / `ModelDeployment` の CRD で宣言的に管理 |
+| 推論エンジン | **ONNX-GenAI(CPU / GPU)** または **vLLM(GPU 専用、高スループット向け)** |
+| 対応 | 生成 AI 推論に加え、**Predictive AI 推論**(分類・スコアリング等の非生成モデル)も可能。マルチモデル同時配信可 |
+| エンドポイント公開 | 内部 Service または **Kubernetes Gateway API**。API キー / Entra ID トークン検証 / TLS で保護 |
+| リージョン | 18 リージョン。**Japan East を含む** |
+| 前提 | Arc 接続、クラスター容量、GPU シナリオでは検証済みドライバー / プラグイン、クラスターレベル権限、証明書・API キー運用体制 |
+
+**Azure Local の具体バージョン、GPU SKU、最小ノード数は概要ページに記載がなかった。**
+
+**切断(disconnected)運用時の差分:** 拡張機能を **expansion pack** として事前にダウンロード・インポートし、モデルはローカルのコンテナレジストリから取得する。Istio・Gateway API CRD・Endpoint Picker イメージが同梱されるので**デプロイ時のアウトバウンド接続が不要。**証明書は `azure-cert-manager` が使えず `cert-manager` + `trust-manager` を導入する。**テレメトリは Microsoft へ送信されない。**認証はパブリックな Entra ID エンドポイントではなく**環境内の Active Directory** と統合する。認可は Azure RBAC で、**`Contributor` がコントロールプレーン書き込みに加えてデータプレーンの推論操作(`predict` / `chat/completions`)まで含む**点が接続環境と異なる。
+
+**サイジングの注意:** マルチレプリカ vLLM は `ModelDeployment` あたり Endpoint Picker Pod を 1 つ追加し、既定でメモリ request 約 512MiB / limit 2GiB。**`az aksarc create` の既定ワーカーサイズ `Standard_A4_v2` は「通常小さすぎる」**と明記されている。
+
+### 9.3 切断コンテナ(エアギャップでの Foundry Tools)
+
+> **⚠ 本ドキュメント初版の記述を訂正:** 初版では「オンプレ / エアギャップの文書処理は Document Intelligence コンテナが唯一の選択肢」と書いたが、**これは不正確だった。****Vision の Read OCR コンテナも GA かつ切断対応**で、印刷 / 手書きテキストを JPEG・PNG・BMP・**PDF・TIFF** から抽出できる。
+>
+> **正確には:** 「**構造化文書抽出(Layout / 請求書・領収書・ID の Prebuilt / Custom Template)をエアギャップで行える唯一の選択肢が Document Intelligence コンテナ**。単純な OCR だけなら Vision Read コンテナも選べる」。なお **Content Understanding にはコンテナが存在しない**ため、**マルチモーダル文書処理をオンプレで、は不可。**
+
+**切断対応の主な一覧:**
+
+| サービス | コンテナ | ライフサイクル | 切断 |
+|---|---|---|---|
+| Document Intelligence | Read / Layout / General Document / ID / Invoice / Receipt / Business Card / Custom Template | **v3.0 / v3.1 / v4.0 すべて GA** | **対応** |
+| Vision | **Read OCR** | **GA** | **対応** |
+| Speech | Speech to text / Custom Speech to text / Neural TTS | GA | 対応 |
+| Speech | Speech language identification | プレビュー | **非対応** |
+| Language | Key Phrase / Language Detection / Sentiment / NER / PII / CLU | GA | 対応 |
+| Language | Summarization | パブリックプレビュー | 対応 |
+| Language | Text Analytics for health / Custom NER | GA | **非対応** |
+| Translator | Text Translation Standard | GA(**ゲート制**) | 対応 |
+| Content Safety | Text Analyze / Image Analyze / Prompt Shields | パブリックプレビュー | **記述が不整合**(下記) |
+| Decision | Anomaly Detector | GA | **非対応** |
+
+> **⚠ ドキュメント間の不整合:** Content Safety の 3 コンテナは container-support ページで「切断環境でも実行できる」と明記されているが、**disconnected-containers ページの対応一覧には Content Safety が含まれていない。**エアギャップ案件で Content Safety を前提にするなら事前に確認する。
+
+**承認プロセスとライセンス(見積もりに直結):**
+
+- **申請フォーム提出後、10 営業日以内**に可否がメールで返る。**承認されたサブスクリプション ID で作成したリソースでのみ動作する。**
+- アクセス条件は「**Microsoft の戦略的顧客またはパートナーとして識別されていること**」で、用途は「インターネット接続ゼロの環境 / たまにしか接続できない遠隔地 / データをクラウドに一切送れない厳格な規制下の組織」のいずれか。
+- **コミットメントプランは暦年単位。**「プラン購入時に**全額が即座に課金される。**コミットメント期間中は**プランを変更できない。**ただし残日数分を按分価格で追加購入はできる」。
+- **ライセンスファイルには有効期限があり、期限を過ぎるとコンテナを実行できない**(具体的な日数はドキュメントに記載なし)。新イメージを pull した後はライセンスの再取得が推奨されている。
+- 使用量は出力マウント経由で記録し、REST エンドポイントから JSON レポートを取得する。
+
+**Document Intelligence コンテナのハードウェア要件(すべて 8 コア):**
+
+| コンテナ | 最小メモリ | 推奨メモリ |
+|---|---|---|
+| Read | 10 GB | 24 GB |
+| Layout / Invoice / Business Card / Custom Template | 16 GB | 24 GB |
+| General Document | 12 GB | 24 GB |
+| Receipt | 11 GB | 24 GB |
+| ID Document | 8 GB | 24 GB |
+
+**接続コンテナ(切断でない場合)の注意:** ポート 443 と `*.cognitiveservices.azure.com` 等の許可が必要で、**DPI(Deep Packet Inspection)は無効化が必須。**また「**既定ではコンテナ API にセキュリティがない**」ため、Istio / Nginx 等を前段に置くことが推奨されている。
+
+### 9.4 ハイブリッド(クラウド + エッジフォールバック)の公式ガイダンスは存在しない
+
+**Azure Architecture Center に「クラウド + エッジ推論フォールバック」のリファレンスアーキテクチャは見つからなかった。**AI アーキテクチャ索引にエッジ推論・ハイブリッド推論・オンプレ AI の記事は 1 本もなく、旧「AI at the edge」記事は索引へリダイレクトされて実体が消えている。`/azure/architecture/hybrid/` も 404。
+
+**代替として使える公式材料:**
+- **配置先の二択**(端末上 = Foundry Local / オンプレ K8s = Foundry Local on Azure Local)を示す Foundry Local 概要ページが、**唯一の公式なエッジ配置ガイダンス。**
+- モデルライフサイクル記事の「Deployment option change」が MaaS / MaaP / **Self-hosting** の 3 戦略とトレードオフを整理しており、「セルフホストは最大の制御を与えるが、インフラ・管理・保守の責任が大きい」と明記している。
+- ゲートウェイパターン(複数バックエンドルーティング)は技術的には Foundry Local(OpenAI 互換)とクラウドの切替に転用できるが、**これらはクラウド内の複数バックエンドを想定した記述で、エッジ→クラウドのフォールバックは対象外。****公式に検証されたパターンではない**ことを顧客に明示する。
+
+**エッジ案件の判断軸:** 「完全にオフラインで推論する」なら Foundry Local か切断コンテナで、**Foundry のエージェント機能・ガードレール・観測性は一切使えない。**「基本はクラウド、通信断時のみローカル」というハイブリッドは、**公式の裏付けが無い自社設計**になることを前提に工数を積む。
+
+### 補足: 「Windows AI Foundry」という製品は存在しない
+
+現行ドキュメントでは **「Microsoft Foundry on Windows」に改称**されている。これは傘の名称で、中身は 3 つの技術:
+
+| | Windows AI APIs | Foundry Local | Windows ML |
+|---|---|---|---|
+| 内容 | タスク別のすぐ使える AI モデル / API | すぐ使える LLM と voice-to-text | 自前 / 入手モデルを実行する ONNX Runtime フレームワーク |
+| 対応デバイス | **Copilot+ PC のみ** | **Windows 10 以降 + クロスプラットフォーム** | Windows 10 以降 + クロスプラットフォーム |
+| モデル配布 | Microsoft ホスト、アプリ間共有 | 同左 | アプリ自身が配布 |
+
+公式の選択順序は「① Windows AI APIs で足りるか(Copilot+ PC 対象なら最速)→ ②足りない、または Windows 10 対応が必要なら **Foundry Local** → ③カスタムモデル / Hugging Face なら **Windows ML**」。3 つを組み合わせることもできる。
 
 ---
 

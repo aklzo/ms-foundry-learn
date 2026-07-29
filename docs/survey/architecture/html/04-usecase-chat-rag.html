@@ -136,6 +136,7 @@ footer {
 <p><strong>まず読むべき公式の選択ガイダンス</strong>(Azure AI Search の RAG 概要より):</p>
 <blockquote><p><strong>agentic retrieval を使うとき:</strong> クライアントがエージェントかチャットボット / 可能な限り高い関連性が必要 / クエリが複雑または会話的 / 引用とクエリ詳細を含む構造化レスポンスが欲しい / <strong>新規 RAG 実装</strong><br><strong>classic RAG を使うとき:</strong> <strong>GA 機能のみが必要</strong> / 単純さと速度が高度な関連性より優先 / <strong>既存のオーケストレーションコードを保持したい</strong> / <strong>クエリパイプラインのきめ細かい制御が必要</strong><br>そして「<strong>新規 RAG 実装は agentic retrieval から始めよ</strong>」。</p></blockquote>
 <p>ただし後述のとおり <strong>Foundry IQ / agentic retrieval は「ポータル経由だと全部プレビュー」</strong>という重大な条件が付く。SLA 条項を書く案件ではここが分岐点になる。</p>
+<blockquote><p><strong>⚠ 前提が 1 つ変わった:</strong> <strong>Azure OpenAI On Your Data は非推奨で、リタイアが近づいている。</strong>公式は「On Your Data のワークロードは <strong>Foundry Agent Service + Foundry IQ</strong> へ移行することを推奨する」と明記している。<strong>「オーケストレーターを挟まず、モデルが直接データストアを読む」構成は新規設計で選べない。</strong>本ページの 5 パターンはいずれもオーケストレーター型(エージェントまたは自アプリ)を前提にしている。</p></blockquote>
 <hr>
 <h2 id="a1-部門内-faq-チャット-file-search・最小構成">A1. 部門内 FAQ チャット(File Search・最小構成)</h2>
 <p><strong>想定:</strong> 情シスや人事が持つ規程・マニュアル・FAQ を数百〜数千ファイル。全社員が同じ文書を見てよい。2〜4 週間で立ち上げたい。</p>

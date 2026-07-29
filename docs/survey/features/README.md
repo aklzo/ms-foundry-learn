@@ -3,9 +3,11 @@
 > **最終更新:** 2026-07-29(learn.microsoft.com 現行ページを直接確認)/ **版:** 初版
 > 本ドキュメント群は SI の技術選定・アーキテクチャ選定基準の構築を目的に、Microsoft Foundry の機能と GA / プレビューのステータスを整理したものです。**定期更新を前提**としています(更新手順は本ページ末尾)。
 
+**関連ドキュメント:** 本ページ群は「**その機能は使えるのか**」を引くためのもの。「**どう組むか**」は [アーキテクチャ設計ガイド](../architecture/README.md) を参照。
+
 ## このドキュメント群について
 
-- **正(マスター)は Markdown**(生成 AI 用)。人間用 HTML は `tools/md2html.py` で `html/` 配下に自動生成します。HTML を直接編集しないでください。
+- **正(マスター)は Markdown**(生成 AI 用)。人間用 HTML は共有ビルダー `docs/survey/tools/md2html.py` で `html/` 配下に自動生成します。HTML を直接編集しないでください。
 - 各機能について「全体ステータス」に加え、**サーフェス別(ポータル / Azure CLI / Python SDK / REST)の対応状況**を、公式ドキュメントに記載がある範囲で記録しています。記載がない場合は「記載なし」、確認できなかった場合は「要確認」と正直に書きます(推測でステータスを書かない)。
 - すべての行に出典(learn.microsoft.com 等の公式 URL)を付けています。
 
@@ -84,7 +86,7 @@
    - [リージョン別 feature availability](https://learn.microsoft.com/en-us/azure/foundry/reference/region-support)
 2. **各カテゴリ MD の該当行を更新**(ステータス変更・新機能追加・廃止済み行の整理)。出典 URL も再確認し、リンク切れ(ドキュメント再編)があれば新 URL に差し替える。
 3. **各ページ冒頭の「最終更新」日付を更新**し、本ページの更新履歴に1行追記する。
-4. **HTML を再生成:** リポジトリルートで `python3 docs/survey/features/tools/md2html.py` を実行。
+4. **HTML を再生成:** リポジトリルートで `python3 docs/survey/tools/md2html.py features` を実行(引数なしなら architecture も含めて全ビルド)。
 5. 生成 AI に更新作業を依頼する場合は、本ページと対象カテゴリ MD を読ませた上で「出典 URL を WebFetch で再確認し、ステータス変化のみ差分更新。推測でステータスを書かない」ことを指示する。
 
 ## 更新履歴

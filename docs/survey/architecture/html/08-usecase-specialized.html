@@ -85,9 +85,9 @@ footer {
 </style></head>
 <body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html" class="current">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
 <main>
-<h1 id="08-ユースケース編-e-音声・文書処理-idp-・大量バッチ・マルチモーダル・m365-連携">08. ユースケース編 E — 音声・文書処理(IDP)・大量バッチ・マルチモーダル・M365 連携</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</a></li><li><a href="#e2-文書処理・idp-intelligent-document-processing">E2. 文書処理・IDP(Intelligent Document Processing)</a></li><li><a href="#e3-大量バッチ処理">E3. 大量バッチ処理</a></li><li><a href="#e4-マルチモーダル生成-画像・動画">E4. マルチモーダル生成(画像・動画)</a></li><li><a href="#e5-m365-teams-連携">E5. M365 / Teams 連携</a></li><li><a href="#この章の未確認事項-次回更新時の重点">この章の未確認事項(次回更新時の重点)</a></li></ul></div>
+<h1 id="08-ユースケース編-e-音声・文書処理-idp-・大量バッチ・マルチモーダル・m365-連携">08. ユースケース編 E — 音声・文書処理(IDP)・大量バッチ・マルチモーダル・M365 連携</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</a></li><li><a href="#e2-文書処理・idp-intelligent-document-processing">E2. 文書処理・IDP(Intelligent Document Processing)</a></li><li><a href="#e3-大量バッチ処理">E3. 大量バッチ処理</a></li><li><a href="#e4-マルチモーダル生成-画像・動画">E4. マルチモーダル生成(画像・動画)</a></li><li><a href="#e5-m365-teams-連携">E5. M365 / Teams 連携</a></li><li><a href="#e6-ファインチューニング-モデルカスタマイズの運用">E6. ファインチューニング / モデルカスタマイズの運用</a></li><li><a href="#この章で-公式に確認できなかった-もの">この章で「公式に確認できなかった」もの</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29<br><br>⚠ <strong>本ページの信頼度について:</strong> この領域を担当した調査エージェントが完了しなかったため、本ページは <a href="../../features/html/07-foundry-tools.html">features/07-foundry-tools</a>・<a href="../../features/html/02-models.html">features/02-models</a>・<a href="../../features/html/03-agent-service.html">features/03-agent-service</a> の記載と、他エージェントが副次的に確認した情報に基づく。<strong>他ページより一次情報の裏取りが薄い。</strong>特に音声とマルチモーダル生成は、実案件で使う前に公式ページの再確認が必要。次回更新時の重点項目。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
 <p>チャット / RAG / 業務自動化に収まらない類型をまとめる。共通するのは、<strong>Foundry Agent Service の外側にある Foundry Tools(旧 Azure AI Services)やモデル固有の API が主役になる</strong>点で、エージェント中心の設計論がそのままは当てはまらない。</p>
 <h2 id="パターン一覧">パターン一覧</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -99,7 +99,7 @@ footer {
 <tr>
 <td>E1</td>
 <td>音声エージェント / コンタクトセンター</td>
-<td>Voice Live API</td>
+<td>Voice Live API + ACS</td>
 <td>リアルタイム音声対話</td>
 </tr>
 <tr>
@@ -126,51 +126,208 @@ footer {
 <td>公開フロー + Work IQ</td>
 <td>業務ツール内でエージェントを使わせたい</td>
 </tr>
+<tr>
+<td>E6</td>
+<td>ファインチューニング運用</td>
+<td>SFT / DPO / RFT + MLOps</td>
+<td>挙動・文体・タスク性能をモデル側で変えたい</td>
+</tr>
 </tbody></table></div>
 <hr>
 <h2 id="e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</h2>
-<h3 id="voice-live-api">Voice Live API</h3>
-<p><strong>フルマネージドの speech-to-speech 統合 API。</strong>STT + 生成 AI + TTS + アバターを<strong>単一の WebSocket インターフェース</strong>で提供する。従来のように「STT → LLM → TTS」を自分でつなぐ必要がない。</p>
+<h3 id="voice-live-api-とは">Voice Live API とは</h3>
+<p><strong>フルマネージドの speech-to-speech 統合 API。</strong>STT + 生成 AI + TTS + アバターを<strong>単一のインターフェース</strong>で提供する。「STT → LLM → TTS」を自分でつなぐ必要がなく、公式も「<strong>デプロイも管理も不要</strong>」と明記している。</p>
 <div class="tablewrap"><table><thead><tr>
-<th>項目</th>
-<th>内容</th>
+<th>構成要素</th>
+<th>選択肢</th>
 </tr></thead><tbody>
 <tr>
-<td>ステータス</td>
-<td><strong>GA 相当・要確認</strong>(安定版 API <code>2025-10-01</code> / <code>2026-04-10</code> が存在し <code>-preview</code> が付かないが、「generally available」の明文は未確認。最新プレビューは <code>2026-06-01-preview</code>)</td>
+<td>STT</td>
+<td>Azure speech to text(既定)/ <code>mai-transcribe</code>(プレビュー)/ <code>whisper-1</code> / <code>gpt-4o-transcribe</code> 系</td>
 </tr>
 <tr>
-<td>リソース</td>
-<td><strong>Foundry リソースに最適化。</strong>Speech リソースでは <strong>Foundry Agent Service 統合と BYOM が使えない</strong>と明記</td>
+<td>LLM</td>
+<td><code>gpt-realtime</code> 系 / <code>gpt-4o</code> 系 / <code>gpt-4.1</code> 系 / <code>gpt-5</code>〜<code>gpt-5.4</code> 系 / <code>phi4-*</code>(プレビュー)/ <code>azure-realtime</code></td>
 </tr>
 <tr>
-<td>モデル</td>
-<td>GPT-Realtime / GPT-5 系 / Phi 等をマネージド提供。<strong>BYOM はプレビュー</strong></td>
+<td>TTS</td>
+<td>600+ voices・150+ locales、HD voices、<code>MAI-Voice-2-Flash</code>(プレビュー)、Custom Voice(限定アクセス)</td>
 </tr>
 <tr>
-<td>SDK</td>
-<td>Python / C# は安定版、<strong>Java / JS はプレビュー</strong></td>
+<td>アバター</td>
+<td>standard / custom / <strong>photo avatar</strong>(静止画 1 枚から talking head)。viseme 出力、word 単位タイムスタンプ</td>
 </tr>
 <tr>
-<td>エージェント統合</td>
-<td>MCP は Foundry(新)のエージェントで対応</td>
+<td>会話品質</td>
+<td>ノイズ抑制、エコーキャンセル、<strong>日本語対応のセマンティック VAD</strong>、フィラー除去、barge-in(割り込み)、auto-truncate</td>
 </tr>
 <tr>
-<td><strong>制約</strong></td>
-<td><strong>SIP 非対応</strong></td>
+<td>ツール</td>
+<td>function calling(同期 / 非同期)、<strong>MCP</strong>、VoiceRAG パターン</td>
 </tr>
 </tbody></table></div>
-<p><strong>SIP 非対応が意味すること:</strong> 既存の PBX / IP 電話網に直接つなぐことができない。電話系のコンタクトセンター案件では、<strong>Azure Communication Services など別のテレフォニー層を挟む構成</strong>が必要になる(※この具体的な接続パターンは本調査で一次情報を確認できていない — <strong>要確認</strong>)。</p>
-<h3 id="関連する音声モデルの状況">関連する音声モデルの状況</h3>
-<p><code>gpt-realtime</code>(GA)/ <code>gpt-realtime-1.5</code>(GA)/ <code>gpt-realtime-2</code> <code>2.1</code>(プレビュー)/ <code>gpt-audio</code>(GA)/ <code>gpt-4o-transcribe</code> 系(プレビュー)。<strong><code>whisper</code> / <code>tts</code> / <code>tts-hd</code> は 2026-12-15 リタイア予定。</strong><code>gpt-realtime-translate</code> / <code>-whisper</code> は時間課金。</p>
-<p><strong>Fast transcription</strong>(録音済み音声をリアルタイム超の速度で同期文字起こし、GA)は<strong>新ポータルのみ対応で classic は非対応。</strong><strong>LLM speech</strong>(LLM 強化の transcribe / translate)はプレビュー。</p>
-<h3 id="音声とガードレールの重大な非対称">⚠ 音声とガードレールの重大な非対称</h3>
-<p><strong>ガードレールは音声モデル(Whisper 等)が処理するプロンプト・完了には適用されない</strong>と明記されている。<strong>音声エージェントでは、Foundry の統一ガードレールに頼れない。</strong>テキスト化した後の経路で Content Safety を自分で噛ませる設計になる。</p>
-<h3 id="設計上の論点">設計上の論点</h3>
+<h3 id="ライフサイクル-ga-の明文がない">⚠ ライフサイクル: GA の明文がない</h3>
+<p><strong>「generally available」と書かれた公式ページは見つからなかった。</strong>ただしプレビューバナーも無く、安定版 API(<code>2025-10-01</code> / <code>2026-04-10</code>)が存在し、課金は 2025-07-01 に開始されている。</p>
+<p>一方で<strong>個別機能には明示的なプレビュー表記がある</strong>(これが逆説的に「コアは非プレビュー扱い」の傍証になる):</p>
 <ul>
-<li><strong>レイテンシが主要な非機能要件になる。</strong>ガードレール処理は介入点あたり約 50〜100ms 加算される。PTU の検討が早い段階で必要。</li>
-<li><strong>会話の永続化と監査。</strong>音声の場合、文字起こしテキストを監査ログに残すのか、音声そのものを残すのかで、ストレージとプライバシーの設計が変わる。</li>
-<li><strong>Language サービスの位置づけ変化に注意。</strong>CLU(会話言語理解)・要約・感情分析・QA は「<strong>legacy capabilities</strong>」に降格し、コア機能は PII 検出・言語検出・NER・Text analytics for health のみになった。<strong>従来型のインテント分類ベースの IVR 設計は、エージェント時代の推奨経路ではない。</strong>代わりに <strong>Language MCP server(プレビュー)</strong> と <strong>Intent Routing agent / Exact Question Answering agent(いずれもプレビュー)</strong> が Foundry Tool Catalog に登場している。</li>
+<li><strong>WebRTC 接続は明確にパブリックプレビュー</strong>(SLA なし・本番非推奨の標準免責文つき)</li>
+<li><code>phi4-mm-realtime</code> / <code>phi4-mini</code>、<code>mai-transcribe</code>、<code>MAI-Voice-2-Flash</code>、BYOM の Anthropic プロファイル、auto-truncation、評価機能もプレビュー</li>
+</ul>
+<blockquote><p><strong>提案書に「GA」と書くなら Microsoft に確認する。</strong>本番設計では <strong>WebRTC を外し WebSocket に寄せる</strong>のが安全。</p></blockquote>
+<h3 id="接続モデル">接続モデル</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>方式</th>
+<th>位置づけ</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>WebSocket(既定・本番向け)</strong></td>
+<td>「サーバー間統合が容易」と公式に位置づけられている。<strong>フロントから直接ではなく、自社ミドル層を挟む前提</strong></td>
+</tr>
+<tr>
+<td>WebRTC(<strong>プレビュー</strong>)</td>
+<td>WS 制御チャネルで SDP 交換。Global standard デプロイのみで最寄りリージョンへ自動ルーティング</td>
+</tr>
+<tr>
+<td>アバター映像</td>
+<td>WebSocket セッション内で SDP 交換し、音声とは別に WebRTC/ICE で映像配信</td>
+</tr>
+</tbody></table></div>
+<p>WebRTC 利用時は <strong>3 チャネル構成</strong>(WS 制御 / WebRTC データチャネル / RTP メディア)になり、アバター設定は side-band 制御では未サポート。</p>
+<p>認証は Microsoft Entra ID(推奨)または API キー。<strong>ただしエージェント連携モードは Entra ID 必須。</strong></p>
+<h3 id="セッション上限とクォータ-サイジングの起点">セッション上限とクォータ(サイジングの起点)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>値(Speech リソース Standard S0)</th>
+</tr></thead><tbody>
+<tr>
+<td>新規接続 / 分(NCPM)</td>
+<td><strong>30</strong></td>
+</tr>
+<tr>
+<td><strong>最大セッション長</strong></td>
+<td><strong>60 分</strong></td>
+</tr>
+<tr>
+<td>トークン / 分(TPM)</td>
+<td><strong>120,000</strong></td>
+</tr>
+<tr>
+<td>換算式</td>
+<td><strong>TPM = NCPM × 4,000</strong>(NCPM を上げると TPM も自動追随)</td>
+</tr>
+<tr>
+<td>アバター併用時</td>
+<td>別途 <strong>2 接続/分</strong>、発話中最大 30 分、アイドル 5 分</td>
+</tr>
+</tbody></table></div>
+<p><strong>⚠ ドキュメント間の不整合:</strong> FAQ は「100,000 tokens per minute」、クォータページは 120,000。<strong>設計時にサポート確認する。</strong></p>
+<p><strong>コンタクトセンター規模(同時数百コール)では必ず増枠申請が必要。</strong>増枠は専用フォームから「Voice Live API tokens per minute」を選ぶ。<strong>429 はクォータ超過だけでなくオートスケール追随中にも発生する</strong>ため、指数バックオフは必須。公式の推奨負荷パターンは「20 接続から 90〜120 秒ごとに +20、失敗時は 1-2-4-4 分間隔でリトライ」。</p>
+<h3 id="レイテンシ">レイテンシ</h3>
+<p><strong>Voice Live 固有の SLO / 目標値は公式に見つからなかった。</strong>参照できる数値は以下:</p>
+<ul>
+<li>Azure OpenAI Realtime API の接続方式比較: <strong>WebRTC 約 100ms / WebSocket 約 200ms</strong>(SIP は可変)</li>
+<li><strong>ガードレール処理は介入点あたり約 50〜100ms 加算</strong></li>
+<li>エコーキャンセルの前提: 「再生が <strong>2 秒以上</strong>遅延するとエコーキャンセル品質が落ちる」</li>
+<li>つなぎ発話機能(<code>interim_response</code>)は <code>latency_threshold_ms</code> を超えたら発話を挿入する(サンプル値 100)</li>
+</ul>
+<h3 id="テレフォニー統合-sip-非対応の回避">テレフォニー統合(SIP 非対応の回避)</h3>
+<p><strong>Voice Live は SIP を直接サポートしない</strong>と FAQ に明記。Architecture Center も「Voice Live API は SIP をサポートしないが、<strong>外部の SIP トランキングソリューションとは連携する</strong>」としている。</p>
+<p><strong>公式に文書化されている接続方法は 3 系統:</strong></p>
+<pre><code> [PSTN / SIP トランク / PBX]
+        │  ACS 提供番号 または Direct Routing(SIP)
+        ▼
+ [Azure Communication Services  Call Automation]
+        │  双方向オーディオストリーミング(WebSocket)
+        │  16-bit PCM mono 16kHz または 24kHz / 20ms パケット(50fps)
+        │  mixed(全参加者ミックス) or unmixed(参加者別・最大 4ch)
+        ▼
+ [自社ミドル層(サーバー)]
+        │  WebSocket
+        ▼
+ [Voice Live API]  ← STT + LLM + TTS
+        │
+        └──&gt; 生成音声を ACS へ書き戻して通話へ</code></pre>
+<ol>
+<li><strong>ACS Call Automation(第一推奨)</strong> — ACS の提供番号を使うか、既存の PSTN キャリア / PBX と <strong>Direct Routing(SIP)</strong> でつなぐ。リファレンス実装として <strong>Call Center Voice Agent Accelerator</strong> が公開されている。</li>
+<li><strong>サードパーティ音声コネクタ</strong> — <strong>Twilio Media Streams / Infobip Calls / Genesys AudioHook</strong> が公式に列挙されている。既存コンタクトセンター資産がある場合の現実解。</li>
+<li><strong>Voice Live を使わず Azure OpenAI GPT Realtime API の SIP を直接使う</strong> — こちらは <strong>SIP をネイティブサポート</strong>する。着信は Webhook イベントで受け、REST で accept / reject / refer / hangup を制御する。<strong>ただし SIP 対応リージョンは <code>swedencentral</code> と <code>eastus2</code> のみ。</strong></li>
+</ol>
+<blockquote><p><strong>日本案件での判断:</strong> 国内 PSTN 接続なら ACS Direct Routing か Twilio / Genesys 経由が現実的。<strong>AOAI Realtime の SIP は対応リージョンが北欧・米国のみ</strong>で、音声往復レイテンシとデータ所在の両面で不利になる。Voice Live + ACS なら Voice Live 側を Japan East に置ける(ただし次項のモデル制約あり)。</p></blockquote>
+<h3 id="日本リージョンの制約が構成を決める">⚠ 日本リージョンの制約が構成を決める</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>機能</th>
+<th>Japan East</th>
+<th>Japan West</th>
+</tr></thead><tbody>
+<tr>
+<td><code>gpt-realtime</code> 系ネイティブ speech-to-speech</td>
+<td><strong>✗(提供なし)</strong></td>
+<td>✗</td>
+</tr>
+<tr>
+<td><code>gpt-4.1</code> / <code>gpt-5</code> 系(テキスト LLM)</td>
+<td>Global standard</td>
+<td>Global standard</td>
+</tr>
+<tr>
+<td>HD voices</td>
+<td><strong>✗</strong></td>
+<td>✗</td>
+</tr>
+<tr>
+<td>リアルタイムアバター</td>
+<td><strong>✗</strong></td>
+<td>✗</td>
+</tr>
+<tr>
+<td><strong>Foundry エージェント連携</strong></td>
+<td><strong>✅</strong></td>
+<td><strong>✗</strong></td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>Japan East ではネイティブ speech-to-speech が使えない。</strong>日本リージョン内で完結させるなら「<strong>非マルチモーダルモデル(<code>gpt-4.1</code> / <code>gpt-5</code> 等)+ Azure STT/TTS</strong>」構成になり、レイテンシ特性が変わる(モデル内で音声を直接扱う構成に比べて往復が増える)。<br><br>さらに <strong>Global standard はデータが任意の Azure リージョンで処理される</strong>ため、データ所在要件がある案件では Japan East の Standard デプロイか Data Zone の検討が必要。なお Speech サービス自体は「リソースのリージョン外でデータを保存・処理しない」と明記されている。</p></blockquote>
+<h3 id="foundry-エージェントとの連携">Foundry エージェントとの連携</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>方式</th>
+<th>指定方法</th>
+</tr></thead><tbody>
+<tr>
+<td>Foundry agents(new)</td>
+<td>SDK の <code>AgentSessionConfig</code>(<code>agent_name</code> / <code>project_name</code> / <code>agent_version</code> / <code>conversation_id</code> / リソース上書き / 認証 ID)</td>
+</tr>
+<tr>
+<td>Foundry agents(classic)</td>
+<td>WebSocket のクエリで <code>agent_id</code> + <code>project_id</code></td>
+</tr>
+<tr>
+<td>Hosted agents</td>
+<td>同じく <code>AgentSessionConfig</code>(Responses プロトコル)/ Invocations プロトコル</td>
+</tr>
+</tbody></table></div>
+<p><strong>制約(設計に効くもの):</strong></p>
+<ul>
+<li><strong>カスタムエージェント使用時は <code>instructions</code> を渡せない。</strong>プロンプトはエージェント側のメタデータに持たせる。</li>
+<li><strong>エージェントモードは Entra ID 認証のみ</strong>(API キー不可)。</li>
+<li><strong>Azure Speech リソース(非 Foundry リソース)では、Agent Service 連携も BYOM も使えない。</strong>リソース種別の選択が機能を決める。</li>
+<li><strong>MCP は「モデルモード(phi 系を除く)」と「Foundry(new)エージェント」で使えるが、classic エージェントでは使えない。</strong>API バージョン <code>2026-04-10</code> 以降が必須。承認フロー(<code>require_approval</code>)は音声で許諾を取る形になる。</li>
+<li>Hosted agent を音声対応にするには、Invocations プロトコルで音声トランスクリプトの入出力を実装し、マニフェストに <code>voiceLiveCompatible: &quot;true&quot;</code> を付ける必要がある。</li>
+</ul>
+<h3 id="ガードレール-調整も無効化もできない">⚠ ガードレール — 調整も無効化もできない</h3>
+<p>FAQ に明記されている:</p>
+<blockquote><p><strong>コンテンツフィルタリングは含まれる。</strong>ただし <strong>Voice Live API のコンテンツフィルタリングを変更または無効化することはできない。</strong>カスタムのコンテンツフィルタリングが必要なら <strong>bring-your-own-model 機能を使う。</strong></p></blockquote>
+<p>カテゴリ・しきい値・音声そのものに適用されるのか(テキスト化後なのか)・注釈が返るのかは、<strong>公式ドキュメントで確認できなかった。</strong></p>
+<p>加えて、Foundry Models 側のコンテンツフィルタ記事には <strong>「Whisper のような音声モデルが処理するプロンプトと完了にはコンテンツフィルタリングシステムが適用されない」</strong>と Important として明記されている。</p>
+<p><strong>→ 金融・医療など独自ポリシーが必要な案件は BYOM が前提</strong>(= Foundry リソース必須。Azure Speech リソースでは不可)。BYOM は 3 プロファイル(Azure OpenAI realtime / Azure OpenAI chat completion / Anthropic messages〈プレビュー〉)があり、公式のユースケースとして「<strong>自分の LLM にカスタマイズしたコンテンツセーフティ構成を適用する</strong>」「PTU を使う」「ファインチューン済みモデルを使う」が挙げられている。<strong>BYOM ページは「レイテンシ削減のためフィルタを非同期モードにせよ」と推奨している。</strong></p>
+<h3 id="e1-のチェックリスト">E1 のチェックリスト</h3>
+<ul>
+<li>[ ] Voice Live の GA ステータスを Microsoft に確認したか(SLA を論点にする案件)</li>
+<li>[ ] WebRTC(プレビュー)を本番設計から外したか</li>
+<li>[ ] <strong>Japan East でネイティブ speech-to-speech が使えない</strong>前提で構成を組んだか</li>
+<li>[ ] 同時コール数から必要 NCPM を逆算し(TPM = NCPM × 4,000)、増枠申請の要否を判断したか</li>
+<li>[ ] <strong>最大セッション 60 分</strong>を超える通話の扱いを決めたか</li>
+<li>[ ] テレフォニー接続方式(ACS / サードパーティ / AOAI SIP)を選び、リージョンとデータ所在を確認したか</li>
+<li>[ ] コンテンツフィルタの調整が必要なら <strong>BYOM 前提</strong>の構成にしたか</li>
+<li>[ ] 429 に対する指数バックオフと段階的な負荷投入を実装したか</li>
 </ul>
 <hr>
 <h2 id="e2-文書処理・idp-intelligent-document-processing">E2. 文書処理・IDP(Intelligent Document Processing)</h2>
@@ -215,8 +372,8 @@ footer {
 </tr>
 <tr>
 <td><strong>オンプレ / 閉域(エアギャップ)</strong></td>
-<td><strong>DI コンテナ</strong></td>
-<td><strong>「現時点で唯一の選択肢」</strong></td>
+<td><strong>DI コンテナ</strong>(構造化抽出)/ <strong>Vision Read OCR コンテナ</strong>(単純 OCR)</td>
+<td><strong>Content Understanding にはコンテナが存在しない</strong> → マルチモーダル文書処理はオンプレ不可。詳細は <a href="07-usecase-regulated-edge.html#9-3-切断コンテナ-エアギャップでの-foundry-tools">07 章 9.3</a></td>
 </tr>
 </tbody></table></div>
 <h3 id="上限値の比較-サイジングに直結">上限値の比較(サイジングに直結)</h3>
@@ -290,7 +447,7 @@ footer {
 <p><strong>公式リファレンスが 2 つある:</strong></p>
 <ul>
 <li><strong>Durable Functions 版</strong>(文書分類):Web アプリ → Blob + Service Bus → Durable Functions(analyze / metadata store / embedding)→ AI Search。注目点は「<strong>Agent Framework にはテキスト分割プリミティブがないため Semantic Kernel の <code>TextChunker</code> を使う</strong>」ことと、<strong>埋め込み工程を Batch デプロイ(<code>GlobalBatch</code>、24 時間ターンアラウンド)に回してコスト削減する</strong>推奨。</li>
-<li><strong>Container Apps 版</strong>(マルチモーダル):Container Apps + Queue Storage + Content Understanding + Azure OpenAI + Cosmos DB。公式に「ワークフローが単純 / ビジュアル設計を好む / ローコード寄りチームなら <strong>Logic Apps か Azure Functions に置き換えよ</strong>」と代替案が示されている。</li>
+<li><strong>Container Apps 版</strong>(マルチモーダル):Container Apps + Queue Storage + Content Understanding + Azure OpenAI + Cosmos DB。<strong>confidence score による人手レビュー分岐</strong>を持つ点が実務的で、公式に「ワークフローが単純 / ビジュアル設計を好む / ローコード寄りチームなら <strong>Logic Apps か Azure Functions に置き換えよ</strong>」と代替案も示されている。</li>
 </ul>
 <p><strong>AI Search のスキルとして組み込む場合の比較:</strong></p>
 <div class="tablewrap"><table><thead><tr>
@@ -373,36 +530,178 @@ footer {
 <p><strong>リアルタイム経路との共存:</strong> Batch とオンラインでクォータプールが分離されているため、<strong>バッチが暴走してもリアルタイム側のクォータを食わない。</strong>これは設計上の大きな利点で、「日中はチャット、夜間は一括処理」を同一リソースで安全に同居させられる。</p>
 <hr>
 <h2 id="e4-マルチモーダル生成-画像・動画">E4. マルチモーダル生成(画像・動画)</h2>
-<blockquote><p>⚠ この節は特に一次情報の裏取りが薄い。実案件では公式ページの再確認が必要。</p></blockquote>
-<p><strong>モデルの現況:</strong></p>
+<h3 id="モデルのライフサイクル">モデルのライフサイクル</h3>
 <div class="tablewrap"><table><thead><tr>
-<th>種別</th>
-<th>状況</th>
+<th>モデル</th>
+<th>ステータス</th>
 </tr></thead><tbody>
 <tr>
-<td>画像生成</td>
-<td><code>gpt-image-2</code> は GA(2026-04-21)。<code>gpt-image-1</code> のみプレビュー。<strong><code>gpt-image-1</code> は 2026-10-23、<code>gpt-image-1.5</code> は 2026-12-16 リタイア予定</strong></td>
+<td><strong><code>gpt-image-2</code></strong></td>
+<td><strong>GA。申請不要</strong></td>
 </tr>
 <tr>
-<td>画像生成(パートナー)</td>
-<td>BFL FLUX.2-pro / flex 等が GA(マルチ参照画像はプレビュー扱い)</td>
+<td><code>gpt-image-1.5</code> / <code>gpt-image-1</code> / <code>gpt-image-1-mini</code></td>
+<td><strong>限定アクセスプレビュー(要申請)</strong></td>
 </tr>
 <tr>
-<td>動画生成</td>
-<td><strong>Sora / Sora 2 はパブリックプレビュー。</strong>非同期ジョブ API。API は <code>api-version=preview</code></td>
+<td><code>dall-e-3</code></td>
+<td><strong>2026-03-04 に廃止済み</strong></td>
 </tr>
 <tr>
-<td>画像生成ツール(エージェント)</td>
-<td><strong>プレビュー。</strong><code>gpt-image-1</code> + LLM オーケストレータが同一プロジェクトに必要</td>
+<td><code>FLUX.2-pro</code> / <code>FLUX.2-flex</code>(Black Forest Labs)</td>
+<td><span class="badge preview">プレビュー</span>。multi-reference は API のみ(Playground 不可)</td>
+</tr>
+<tr>
+<td><code>MAI-Image-2.5</code> 系(Microsoft)</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td><strong><code>sora</code> / <code>sora-2</code>(動画)</strong></td>
+<td><strong>プレビュー</strong></td>
 </tr>
 </tbody></table></div>
-<p><strong>アーキテクチャ上の含意:</strong></p>
+<h3 id="画像生成-api-は同期-制約はレート制限">画像生成 — API は同期。制約はレート制限</h3>
+<p><strong>画像生成は同期 API</strong>(<code>/images/generations</code>、<code>/images/edits</code>)で、非同期ジョブではない。FLUX は Image API に加えてプロバイダ固有 API(<code>seed</code> / <code>safety_tolerance</code> 等が使える)も利用できる。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th><code>gpt-image-2</code></th>
+<th><code>gpt-image-1.5</code> / <code>-1</code> / <code>-1-mini</code></th>
+</tr></thead><tbody>
+<tr>
+<td>サイズ</td>
+<td><strong>任意解像度。</strong>両辺が 16px の倍数、長辺 ≤3,840px(4K)、アスペクト比 ≤3:1、総ピクセル 655,360〜8,294,400</td>
+<td><code>1024x1024</code> / <code>1024x1536</code> / <code>1536x1024</code> のみ</td>
+</tr>
+<tr>
+<td>品質</td>
+<td><code>low</code> / <code>medium</code> / <code>high</code></td>
+<td>同左</td>
+</tr>
+<tr>
+<td>出力</td>
+<td><code>png</code>(既定)/ <code>jpeg</code>。<strong>GPT-image 系は常に base64 を返す</strong>(<code>response_format</code> 非対応)</td>
+<td>同左</td>
+</tr>
+<tr>
+<td>枚数</td>
+<td><code>n</code> は 1〜10。<code>partial_images</code> でストリーミング可</td>
+<td>同左</td>
+</tr>
+<tr>
+<td>編集</td>
+<td>inpainting(マスクは同寸法 PNG、alpha=0 が編集対象)/ variations。入力は PNG/JPG <strong>50MB 未満</strong></td>
+<td>同左</td>
+</tr>
+<tr>
+<td>プロンプト長</td>
+<td>4,000 文字</td>
+<td>同左</td>
+</tr>
+</tbody></table></div>
+<p><strong>⚠ 設計上の最大の制約はレート制限。</strong>既定は <strong>9 RPM 前後</strong>しかない。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>モデル / デプロイ種別</th>
+<th>Tier 1</th>
+<th>Tier 3</th>
+<th>Tier 6</th>
+</tr></thead><tbody>
+<tr>
+<td><code>gpt-image-2</code> GlobalStandard</td>
+<td>6</td>
+<td>18</td>
+<td>36</td>
+</tr>
+<tr>
+<td><code>gpt-image-2</code> <strong>DataZoneStandard</strong></td>
+<td><strong>2</strong></td>
+<td><strong>6</strong></td>
+<td><strong>12</strong></td>
+</tr>
+<tr>
+<td><code>gpt-image-1.5</code> GlobalStandard</td>
+<td>9</td>
+<td>30</td>
+<td>90</td>
+</tr>
+<tr>
+<td><code>gpt-image-1-mini</code> GlobalStandard</td>
+<td>12</td>
+<td>54</td>
+<td>180</td>
+</tr>
+</tbody></table></div>
+<p><strong>TPM は設定されず RPM のみ。</strong>しかも <strong>Data Zone デプロイは Global の 1/3 程度</strong>まで落ちる。<strong>データ所在要件と画像生成スループットは正面から衝突する。</strong></p>
+<h3 id="動画生成-sora-sora-2-非同期ジョブ-24-時間の失効">動画生成(Sora / Sora 2)— 非同期ジョブ + 24 時間の失効</h3>
+<p><strong>API は 2 系統が併記されている</strong>(Azure 独自の jobs API と、OpenAI v1 互換の videos API)。いずれも「ジョブ作成 → ポーリング → コンテンツ取得」の流れ。</p>
+<pre><code> POST  .../video/generations/jobs        → {&quot;id&quot;:&quot;task_...&quot;,&quot;status&quot;:&quot;queued&quot;}
+ GET   .../video/generations/jobs/{id}   → queued → preprocessing → running
+                                            → processing → succeeded | failed | cancelled
+ GET   .../video/generations/{gid}/content/video → MP4 バイナリ</code></pre>
+<p>OpenAI 互換側は Create / Get Status / Download / <strong>List</strong> / <strong>Delete</strong> の 5 エンドポイントに加え、<code>remix</code> で構図・モーションを再利用できる。生成時間は <strong>1〜5 分。</strong></p>
+<p><strong>アーキテクチャを支配する制約:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>値</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>同時実行</strong></td>
+<td><strong>2 ジョブまで</strong>(1 つ終わるまで新規不可)</td>
+</tr>
+<tr>
+<td><strong>ジョブ保持</strong></td>
+<td><strong>作成後 24 時間で失効</strong></td>
+</tr>
+<tr>
+<td><strong>クォータ</strong></td>
+<td><code>sora</code> は 60 RPM、<strong><code>sora-2</code> は 2 job RPM</strong>(動画ジョブ要求のみカウント)</td>
+</tr>
+<tr>
+<td>入力</td>
+<td>画像最大 2 枚(間を補間)、動画 1 本・最大 5 秒</td>
+</tr>
+</tbody></table></div>
+<p><strong>⚠ ドキュメント内に不整合がある。</strong>解像度と尺について「Limitations 節」「API パラメータ表」「トラブルシュート表」の 3 箇所で記述が食い違っている(尺は 1〜20 秒 vs 4/8/12 秒、解像度も列挙が異なる)。<strong>実装前に対象リージョン・デプロイで実測確認する。</strong></p>
+<p><strong>ストレージ:</strong> 出力は Azure OpenAI 側に保持され、Download で取得、Delete で個別削除する。<strong>BYO Storage(自社 Blob への直接出力)の記載は見つからなかった。ジョブが 24 時間で失効する以上、成功後すぐに自社 Blob へ退避する設計が必須。</strong></p>
+<h3 id="安全性とプロベナンス-動画は文書化されていない">⚠ 安全性とプロベナンス — 動画は文書化されていない</h3>
+<p><strong>画像には Content Credentials(C2PA)が自動付与される。</strong></p>
+<blockquote><p>Azure OpenAI が生成したすべての AI 生成画像には <strong>Content Credentials</strong> が含まれる。これは C2PA のオープン仕様に基づく、改ざん検知可能なコンテンツの来歴開示手段である。</p></blockquote>
+<p>マニフェストには <code>description: &quot;AI Generated Image&quot;</code>、<code>softwareAgent</code>(<code>Azure OpenAI DALL-E</code> または <code>Azure OpenAI ImageGen</code>)、生成タイムスタンプが入り、Azure OpenAI に遡る証明書で署名される。追加設定は不要で、検証は contentcredentials.org などで行える。</p>
+<p><strong>ただし重大な留保が 3 つある:</strong></p>
+<ol>
+<li>この記事は <strong>「Foundry (classic) ポータル専用。新 Foundry ポータル向けには提供されない」</strong>と明記されており、<strong>新 Foundry ドキュメントに対応記事が存在しない</strong>(該当 URL は 404)。</li>
+<li><strong><code>gpt-image-2</code> が明示的に列挙されていない</strong>(記載は「DALL·E and GPT-image-1 series」)。同系統として付与される可能性は高いが<strong>確認できず。</strong></li>
+<li><strong>動画(Sora / Sora 2)への C2PA・電子透かし・プロベナンス付与の記載は一切見つからなかった。</strong>生成動画の来歴表示が要件なら、<strong>自前で C2PA を付与する検討が必要。</strong></li>
+</ol>
+<p><strong>コンテンツフィルタリングは入力プロンプトと出力画像の両方に適用される。</strong>「全モデルで入出力フィルタリング」「<strong>未成年のフォトリアリスティック画像を既定でブロック</strong>」と明記され、ブロック時は <code>error.code: &quot;contentFilter&quot;</code> が返る。解除は限定アクセス申請経由。</p>
+<p><strong>⚠ 画像入力シナリオではリクエスト単位のガードレール指定が効かない。</strong>「画像入力(chat with images)のシナリオではリクエスト時のガードレール指定が利用できず、既定のガードレールが使われる」と明記されている。</p>
+<p><strong>Sora 2 の RAI 制限は商用ユースケースの大半を排除しうる。</strong>公式に列挙されているのは:</p>
 <ul>
-<li><strong>非同期ジョブとして設計する。</strong>特に動画生成はジョブ投入 → ポーリング → 成果物取得の流れになるため、<strong>同期 API の裏に隠すとタイムアウトする。</strong>キュー + ワーカー + 成果物ストレージ(Blob)が基本形。</li>
-<li><strong>Image Generation ツールは閉域で使えない</strong>(ネットワーク分離下で「Not supported / 開発中」)。</li>
-<li><strong>リタイア日が近いモデルが多い。</strong>特に画像生成系は 2026 年後半に複数のリタイアが予定されており、<strong>モデル固定でプロンプトを作り込むと更改コストが読めなくなる。</strong></li>
-<li>生成物の安全性・権利関係(protected material 検出、content credentials 等)については、本調査で十分な一次情報を確認できていない。<strong>要確認。</strong></li>
+<li><strong>IP(知的財産)およびフォトリアリスティックなコンテンツをすべてブロック</strong></li>
+<li><strong>18 歳未満の視聴に適した内容のみ</strong>(将来この制限を回避する設定を提供予定)</li>
+<li><strong>著作権キャラクター・著作権音楽は拒否</strong></li>
+<li><strong>実在人物(著名人を含む)は生成不可</strong></li>
+<li><strong>人間の顔が写った入力画像は現在拒否</strong></li>
 </ul>
+<blockquote><p><strong>企画段階で先に潰すべき制約。</strong>「自社タレントを起用した動画を生成する」「実写風の製品映像を作る」といった用途は現時点で成立しない。</p></blockquote>
+<h3 id="アーキテクチャガイダンスは存在しない">アーキテクチャガイダンスは存在しない</h3>
+<p>**「キュー + ワーカー + Blob + セーフティレビュー」型のメディア<em>生成</em>パイプラインを扱う Azure Architecture Center の公式記事・サンプルは見つからなかった。<strong>最も構造が近いのは「Extract and Map Information from Unstructured Content」(Container Apps + Queue Storage + Blob + Cosmos DB + confidence score による人手レビュー分岐)だが、これは</strong>処理・抽出であって生成ではない。**</p>
+<p><strong>画像 6〜36 RPM / Sora 2 が 2 RPM + 同時 2 ジョブ</strong>という制約下では、汎用パターンである <strong>Queue-Based Load Leveling / Competing Consumers / Background jobs</strong> の適用が実質必須になる。本ドキュメントの構成案:</p>
+<pre><code> [API]  ← ユーザー要求を受けて即座にジョブ ID を返す(同期で待たない)
+   │
+   ▼
+ [Service Bus / Queue Storage]  ← Queue-Based Load Leveling
+   │
+   ▼
+ [Container Apps ワーカー]  ← RPM 上限に合わせてレート制限。429 は指数バックオフ
+   ├─ 画像: 同期 images/generations
+   └─ 動画: jobs API を作成 → 状態を Cosmos DB に永続化 → 外部からポーリング
+   │
+   ▼  成功時は 24 時間以内に必ず退避
+ [Blob Storage]  ← 長期保管
+   │
+   ▼
+ [Content Safety / 人手レビュー] ──&gt; [公開ストレージへ昇格]</code></pre>
+<p><strong>Sora 2 の「同時 2 ジョブ・24 時間失効」がスループット設計の支配要因</strong>になる。</p>
 <hr>
 <h2 id="e5-m365-teams-連携">E5. M365 / Teams 連携</h2>
 <h3 id="エージェントを-teams-m365-copilot-に公開する">エージェントを Teams / M365 Copilot に公開する</h3>
@@ -456,17 +755,191 @@ footer {
 <h3 id="m365-agents-sdk-という選択肢">M365 Agents SDK という選択肢</h3>
 <p>M365 Copilot / Teams / パートナープラットフォーム / 独自アプリ / Web にまたがるフルスタック・マルチチャネル向け。<strong>Semantic Kernel や MAF をオーケストレータとして内部で使える。</strong>公式の使い分けは「<strong>AI モデルやオーケストレーションを完全に制御したいなら、M365 Agents SDK か Agents Toolkit 経由の Foundry によるプロコード方式を選べ。</strong>」</p>
 <hr>
-<h2 id="この章の未確認事項-次回更新時の重点">この章の未確認事項(次回更新時の重点)</h2>
-<p>本ページは一次情報の裏取りが他ページより薄い。以下は<strong>特に再確認が必要:</strong></p>
+<h2 id="e6-ファインチューニング-モデルカスタマイズの運用">E6. ファインチューニング / モデルカスタマイズの運用</h2>
+<h3 id="まず-本当に必要か-を潰す">まず「本当に必要か」を潰す</h3>
+<p><strong>公式の立場は「多くのユースケースでファインチューニングは不要」である。</strong>マルチテナンシー記事に最も明快な形で書かれている。</p>
+<blockquote><p><strong>ただしファインチューニングはほとんどのユースケースで必要ない。</strong>通常は Azure OpenAI on your data 機能や別の RAG アプローチでモデルをグラウンディングできる。</p></blockquote>
+<p>一方で「FT は知識を追加できないから知識は RAG で」という定式化は<strong>公式ドキュメントには存在しない。</strong>公式のフレーミングは<strong>相補的</strong>で、むしろ「<strong>FT と検索の組合せ</strong>」を推している。</p>
+<blockquote><p><strong>ファインチューニングと検索手法を組み合わせると、モデルが外部知識を統合する能力が向上する。</strong>ファインチューニングは、<strong>取得したデータを効果的に使い、無関係な情報を除外するようモデルを訓練する。</strong></p></blockquote>
+<p><strong>FT が有利になる条件(公式の 7 カテゴリ):</strong></p>
 <ol>
-<li><strong>Voice Live の GA 明文表記</strong>(安定版 API の存在から実質 GA と判断できるが「generally available」の文言自体は未確認)</li>
-<li><strong>音声エージェントとテレフォニー(ACS / SIP 相当)の公式な接続パターン</strong></li>
-<li><strong>リアルタイム音声のセッション上限・レイテンシ目標値</strong></li>
-<li><strong>マルチモーダル生成の安全性まわり</strong>(content credentials、透かし、protected material 検出の適用範囲)</li>
-<li><strong>Foundry Local のライフサイクル表記</strong>(現行ページに preview / GA の明記なし)</li>
-<li><strong>Foundry Local on Azure Local の具体的な構成要件</strong></li>
-<li><strong>マルチテナント SaaS 向けの Azure Architecture Center 公式ガイダンス</strong>(<code>secure-multitenant-rag</code> の存在は確認済みだが内容は未取得)</li>
-<li><strong>ファインチューニング / 蒸留の運用アーキテクチャ</strong>(FT モデルのホスティング課金が発生することは確認済み。RFT・蒸留のパイプライン設計は未確認)</li>
+<li><strong>プロンプトエンジニアリングのオーバーヘッド削減</strong> — few-shot を積み上げてプロンプトが長大化しトークン数とレイテンシが増えるケース。「<strong>エッジケースが多数あるシナリオで価値がある</strong>」</li>
+<li>スタイル・トーンの変更</li>
+<li>特定フォーマット / スキーマでの出力生成</li>
+<li><strong>ツール利用の強化</strong> — 「多数のツールを列挙するとトークン使用量が増え誤情報につながる。ツールの例で FT すると、<strong>完全なツール定義が無くても</strong>精度と一貫性が上がる」</li>
+<li><strong>検索ベース性能の強化</strong>(上記の RAG 併用)</li>
+<li>効率最適化(大→小モデルへの知識移転)</li>
+<li>蒸留</li>
 </ol>
+<p><strong>前提条件:</strong> 「<strong>数百〜数千件のタスク固有のプロンプト・応答ペア</strong>という、小規模で高品質なデータセットがある場合に適する」。データ量の目安は初期テストで 50〜100 件、本番は 500 件以上。</p>
+<p><strong>⚠ 公式が明記している FT の運用負債:</strong></p>
+<blockquote><p><strong>データが更新されたとき、または更新されたベースモデルがリリースされたときに、ファインチューニングをやり直す必要があるかもしれない。</strong>これには定期的な監視と更新が伴う。</p></blockquote>
+<p>さらにモデルライフサイクル記事にも「<strong>ファインチューン済みモデルから新しいモデルリビジョンへ移るときは、使う前に新バージョンを再度ファインチューニングする必要がある</strong>」と明記されている。<strong>ベースモデルが 18 か月でリタイアする以上、FT は「作って終わり」にならない。</strong></p>
+<h3 id="手法の使い分け">手法の使い分け</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>手法</th>
+<th>適用条件(公式の表現)</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>SFT</strong>(教師ありファインチューニング)</td>
+<td>「<strong>問題の解き方が有限</strong>で、特定タスクを教えて精度と簡潔さを高めたい場合に最適」</td>
+</tr>
+<tr>
+<td><strong>RFT</strong>(強化ファインチューニング)</td>
+<td>「<strong>問題の解き方が多数ある場合に最適。</strong>grader がモデルに段階的に報酬を与え推論品質を高める」。例として金融のリスク評価、医療のデータ分析・仮説生成</td>
+</tr>
+<tr>
+<td><strong>DPO</strong>(直接選好最適化)</td>
+<td>報酬モデル不要でバイナリ選好から学習。「計算負荷が軽く高速……アラインメントに同等に効果的でより効率的」。<strong>選好する応答と選好しない応答の両方</strong>を学習データに含める</td>
+</tr>
+<tr>
+<td><strong>蒸留</strong></td>
+<td>独立した手法ではなく <strong>SFT の用途の 1 つ</strong>として記述されている。大きいモデルの出力で小さいモデルを FT する</td>
+</tr>
+</tbody></table></div>
+<p><strong>公式のスタッキング推奨:</strong> 「まず <strong>SFT</strong> でユースケースに最適化したモデルを作り、<strong>次に DPO</strong> で応答を自分の選好にアラインさせる。SFT の段階ではデータ品質とタスクの代表性に集中し、DPO の段階で具体的な比較によって応答を調整する。」</p>
+<p><strong>対応モデル(抜粋):</strong> GPT-4.1 系 / GPT-4o は SFT + DPO(4.1 と 4o は<strong>ビジョンも対応</strong>)、GPT-4o-mini は SFT のみ、<strong>o4-mini は RFT のみ。</strong>Phi 4 / Ministral 3B / Mistral 系は SFT。<strong>日本案件で注目すべき点として、NTT の tsuzumi-7b が SFT 対応</strong>として列挙されている。なお <code>gpt-5</code> の RFT はゲート制・招待制。</p>
+<p><strong>Serverless か Managed compute か:</strong> Serverless は Microsoft 側キャパシティで従量課金、GPU クォータ不要、<strong>OpenAI モデルへの独占的アクセス</strong>。Managed compute はモデル種別が広く高度なカスタマイズが可能だが、<strong>学習・ホスティング両方に自前 VM が必要で、多くの顧客が持っていない高いクォータを要求し、OpenAI モデルを含まない。</strong>公式の結論は「<strong>大半の顧客には serverless が最良のバランス</strong>」。</p>
+<h3 id="コスト構造-使わなくても課金され-放置すると消える">⚠ コスト構造 — 使わなくても課金され、放置すると消える</h3>
+<p><strong>2 つのルールが同時に効くので、両方を運用設計に入れる。</strong></p>
+<blockquote><p>デプロイした各カスタマイズ済み(ファインチューン済み)モデルは、<strong>chat completions や response API の呼び出しがあるかどうかに関わらず、時間単位のホスティングコストが発生する。</strong></p></blockquote>
+<blockquote><p><strong>カスタマイズ済みモデルをデプロイした後、デプロイが 15 日を超えて非アクティブのままだと、そのデプロイは削除される。</strong>……<strong>非アクティブなデプロイの削除は、基盤となるカスタマイズ済みモデル自体を削除したり影響を与えたりしない。カスタマイズ済みモデルはいつでも再デプロイできる。</strong></p></blockquote>
+<p><strong>含意は 2 つ。</strong>(1) 見積もりでは「<strong>デプロイ数 × 稼働時間</strong>」が固定費になる。学習済みモデルの<strong>保管自体は無料</strong>なので、使わないデプロイは消す。(2) <strong>低頻度利用の本番エンドポイントが 15 日で黙って消える。</strong>キープアライブの定期呼び出しか、明示的な再デプロイ手順を運用に入れる(この対策自体は公式に記載がない)。</p>
+<p><strong>デプロイ種別の使い分け:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>種別</th>
+<th>コスト特性</th>
+<th>ステータス</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Standard</strong></td>
+<td>トークン従量 + 時間ホスティング。<strong>データレジデンシはデプロイリージョン内に限定</strong></td>
+<td><span class="badge ga">GA</span></td>
+</tr>
+<tr>
+<td><strong>Global Standard</strong></td>
+<td>コスト削減。ただし「<strong>カスタムモデルの重みがリソースの地理的範囲外に一時的に保存される可能性がある</strong>」</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td><strong>Developer Tier</strong></td>
+<td><strong>時間ホスティング料が無い。</strong>ただし可用性 SLA なしで「<strong>モデル候補の評価用であり本番用ではない</strong>」</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Provisioned Throughput</strong></td>
+<td>レイテンシ重視のエージェント向け。<strong>ベースモデルと同じリージョナル PTU キャパシティを使う</strong>ため既存 PTU クォータを流用できる</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+</tbody></table></div>
+<p><strong>→ 評価・PoC は Developer Tier(時間課金なし)、本番は Standard / Global Standard / PTU</strong> という切り分けが公式の意図。<strong>Global Standard を選ぶとカスタムモデルの重みが地理的範囲外に出る可能性がある</strong>点は、規制案件では致命的になりうる。</p>
+<p><strong>クロスリージョン / クロスサブスクリプション / クロステナントのデプロイに対応している</strong>(学習したリージョンと別のリージョンへデプロイ可能)。ただし<strong>ポータルはクロスリージョン非対応で SDK / REST が必要。</strong></p>
+<h3 id="2-段階リタイアと-api-のステータス表記のズレ">⚠ 2 段階リタイアと、API のステータス表記のズレ</h3>
+<blockquote><p><strong>ファインチューン済みモデルは 2 段階でリタイアする: training と deployment。</strong>明示的な記載がない限り、<strong>training のリタイアはベースモデルのリタイア日より早くはならない。</strong>training がリタイアするとファインチューニングには使えなくなるが、<strong>それ以前に学習済みのモデルはデプロイ可能なまま残る。</strong><strong>deployment のリタイア時点で、推論とデプロイはエラーを返す。</strong></p></blockquote>
+<p>主要モデルの日程は「training は 2027-04 前後(既存顧客のみ延長)、<strong>deployment は約 6 か月後の 2027-10</strong>」という形で並んでいる。<strong>学習停止から推論停止まで約半年のバッファ</strong>がある設計。</p>
+<p><strong>⚠ 自動化を書くときの落とし穴:</strong> Models API のフィールド値がドキュメント / ポータルの用語とズレている。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>ドキュメント上の段階</th>
+<th>API の <code>lifecycleStatus</code></th>
+</tr></thead><tbody>
+<tr>
+<td>Deprecated(<strong>まだ動く</strong>)</td>
+<td><strong><code>Deprecating</code></strong></td>
+</tr>
+<tr>
+<td>Retired(<strong>410 Gone</strong>)</td>
+<td><strong><code>Deprecated</code></strong></td>
+</tr>
+</tbody></table></div>
+<p>さらに <strong>FT 可否の判定には <code>deprecation.fineTune</code> フィールドを使う</strong>(推論用の <code>deprecation.inference</code> とは別)。ここを取り違えると「まだ使えるモデルを廃止扱いする / 廃止済みを使える扱いする」逆転バグになる。</p>
+<p><strong>リタイア日の延長申請はできない</strong>と明記されている(「Retirement dates aren't extendable.」)。</p>
+<h3 id="パイプラインは-既存の-mlops-を使え-が公式回答">パイプラインは「既存の MLOps を使え」が公式回答</h3>
+<p><strong>ファインチューニング専用の E2E 参照アーキテクチャは Azure Architecture Center に存在しない。</strong>公式の答えは明快で:</p>
+<blockquote><p><strong>基盤モデルのファインチューニングは、データ準備・モデル学習・評価・デプロイといった、従来型の機械学習モデルの学習と論理的に similar なプロセスに従う。これらのプロセスは、スケーラビリティ・再現性・ガバナンスを確保するために、既存の MLOps 投資を使うべきである。</strong></p></blockquote>
+<p>つまり <strong>MLOps v2 のパイプライン設計 + GenAIOps の評価</strong>をそのまま当てる。ステージごとの公式ガイダンスは:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>ステージ</th>
+<th>要点</th>
+</tr></thead><tbody>
+<tr>
+<td>DataOps</td>
+<td><strong>再現性とデータバージョニング</strong>により、異なる特徴量データで実験し、モデル性能を比較し、結果を再現できるようにする</td>
+</tr>
+<tr>
+<td>実験</td>
+<td><strong>Azure ML パイプライン</strong>でデータ前処理から学習・評価までのファインチューニングプロセス全体を管理する</td>
+</tr>
+<tr>
+<td>評価</td>
+<td>Evaluate Model コンポーネント、または Foundry を使うなら<strong>評価 SDK</strong> に拡張する</td>
+</tr>
+<tr>
+<td>デプロイ</td>
+<td>学習・検証データは <strong>JSONL</strong> で用意。<strong>ゲートウェイ経由で段階的にロールアウト</strong>し、問題があれば以前のバージョンへロールバックする</td>
+</tr>
+<tr>
+<td>監視</td>
+<td>逸脱・エラー率・処理時間に加え、<strong>レイテンシ・トークン使用量・429 エラー</strong>を追う。<strong>クォータ使用量の監視</strong>も明記</td>
+</tr>
+</tbody></table></div>
+<p><strong>ガバナンス面の公式推奨:</strong> 「自動化コードに<strong>データリネージを組み込んで監査可能性を支える</strong>」「<strong>モデルカタログを維持し、新モデルの発見とカタログ更新を自動化する</strong>」「<strong>モデルは、それを学習させた生データと同程度の機密性で扱う</strong>」。加えてモデルライフサイクル記事は「<strong>本番モデルをテストの機会なく自動的に新バージョンへアップグレードするプラットフォーム機能の使用を避けよ。Azure OpenAI ではデプロイを No Auto Upgrade に設定せよ</strong>」と明記している。</p>
+<p><strong>学習データ取り込みの落とし穴:</strong> Azure Blob Storage から学習データを取り込むには<strong>ストレージアカウントのパブリックネットワークアクセスを有効にする必要がある。</strong>閉域環境ではローカルファイルアップロードか SDK 経由を使う。</p>
+<p><strong>その他の数値制約:</strong> 学習ファイルは 512MB 未満、<strong>JSONL のみ</strong>、UTF-8 with BOM、suffix は 18 文字まで、batch size 最大 256、epochs は <code>-1</code> で自動決定。</p>
+<hr>
+<h2 id="この章で-公式に確認できなかった-もの">この章で「公式に確認できなかった」もの</h2>
+<p>推測で埋めず、確認できなかったことを明示する。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>状況</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Voice Live の GA 明文</strong></td>
+<td>プレビューバナーも GA 宣言も無い。安定版 API の存在と課金開始から実質 GA と読めるが、断定できない</td>
+</tr>
+<tr>
+<td><strong>Voice Live 固有のレイテンシ SLO</strong></td>
+<td>数値目標の記載なし。AOAI Realtime の接続方式比較(WebRTC 約 100ms / WebSocket 約 200ms)が唯一の参考値</td>
+</tr>
+<tr>
+<td><strong>Voice Live のコンテンツフィルタの詳細</strong></td>
+<td>「含まれる」「変更・無効化不可」は明記。<strong>カテゴリ・しきい値・音声への適用範囲・注釈の返却有無は不明</strong></td>
+</tr>
+<tr>
+<td><strong>Voice Live の TPM</strong></td>
+<td>FAQ が 100,000、クォータページが 120,000 で不一致</td>
+</tr>
+<tr>
+<td><strong>Sora 2 の解像度・尺</strong></td>
+<td>同一ページ内の 3 箇所で記述が食い違う。実測確認が必要</td>
+</tr>
+<tr>
+<td><strong><code>gpt-image-2</code> への C2PA 付与</strong></td>
+<td>明示的な列挙がない。同系統として付与される可能性は高いが未確認</td>
+</tr>
+<tr>
+<td><strong>動画のプロベナンス</strong></td>
+<td>C2PA・透かし・来歴メタデータの記載が一切ない</td>
+</tr>
+<tr>
+<td><strong>新 Foundry での Content Credentials</strong></td>
+<td>記事が classic 専用で、新ポータル向けページが存在しない(404)</td>
+</tr>
+<tr>
+<td><strong>メディア生成パイプラインの公式アーキテクチャ</strong></td>
+<td>存在しない。処理・抽出側の記事が最も近いだけ</td>
+</tr>
+<tr>
+<td><strong>ファインチューニング専用の E2E 参照アーキテクチャ</strong></td>
+<td>存在しない。公式の答えは「<strong>既存の MLOps 投資をそのまま使え</strong>」</td>
+</tr>
+<tr>
+<td><strong>リソースあたりの FT デプロイ数上限</strong></td>
+<td>デプロイ手順ページに記載なし</td>
+</tr>
+<tr>
+<td>新ポータルの fine-tuning 総覧ページ</td>
+<td><code>/azure/foundry/concepts/fine-tuning-overview</code> は <strong>404</strong>。総覧は classic 配下にのみ存在し、新ポータル側は複数ページに分散している</td>
+</tr>
+</tbody></table></div>
 </main>
 <footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

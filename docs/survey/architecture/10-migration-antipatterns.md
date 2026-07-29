@@ -19,6 +19,9 @@ Foundry は「GA だが足元が動いている」プラットフォームで、
 | **2028-09-25** | Azure AI Vision Image Analysis 4.0/3.2 | 画像解析パイプラインの作り替え | Document Intelligence / Content Understanding / Foundry Models |
 | **日付未公表** | コンテナプロトコル 1.0.0 | 猶予期間後、1.0.0 のエージェントへのリクエストが**ブロックされる**。2.0.0 でないと 1 セッション内の複数ユーザー多重化ができない | プロトコル 2.0.0 |
 | **日付未公表(Planned/TBD)** | Agent Applications(旧 publishing モデル) | 廃止告知と EOS が予告済み。レガシー ID のエージェントは**インプレース昇格不可**(作り直し) | 新オブジェクトモデル(Agent に統合) |
+| **日付未公表(リタイア間近と明記)** | **Azure OpenAI On Your Data** | 「モデルが直接データを読む(オーケストレーター不要)」構成が終わる。RAG の既存提案書は要更新 | **Foundry Agent Service + Foundry IQ** |
+| 2027-04-20 | prompt flow | **新規開発に非推奨。**ランタイムコンテナはセキュリティ更新も停止済み | Microsoft Agent Framework |
+| 2027-10 前後 | ファインチューン済みモデル(gpt-4o / 4.1 / o4-mini 系)の **deployment** | 学習停止(2027-04 前後)の約 6 か月後に推論も停止。**FT は作り直しが前提** | 後継ベースモデルで再ファインチューニング |
 | 未発表(投資停止) | ハブベースプロジェクト(classic) | 廃止日は未発表だが新規投資は停止。**新規案件で選ぶ理由はほぼない** | Foundry プロジェクト |
 
 出典・詳細は [features/README の重要期限表](../features/README.md)。

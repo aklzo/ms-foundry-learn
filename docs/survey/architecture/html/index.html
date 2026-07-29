@@ -145,7 +145,7 @@ footer {
 <tr>
 <td>08</td>
 <td><a href="08-usecase-specialized.html">UC-E 音声・文書処理・バッチ・M365</a></td>
-<td>Voice Live、DI と Content Understanding の使い分け、Batch、マルチモーダル、Teams 公開</td>
+<td>Voice Live とテレフォニー、DI と Content Understanding の使い分け、Batch、マルチモーダル生成、Teams 公開、ファインチューニング運用</td>
 <td>チャット以外の類型</td>
 </tr>
 <tr>
@@ -346,7 +346,7 @@ footer {
 <td>Foundry 非依存</td>
 <td>自前</td>
 <td>オフライン</td>
-<td>Foundry Local / DI コンテナ</td>
+<td><strong>端末上 = Foundry Local / オンプレ K8s = Azure Local 版(プレビュー・申請制)/ エアギャップ = 切断コンテナ</strong></td>
 <td><a href="07-usecase-regulated-edge.html#9-エッジ・オンプレ・ハイブリッド">07</a></td>
 </tr>
 <tr>
@@ -393,6 +393,15 @@ footer {
 <td>要件次第</td>
 <td>業務ツール内で使わせる</td>
 <td><a href="08-usecase-specialized.html#e5-m365-teams-連携">08</a></td>
+</tr>
+<tr>
+<td><strong>E6</strong></td>
+<td>ファインチューニング運用</td>
+<td>MLOps パイプライン</td>
+<td>併用推奨</td>
+<td>要件次第</td>
+<td><strong>挙動・文体をモデル側で変える</strong>(知識追加は RAG)</td>
+<td><a href="08-usecase-specialized.html#e6-ファインチューニング-モデルカスタマイズの運用">08</a></td>
 </tr>
 </tbody></table></div>
 <h3 id="foundry-機能を使う-vs-自前実装する-の全組合せ">「Foundry 機能を使う vs 自前実装する」の全組合せ</h3>
@@ -716,6 +725,16 @@ footer {
 <td>「2026-09-25 までに移行計画を」と記載</td>
 </tr>
 <tr>
+<td><strong>日付未公表(間近と明記)</strong></td>
+<td><strong>Azure OpenAI On Your Data</strong></td>
+<td>「モデルが直接データを読む」構成が終わる。<strong>RAG の既存提案書は要更新</strong>。移行先は Foundry Agent Service + Foundry IQ</td>
+</tr>
+<tr>
+<td>2027-10 前後</td>
+<td>ファインチューン済みモデルの deployment</td>
+<td>学習停止の約 6 か月後に推論も停止。<strong>FT は作り直しが前提</strong></td>
+</tr>
+<tr>
 <td>日付未公表</td>
 <td>コンテナプロトコル 1.0.0 / Agent Applications</td>
 <td>猶予期間後にブロックされる / 廃止告知が予告済み</td>
@@ -752,7 +771,11 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>2026-07-29</td>
-<td>初版作成(全 10 章)。⚠ 08 章(特化ユースケース)は調査が不完全で、音声・マルチモーダル生成の裏取りが薄い</td>
+<td>初版作成(全 10 章)</td>
+</tr>
+<tr>
+<td>2026-07-29</td>
+<td>追補調査を反映。<strong>08 章</strong>に Voice Live のクォータ・テレフォニー統合(ACS)・日本リージョン制約、マルチモーダル生成の非同期ジョブと Sora 2 の RAI 制限、<strong>E6 ファインチューニング運用</strong>を追加。<strong>07 章 9 節</strong>をエッジ 3 形態(Foundry Local / Azure Local 版 / 切断コンテナ)に再構成し、<strong>初版の誤り「オンプレ文書処理は DI コンテナが唯一の選択肢」を訂正</strong>(Vision Read OCR も GA・切断対応)。<strong>06 章</strong>に公式のマルチテナンシー 4 方式比較と Responses API の分離課題を追加。<strong>Azure OpenAI On Your Data の非推奨</strong>を 04 / 10 章と期限表に反映</td>
 </tr>
 </tbody></table></div>
 </main>

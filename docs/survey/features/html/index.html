@@ -87,9 +87,10 @@ footer {
 <main>
 <h1 id="microsoft-foundry-機能一覧・ステータス調査">Microsoft Foundry 機能一覧・ステータス調査</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#このドキュメント群について">このドキュメント群について</a></li><li><a href="#前提知識-2025年11月-ignite-の大改編">前提知識: 2025年11月(Ignite)の大改編</a></li><li><a href="#ステータス凡例">ステータス凡例</a></li><li><a href="#カテゴリ別ドキュメント">カテゴリ別ドキュメント</a></li><li><a href="#ハイライト-si-選定観点の要点">ハイライト(SI 選定観点の要点)</a></li><li><a href="#重要期限-廃止・移行スケジュール">重要期限(廃止・移行スケジュール)</a></li><li><a href="#更新運用ガイド-定期更新の手順">更新運用ガイド(定期更新の手順)</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
 <blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページを直接確認)/ <strong>版:</strong> 初版<br>本ドキュメント群は SI の技術選定・アーキテクチャ選定基準の構築を目的に、Microsoft Foundry の機能と GA / プレビューのステータスを整理したものです。<strong>定期更新を前提</strong>としています(更新手順は本ページ末尾)。</p></blockquote>
+<p><strong>関連ドキュメント:</strong> 本ページ群は「<strong>その機能は使えるのか</strong>」を引くためのもの。「<strong>どう組むか</strong>」は <a href="../../architecture/html/index.html">アーキテクチャ設計ガイド</a> を参照。</p>
 <h2 id="このドキュメント群について">このドキュメント群について</h2>
 <ul>
-<li><strong>正(マスター)は Markdown</strong>(生成 AI 用)。人間用 HTML は <code>tools/md2html.py</code> で <code>html/</code> 配下に自動生成します。HTML を直接編集しないでください。</li>
+<li><strong>正(マスター)は Markdown</strong>(生成 AI 用)。人間用 HTML は共有ビルダー <code>docs/survey/tools/md2html.py</code> で <code>html/</code> 配下に自動生成します。HTML を直接編集しないでください。</li>
 <li>各機能について「全体ステータス」に加え、<strong>サーフェス別(ポータル / Azure CLI / Python SDK / REST)の対応状況</strong>を、公式ドキュメントに記載がある範囲で記録しています。記載がない場合は「記載なし」、確認できなかった場合は「要確認」と正直に書きます(推測でステータスを書かない)。</li>
 <li>すべての行に出典(learn.microsoft.com 等の公式 URL)を付けています。</li>
 </ul>
@@ -296,7 +297,7 @@ footer {
 </ul>
 <li><strong>各カテゴリ MD の該当行を更新</strong>(ステータス変更・新機能追加・廃止済み行の整理)。出典 URL も再確認し、リンク切れ(ドキュメント再編)があれば新 URL に差し替える。</li>
 <li><strong>各ページ冒頭の「最終更新」日付を更新</strong>し、本ページの更新履歴に1行追記する。</li>
-<li><strong>HTML を再生成:</strong> リポジトリルートで <code>python3 docs/survey/features/tools/md2html.py</code> を実行。</li>
+<li><strong>HTML を再生成:</strong> リポジトリルートで <code>python3 docs/survey/tools/md2html.py features</code> を実行(引数なしなら architecture も含めて全ビルド)。</li>
 <li>生成 AI に更新作業を依頼する場合は、本ページと対象カテゴリ MD を読ませた上で「出典 URL を WebFetch で再確認し、ステータス変化のみ差分更新。推測でステータスを書かない」ことを指示する。</li>
 </ol>
 <h2 id="更新履歴">更新履歴</h2>

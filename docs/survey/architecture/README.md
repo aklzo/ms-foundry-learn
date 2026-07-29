@@ -15,7 +15,7 @@
 | 05 | [UC-B 業務自動化・マルチエージェント](./05-usecase-agent-automation.md) | 基幹連携、HITL 承認フロー、長時間プロセス、マルチエージェント、業務フロー主導 | エージェントに業務処理をさせる |
 | 06 | [UC-C 顧客向け公開・マルチテナント](./06-usecase-customer-facing.md) | WAF チューニング、BOLA 対策、テナント分離、チャージバック、大規模キャパシティ | 外部顧客に提供する |
 | 07 | [UC-D 規制業種・閉域・データ主権](./07-usecase-regulated-edge.md) | 3 つの egress モデル、閉域で使えない機能一覧、CMK、Purview の限界、Gov クラウド、エッジ | 金融・公共・医療の案件 |
-| 08 | [UC-E 音声・文書処理・バッチ・M365](./08-usecase-specialized.md) | Voice Live、DI と Content Understanding の使い分け、Batch、マルチモーダル、Teams 公開 | チャット以外の類型 |
+| 08 | [UC-E 音声・文書処理・バッチ・M365](./08-usecase-specialized.md) | Voice Live とテレフォニー、DI と Content Understanding の使い分け、Batch、マルチモーダル生成、Teams 公開、ファインチューニング運用 | チャット以外の類型 |
 | 09 | [運用アーキテクチャ](./09-operations.md) | PTU サイジング、BCDR、可観測性、評価、コスト、CI/CD | 本番運用を設計する |
 | 10 | [移行とアンチパターン](./10-migration-antipatterns.md) | 確定済み廃止スケジュール、移行パターン、**踏みやすい 11 のアンチパターン** | 既存資産があるとき / レビュー前 |
 
@@ -54,12 +54,13 @@
 | **C3** | 大規模 / 複数部門への払い出し | 任意 | 任意 | APIM 必須 | 部門別按分・キャパシティ | [06](./06-usecase-customer-facing.md#c3-大規模トラフィック・複数部門への払い出し) |
 | **D1** | 規制業種・閉域 | Hosted agent or 自前 | **AI Search 自前索引一択** | **BYO VNet** | 閉域・監査・データ主権 | [07](./07-usecase-regulated-edge.md) |
 | **D2** | ソブリン(Azure Government) | **Prompt agent のみ** | File Search / AI Search | Gov クラウド | **hosted agent・MCP・A2A が非対応** | [07](./07-usecase-regulated-edge.md#8-ソブリンクラウド-azure-government) |
-| **D3** | エッジ・オンプレ | Foundry 非依存 | 自前 | オフライン | Foundry Local / DI コンテナ | [07](./07-usecase-regulated-edge.md#9-エッジ・オンプレ・ハイブリッド) |
+| **D3** | エッジ・オンプレ | Foundry 非依存 | 自前 | オフライン | **端末上 = Foundry Local / オンプレ K8s = Azure Local 版(プレビュー・申請制)/ エアギャップ = 切断コンテナ** | [07](./07-usecase-regulated-edge.md#9-エッジ・オンプレ・ハイブリッド) |
 | **E1** | 音声エージェント | Voice Live API | 任意 | 要件次第 | リアルタイム音声対話 | [08](./08-usecase-specialized.md#e1-音声エージェント-コンタクトセンター) |
 | **E2** | 文書処理・IDP | 非同期パイプライン | DI / Content Understanding | 要件次第 | 帳票・契約書の構造化抽出 | [08](./08-usecase-specialized.md#e2-文書処理・idp-intelligent-document-processing) |
 | **E3** | 大量バッチ処理 | ジョブ実行基盤 | 不要 | 任意 | **Batch で 50% 割引** | [08](./08-usecase-specialized.md#e3-大量バッチ処理) |
 | **E4** | マルチモーダル生成 | 非同期ジョブ | 不要 | 公開必須(閉域不可) | 画像・動画生成 | [08](./08-usecase-specialized.md#e4-マルチモーダル生成-画像・動画) |
 | **E5** | M365 / Teams 連携 | Prompt / Hosted agent | Work IQ 等 | 要件次第 | 業務ツール内で使わせる | [08](./08-usecase-specialized.md#e5-m365-teams-連携) |
+| **E6** | ファインチューニング運用 | MLOps パイプライン | 併用推奨 | 要件次第 | **挙動・文体をモデル側で変える**(知識追加は RAG) | [08](./08-usecase-specialized.md#e6-ファインチューニング-モデルカスタマイズの運用) |
 
 ### 「Foundry 機能を使う vs 自前実装する」の全組合せ
 
@@ -158,6 +159,8 @@
 | **2027-03-31** | Agents (classic)(v1) | classic プロジェクト上のエージェント資産 |
 | **2027-04-20** | prompt flow | **新規開発に非推奨。**Microsoft Agent Framework への移行を明示要求 |
 | **2028-09-25** | Azure AI Vision Image Analysis | 「2026-09-25 までに移行計画を」と記載 |
+| **日付未公表(間近と明記)** | **Azure OpenAI On Your Data** | 「モデルが直接データを読む」構成が終わる。**RAG の既存提案書は要更新**。移行先は Foundry Agent Service + Foundry IQ |
+| 2027-10 前後 | ファインチューン済みモデルの deployment | 学習停止の約 6 か月後に推論も停止。**FT は作り直しが前提** |
 | 日付未公表 | コンテナプロトコル 1.0.0 / Agent Applications | 猶予期間後にブロックされる / 廃止告知が予告済み |
 
 全体表は [10 章](./10-migration-antipatterns.md#1-確定済み廃止スケジュールと設計への影響)と [features/README](../features/README.md) を参照。
@@ -193,4 +196,5 @@
 
 | 日付 | 内容 |
 |---|---|
-| 2026-07-29 | 初版作成(全 10 章)。⚠ 08 章(特化ユースケース)は調査が不完全で、音声・マルチモーダル生成の裏取りが薄い |
+| 2026-07-29 | 初版作成(全 10 章) |
+| 2026-07-29 | 追補調査を反映。**08 章**に Voice Live のクォータ・テレフォニー統合(ACS)・日本リージョン制約、マルチモーダル生成の非同期ジョブと Sora 2 の RAI 制限、**E6 ファインチューニング運用**を追加。**07 章 9 節**をエッジ 3 形態(Foundry Local / Azure Local 版 / 切断コンテナ)に再構成し、**初版の誤り「オンプレ文書処理は DI コンテナが唯一の選択肢」を訂正**(Vision Read OCR も GA・切断対応)。**06 章**に公式のマルチテナンシー 4 方式比較と Responses API の分離課題を追加。**Azure OpenAI On Your Data の非推奨**を 04 / 10 章と期限表に反映 |
