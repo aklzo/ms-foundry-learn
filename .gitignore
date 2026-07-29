@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+
+# 環境変数・シークレット
+.env
+.env.*
+
+# ローカル設定
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db

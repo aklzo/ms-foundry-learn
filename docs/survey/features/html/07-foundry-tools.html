@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07. Foundry Tools(旧 Azure AI Services)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry 機能一覧・ステ…</a><a href="01-platform-projects.html">01. プラットフォーム基盤・プロジェクト・コント…</a><a href="02-models.html">02. Foundry Models</a><a href="03-agent-service.html">03. Foundry Agent Service</a><a href="04-tools-knowledge.html">04. エージェントツール・ナレッジ</a><a href="05-observability-evaluation.html">05. オブザーバビリティ・評価</a><a href="06-safety-guardrails.html">06. 安全性・ガードレール</a><a href="07-foundry-tools.html" class="current">07. Foundry Tools</a><a href="08-developer-experience.html">08. 開発者サーフェス</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="07-foundry-tools-旧-azure-ai-services">07. Foundry Tools(旧 Azure AI Services)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#サービス別ステータス">サービス別ステータス</a></li><li><a href="#プレイグラウンド提供状況-foundry-新ポータル">プレイグラウンド提供状況(Foundry 新ポータル)</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
+<p><a href="index.html">← 機能一覧 TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<h2 id="概要">概要</h2>
+<p>旧 Azure AI Services は「<strong>Foundry Tools</strong>」に正式改称済み(ページタイトル「What are Foundry Tools?」。各サービスも「Azure Speech in Foundry Tools」等に改称)。ただし<strong>ドキュメント URL は <code>/azure/ai-services/</code> 配下に残存</strong>している。</p>
+<p><strong>リソースモデル</strong>: Foundry リソース(kind = <code>AIServices</code>)1つで、<strong>1エンドポイント・1キーにより Azure OpenAI + Foundry Tools に到達可能</strong>。バンドル対象として公式表に明記されているのは Content Safety / Document Intelligence / Language / Speech / Translator / Agent Service / Model Inference。Content Understanding も Foundry リソースの一部として利用可能と明記。<strong>例外は Face(個別リソース+limited access 申請制)と Custom Translator(専用ポータル)</strong>。</p>
+<h2 id="サービス別ステータス">サービス別ステータス</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Speech(Azure Speech in Foundry Tools)</td>
+<td>STT / TTS / 翻訳 / 話者認識。「Microsoft Foundry リソース経由で提供」と overview に明記</td>
+<td><span class="badge ga">GA</span>(サービス全体)</td>
+<td>Foundry(新)で STT / TTS / アバター / Voice Live / Speech MCP server 提供。Speech Studio も継続</td>
+<td>Speech CLI (spx) あり</td>
+<td>Speech SDK あり</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/overview">overview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-features-foundry" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-features-foundry">speech-features-foundry</a></td>
+<td>REST API もあり。コンテナ/ソブリンクラウド対応</td>
+</tr>
+<tr>
+<td>Voice Live API</td>
+<td>音声エージェント向けフルマネージド speech-to-speech 統合 API(STT+生成 AI+TTS+アバターを単一 WebSocket IF で提供)</td>
+<td>GA相当・要確認(安定版 API <code>2025-10-01</code>・<code>2026-04-10</code> が存在〈-preview なし〉だが「GA」の明文は未発見。最新プレビューは <code>2026-06-01-preview</code>)</td>
+<td>Foundry(新)playground あり。classic の Speech playground にも Voice Live あり</td>
+<td><span class="badge na">記載なし</span></td>
+<td>SDK: Python / C# は安定版、Java / JS はプレビュー(FAQ 明記)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live">voice-live</a> ・ <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2026-06-01-preview" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2026-06-01-preview">voice-live-api-reference-2026-06-01-preview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-faq" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-faq">voice-live-faq</a></td>
+<td>「Foundry リソースに最適化。Speech リソースでは Foundry Agent Service 統合と BYOM 不可」と明記。モデルは GPT-Realtime / GPT-5 系 / Phi 等マネージド提供。BYOM はプレビュー。MCP は Foundry(新)エージェントで対応。SIP 非対応</td>
+</tr>
+<tr>
+<td>Fast transcription</td>
+<td>録音済み音声をリアルタイム超の速度で同期文字起こし</td>
+<td><span class="badge ga">GA</span>(プレビュー表記なし)</td>
+<td>Foundry(新)ポータルに playground あり。<strong>classic は非対応</strong>(新ポータルへ誘導)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><code>azure-ai-transcription</code> (Python) / <code>Azure.AI.Speech.Transcription</code> (.NET)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/fast-transcription-create" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/fast-transcription-create">fast-transcription-create</a></td>
+<td>REST <code>2025-10-15</code>。SDK 前提条件は「Microsoft Foundry リソース」</td>
+</tr>
+<tr>
+<td>LLM speech</td>
+<td>LLM 強化の transcribe / translate(fast transcription 同等の高速推論)</td>
+<td><span class="badge preview">パブリックプレビュー</span>(overview に「LLM speech (preview)」)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/overview">overview</a></td>
+<td>プロンプトチューニング可</td>
+</tr>
+<tr>
+<td>Language(Azure Language in Foundry Tools)</td>
+<td>NLP 全般。<strong>「コア機能」= PII 検出・言語検出・NER・Text analytics for health のみ。CLU・要約・感情分析・QA・キーフレーズ等は「legacy capabilities」に降格</strong></td>
+<td><span class="badge ga">GA</span>(サービス)。PII 匿名化(synthetic replacement)はプレビュー。Document PII playground は Foundry で GA と明記</td>
+<td>「Microsoft Foundry でほとんどの機能をノーコード利用可」と明記</td>
+<td><span class="badge na">記載なし</span></td>
+<td><code>azure-ai-textanalytics</code>(C#/Java/JS/Python)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/language-service/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/language-service/overview">overview</a></td>
+<td><strong>Language MCP server(プレビュー)</strong>が Foundry Tool Catalog に登場。<strong>Intent Routing agent / Exact Question Answering agent(いずれもプレビュー)</strong>のプレビルトエージェントも提供。新規開発はコア機能推奨</td>
+</tr>
+<tr>
+<td>Translator — Text translation <code>2026-06-06</code> (GA)</td>
+<td><strong>新しい LLM ベース翻訳 API</strong>。指定 LLM の選択、adaptive custom translation、拡張パラメータ</td>
+<td><span class="badge ga">GA</span>(overview の機能表に「version 2026-06-06 (GA)」明記)</td>
+<td><span class="badge na">記載なし</span>(開発手段は REST のみ列挙)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span>(REST のみ)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/translator/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/translator/overview">overview</a></td>
+<td>v3 からの移行ガイドあり。GPT-5.1 等の LLM を翻訳に利用可能</td>
+</tr>
+<tr>
+<td>Translator — Text translation v3 / Document translation</td>
+<td>従来 NMT テキスト翻訳(v3 GA)、非同期/同期ドキュメント翻訳(GA)</td>
+<td><span class="badge ga">GA</span></td>
+<td>テキスト翻訳・同期ドキュメント翻訳は <strong>Foundry (classic) portal</strong> と明記</td>
+<td><span class="badge na">記載なし</span></td>
+<td>Text translation SDK / Document Translation SDK あり</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/translator/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/translator/overview">overview</a></td>
+<td>非同期バッチは Blob Storage 必要。コンテナ対応</td>
+</tr>
+<tr>
+<td>Adaptive custom translation (AdaptCT)</td>
+<td>5〜10,000 の対訳ペアで LLM 翻訳出力を実行時適応(few-shot retrieval、学習・デプロイ不要)</td>
+<td>Playground は「GA in Foundry NextGen」、<strong>API は「v1.0 preview」</strong>(同一機能でサーフェスによりステータスが異なる)</td>
+<td>Foundry(新)ポータル: Build &gt; Models &gt; AI Services &gt; Azure Translator &gt; Adaptive LLM</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span>(REST v1.0 preview)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/translator/foundry/adaptive-custom-translation" title="https://learn.microsoft.com/en-us/azure/ai-services/translator/foundry/adaptive-custom-translation">adaptive-custom-translation</a></td>
+<td>Foundry リソース必須。<code>2026-06-06</code> API と組み合わせて利用</td>
+</tr>
+<tr>
+<td>Vision — Image Analysis 4.0/3.2</td>
+<td>画像からのタグ/キャプション/OCR 抽出</td>
+<td><span class="badge deprecated">非推奨</span> — <strong>2028-09-25 廃止</strong>(overview で「Image Analysis (legacy)」「OCR (legacy)」表記)</td>
+<td><span class="badge na">記載なし</span>(移行先として Foundry のモデルを案内)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview">overview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/migration-options" title="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/migration-options">migration-options</a></td>
+<td>移行先の公式推奨: OCR→Document Intelligence、顔→Face API、埋め込み→Cohere Embed (Foundry)、汎用→GPT 系 Foundry Models / Content Understanding。「2026-09-25 までに移行計画を」と記載</td>
+</tr>
+<tr>
+<td>Face</td>
+<td>顔検出・認識・Liveness 検出</td>
+<td><span class="badge ga">GA</span>(ただし <strong>limited access — 申請制</strong>)。emotion/gender 属性は廃止済み</td>
+<td>Vision Studio を案内(Foundry ポータル統合の記載なし)</td>
+<td><span class="badge na">記載なし</span></td>
+<td>SDK/REST あり。Liveness SDK は別途 gated</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/face/overview-identity" title="https://learn.microsoft.com/en-us/azure/ai-services/face/overview-identity">overview-identity</a></td>
+<td>Image Analysis 廃止後の顔系シナリオの受け皿として明示的に推奨</td>
+</tr>
+<tr>
+<td>Document Intelligence</td>
+<td>文書 OCR+構造化抽出(Read / Layout / プレビルト / カスタムモデル)</td>
+<td><span class="badge ga">GA</span>(v4.0 <code>2024-11-30</code> が現行推奨)。REST v2.1 は 2027-09-15 EOL、v3.0 は 2029-03-30 EOL</td>
+<td>Document Intelligence Studio(documentintelligence.ai.azure.com、Foundry ポータルとは別)</td>
+<td><span class="badge na">記載なし</span></td>
+<td>C#/Python/Java/JS SDK + REST</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/overview">overview</a></td>
+<td>Foundry リソースにバンドル。「Content Understanding の一部として高精度・決定論的抽出を担う。CU は LLM 分析側」という役割分担を明記</td>
+</tr>
+<tr>
+<td>Content Understanding</td>
+<td>ドキュメント/画像/動画/音声のマルチモーダル理解(スキーマ定義でフィールド抽出、RAG/エージェント向け出力)</td>
+<td><span class="badge ga">GA</span>(API <code>2025-11-01</code>、2025年11月 Ignite)。preview API(<code>2024-12-01-preview</code> / <code>2025-05-01-preview</code>)は 2026-07-15 までに廃止。SDK は 2026年3月に GA(Python/.NET/Java/JS)。Pro mode はプレビュー系で GA に未継承</td>
+<td>Foundry(新)ポータル: Read/Layout 提供(2025年12月〜)+ prebuilt analyzers playground(2026年4月〜)。ただし新ポータルの「Content Understanding Tool」フル体験は「coming soon」表記。Content Understanding Studio が補完 UX</td>
+<td><span class="badge na">記載なし</span></td>
+<td><code>azure-ai-contentunderstanding</code>(GA)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/overview">overview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/whats-new" title="https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/whats-new">whats-new</a></td>
+<td><strong>Foundry リソース必須</strong>。GA でマネージド生成モデル容量は廃止 → <strong>必ず自分の Foundry モデルデプロイ(BYO model)を接続</strong>(Read/Layout のみモデル不要)。Agent Framework 統合(プレビュー)、LangChain/MarkItDown 統合あり。業種別プレビルトアナライザー多数</td>
+</tr>
+<tr>
+<td>Azure AI Content Safety(位置づけのみ)</td>
+<td>有害コンテンツ検出。詳細は <a href="06-safety-guardrails.html">06-safety-guardrails</a></td>
+<td><span class="badge ga">GA</span>(サービス。Groundedness / custom categories / multimodal / Task adherence はプレビュー)</td>
+<td>Content Safety Studio。Foundry では Guardrails としてモデルデプロイに統合</td>
+<td><span class="badge na">記載なし</span></td>
+<td>REST/SDK あり</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview">overview</a></td>
+<td>90 日ルールで旧 API 版を順次廃止</td>
+</tr>
+</tbody></table></div>
+<h2 id="プレイグラウンド提供状況-foundry-新ポータル">プレイグラウンド提供状況(Foundry 新ポータル)</h2>
+<ul>
+<li>中核プレイグラウンドは <strong>Model / Agents / Images / Video(プレビュー)</strong> の4種( <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/concept-playgrounds" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/concept-playgrounds">concept-playgrounds</a> )。</li>
+<li>Foundry Tools 系: Speech(STT/TTS/アバター/Voice Live)は新ポータル提供。Language は Foundry でノーコード試用可(Document PII playground は GA 明記)。Content Understanding は新ポータルに prebuilt analyzers playground。Translator は classic ポータル+Adaptive LLM のみ新ポータル GA。Document Intelligence と Face は Foundry 外の専用 Studio(DI Studio / Vision Studio)のまま。</li>
+</ul>
+<h2 id="補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</h2>
+<ul>
+<li><strong>世代交代が進行中</strong>: Image Analysis→Content Understanding / Foundry Models、Document Intelligence→Content Understanding と併存(決定論的抽出は DI、LLM 分析は CU)、Language の CLU / 要約系は「legacy」化(エージェント時代は MCP server+プレビルトエージェントへ)、Translator は NMT v3→LLM ベース <code>2026-06-06</code> へ。</li>
+<li><strong>エージェント統合の形</strong>: 各 Foundry Tool は「MCP server / Tool Catalog / プレビルトエージェント」経由で Foundry Agent Service に接続する方向(Speech MCP server、Language MCP server、Voice Live のエージェント統合)。</li>
+<li><strong>standard setup(BYO ストレージ)</strong>のバリアントが Speech / Language / Vision / Content Understanding 向けにあり(Speech / Language の Storage Account オプションはプレビュー)。</li>
+<li><strong>要確認</strong>: Voice Live の GA 明文表記(安定版 API の存在から実質 GA と判断できるが「generally available」の文言自体は未確認。確認 URL: <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2025-10-01" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2025-10-01">voice-live-api-reference-2025-10-01</a> )。</li>
+</ul>
+</main>
+<footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

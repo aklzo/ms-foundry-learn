@@ -1,0 +1,44 @@
+[project]
+name = "agentic-search-maf"
+version = "0.1.0"
+description = "Agentic web research tool ported from agentic-search-rs to Microsoft Agent Framework"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "agent-framework-core>=1.10",
+    "agent-framework-openai>=1.10",
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "readability-lxml>=0.8",
+    "pydantic>=2.7",
+    "typing-extensions>=4.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.14",
+]
+
+[project.scripts]
+agentic-search-maf = "agentic_search_maf.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_search_maf"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "C4"]
+

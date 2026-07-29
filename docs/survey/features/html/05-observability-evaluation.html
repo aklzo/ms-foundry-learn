@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05. オブザーバビリティ・評価</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry 機能一覧・ステ…</a><a href="01-platform-projects.html">01. プラットフォーム基盤・プロジェクト・コント…</a><a href="02-models.html">02. Foundry Models</a><a href="03-agent-service.html">03. Foundry Agent Service</a><a href="04-tools-knowledge.html">04. エージェントツール・ナレッジ</a><a href="05-observability-evaluation.html" class="current">05. オブザーバビリティ・評価</a><a href="06-safety-guardrails.html">06. 安全性・ガードレール</a><a href="07-foundry-tools.html">07. Foundry Tools</a><a href="08-developer-experience.html">08. 開発者サーフェス</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="05-オブザーバビリティ・評価">05. オブザーバビリティ・評価</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#機能一覧">機能一覧</a></li><li><a href="#補足ノート">補足ノート</a></li></ul></div>
+<p><a href="index.html">← 機能一覧 TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<h2 id="概要">概要</h2>
+<p>トレーシング・評価・モニタリングを統合した観測基盤を扱う。領域別のステータスは混在しており、<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a>(2026-07-22 更新)の記載が最も体系的:</p>
+<ul>
+<li>Tracing(Trace Replay 含む): <strong>prompt / hosted エージェントは GA、workflow / 外部エージェントはプレビュー</strong></li>
+<li>Tracing VNet: プレビュー</li>
+<li>トレース→評価データセット変換: プレビュー</li>
+<li>Evaluations: <strong>GA</strong>(一部評価器・機能はプレビュー)</li>
+<li>Monitoring: <strong>プレビュー</strong></li>
+<li>Red teaming: <strong>GA</strong></li>
+<li>Operate &gt; Compliance: プレビュー</li>
+</ul>
+<h2 id="機能一覧">機能一覧</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Observability(全体像)</td>
+<td>トレース・モニタリング・評価を統合した AI アプリのライフサイクル観測基盤。App Insights 統合ダッシュボード</td>
+<td>領域別に混在(上記の Feature readiness 参照)</td>
+<td>Foundry(新)中心</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/observability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/observability">observability</a></td>
+<td>エージェントプレイグラウンドの評価は全プロジェクトで既定有効・従量課金</td>
+</tr>
+<tr>
+<td>Tracing(トレーシング)</td>
+<td>OpenTelemetry セマンティック規約ベースで App Insights にテレメトリ送信。サーバー側トレースはコード変更不要、ポータルで 90 日分閲覧可</td>
+<td><span class="badge ga">GA</span>(prompt / hosted エージェント)。workflow・外部エージェントはプレビュー</td>
+<td>Foundry(新)の Agents &gt; Traces タブ</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code> + opentelemetry-sdk + azure-core-tracing-opentelemetry)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup">trace-agent-setup</a></td>
+<td>LangChain / LangGraph / OpenAI Agents SDK / Microsoft Agent Framework 連携対応。VS Code Foundry Toolkit でローカルトレース可。Tracing の VNet 対応はプレビュー</td>
+</tr>
+<tr>
+<td>Trace Replay</td>
+<td>会話トレースを Trajectories ビュー(スパン階層+ウォーターフォール)と User ビュー(チャット再現)で再生・分析</td>
+<td>表記揺れあり: What's new(2026年6月)は「(preview)」、GA 一覧(2026-07-22)は Tracing に含めて「GA for prompt and hosted agents」→ <strong>prompt / hosted は実質 GA、workflow / 外部はプレビュー</strong>と読むのが最新記載に忠実</td>
+<td>Foundry(新)ポータルのみ(Traces ページから起動)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span>(ポータル機能)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-replay" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-replay">trace-agent-replay</a></td>
+<td>再生には2スパン以上必要。Log Analytics Reader ロール必須</td>
+</tr>
+<tr>
+<td>トレース→評価データセット変換(Data Generation)</td>
+<td>本番トレースをインテリジェントサンプリング(MinHash による多様性抽出、低品質トラフィック除去)で評価/FT 用データセットに変換</td>
+<td><span class="badge preview">パブリックプレビュー</span>(タイトルに「(preview)」明記)</td>
+<td>Foundry(新)の Data Generation タブ</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=2.2.0、<code>project_client.beta.datasets</code>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/traces-to-dataset" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/traces-to-dataset">traces-to-dataset</a></td>
+<td>max_samples は 15〜1000。App Insights / ストレージへのパブリックネットワークアクセスが必要</td>
+</tr>
+<tr>
+<td>Evaluations(評価・クラウド評価)</td>
+<td>Foundry プロジェクトに対する評価実行。エージェントターゲット評価、ルーブリック評価器の自動生成、データセット評価</td>
+<td><span class="badge ga">GA</span>(「some evaluators and features are Preview」)。プレビュー部分: 会話レベル評価、トレース評価、会話シミュレーション、合成データ評価</td>
+<td>Foundry(新)の Evaluations タブ・評価ウィザード</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=2.2.0 + OpenAI evals クライアント。C# / REST もあり)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/cloud-evaluation" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/cloud-evaluation">cloud-evaluation</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/evaluate-agent" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/evaluate-agent">evaluate-agent</a></td>
+<td><strong>Entra ID 認証必須(API キー不可)</strong>。GitHub Actions 連携で CI/CD ゲート化可</td>
+</tr>
+<tr>
+<td>組み込み評価器: 品質・RAG・類似度</td>
+<td>Coherence, Fluency, Retrieval, Groundedness, Relevance, BLEU/ROUGE 等</td>
+<td>概ね GA。Groundedness Pro / Response Completeness のみプレビュー表記</td>
+<td><span class="badge ok">対応</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>builtin.*</code> 名で指定)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/built-in-evaluators" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/built-in-evaluators">built-in-evaluators</a></td>
+<td>Azure OpenAI graders(Model Labeler 等)にはプレビュー表記なし</td>
+</tr>
+<tr>
+<td>組み込み評価器: 安全性</td>
+<td>Hate/Unfairness, Sexual, Violence, Self-Harm, Protected Materials, Indirect Attack (XPIA), Code Vulnerability, Ungrounded Attributes, Prohibited Actions, Sensitive Data Leakage</td>
+<td>GA相当(プレビュー表記なし)</td>
+<td><span class="badge ok">対応</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/risk-safety-evaluators" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/risk-safety-evaluators">risk-safety-evaluators</a></td>
+<td>AI 支援安全性評価器はリージョン制限あり。従量課金対象</td>
+</tr>
+<tr>
+<td>組み込み評価器: エージェント向け</td>
+<td>Intent Resolution, Task Adherence, Task Completion, Customer Satisfaction, Tool Call Accuracy, Tool Selection, Tool Input/Output 系, Task Navigation Efficiency, Quality Grader</td>
+<td>Intent Resolution / Task Adherence / Task Completion / Customer Satisfaction / Quality Grader = プレビュー。Tool Call Accuracy / Tool Selection / Tool Input Accuracy / Tool Output Utilization / Tool Call Success / Task Navigation Efficiency = GA相当(プレビュー表記なし)</td>
+<td><span class="badge ok">対応</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(evals API、<code>builtin.task_adherence</code> 等)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/agent-evaluators" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/agent-evaluators">agent-evaluators</a></td>
+<td>Bing Grounding / Azure AI Search / Code Interpreter 等のツール呼び出しを含む会話ではツール系評価器のサポートが限定的</td>
+</tr>
+<tr>
+<td>Rubric 評価器 / カスタム評価器</td>
+<td>エージェントのコンテキストから LLM ジャッジ用の重み付きルーブリックを自動生成。独自ロジックのカスタム評価器も定義可</td>
+<td>どちらもパブリックプレビュー(「(preview)」明記)</td>
+<td><span class="badge ok">対応</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>project_client.beta.evaluators</code>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/built-in-evaluators" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/built-in-evaluators">built-in-evaluators</a></td>
+<td>evaluate-agent ページでは Rubric 評価器をエージェント評価の主要手段として推奨</td>
+</tr>
+<tr>
+<td>ローカル評価(<code>azure-ai-evaluation</code>)</td>
+<td><code>evaluate()</code> API とローカル評価器クラス群によるローカル実行評価</td>
+<td>パッケージ自体は GA(stable 1.18.2、非推奨表記なし)。ただし<strong>ドキュメントは Foundry (classic) 専用に移動</strong>(「This article isn't available for the new Foundry portal」)</td>
+<td>classic のみ(新ポータルのドキュメント体系から除外)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>pip install azure-ai-evaluation</code>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/develop/evaluate-sdk" title="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/develop/evaluate-sdk">evaluate-sdk</a> ・ <a href="https://learn.microsoft.com/en-us/python/api/overview/azure/ai-evaluation-readme" title="https://learn.microsoft.com/en-us/python/api/overview/azure/ai-evaluation-readme">ai-evaluation-readme</a></td>
+<td>新 Foundry の評価は <code>azure-ai-projects</code>&gt;=2.2.0 + OpenAI evals クライアントに全面移行。明示的な後継宣言・廃止日は未確認</td>
+</tr>
+<tr>
+<td>継続的評価(Continuous evaluation)</td>
+<td>本番トラフィックのサンプリング評価。<code>EvaluationRule</code>(response_completed イベント、既定 100 回/時)で構成</td>
+<td><span class="badge unknown">要確認</span>(Monitor 設定表では Continuous evaluation に preview 表記なし〈Scheduled evaluations / Red team scans / Alerts は preview 明記〉。一方 GA 一覧では Monitoring 領域全体がプレビュー)</td>
+<td>Foundry(新)の Monitor タブ設定</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=2.0.0 の <code>evaluation_rules</code>。.NET もあり)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard">how-to-monitor-agents-dashboard</a></td>
+<td>カスタム評価器(プレビュー)も継続的評価に追加可。プロジェクトのマネージド ID に Foundry User ロール必須</td>
+</tr>
+<tr>
+<td>AI Red Teaming Agent</td>
+<td>PyRIT ベースの自動敵対的スキャン。ローカル/クラウド実行、ASR (Attack Success Rate) を算出</td>
+<td><span class="badge ga">GA</span>(GA 一覧に「Red teaming: GA」。概念ページにプレビューバナーなし)</td>
+<td><span class="badge ok">対応</span>(結果を Foundry で記録・追跡)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=2.0.0。REST は api-version <code>2025-11-15-preview</code>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/ai-red-teaming-agent" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/ai-red-teaming-agent">ai-red-teaming-agent</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/run-ai-red-teaming-cloud" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/run-ai-red-teaming-cloud">run-ai-red-teaming-cloud</a></td>
+<td>エージェント固有リスク(Prohibited Actions / Sensitive Data Leakage / Task Adherence)はクラウドのみ。対応リージョン: East US 2, France Central, Sweden Central, Switzerland West, US North Central。workflow / 非 Foundry エージェント・Function ツールは非対応</td>
+</tr>
+<tr>
+<td>Agent Monitoring Dashboard</td>
+<td>トークン使用量・レイテンシ・実行成功率・評価スコア・red teaming 結果の統合ダッシュボード</td>
+<td><span class="badge preview">パブリックプレビュー</span>(「View agent metrics (preview)」、GA 一覧「Monitoring: Preview」)</td>
+<td>Foundry(新)の Build &gt; エージェント &gt; Monitor タブ</td>
+<td><span class="badge na">記載なし</span></td>
+<td>継続的評価ルール設定のみ SDK(表示はポータル)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard">how-to-monitor-agents-dashboard</a></td>
+<td>データは接続済み App Insights に保存(保持・課金は App Insights 設定に従う)。AI Gateway 経由で非 Foundry エージェントのオンボードも可</td>
+</tr>
+<tr>
+<td>Microsoft Purview 連携</td>
+<td>Foundry の AI インタラクションに対する DSPM for AI、監査、データ分類、秘密度ラベル、DLP、IRM、eDiscovery、保持ポリシー等</td>
+<td><span class="badge unknown">要確認</span>(Purview 側ページにプレビュー表記なし。Foundry 側の有効化 UI〈Control Plane の Compliance〉は GA 一覧でプレビュー)</td>
+<td>Foundry Control Plane で有効化、または Defender for Cloud 経由</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span>(Purview API / Graph API 経由)</td>
+<td><a href="https://learn.microsoft.com/en-us/purview/ai-azure-foundry" title="https://learn.microsoft.com/en-us/purview/ai-azure-foundry">ai-azure-foundry</a></td>
+<td>Purview の従量課金有効化が必要。Entra ID ユーザーコンテキスト付き API 呼び出しがポリシー適用の条件</td>
+</tr>
+<tr>
+<td>Defender for Cloud(AI threat protection)</td>
+<td>生成 AI アプリ/エージェントへの脅威(ジェイルブレイク、データ漏えい、資格情報窃取等)をリアルタイム検知。Defender XDR 統合</td>
+<td><span class="badge ga">GA</span>(「Release state: Generally available (GA)」明記)</td>
+<td>Azure portal / Defender XDR ポータル</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/defender-for-cloud/ai-threat-protection" title="https://learn.microsoft.com/en-us/azure/defender-for-cloud/ai-threat-protection">ai-threat-protection</a></td>
+<td>30 日間無料試用。テキストトークンのみスキャン。Azure Government / 21Vianet 非対応</td>
+</tr>
+</tbody></table></div>
+<h2 id="補足ノート">補足ノート</h2>
+<p><strong>1. Trace Replay のステータス揺れ(重要)</strong> What's new(June 2026)では「(preview)」として新規掲載、より新しい GA 一覧(2026-07-22 更新)では Tracing に含めて「GA for prompt and hosted agents」。個別記事タイトルに (preview) は付いていない。報告上は両出典を併記し、「prompt / hosted エージェントでは実質 GA 入り、workflow / 外部エージェントはプレビュー」と読むのが最新記載に忠実。</p>
+<p><strong>2. 評価 SDK の世代交代</strong> 新 Foundry の評価ドキュメントは全面的に <strong><code>azure-ai-projects</code>(&gt;=2.2.0)+ OpenAI 互換 evals API</strong>(<code>client.evals.create</code> / <code>builtin.*</code> 評価器名)ベースに書き換えられた。<code>azure-ai-evaluation</code>(ローカル評価)は stable 1.18.2 が存続し廃止告知はないが、ドキュメントは foundry-classic 配下(hub-based プロジェクト向け)に隔離された。正式な移行アナウンス文書は未確認。</p>
+<p><strong>3. 継続的評価の位置づけ</strong> Monitor 設定パネルでは Continuous evaluation のみ preview 表記がなく、Scheduled evaluations / Red team scans / Alerts が preview 明記。ただしダッシュボード表示自体が preview であり、GA 一覧でも Monitoring 領域全体がプレビューのため、本番採用判断時は「周辺はプレビュー」として扱うのが安全。</p>
+<p><strong>4. サーフェス全般の傾向</strong> 観測性・評価領域の手順書はすべて「Foundry(新)ポータル + Python SDK(<code>azure-ai-projects</code>)」が主線で、一部 C#/.NET と REST(api-version <code>2025-11-15-preview</code>)を併記。<strong>Azure CLI の手順はどのページにも記載なし</strong>。</p>
+</main>
+<footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

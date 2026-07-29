@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08. 開発者サーフェス(SDK / CLI / API / フレームワーク)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry 機能一覧・ステ…</a><a href="01-platform-projects.html">01. プラットフォーム基盤・プロジェクト・コント…</a><a href="02-models.html">02. Foundry Models</a><a href="03-agent-service.html">03. Foundry Agent Service</a><a href="04-tools-knowledge.html">04. エージェントツール・ナレッジ</a><a href="05-observability-evaluation.html">05. オブザーバビリティ・評価</a><a href="06-safety-guardrails.html">06. 安全性・ガードレール</a><a href="07-foundry-tools.html">07. Foundry Tools</a><a href="08-developer-experience.html" class="current">08. 開発者サーフェス</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="08-開発者サーフェス-sdk-cli-api-フレームワーク">08. 開発者サーフェス(SDK / CLI / API / フレームワーク)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#api">API</a></li><li><a href="#sdk-言語別">SDK(言語別)</a></li><li><a href="#cli-iac">CLI / IaC</a></li><li><a href="#開発ツール・フレームワーク">開発ツール・フレームワーク</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
+<p><a href="index.html">← 機能一覧 TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com、PyPI / NuGet / npm / Maven の現行ページ確認)</p></blockquote>
+<h2 id="概要">概要</h2>
+<p>API は「<strong>推論系 = v1 API(月次 <code>api-version</code> 廃止、OpenAI SDK 直結)</strong>」と「<strong>プロジェクト操作系 = Foundry SDK(<code>azure-ai-projects</code> 2.x)+ Microsoft Foundry REST API(v1 / v1-preview)</strong>」の二層構造に整理された。SDK overview では接続先として Foundry SDK(<code>services.ai.azure.com/api/projects/...</code>)、OpenAI SDK(<code>/openai/v1</code>)、<strong>Anthropic SDK</strong>(<code>services.ai.azure.com/anthropic</code>)、Agent Framework の4系統が明示されている(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/sdk-overview" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/sdk-overview">sdk-overview</a> )。</p>
+<h2 id="api">API</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>詳細(言語/サーフェス差異)</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Foundry v1 API (<code>/openai/v1/</code>)</td>
+<td>月次の日付型 <code>api-version</code> を廃止した次世代 API。素の OpenAI クライアントをそのまま接続でき、DeepSeek / Grok 等の他プロバイダーモデルも同一構文で呼べる</td>
+<td><span class="badge ga">GA</span>(2025年8月に opt-in 開始。プレビュー機能はヘッダー例 <code>&quot;aoai-evals&quot;:&quot;preview&quot;</code> またはパス内 <code>alpha</code> で個別 opt-in)</td>
+<td>Python / C# / JS / Go / Java / REST すべて OpenAI 公式 SDK + <code>base_url</code> 指定。<code>openai.azure.com/openai/v1</code> と <code>services.ai.azure.com/openai/v1</code> の両形式可。プロジェクトエンドポイント経由 <code>{project_endpoint}/openai/v1/responses</code> も可(ただし embeddings はプロジェクトエンドポイント未ルーティング)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle" title="https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle">api-version-lifecycle</a></td>
+<td>v1 OpenAPI 3.0 spec は azure-rest-api-specs リポジトリで公開</td>
+</tr>
+<tr>
+<td>Microsoft Foundry REST API</td>
+<td>Foundry(プロジェクト/Agents/evals/Azure OpenAI)のデータプレーン REST リファレンス</td>
+<td><span class="badge ga">GA</span> (v1) + v1-preview の2ビュー並存</td>
+<td>REST 共通</td>
+<td><a href="https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/" title="https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/">microsoft-foundry</a></td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h2 id="sdk-言語別">SDK(言語別)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>詳細</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Python: <code>azure-ai-projects</code> 2.x</td>
+<td>Foundry プロジェクトの統合クライアント(Agents 作成・実行、認証済み OpenAI クライアント取得、toolbox、fine-tuning、デプロイ/接続の列挙)</td>
+<td><span class="badge ga">GA</span>(2.4.0、2026-07-27、Production/Stable)</td>
+<td>1.x は Foundry classic 用として並存。プレビュー機能はクライアント構築時 <code>allow_preview=True</code> で明示 opt-in</td>
+<td><a href="https://pypi.org/project/azure-ai-projects/" title="https://pypi.org/project/azure-ai-projects/">azure-ai-projects</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/sdk-overview" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/sdk-overview">sdk-overview</a></td>
+<td>4言語の中で最も更新頻度が高い</td>
+</tr>
+<tr>
+<td>Python: <code>azure-ai-agents</code></td>
+<td>Agent Service 単体クライアント</td>
+<td><span class="badge ga">GA</span>(1.1.0、2025-08-05)だが更新停滞・実質集約</td>
+<td>公式に「<code>azure-ai-projects</code> の利用を推奨」と明記</td>
+<td><a href="https://pypi.org/project/azure-ai-agents/" title="https://pypi.org/project/azure-ai-agents/">azure-ai-agents</a></td>
+<td>非推奨表記はないが実質 <code>azure-ai-projects</code> 2.x へ</td>
+</tr>
+<tr>
+<td>Python: <code>azure-ai-inference</code></td>
+<td>旧・モデル推論統一クライアント</td>
+<td><span class="badge deprecated">非推奨</span> → <strong>2026-08-26 廃止予定</strong>(beta のまま GA せず。最終版 1.0.0b9)</td>
+<td>Python / C#(<code>Azure.AI.Inference</code>)/ JS(<code>@azure/ai-inference</code>)/ Java 全言語対象。移行先は OpenAI SDK + v1 API</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/foundry-models/supported-languages" title="https://learn.microsoft.com/en-us/azure/foundry-classic/foundry-models/supported-languages">supported-languages</a> ・ <a href="https://pypi.org/project/azure-ai-inference/" title="https://pypi.org/project/azure-ai-inference/">azure-ai-inference</a></td>
+<td>「deprecated and will be retired on August 26, 2026」と明記。移行ガイド: /azure/foundry/how-to/model-inference-to-openai-migration</td>
+</tr>
+<tr>
+<td>Python: <code>azure-ai-evaluation</code></td>
+<td>評価 SDK(ローカル評価。詳細は <a href="05-observability-evaluation.html">05-observability-evaluation</a>)</td>
+<td><span class="badge ga">GA</span>(1.18.2、2026-07-22、Production/Stable)</td>
+<td>Python 中心</td>
+<td><a href="https://pypi.org/project/azure-ai-evaluation/" title="https://pypi.org/project/azure-ai-evaluation/">azure-ai-evaluation</a></td>
+<td>ドキュメントは classic 配下に移動済み(新 Foundry は projects SDK の evals へ)</td>
+</tr>
+<tr>
+<td><code>openai</code> パッケージ(プロジェクトエンドポイント利用)</td>
+<td>Foundry での本番推論の公式推奨ルート。v1 API で Entra ID トークン自動リフレッシュ対応(<code>AzureOpenAI</code> クライアント不要に)</td>
+<td><span class="badge ga">GA</span>(v1 API 経由)</td>
+<td>Python / JS / Java / Go / C#(OpenAI .NET)全対応</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle" title="https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle">api-version-lifecycle</a></td>
+<td><code>AzureOpenAI()</code> ではなく素の <code>OpenAI()</code> + <code>base_url</code> が新標準</td>
+</tr>
+<tr>
+<td>C#: <code>Azure.AI.Projects</code></td>
+<td>.NET 統合プロジェクトクライアント</td>
+<td><span class="badge ga">GA</span>(2.0.1、2026-04-23。プレリリース 2.1.0-beta.4)</td>
+<td>.NET は3パッケージ構成: <code>Azure.AI.Projects</code> + <code>Azure.AI.Projects.Agents</code> + <code>Azure.AI.Extensions.OpenAI</code>(GA)。<code>Azure.AI.Projects.OpenAI</code>(preview)と <code>Azure.AI.Extensions.OpenAI</code>(GA)は同居不可(型重複)</td>
+<td><a href="https://www.nuget.org/packages/Azure.AI.Projects" title="https://www.nuget.org/packages/Azure.AI.Projects">Azure.AI.Projects</a></td>
+<td>1.1.0 GA は classic 用として並存</td>
+</tr>
+<tr>
+<td>JS/TS: <code>@azure/ai-projects</code></td>
+<td>JS/TS 統合プロジェクトクライアント</td>
+<td><span class="badge ga">GA</span>(2.3.1、npm latest、stable)</td>
+<td>docs 上の対応表は 2.0.1(新 Foundry)/ 1.0.1(classic)</td>
+<td><a href="https://www.npmjs.com/package/@azure/ai-projects" title="https://www.npmjs.com/package/@azure/ai-projects">ai-projects</a></td>
+<td>リリース日は要確認(npm ページ 403 のためレジストリ API で版のみ確認)</td>
+</tr>
+<tr>
+<td>Java: <code>com.azure:azure-ai-projects</code></td>
+<td>Java 統合プロジェクトクライアント</td>
+<td><span class="badge ga">GA</span>(2.2.0、Maven Central、stable)</td>
+<td><code>com.azure:azure-ai-agents</code> 2.2.0 と OpenAI Java 4.14.0 に依存</td>
+<td><a href="https://central.sonatype.com/artifact/com.azure/azure-ai-projects" title="https://central.sonatype.com/artifact/com.azure/azure-ai-projects">azure-ai-projects</a></td>
+<td>4言語(Python/C#/JS/Java)すべて 2.x GA でパリティほぼ達成</td>
+</tr>
+</tbody></table></div>
+<h2 id="cli-iac">CLI / IaC</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>詳細</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Azure CLI: <code>az cognitiveservices</code></td>
+<td>Foundry リソース(account)・プロジェクト・接続・モデルデプロイの管理コマンド群</td>
+<td>account / project / connection / deployment / commitment-plan: GA。<code>az cognitiveservices agent</code>(hosted agent 管理)・managed-compute-deployment・managed-network: プレビュー</td>
+<td>Azure CLI (Core)。<strong>専用の <code>az foundry</code> 拡張は存在しない</strong>(2026-07 時点)</td>
+<td><a href="https://learn.microsoft.com/en-us/cli/azure/cognitiveservices" title="https://learn.microsoft.com/en-us/cli/azure/cognitiveservices">cognitiveservices</a></td>
+<td>ms.service は foundry-tools に変更済み ※Agent Service 側ドキュメントには <code>az cognitiveservices agent</code> 削除済みとの記載もあり表記揺れ(<a href="03-agent-service.html">03-agent-service</a> 参照)</td>
+</tr>
+<tr>
+<td>Azure Developer CLI (azd) Foundry 拡張群</td>
+<td><code>azd ai</code> 名前空間で agent のビルド/デプロイ/評価/運用。<code>microsoft.foundry</code>(メタパッケージ)+ <code>azure.ai.agents</code> / <code>connections</code> / <code>inspector</code> / <code>projects</code> / <code>routines</code> / <code>skills</code> / <code>toolboxes</code></td>
+<td><span class="badge preview">パブリックプレビュー</span></td>
+<td>azd 1.25.2+、Python 3.10+ または .NET 8+</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/install-cli-foundry-extensions" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/install-cli-foundry-extensions">install-cli-foundry-extensions</a></td>
+<td><code>azd ai agent run</code>(ローカル実行)/ <code>invoke</code> 等</td>
+</tr>
+<tr>
+<td><code>az ml</code>(classic ハブ用)</td>
+<td>旧ハブベースプロジェクト(<code>--kind hub</code> / <code>--kind project</code>)の管理</td>
+<td><span class="badge ga">GA</span>(ただし Foundry classic 限定の位置づけ)</td>
+<td>新 Foundry プロジェクトは <code>az cognitiveservices account project</code> 側</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/develop/create-hub-project-sdk" title="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/develop/create-hub-project-sdk">create-hub-project-sdk</a></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Bicep / ARM</td>
+<td><code>Microsoft.CognitiveServices/accounts</code>(kind AIServices)+ 子リソース <code>accounts/projects</code>、<code>accounts/deployments</code> で IaC 管理</td>
+<td><span class="badge ga">GA</span>(projects は API version 2025-06-01 で利用可。最新プレビュー版 2026-05-15-preview)</td>
+<td>capabilityHosts 等はプレビュー API version</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/templates/microsoft.cognitiveservices/accounts" title="https://learn.microsoft.com/en-us/azure/templates/microsoft.cognitiveservices/accounts">accounts</a></td>
+<td>旧 hub は Microsoft.MachineLearningServices 側のまま</td>
+</tr>
+<tr>
+<td>Terraform (AzureRM/AzAPI)</td>
+<td><code>azurerm_cognitive_account</code>(kind AIServices + <code>project_management_enabled = true</code>)+ <code>azurerm_cognitive_account_project</code>(新 Foundry プロジェクト)</td>
+<td>GA相当(AzureRM で新リソースタイプ対応済み。プレビュー機能は AzAPI 併用)</td>
+<td>旧 hub 用 <code>azurerm_ai_foundry</code> / <code>azurerm_ai_foundry_project</code> も存続。AVM モジュール <code>Azure/avm-ptn-aiml-ai-foundry</code> あり</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/create-resource-terraform" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/create-resource-terraform">create-resource-terraform</a> ・ <a href="https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cognitive_account_project" title="https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cognitive_account_project">cognitive_account_project</a></td>
+<td>Terraform 作成プロジェクトが Agent Framework から使えない既知トラブル報告あり(learn Q&amp;A)</td>
+</tr>
+</tbody></table></div>
+<h2 id="開発ツール・フレームワーク">開発ツール・フレームワーク</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>詳細</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>VS Code 拡張: Foundry Toolkit</td>
+<td>旧 AI Toolkit + 旧 Microsoft Foundry 拡張を1つに統合。プロジェクト作成、モデルカタログ/デプロイ、プレイグラウンド、宣言型/ホスト型エージェント管理、ローカルデバッグ</td>
+<td><span class="badge ga">GA</span>(マーケットプレイスに Preview マークなし。v1.6.5、2026-06-28 更新)</td>
+<td>VS Code(ID: ms-windows-ai-studio.windows-ai-studio)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/get-started-projects-vs-code" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/get-started-projects-vs-code">get-started-projects-vs-code</a> ・ <a href="https://marketplace.visualstudio.com/items?itemName=ms-windows-ai-studio.windows-ai-studio" title="https://marketplace.visualstudio.com/items?itemName=ms-windows-ai-studio.windows-ai-studio">items</a></td>
+<td>名称変遷: AI Toolkit → Foundry Toolkit</td>
+</tr>
+<tr>
+<td>Foundry MCP Server</td>
+<td>クラウドホスト型 MCP サーバー(<code>https://mcp.ai.azure.com</code>)。エージェント/データセット/評価/モデルデプロイ等を 38 ツール・10 カテゴリで会話的に操作</td>
+<td><span class="badge preview">パブリックプレビュー</span></td>
+<td>VS Code / Visual Studio / Foundry Tools から利用。<strong>ネットワーク分離未対応</strong>(Private Link 裏のリソース不可)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/mcp/get-started" title="https://learn.microsoft.com/en-us/azure/foundry/mcp/get-started">get-started</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/mcp/available-tools" title="https://learn.microsoft.com/en-us/azure/foundry/mcp/available-tools">available-tools</a></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Microsoft Agent Framework (MAF)</td>
+<td>Semantic Kernel + AutoGen の直接後継(同一チーム開発)。Agents / Harness / Workflows の3本柱。<code>FoundryChatClient</code> で Foundry プロジェクトエンドポイント(Responses API)に統合</td>
+<td><span class="badge ga">GA</span>(1.0、2026-04-02/03)。Python <code>agent-framework</code> 1.12.1 stable(2026-07-23)、.NET <code>Microsoft.Agents.AI.Foundry</code> 1.5.0 stable。<strong>Go はパブリックプレビュー</strong></td>
+<td>Python / .NET が GA、Go がプレビュー。サブパッケージ: agent-framework-core / -foundry / -copilotstudio(copilotstudio はプレビュー)</td>
+<td><a href="https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview" title="https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview">agent-framework-overview</a> ・ <a href="https://pypi.org/project/agent-framework/" title="https://pypi.org/project/agent-framework/">agent-framework</a> ・ <a href="https://devblogs.microsoft.com/agent-framework/microsoft-agent-framework-version-1-0/" title="https://devblogs.microsoft.com/agent-framework/microsoft-agent-framework-version-1-0/">microsoft-agent-framework-version-1-0</a></td>
+<td>Build 2026 で Agent Harness、Hosted Agents、CodeAct 発表</td>
+</tr>
+<tr>
+<td>LangGraph / LangChain 統合</td>
+<td><code>langchain-azure-ai</code> パッケージ経由。<code>AgentServiceFactory</code> で Foundry Agent Service を LangGraph ノード化、<code>langchain_azure_ai.agents.hosting</code> で LangGraph グラフを Foundry ホスト型エージェントとして公開。OpenTelemetry トレース、Foundry Memory 統合も</td>
+<td>公式ドキュメント整備済み(統合自体のステータス表記は要確認。パッケージ: <a href="https://pypi.org/project/langchain-azure-ai/" title="https://pypi.org/project/langchain-azure-ai/">langchain-azure-ai</a> )</td>
+<td>Python(LangChain / LangGraph)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/langchain-agents" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/langchain-agents">langchain-agents</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/langchain-hosted-agents" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/langchain-hosted-agents">langchain-hosted-agents</a></td>
+<td>ホスティング/メモリ/トレースの各記事が 2026-06 に更新</td>
+</tr>
+</tbody></table></div>
+<h2 id="補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</h2>
+<ol>
+<li><strong>SDK パリティ</strong>: 統合プロジェクトクライアント 2.x は Python (2.4.0) / .NET (2.0.1) / JS (2.3.1) / Java (2.2.0) の4言語すべて GA。Python が最も先行。</li>
+<li><strong><code>azure-ai-inference</code> の廃止が確定日付付き</strong>(2026-08-26)。一度も GA せず beta のまま終了し、全言語で OpenAI SDK + v1 API へ移行する構図。既存資産の棚卸しが必要。</li>
+<li><strong>CLI は3系統に分裂</strong>: (a) <code>az cognitiveservices</code>(リソース/プロジェクト/デプロイ管理、GA)、(b) azd の Foundry 拡張群(エージェント開発ライフサイクル、プレビュー)、(c) <code>az ml</code>(classic ハブ専用に格下げ)。<strong>独立した <code>az foundry</code> コマンド群は存在しない</strong> — 「Foundry の CLI」は azd 側に寄っている。</li>
+<li><strong>MAF が Foundry ネイティブのコードファースト経路として GA</strong>。ビジュアル Workflows 廃止(2026-12-01)の公式移行先でもあり、「portal(prompt agents)vs MAF(コードファースト)vs LangGraph(サードパーティ、hosted agents として持ち込み可)」という技術選定の3経路が明確化した。</li>
+<li>検索結果中の「<code>azure-ai-inference</code> 2026-05-30 リタイア」説は learn 本文の 2026-08-26 と食い違うため、learn 明記の 8/26 を採用(揺れとして記録)。</li>
+</ol>
+</main>
+<footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Microsoft Foundry 機能一覧・ステータス調査</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html" class="current">Microsoft Foundry 機能一覧・ステ…</a><a href="01-platform-projects.html">01. プラットフォーム基盤・プロジェクト・コント…</a><a href="02-models.html">02. Foundry Models</a><a href="03-agent-service.html">03. Foundry Agent Service</a><a href="04-tools-knowledge.html">04. エージェントツール・ナレッジ</a><a href="05-observability-evaluation.html">05. オブザーバビリティ・評価</a><a href="06-safety-guardrails.html">06. 安全性・ガードレール</a><a href="07-foundry-tools.html">07. Foundry Tools</a><a href="08-developer-experience.html">08. 開発者サーフェス</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="microsoft-foundry-機能一覧・ステータス調査">Microsoft Foundry 機能一覧・ステータス調査</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#このドキュメント群について">このドキュメント群について</a></li><li><a href="#前提知識-2025年11月-ignite-の大改編">前提知識: 2025年11月(Ignite)の大改編</a></li><li><a href="#ステータス凡例">ステータス凡例</a></li><li><a href="#カテゴリ別ドキュメント">カテゴリ別ドキュメント</a></li><li><a href="#ハイライト-si-選定観点の要点">ハイライト(SI 選定観点の要点)</a></li><li><a href="#重要期限-廃止・移行スケジュール">重要期限(廃止・移行スケジュール)</a></li><li><a href="#更新運用ガイド-定期更新の手順">更新運用ガイド(定期更新の手順)</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページを直接確認)/ <strong>版:</strong> 初版<br>本ドキュメント群は SI の技術選定・アーキテクチャ選定基準の構築を目的に、Microsoft Foundry の機能と GA / プレビューのステータスを整理したものです。<strong>定期更新を前提</strong>としています(更新手順は本ページ末尾)。</p></blockquote>
+<h2 id="このドキュメント群について">このドキュメント群について</h2>
+<ul>
+<li><strong>正(マスター)は Markdown</strong>(生成 AI 用)。人間用 HTML は <code>tools/md2html.py</code> で <code>html/</code> 配下に自動生成します。HTML を直接編集しないでください。</li>
+<li>各機能について「全体ステータス」に加え、<strong>サーフェス別(ポータル / Azure CLI / Python SDK / REST)の対応状況</strong>を、公式ドキュメントに記載がある範囲で記録しています。記載がない場合は「記載なし」、確認できなかった場合は「要確認」と正直に書きます(推測でステータスを書かない)。</li>
+<li>すべての行に出典(learn.microsoft.com 等の公式 URL)を付けています。</li>
+</ul>
+<h2 id="前提知識-2025年11月-ignite-の大改編">前提知識: 2025年11月(Ignite)の大改編</h2>
+<p>調査の前提として、以下の再編を把握しておく必要があります(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry">What is Microsoft Foundry?</a>、<a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/navigate-from-classic">新旧ナビゲーションガイド</a>)。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>観点</th>
+<th>旧</th>
+<th>現行</th>
+</tr></thead><tbody>
+<tr>
+<td>ブランド</td>
+<td>Azure AI Studio / Azure AI Foundry</td>
+<td><strong>Microsoft Foundry</strong></td>
+</tr>
+<tr>
+<td>ブランド</td>
+<td>Azure AI Services</td>
+<td><strong>Foundry Tools</strong></td>
+</tr>
+<tr>
+<td>ポータル</td>
+<td>Foundry (classic)(ハブベースプロジェクト)</td>
+<td><strong>Foundry ポータル(新)= GA</strong>(Foundry プロジェクト)</td>
+</tr>
+<tr>
+<td>ドキュメント</td>
+<td>/azure/ai-foundry/</td>
+<td><strong>/azure/foundry/</strong>(新)+ /azure/foundry-classic/(旧)</td>
+</tr>
+<tr>
+<td>エージェント API</td>
+<td>Assistants API(Agents v0.5/v1)</td>
+<td><strong>Responses API(Agents v2)</strong></td>
+</tr>
+<tr>
+<td>API バージョニング</td>
+<td>月次 <code>api-version</code></td>
+<td><strong>v1 安定ルート(<code>/openai/v1/</code>)</strong></td>
+</tr>
+<tr>
+<td>リソースモデル</td>
+<td>Hub + Azure OpenAI + AI Services</td>
+<td><strong>Foundry リソース</strong>(単一。ARM 上は <code>Microsoft.CognitiveServices/accounts</code> を継続)</td>
+</tr>
+<tr>
+<td>SDK</td>
+<td><code>azure-ai-inference</code> 等 複数パッケージ</td>
+<td><strong><code>azure-ai-projects</code> 2.x + <code>openai</code></strong> を単一プロジェクトエンドポイントへ</td>
+</tr>
+<tr>
+<td>用語</td>
+<td>Threads / Messages / Runs / Assistants</td>
+<td><strong>Conversations / Items / Responses / Agent Versions</strong></td>
+</tr>
+</tbody></table></div>
+<h2 id="ステータス凡例">ステータス凡例</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>表記</th>
+<th>意味</th>
+</tr></thead><tbody>
+<tr>
+<td><span class="badge ga">GA</span></td>
+<td>一般提供(General Availability)。SLA・サポート対象</td>
+</tr>
+<tr>
+<td><span class="badge preview">パブリックプレビュー</span></td>
+<td>公開プレビュー。SLA なし・仕様変更あり得る。本番利用は原則非推奨</td>
+</tr>
+<tr>
+<td><span class="badge private">限定プレビュー</span></td>
+<td>申請制・招待制のプレビュー(limited access / gated)</td>
+</tr>
+<tr>
+<td><span class="badge deprecated">非推奨</span></td>
+<td>Deprecated。廃止日が予告されている(新規利用を避ける)</td>
+</tr>
+<tr>
+<td><span class="badge retired">廃止</span></td>
+<td>Retired。利用不可</td>
+</tr>
+<tr>
+<td><span class="badge unknown">要確認</span></td>
+<td>公式ページ上にライフサイクル明記が見つからなかったもの(確認した URL を併記)</td>
+</tr>
+</tbody></table></div>
+<p><strong>注意:</strong> 公式ドキュメント間でステータス表記が揺れている機能があります(例: Trace Replay、hosted agents、Claude モデルのライフサイクル)。その場合は両方の出典を併記しています。最も体系的な一次情報は <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA(GA/プレビュー一覧表)</a> です。</p>
+<h2 id="カテゴリ別ドキュメント">カテゴリ別ドキュメント</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>ドキュメント</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>01</td>
+<td><a href="01-platform-projects.html">プラットフォーム基盤・プロジェクト</a></td>
+<td>Foundry リソース、プロジェクト(新旧)、ポータル、コントロールプレーン、RBAC、ネットワーク、CMK、Azure Policy、接続、IaC</td>
+</tr>
+<tr>
+<td>02</td>
+<td><a href="02-models.html">Foundry Models(モデル)</a></td>
+<td>モデルカタログ、モデルファミリ別提供状況(OpenAI / Claude / Grok / DeepSeek 等)、デプロイタイプ、Model router、ライフサイクル、ファインチューニング、Foundry Local</td>
+</tr>
+<tr>
+<td>03</td>
+<td><a href="03-agent-service.html">Foundry Agent Service</a></td>
+<td>Agents v2(Responses API)、prompt/hosted エージェント、ワークフロー、Memory、Routines、A2A、M365/Teams 公開、廃止スケジュール</td>
+</tr>
+<tr>
+<td>04</td>
+<td><a href="04-tools-knowledge.html">エージェントツール・ナレッジ(RAG)</a></td>
+<td>ツールカタログ、File Search、AI Search、Web search、MCP、Toolbox、Work IQ / Fabric IQ、Foundry IQ(ナレッジベース)</td>
+</tr>
+<tr>
+<td>05</td>
+<td><a href="05-observability-evaluation.html">オブザーバビリティ・評価</a></td>
+<td>トレーシング、Trace Replay、評価(評価器・クラウド評価・継続的評価)、AI Red Teaming、モニタリング、Purview / Defender 連携</td>
+</tr>
+<tr>
+<td>06</td>
+<td><a href="06-safety-guardrails.html">安全性・ガードレール</a></td>
+<td>Guardrails and controls 枠組み、コンテンツフィルター、Prompt Shields、Groundedness、PII、Task adherence、ブロックリスト</td>
+</tr>
+<tr>
+<td>07</td>
+<td><a href="07-foundry-tools.html">Foundry Tools(旧 Azure AI Services)</a></td>
+<td>Speech(Voice Live)、Language、Translator、Vision / Face、Document Intelligence、Content Understanding の Foundry 統合状況</td>
+</tr>
+<tr>
+<td>08</td>
+<td><a href="08-developer-experience.html">開発者サーフェス(SDK / CLI / API)</a></td>
+<td>v1 API、各言語 SDK、Azure CLI / azd 拡張、Bicep / Terraform、VS Code 拡張、Foundry MCP Server、Microsoft Agent Framework、LangGraph 統合</td>
+</tr>
+</tbody></table></div>
+<h2 id="ハイライト-si-選定観点の要点">ハイライト(SI 選定観点の要点)</h2>
+<ul>
+<li><strong>新ポータルは GA、ただし機能単位で GA / プレビューが混在。</strong> <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a> の表が唯一の体系的な一覧。Operate(コントロールプレーン)の大半・Monitoring・Workflows・Memory 等はプレビュー継続。</li>
+<li><strong>Agent Service はサービスとして GA</strong>(Responses API ベースの v2)。ただし hosted agents は 2026-08-20 に初期プレビュー基盤のサポート終了(再デプロイ必要)、ビジュアル Workflows は<strong>プレビューのまま 2026-12-01 廃止</strong>で Microsoft Agent Framework へ誘導、という「GA だが足元が動いている」状態。</li>
+<li><strong>ハブベースプロジェクト(classic)は廃止日未発表のレガシー扱い。</strong> 新規投資は Foundry プロジェクトに集中と明言。ただし prompt flow・マネージドコンピュート・serverless API デプロイ等は classic にしか残っていない。</li>
+<li><strong>CLI は一級市民ではない。</strong> 専用の <code>az foundry</code> は存在せず、リソース管理は <code>az cognitiveservices</code>(GA)、エージェント開発は azd 拡張(プレビュー)、それ以外の多くの機能は「ポータル + SDK/REST のみ」でドキュメントに CLI 手順がない。</li>
+<li><strong>Claude(Anthropic)が 2026 年に本格参入。</strong> 「Hosted on Azure」形態の claude-opus-5 / sonnet-5 等は GA + Data Zone (US) 対応。ただし Anthropic SDK + Marketplace 課金 + Foundry 組み込みコンテンツフィルター非適用という独自制約あり。</li>
+<li><strong>確定済みの廃止日程が多数</strong>(下表)。移行設計を伴う提案では必読。</li>
+</ul>
+<h2 id="重要期限-廃止・移行スケジュール">重要期限(廃止・移行スケジュール)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>期限</th>
+<th>対象</th>
+<th>影響・移行先</th>
+<th>出典</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-08-20</td>
+<td>Hosted agents 初期プレビュー基盤</td>
+<td>サポート終了。新基盤へ再デプロイ必須</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-hosted-agent-preview" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-hosted-agent-preview">migrate-hosted-agent-preview</a></td>
+</tr>
+<tr>
+<td>2026-08-26</td>
+<td>Assistants API(Azure OpenAI)</td>
+<td><span class="badge retired">廃止</span>。Responses API(Agents v2)へ移行</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/assistants" title="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/assistants">assistants</a></td>
+</tr>
+<tr>
+<td>2026-08-26</td>
+<td><code>azure-ai-inference</code> SDK</td>
+<td><span class="badge retired">廃止</span>(beta のまま GA せず終了)。OpenAI SDK + v1 API へ移行。※一部ページに 2026-05-30 表記もあり要再確認</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/foundry-models/supported-languages" title="https://learn.microsoft.com/en-us/azure/foundry-classic/foundry-models/supported-languages">supported-languages</a></td>
+</tr>
+<tr>
+<td>2026-12-01</td>
+<td>ビジュアル Workflows(マルチエージェント)</td>
+<td><span class="badge retired">廃止</span>。Microsoft Agent Framework / Logic Apps / A2A へ移行</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/workflow" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/workflow">workflow</a></td>
+</tr>
+<tr>
+<td>2027-03-31</td>
+<td>Agents (classic)(v1、Threads/Runs)</td>
+<td><span class="badge retired">廃止</span>。Agents v2 へ移行(状態データは自動移行されない)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/agents/whats-new" title="https://learn.microsoft.com/en-us/azure/foundry-classic/agents/whats-new">whats-new</a></td>
+</tr>
+<tr>
+<td>2026-10-01 前後</td>
+<td>gpt-4o / o1 / o3 / o4-mini 等の旧モデル群</td>
+<td>リタイア(詳細は <a href="02-models.html">02-models</a>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule">model-retirement-schedule</a></td>
+</tr>
+<tr>
+<td>2028-09-25</td>
+<td>Azure AI Vision Image Analysis 4.0/3.2</td>
+<td><span class="badge retired">廃止</span>。Document Intelligence / Content Understanding / Foundry Models へ移行</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview">overview</a></td>
+</tr>
+</tbody></table></div>
+<h2 id="更新運用ガイド-定期更新の手順">更新運用ガイド(定期更新の手順)</h2>
+<p><strong>推奨頻度:</strong> 月1回(Microsoft の What's new が月次更新のため)。Ignite(11月)・Build(5月)直後は必ず更新。</p>
+<ol>
+<li><strong>一次情報の差分確認</strong>(下記ウォッチリストを上から順に)</li>
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/azure/foundry/whats-new-foundry">What's new in Microsoft Foundry</a> — 月次の新機能・ステータス変更</li>
+<li><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA(GA/プレビュー一覧)</a> — 機能別ステータスの最重要ページ</li>
+<li><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule">Model retirement schedule</a> — モデルのリタイア日</li>
+<li><a href="https://devblogs.microsoft.com/foundry/">Microsoft Foundry Blog</a> — 発表の背景・詳細</li>
+<li><a href="https://learn.microsoft.com/en-us/azure/foundry/reference/region-support">リージョン別 feature availability</a></li>
+</ul>
+<li><strong>各カテゴリ MD の該当行を更新</strong>(ステータス変更・新機能追加・廃止済み行の整理)。出典 URL も再確認し、リンク切れ(ドキュメント再編)があれば新 URL に差し替える。</li>
+<li><strong>各ページ冒頭の「最終更新」日付を更新</strong>し、本ページの更新履歴に1行追記する。</li>
+<li><strong>HTML を再生成:</strong> リポジトリルートで <code>python3 docs/survey/features/tools/md2html.py</code> を実行。</li>
+<li>生成 AI に更新作業を依頼する場合は、本ページと対象カテゴリ MD を読ませた上で「出典 URL を WebFetch で再確認し、ステータス変化のみ差分更新。推測でステータスを書かない」ことを指示する。</li>
+</ol>
+<h2 id="更新履歴">更新履歴</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-07-29</td>
+<td>初版作成(全8カテゴリ、learn.microsoft.com 現行ページを確認)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

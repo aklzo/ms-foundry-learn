@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05. ユースケース編 B — 業務自動化・マルチエージェント・基幹システム連携</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html" class="current">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="05-ユースケース編-b-業務自動化・マルチエージェント・基幹システム連携">05. ユースケース編 B — 業務自動化・マルチエージェント・基幹システム連携</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#b1-単一エージェント-基幹-api-参照系中心">B1. 単一エージェント + 基幹 API(参照系中心)</a></li><li><a href="#b2-承認付き業務自動化-hitl">B2. 承認付き業務自動化(HITL)</a></li><li><a href="#b3-長時間・確実な再開が要る業務プロセス">B3. 長時間・確実な再開が要る業務プロセス</a></li><li><a href="#b4-マルチエージェント-専門分化">B4. マルチエージェント(専門分化)</a></li><li><a href="#b5-業務フローエンジン主導-logic-apps-copilot-studio">B5. 業務フローエンジン主導(Logic Apps / Copilot Studio)</a></li><li><a href="#オーケストレーション方式の比較">オーケストレーション方式の比較</a></li><li><a href="#決定表">決定表</a></li><li><a href="#定期実行・イベント駆動をどうするか">定期実行・イベント駆動をどうするか</a></li><li><a href="#このパターン特有のチェックリスト">このパターン特有のチェックリスト</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<p>「検索して答える」で終わらず、<strong>エージェントが業務システムに対して実際にアクションを起こす</strong>類型。RAG チャットとの決定的な違いは、<strong>誤動作が実世界に不可逆な影響を与えうる</strong>ことで、そのため承認・監査・冪等性・権限の設計が主題になる。</p>
+<p>WAF が明示している通り:</p>
+<blockquote><p>Tools layer のアクションは実世界に、場合によっては<strong>不可逆な</strong>結果をもたらす。<strong>高リスク操作には人間の承認ステップを追加せよ。</strong>統合前にすべてのツールを評価し、ガバナンスをワークロード境界の外まで拡張せよ。</p></blockquote>
+<h2 id="パターン一覧">パターン一覧</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>パターン</th>
+<th>オーケストレーション</th>
+<th>決め手になる要件</th>
+</tr></thead><tbody>
+<tr>
+<td>B1</td>
+<td>単一エージェント + 基幹 API 呼び出し</td>
+<td>Prompt agent + Toolbox</td>
+<td>参照系中心。更新は限定的</td>
+</tr>
+<tr>
+<td>B2</td>
+<td><strong>承認付き業務自動化(HITL)</strong></td>
+<td><strong>MAF hosted agent</strong></td>
+<td>「担当者が承認してから実行」</td>
+</tr>
+<tr>
+<td>B3</td>
+<td>長時間・確実な再開が要る業務プロセス</td>
+<td><strong>MAF + Durable Extension + DTS</strong></td>
+<td>数時間〜数日停止して再開</td>
+</tr>
+<tr>
+<td>B4</td>
+<td>マルチエージェント(専門分化)</td>
+<td>MAF workflows / A2A</td>
+<td>領域ごとにプロンプト・権限を分けたい</td>
+</tr>
+<tr>
+<td>B5</td>
+<td>業務フローエンジン主導</td>
+<td>Logic Apps / Copilot Studio</td>
+<td>業務部門がビジュアルで保守</td>
+</tr>
+</tbody></table></div>
+<p><strong>まず複雑度の段階を選ぶ</strong>(公式の AI Agent Orchestration Patterns より):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>レベル</th>
+<th>使う条件</th>
+</tr></thead><tbody>
+<tr>
+<td>Direct model call</td>
+<td>分類・要約・翻訳などの単発タスク。「<strong>プロンプトエンジニアリングで解けるならエージェントは要らない</strong>」</td>
+</tr>
+<tr>
+<td><strong>Single agent with tools</strong></td>
+<td><strong>「エンタープライズユースケースではしばしばこれが正しい既定」</strong></td>
+</tr>
+<tr>
+<td>Multiagent orchestration</td>
+<td>部門横断、<strong>エージェントごとに異なるセキュリティ境界が必要</strong>、並列特化が有利</td>
+</tr>
+</tbody></table></div>
+<p><strong>この順序を飛ばさない。</strong>WAF も「タスクとモデル呼び出しの間に自動的にエージェントを挟むな。エージェント層はレイテンシを増やし、攻撃面を広げ、テストを複雑にする」と警告している。</p>
+<hr>
+<h2 id="b1-単一エージェント-基幹-api-参照系中心">B1. 単一エージェント + 基幹 API(参照系中心)</h2>
+<p><strong>想定:</strong> 在庫照会、受発注状況の確認、顧客情報の参照。更新は限定的か、行っても低リスク。</p>
+<pre><code> [ユーザー(Teams / 自社ポータル)]
+        │ Entra ID
+        ▼
+ [Foundry: Prompt agent]
+        │
+        ▼
+ [Toolbox]  ← 単一の MCP 互換エンドポイント。バージョニングと集中認証
+    ├ OpenAPI ツール ──&gt; 基幹 API(社内 APIM 経由)
+    ├ MCP ツール ─────&gt; SaaS(ServiceNow / Salesforce 等)
+    ├ Azure Functions ─&gt; 独自ロジック(standard セットアップ必須)
+    └ AI Search ─────&gt; 手順書・マスタ定義のグラウンディング</code></pre>
+<h3 id="ツール接続の選択肢と制約">ツール接続の選択肢と制約</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>方式</th>
+<th>認証</th>
+<th>制約</th>
+</tr></thead><tbody>
+<tr>
+<td>OpenAPI ツール(GA)</td>
+<td>anonymous / API キー / マネージド ID</td>
+<td>API キーは 1 スキーム / ツール</td>
+</tr>
+<tr>
+<td>MCP ツール(GA)</td>
+<td>キー / Entra(agent MI・project MI)/ <strong>OAuth ID パススルー(OBO)</strong></td>
+<td>長時間実行はプレビュー</td>
+</tr>
+<tr>
+<td>Azure Functions(GA)</td>
+<td>キュー経由</td>
+<td><strong>standard セットアップのみ(basic 不可)</strong></td>
+</tr>
+<tr>
+<td>Logic Apps コネクタ → MCP 変換(プレビュー)</td>
+<td>コネクタ依存</td>
+<td>1 コネクタ / ツール、<strong>OAuth 2.0 コネクタ非対応</strong>、マネージドコネクタのみ</td>
+</tr>
+</tbody></table></div>
+<p><strong>公式の推奨:</strong> 「迷ったら Microsoft Entra 認証から始めよ。」</p>
+<p><strong>Toolbox を挟む理由:</strong> ツール束を一度定義して単一の MCP 互換エンドポイントとして公開でき、バージョニング(バージョン別エンドポイントでテストしてから default に昇格)と集中認証(資格情報の注入・トークン更新・ポリシー適用)を担う。<strong>任意の MCP 対応ランタイム(MAF / LangGraph / GitHub Copilot SDK / 自作)から同じツール群を消費できる</strong>ため、後でオーケストレーションを載せ替えてもツール層が生き残る。</p>
+<blockquote><p><strong>⚠ Hosted agent はツールを直付けできない。</strong>「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」と明記され、<code>create_version</code> の <code>tools</code> パラメータは削除済み。<strong>コードファーストに進む予定があるなら、最初から Toolbox 前提で組む。</strong></p></blockquote>
+<p><strong>実行時のツール上書き:</strong> <code>mcp.server_label</code> / <code>server_url</code> / <code>headers</code>、<code>file_search.vector_store_ids</code> などはリクエスト単位で差し替えられる。<strong>dev/stg/prod で同じエージェント定義を使い回す、テナントごとにナレッジを切り替える</strong>といった構成がバージョンを増やさずに組める。</p>
+<h3 id="認可の設計-このパターンの本命">認可の設計(このパターンの本命)</h3>
+<p><strong>「エージェントのマネージド ID で叩く(app-only)」か「ログインユーザーの権限で叩く(OBO)」か</strong>で、監査要件の満たし方が変わる。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>パターン</th>
+<th>フロー</th>
+<th>権限の源泉</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Attended(OBO / 委任アクセス)</strong></td>
+<td>ユーザーがアプリに認証 → アプリがユーザートークンを Agent Service に渡す → 「エージェント ID + ユーザーの委任権限」を持つトークンに交換</td>
+<td><strong>ユーザーが同意し認可されているリソースにしかアクセスできない</strong></td>
+</tr>
+<tr>
+<td><strong>Unattended(アプリケーション専用)</strong></td>
+<td>blueprint を Entra に認証 → agent identity のトークン取得 → ダウンストリーム向けスコープ付きトークン</td>
+<td>エージェント自身の RBAC のみ。人間は不在</td>
+</tr>
+</tbody></table></div>
+<p><strong>Entra Agent ID は GA。</strong>プロジェクトで最初のエージェントを作った時点で既定の blueprint と agent identity がプロビジョニングされる。</p>
+<p><strong>⚠ 実装で詰まりやすい 3 点:</strong></p>
+<ol>
+<li><strong>未公開エージェントはプロジェクト内で共通の ID を共有し、publish すると専用の agent identity が作られる。</strong>このとき <code>agentIdentityId</code> が変わるため、<strong>RBAC を再割り当てする必要がある</strong>(共有 ID のロールは引き継がれない)。</li>
+<li><strong>RBAC を割り当てるべきプリンシパルは agent identity であって、プロジェクトのマネージド ID ではない。</strong>プロジェクト MI はインフラ操作用(ACR pull 等)であってランタイム ID ではない。</li>
+<li><strong>audience は「MCP サーバーの URL」ではなく「ダウンストリームサービスのリソース識別子」</strong>(例: Storage なら <code>https://storage.azure.com</code>)。<strong>間違えると RBAC が正しくても認証に失敗する。</strong></li>
+</ol>
+<p><strong>エージェント単位 RBAC</strong> も使える(スコープ URI は <code>.../projects/&lt;project&gt;/agents/&lt;agentName&gt;</code>)。ただし<strong>現時点ではエージェントエンドポイントへのアクセスにのみ評価され</strong>、より広いコントロールプレーン権限は付与しない。エンドユーザーには <code>Foundry Agent Consumer</code> をエージェントスコープで割り当てるのが公式のペルソナ例。</p>
+<p><strong>本番の資格情報:</strong> blueprint の資格情報はクライアントシークレット / 証明書 / <strong>フェデレーテッド資格情報(マネージド ID)</strong> の 3 種で、<strong>本番はフェデレーテッド一択</strong>(シークレットを保存しない、Azure が自動ローテーション)。公式も「本番でクライアントシークレットを blueprint の資格情報に使うな」と明示的に警告している。</p>
+<h3 id="更新系を入れるときの必須事項">更新系を入れるときの必須事項</h3>
+<ul>
+<li><strong>冪等性。</strong>エージェントはリトライされうるし、非決定的に同じツールを 2 回呼ぶこともある。<strong>更新系 API には冪等キーを持たせる。</strong></li>
+<li><strong>金額・権限・件数の上限チェックをツール側に置く。</strong>プロンプトで「10 万円以上は承認を取れ」と書くのは統制ではない。</li>
+<li><strong>ガードレールの Tool call / Tool response 介入点</strong>を設定する(<strong>プレビュー</strong>)。<strong>エージェントに明示割当したガードレールは基盤モデル側の設定を完全に上書きする</strong>ため、Tool 系のコントロールを置き忘れるとその経路が未スキャンになる。</li>
+</ul>
+<hr>
+<h2 id="b2-承認付き業務自動化-hitl">B2. 承認付き業務自動化(HITL)</h2>
+<p><strong>想定:</strong> 「エージェントが調査して実行案を提示 → 担当者が承認 → 実行 → 監査ログ」。SI で最頻出のパターン。</p>
+<p><strong>この要件が入った時点で Prompt agent では足りない。</strong>分岐・承認待ち・再開の明示制御が要るため、コードファーストに上がる。</p>
+<pre><code> [業務画面 / Teams]
+        │
+        ▼
+ [Foundry Hosted agent(MAF、Responses プロトコル)]
+   ┌──────────────────────────────────────────┐
+   │ MAF Workflow(グラフ)                     │
+   │   [トリアージ] → [調査(RAG)] → [実行案生成] │
+   │                        │                  │
+   │                 [RequestInfoExecutor]     │ ← HITL。外部への問い合わせで停止
+   │                        │                  │
+   │                 承認 ──┴── 却下 → 終了     │
+   │                        ▼                  │
+   │                   [実行(ツール)] → [監査記録] │
+   └──────────────────────────────────────────┘
+        │ Toolbox(MCP)
+        ▼
+ [基幹システム / Logic Apps コネクタ / 社内 MCP(APIM 経由)]</code></pre>
+<p><strong>MAF が提供するもの:</strong></p>
+<ul>
+<li><strong>Type Safety</strong> — メッセージ型の検証で実行時エラーを防ぐ</li>
+<li><strong>Flexible Control Flow</strong> — executors と edges のグラフ。条件ルーティング、並列処理、動的パス</li>
+<li><strong>External Integration</strong> — request/response パターンで外部 API 連携と <strong>HITL</strong>(<code>RequestInfoExecutor</code> / <code>ctx.request_info()</code>)</li>
+<li><strong>Checkpointing</strong> — 「チェックポイントでワークフロー状態を保存し、長時間プロセスの回復と再開を可能にする」(Graph API では <strong>superstep 境界</strong>でチェックポイント)</li>
+<li><strong>Multi-Agent Orchestration</strong> — sequential / concurrent / hand-off / magentic の組込みパターン</li>
+</ul>
+<p><strong>API は 2 種類ある。</strong>Graph API(<code>WorkflowBuilder</code>)が「完全サポート」で、Functional API(<code>@workflow</code>、Python)は <strong>experimental</strong> と明記されている。<strong>本番は Graph API。</strong></p>
+<p><strong>ホスティングの選択:</strong> Hosted agent(Foundry が実行)か Container Apps / AKS(自分で実行)か。<strong>Hosted agent はセッション単位のスケールで、アイドル 15 分で計算をデプロビジョンし状態は保持、30 日無活動で恒久削除。</strong>課金はアクティブな全セッションの CPU + メモリ合計で、サイズは 0.5vCPU/1GiB・1vCPU/2GiB・2vCPU/4GiB の 3 種のみ。<strong>オーバーサイジングは同時実行数の倍率でコストに効く。</strong></p>
+<p><strong>⚠ Hosted agent を選んだ場合の可観測性の利点:</strong> App Insights の接続文字列が自動注入され、プロトコルライブラリが <strong>OpenTelemetry トレースを既定で出力する。</strong>逆に自前オーケストレーション(App Service / ACA)にすると、<strong>エージェントのメトリクスは Foundry のダッシュボードに出ない</strong>(Foundry はマネージドエージェントしか見えない)。</p>
+<p><strong>承認の「待ち時間」が問題になる場合:</strong> Hosted agent のアイドル 15 分は<strong>計算のデプロビジョンであって状態の消失ではない</strong>が、承認が数日にわたるなら B3(Durable)に上げる。</p>
+<h3 id="監査ログの設計">監査ログの設計</h3>
+<p>Foundry の Tracing だけに依存しない。理由は 3 つ。</p>
+<ol>
+<li><strong>Tracing はネットワーク分離に未対応</strong>(プライベート App Insights での VNet サポートが未提供)。</li>
+<li>ポータルで見られるのは<strong>直近 90 日</strong>。それ以上は App Insights / Log Analytics の保持設定に従う。</li>
+<li>トレースは<strong>プロンプト・出力・ツール引数を含みうる</strong>ため、そのまま法定監査ログにすると機微情報の扱いが問題になる(公式も「テレメトリ到達前にマスクせよ」と推奨している)。</li>
+</ol>
+<p><strong>業務監査ログはアプリ側に別途持つ</strong>(誰が・いつ・何を承認し・どのパラメータで実行されたか)。MAF のミドルウェアで実行パイプラインに差し込むのが自然。</p>
+<hr>
+<h2 id="b3-長時間・確実な再開が要る業務プロセス">B3. 長時間・確実な再開が要る業務プロセス</h2>
+<p><strong>想定:</strong> 承認が数時間〜数日かかる、外部システムのバッチ完了を待つ、途中で失敗したステップだけ再開したい。</p>
+<p><strong>「MAF では長時間処理が無理だから LangGraph へ」と結論する前に、Durable Extension を確認する。</strong></p>
+<p><strong>Durable Extension for MAF</strong> はエージェント / マルチエージェントオーケストレーション / MAF workflows に<strong>耐久実行</strong>を付与する。エージェントセッションの永続化、進捗チェックポイント、障害回復、分散ホスト間スケールを、<strong>コアのエージェントロジックを変更せずに</strong>適用できる。MAF workflows については「グラフの各ステップを自動的にチェックポイントし、<strong>ワークフロー定義を変更せずに</strong>障害から回復する」と明記されている。</p>
+<p><strong>ホスティングモデルは 2 つ:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>モデル</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Azure Functions</strong></td>
+<td>マネージド・サーバーレス。スケールアウトと scale-to-zero、Functions のトリガー / バインディング、HTTP エンドポイント自動生成、<strong>MCP server trigger</strong></td>
+</tr>
+<tr>
+<td><strong>Bring-your-own-compute</strong></td>
+<td>自前ワーカープロセス、サービス、コンテナ、Kubernetes、既存アプリ基盤</td>
+</tr>
+</tbody></table></div>
+<p><strong>バックエンドは Durable Task Scheduler (DTS) が推奨</strong>(最高性能、フルマネージド、<strong>UI ダッシュボードによる組込みの可観測性</strong>)。DTS ダッシュボードでは agent session insights(会話履歴)と orchestration insights を可視化でき、<strong>ローカル開発用のエミュレータもある</strong>ため CI でのテストがしやすい。</p>
+<p><strong>ステートフルなエージェントスレッド:</strong> thread ID ごとに会話履歴全体を耐久ストレージに保持し、プロセス再起動や別インスタンスでの再開でも保持される。</p>
+<p><strong>注意:</strong> 分散ホストで<strong>信頼性のあるストリーミング</strong>を行うには Redis 等の reliable stream broker が別途必要。また、<strong>Hosted agent の中から DTS を使う公式パターンは本調査では確認できなかった</strong> — Durable を使うなら Functions か自前コンピュートにホストする構成が確実。</p>
+<p><strong>代替案としての Logic Apps / Durable Functions 単体:</strong> 「AI は業務フローの 1 ステップにすぎず、承認・長時間待機・既存業務フロー統合が主役」ならこちら(→ B5)。</p>
+<hr>
+<h2 id="b4-マルチエージェント-専門分化">B4. マルチエージェント(専門分化)</h2>
+<p><strong>まず「本当に必要か」を問う。</strong>多くの案件は単一エージェント + 複数ツールで足りる。マルチエージェントが要るのは「担当領域ごとにプロンプト・ナレッジ・<strong>権限</strong>を分けたい」「並列に調査させたい」場合。</p>
+<h3 id="ポータルのビジュアル-workflows-は選択肢から外れた">⚠ ポータルのビジュアル Workflows は選択肢から外れた</h3>
+<p><strong>2026-12-01 に廃止。</strong>「デザイナーとポータル内でのワークフロー実行はサポートされなくなるが、<strong>YAML ベースのワークフロー定義は hosted agent としてデプロイすれば実行を継続する</strong>」。さらに GA 一覧の rollout pitfalls に「<strong>Workflows に新しい本番依存を作ること</strong>」が明記されている。</p>
+<p><strong>移行先は 3 つ:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>やりたいこと</th>
+<th>移行先</th>
+</tr></thead><tbody>
+<tr>
+<td>コードファーストに移す</td>
+<td><strong>Microsoft Agent Framework(推奨)。</strong>エクスポートした YAML を宣言的ワークフローとしてほぼそのまま持ち込める</td>
+</tr>
+<tr>
+<td>ビジュアルデザイナーを維持したい</td>
+<td><strong>Azure Logic Apps。</strong>決定論的ステップと Foundry エージェントの確率的推論を同一実行内で混在させられる</td>
+</tr>
+<tr>
+<td>1 エージェントが別エージェントを呼ぶだけ</td>
+<td><strong>A2A</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>廃止前にやるべきこと:</strong> <strong>YAML ビューに切り替えて定義をエクスポートする</strong>(デザイナーが消える前に)。</p>
+<p><strong>Connected agents について:</strong> 新 Foundry 側のドキュメントが見当たらず classic 側にのみ存在するため、<strong>新ポータルでの GA / プレビュー位置づけが不明瞭。</strong>移行ガイドは A2A ツールを推奨している。<strong>新規設計では A2A か MAF に寄せるのが安全。</strong></p>
+<h3 id="5-つのオーケストレーションパターン">5 つのオーケストレーションパターン</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>パターン</th>
+<th>ルーティング</th>
+<th>適する対象</th>
+<th>注意点</th>
+</tr></thead><tbody>
+<tr>
+<td>Sequential</td>
+<td>決定的・事前定義順</td>
+<td>段階的な品質向上、明確な依存関係</td>
+<td>前段の失敗が伝播、並列性なし</td>
+</tr>
+<tr>
+<td>Concurrent</td>
+<td>決定的 or 動的選択</td>
+<td>複数視点の独立分析、レイテンシ重視</td>
+<td>結果矛盾時の解決が必要、リソース消費大</td>
+</tr>
+<tr>
+<td>Group chat</td>
+<td>chat manager がターン制御</td>
+<td>合意形成、maker-checker 検証</td>
+<td>会話ループ、多数エージェントで制御困難</td>
+</tr>
+<tr>
+<td>Handoff</td>
+<td>エージェントが移譲を判断</td>
+<td>適切な専門家が処理中に判明する場合</td>
+<td><strong>無限 handoff ループ</strong>、経路が予測不能</td>
+</tr>
+<tr>
+<td>Magentic</td>
+<td>manager が task ledger を動的に構築</td>
+<td>解法が事前に定まらない open-ended 問題</td>
+<td>収束が遅い、曖昧なゴールで停滞</td>
+</tr>
+</tbody></table></div>
+<p><strong>MAF は 5 パターンすべてを組込みでサポートする。</strong>一方 Foundry Agent Service は「ワークフローが主に非決定的で、<strong>完全に実装できるパターンの範囲が限られる</strong>」と明記されている。</p>
+<p><strong>アンチパターン(公式列挙):</strong> 単純な sequential / concurrent で足りるのに複雑なパターンを使う / 意味ある特化のないエージェント追加 / 多段ホップのレイテンシ軽視 / <strong>並列エージェント間で可変状態を共有(トランザクション不整合)</strong> / <strong>本質的に非決定的なワークフローに決定的パターンを使う(およびその逆)</strong> / コンテキストウィンドウ肥大によるモデルリソースの過剰消費。</p>
+<h3 id="セキュリティ上の必須事項">セキュリティ上の必須事項</h3>
+<blockquote><p>エージェントは全ユーザーの要求を扱うためナレッジストアへの広いアクセスを持たざるを得ないが、<strong>ユーザーがアクセスできないデータを返してはならない。セキュリティトリミングはパターン内のすべてのエージェントで実装しなければならない。</strong></p></blockquote>
+<p><strong>1 プロジェクト内の全 prompt agent は同一マネージド ID を共有する。</strong>アクセスパターンが異なるならプロジェクトを分ける。<strong>hosted agent は個別の Entra Agent ID を持つ</strong>ので、プロジェクトを分けずに per-agent の権限と監査ができる — <strong>マルチエージェントで権限を分けたいなら hosted agent が有利。</strong></p>
+<h3 id="a2a-を使う場合の制約-プレビュー">A2A を使う場合の制約(プレビュー)</h3>
+<ul>
+<li><strong>Prompt agent は既定で A2A エンドポイントを公開できる。Hosted agent は Responses プロトコルを実装している場合のみ。</strong></li>
+<li>プロトコル v1.0 と v0.3 の両方をサポートし、<strong>バージョン未指定時は既定で v0.3。</strong></li>
+<li><strong>ポータル未対応</strong>(REST または Python SDK のみ)。agent card 設定は REST のみ。</li>
+<li><strong>Entra ID 認証必須</strong>(キー認証・匿名アクセス不可)。呼び出し側に <code>Foundry Agent Consumer</code> ロール以上が必要。</li>
+<li><strong>制限が厳しい:</strong> テキストモダリティのみ(ファイル等不可)、<strong>ストリーミング(SSE)非対応</strong>、v1.0 は JSONRPC のみ、gRPC 非対応、本番非推奨。</li>
+</ul>
+<p><strong>→ A2A は「組織をまたぐ疎結合な委譲」には筋が良いが、リッチな入出力やストリーミングが要るなら現時点では使えない。</strong></p>
+<h3 id="エージェント数が多い場合">エージェント数が多い場合</h3>
+<p>エージェントが数十〜数百になるなら、公式のソリューションアイデア「Dynamic AI Agents at Scale」が参考になる。AKS 上のオーケストレータ + <strong>AI Search をセマンティックキャッシュとして使い、ベクトル類似検索で候補エージェントを絞る</strong>(単一エージェントが信頼度閾値を超えれば orchestrator の LLM をバイパスして直接呼ぶ)+ Azure Managed Redis で会話コンテキストを TTL 管理、という構成。<strong>ただし「エージェントが 5 未満なら使うな」と明記されている。</strong></p>
+<hr>
+<h2 id="b5-業務フローエンジン主導-logic-apps-copilot-studio">B5. 業務フローエンジン主導(Logic Apps / Copilot Studio)</h2>
+<p><strong>想定:</strong> 業務部門がフローを保守したい。承認・通知・既存 SaaS 連携が処理の主役で、AI は判断の一部を担う。</p>
+<p><strong>Logic Apps の agent loop</strong> は 2 形態ある:</p>
+<ul>
+<li><strong>Autonomous agentic workflows</strong> — agent loop と LLM で反復的に判断・実行、人間の介入なし</li>
+<li><strong>Conversational agentic workflows</strong> — 対話型</li>
+</ul>
+<p><strong>Foundry Agent Service をモデルソースとして選択でき</strong>(マネージド ID 認証)、逆に <strong>Foundry エージェントから Logic Apps のワークフローをアクションとして呼ぶ</strong>こともできる。<strong>1,400+ のコネクタ</strong>をそのまま使えるのが最大の価値。</p>
+<p><strong>Copilot Studio との棲み分け:</strong> CAF は SaaS(Copilot Studio)vs PaaS(Foundry)として整理し、ハイブリッド運用も推奨している。ただし <strong>Copilot Studio から Foundry エージェントへの接続はプレビュー</strong>(新 Foundry ポータルで作成されたエージェントのみ接続可)。逆方向の <strong>Foundry エージェントを M365 Copilot / Teams に publish するフローは GA。</strong></p>
+<p><strong>採用モデルとしての位置づけ(CAF):</strong> 「Low-code SaaS 開発は業務部門に開発を開放できるが、<strong>重いカスタマイズは限界に達しマネージドプラットフォームへの移行が必要になる</strong>」。<strong>最初から複雑さが見えているなら Logic Apps / Copilot Studio で始めない。</strong></p>
+<hr>
+<h2 id="オーケストレーション方式の比較">オーケストレーション方式の比較</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>軸</th>
+<th>Prompt agent</th>
+<th>Hosted agent + MAF</th>
+<th>MAF + Durable</th>
+<th>Logic Apps</th>
+<th>自アプリ + Responses API</th>
+</tr></thead><tbody>
+<tr>
+<td>ステータス</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge ga">GA</span>(<strong>旧基盤は 2026-08-20 EOS</strong>)</td>
+<td><span class="badge ga">GA</span>(拡張単体の GA 表記は未確認)</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge ga">GA</span></td>
+</tr>
+<tr>
+<td>状態管理</td>
+<td>サービスが完全管理</td>
+<td>Responses ならプラットフォーム管理</td>
+<td><strong>thread ID 単位で耐久ストレージに全履歴</strong></td>
+<td>ワークフロー実行状態を保持</td>
+<td><strong>完全に自前</strong></td>
+</tr>
+<tr>
+<td>HITL</td>
+<td>ツール承認中心</td>
+<td><code>RequestInfoExecutor</code> を自コードで</td>
+<td><strong>HITL が組込みパターン</strong></td>
+<td>承認アクション多数</td>
+<td>自前実装</td>
+</tr>
+<tr>
+<td>長時間実行</td>
+<td><code>background: true</code> + ポーリング</td>
+<td>セッション最大 30 日。<strong>アイドル 15 分で計算停止</strong>(状態は保持)</td>
+<td><strong>チェックポイント・障害回復・分散スケール</strong></td>
+<td>Logic Apps ランタイム</td>
+<td>自前</td>
+</tr>
+<tr>
+<td>テスト容易性</td>
+<td>Playground 中心</td>
+<td><strong><code>azd ai agent run</code> でローカル実行可</strong></td>
+<td><strong>DTS エミュレータでローカル完結</strong></td>
+<td>デザイナー / テストキャンバス</td>
+<td>容易</td>
+</tr>
+<tr>
+<td>可搬性</td>
+<td>Foundry 固有</td>
+<td><strong>コードは可搬</strong>(ホスティングブリッジのみ Foundry 固有)</td>
+<td>Durable Task 依存</td>
+<td>Logic Apps 固有</td>
+<td>最も高い</td>
+</tr>
+<tr>
+<td>ネットワーク分離</td>
+<td>private networking 対応</td>
+<td><strong>BYO VNet。ただしエンドポイント自体は公開のまま</strong></td>
+<td>自前 VNet で完全制御</td>
+<td>ISE / VNet 統合</td>
+<td>自アプリ側で制御</td>
+</tr>
+<tr>
+<td>可観測性</td>
+<td>Foundry Tracing(GA)</td>
+<td>App Insights 自動注入 + OTel 既定出力</td>
+<td><strong>DTS ダッシュボード</strong></td>
+<td>Logic Apps 実行履歴</td>
+<td><strong>Foundry には出ない</strong></td>
+</tr>
+<tr>
+<td>コスト構造</td>
+<td>推論 + ツールのみ(<strong>コンピュート課金なし</strong>)</td>
+<td>+ セッション単位の CPU/メモリ</td>
+<td>Functions / DTS 課金</td>
+<td>Logic Apps 実行課金</td>
+<td>インフラ課金</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="決定表">決定表</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>状況</th>
+<th>選ぶもの</th>
+</tr></thead><tbody>
+<tr>
+<td>PoC / 社内ツール / 独自オーケストレーション不要</td>
+<td><strong>Prompt agent</strong>(GA、コンピュート課金なし、最速)</td>
+</tr>
+<tr>
+<td>業務ロジックをコードで書きたい / 既存フレームワーク資産あり</td>
+<td><strong>MAF でコードを書き Hosted agent としてデプロイ。</strong>Workflows 廃止の公式移行先で、Microsoft が最も投資している経路</td>
+</tr>
+<tr>
+<td>数時間〜数日の長時間プロセス、確実な再開が要件</td>
+<td><strong>MAF + Durable Extension + Durable Task Scheduler</strong></td>
+</tr>
+<tr>
+<td>ビジュアルデザイナーが業務要件(業務部門が触る)</td>
+<td><strong>Logic Apps</strong>。Copilot Studio は M365 業務エージェント向け</td>
+</tr>
+<tr>
+<td>LLM 生成コード / 顧客提供コードを実行</td>
+<td><strong>ACA Dynamic Sessions</strong>(Hyper-V 分離)。Foundry 内で完結させるなら Custom Code Interpreter(プレビュー)</td>
+</tr>
+<tr>
+<td>マルチクラウド / ロックイン回避が要件</td>
+<td><strong>自アプリ + Responses API</strong>、または MAF を Container Apps で自己ホスト</td>
+</tr>
+</tbody></table></div>
+<p><strong>現時点で最も安全な既定解</strong>は「<strong>Foundry には GA 済みの土台(ホスティング・ID・ツールゲートウェイ・可観測性)だけを任せ、オーケストレーションは GA 済みの MAF コードで持つ</strong>」構成。Foundry 側でプレビューのまま動いている機能(Workflows / Memory / Routines)に業務ロジックの中核を預けずに済む。</p>
+<pre><code> [クライアント / Teams / M365 Copilot]
+        │ Responses または Activity プロトコル
+        ▼
+ [Foundry Hosted agent]  ← MAF or LangGraph のコンテナ(Python / C#)
+   ├ モデル: Responses API(プロジェクトエンドポイント)
+   ├ ツール: Foundry Toolbox(単一 MCP エンドポイント / 集中認証 / バージョニング)
+   │    └ 背後: AI Search / OpenAPI / Azure Functions / 社内 MCP(APIM 経由)
+   ├ 長時間処理: Durable Extension + DTS(別ワーカー or Functions)
+   ├ 非信頼コード実行: ACA Dynamic Sessions
+   └ 可観測性: 自動注入の App Insights + OTel(GenAI セマンティック規約)</code></pre>
+<hr>
+<h2 id="定期実行・イベント駆動をどうするか">定期実行・イベント駆動をどうするか</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>適する場面</th>
+<th>制約</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Routines</strong>(プレビュー)</td>
+<td>「いつこのエージェントを走らせるか」だけを解きたい</td>
+<td><strong>1 トリガー + 1 アクション。</strong>トリガーは timer / recurring(cron 風)/ event(プレビューでは <code>github_issue</code> のみ)。<strong>マルチエージェント非対応。</strong>リージョン限定</td>
+</tr>
+<tr>
+<td>Logic Apps</td>
+<td>既存の業務トリガーと統合したい</td>
+<td>Logic Apps の課金と運用</td>
+</tr>
+<tr>
+<td>Azure Functions / Durable</td>
+<td>独自のトリガーロジックが要る</td>
+<td>自前実装</td>
+</tr>
+</tbody></table></div>
+<p>Routines の位置づけは公式に明快で、「<strong>Routines がなければ、チームはスケジューラ・Logic Apps・Azure Functions・キュー・カスタムストレージ・認証コードを組み合わせてこのトリガー層を自作することになる</strong>」。実行履歴(入力・出力・ステータス・トレースへのリンク)を Foundry プロジェクト内に保持する点も運用上の利点。<strong>ただしプレビューなので、本番の必須経路に置くなら代替を用意しておく。</strong></p>
+<hr>
+<h2 id="このパターン特有のチェックリスト">このパターン特有のチェックリスト</h2>
+<ul>
+<li>[ ] 更新系ツールに<strong>冪等キー</strong>を持たせたか</li>
+<li>[ ] 金額 / 権限 / 件数の上限チェックを<strong>ツール側</strong>(プロンプトではなく)に置いたか</li>
+<li>[ ] 高リスク操作に<strong>人間の承認ステップ</strong>を入れたか</li>
+<li>[ ] app-only と OBO のどちらで基幹を叩くか決め、監査要件と整合するか確認したか</li>
+<li>[ ] <strong>agent identity に RBAC を割り当てたか</strong>(プロジェクト MI ではなく)</li>
+<li>[ ] publish 時に <code>agentIdentityId</code> が変わることを運用手順に入れたか</li>
+<li>[ ] <strong>ガードレールの Tool call / Tool response 介入点</strong>を設定したか(未設定だとその経路が未スキャン)</li>
+<li>[ ] Hosted agent の<strong>セッションサイズをオーバーサイジングしていないか</strong>(同時実行数の倍率でコストに効く)</li>
+<li>[ ] <strong>2026-08-20 の hosted agent 旧基盤 EOS</strong> への対応が済んでいるか(<a href="10-migration-antipatterns.html">10 章</a>)</li>
+<li>[ ] <strong>2026-12-01 の Workflows 廃止</strong>を前提にした構成か</li>
+<li>[ ] 業務監査ログを Foundry の Tracing とは別にアプリ側で持ったか</li>
+<li>[ ] マルチエージェントなら<strong>すべてのエージェント</strong>にセキュリティトリミングを実装したか</li>
+<li>[ ] AI Red Teaming で <strong>Prohibited actions / Sensitive data leakage / Task adherence</strong> を検証したか(<strong>Function tool 呼び出し・Connected Agent・Computer Use は Red Teaming 非対応</strong>な点も認識)</li>
+</ul>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

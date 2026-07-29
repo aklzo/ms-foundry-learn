@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02. 構成要素カタログ — レイヤー別「Foundry 機能 vs 自前実装」の組合せ</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html" class="current">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="02-構成要素カタログ-レイヤー別-foundry-機能-vs-自前実装-の組合せ">02. 構成要素カタログ — レイヤー別「Foundry 機能 vs 自前実装」の組合せ</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#このドキュメントの使い方">このドキュメントの使い方</a></li><li><a href="#レイヤー一覧-先に全体像">レイヤー一覧(先に全体像)</a></li><li><a href="#l1-モデル提供-推論エンドポイント">L1. モデル提供(推論エンドポイント)</a></li><li><a href="#l2-オーケストレーション-エージェントの制御ロジック">L2. オーケストレーション(エージェントの制御ロジック)</a></li><li><a href="#l3-会話状態-スレッド-セッション">L3. 会話状態(スレッド / セッション)</a></li><li><a href="#l4-長期記憶-ユーザープロファイル-手続き記憶">L4. 長期記憶(ユーザープロファイル / 手続き記憶)</a></li><li><a href="#l5-ナレッジ-rag">L5. ナレッジ / RAG</a></li><li><a href="#l6-ツール実行-外部システム連携">L6. ツール実行(外部システム連携)</a></li><li><a href="#l7-コード実行サンドボックス">L7. コード実行サンドボックス</a></li><li><a href="#l8-ガードレール・安全性">L8. ガードレール・安全性</a></li><li><a href="#l9-id・認証・認可">L9. ID・認証・認可</a></li><li><a href="#l10-ネットワーク">L10. ネットワーク</a></li><li><a href="#l11-ゲートウェイ・流量制御">L11. ゲートウェイ・流量制御</a></li><li><a href="#l12-l13-可観測性・評価">L12〜L13. 可観測性・評価</a></li><li><a href="#l14-ui・チャネル">L14. UI・チャネル</a></li><li><a href="#l15-実行基盤-コンピュート">L15. 実行基盤(コンピュート)</a></li><li><a href="#l16-iac・ci-cd">L16. IaC・CI/CD</a></li><li><a href="#組合せの典型パターン-このカタログの使い方の例">組合せの典型パターン(このカタログの使い方の例)</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<h2 id="このドキュメントの使い方">このドキュメントの使い方</h2>
+<p>Foundry を使ったアーキテクチャは「Foundry を使うか使わないか」の二択ではない。<strong>レイヤーごとに独立して「Foundry のマネージド機能に寄せる / アプリ側で自前実装する」を選べる</strong>のが実態であり、SI の設計はこの組合せ選択そのものである。</p>
+<p>本ページは 16 レイヤーそれぞれについて、取りうる選択肢を<strong>マネージド度 3 段階</strong>で並べ、選定の決め手と地雷を整理する。ユースケース別の「実際にどう組んだか」は <a href="index.html#ドキュメント一覧">04〜08 のユースケース編</a>を参照。</p>
+<h3 id="マネージド度の定義-本ドキュメント共通">マネージド度の定義(本ドキュメント共通)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>記号</th>
+<th>呼称</th>
+<th>意味</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>M</strong></td>
+<td>フルマネージド</td>
+<td>Foundry の機能を構成するだけ。ランタイムコードを書かない</td>
+</tr>
+<tr>
+<td><strong>H</strong></td>
+<td>ハイブリッド</td>
+<td>Foundry の部品を API として借り、制御はアプリ側コードが持つ</td>
+</tr>
+<tr>
+<td><strong>S</strong></td>
+<td>自前実装</td>
+<td>Azure 汎用サービス / OSS / 自社実装で組む。Foundry 固有機能に依存しない</td>
+</tr>
+</tbody></table></div>
+<p>「M ほど良い」ではない。<strong>M は立ち上がりが速く運用が軽い代わりに、制御粒度・移植性・コスト可視性を失う。</strong>S はその逆。案件のライフサイクル(PoC か 10 年運用か)、規制、既存資産で決まる。</p>
+<hr>
+<h2 id="レイヤー一覧-先に全体像">レイヤー一覧(先に全体像)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>レイヤー</th>
+<th>M(フルマネージド)</th>
+<th>H(ハイブリッド)</th>
+<th>S(自前実装)</th>
+<th>迷ったら</th>
+</tr></thead><tbody>
+<tr>
+<td>L1</td>
+<td>モデル提供</td>
+<td>Foundry モデルデプロイ(Global Standard)</td>
+<td>Foundry + APIM ゲートウェイ</td>
+<td>他クラウド / セルフホスト(vLLM 等)</td>
+<td>M</td>
+</tr>
+<tr>
+<td>L2</td>
+<td>オーケストレーション</td>
+<td>Prompt agent / Workflows(廃止予定)</td>
+<td>Hosted agent(MAF・LangGraph 等)</td>
+<td>自アプリ内でループ実装 + Responses API</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L3</td>
+<td>会話状態</td>
+<td>Agent Service の Conversations</td>
+<td>standard setup の BYO Cosmos DB</td>
+<td>自前 DB(Cosmos / PostgreSQL 等)</td>
+<td>M→S</td>
+</tr>
+<tr>
+<td>L4</td>
+<td>長期記憶</td>
+<td>Foundry Memory(プレビュー)</td>
+<td>Memory + 自前フィルタ</td>
+<td>自前サマライズ + ベクトル検索</td>
+<td>S(本番)</td>
+</tr>
+<tr>
+<td>L5</td>
+<td>ナレッジ / RAG</td>
+<td>File Search / Foundry IQ</td>
+<td>Azure AI Search ツール + 自前索引</td>
+<td>自前パイプライン + 任意ベクトル DB</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L6</td>
+<td>ツール実行</td>
+<td>ツールカタログ / MCP / OpenAPI ツール</td>
+<td>Toolbox + 自前 MCP サーバー</td>
+<td>アプリ内 function calling ループ</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L7</td>
+<td>コード実行</td>
+<td>Code Interpreter</td>
+<td>Custom Code Interpreter</td>
+<td>Container Apps dynamic sessions 直</td>
+<td>M</td>
+</tr>
+<tr>
+<td>L8</td>
+<td>ガードレール</td>
+<td>Guardrails(既定 DefaultV2)</td>
+<td>カスタムガードレール + 自前後処理</td>
+<td>Content Safety API を自前で呼ぶ</td>
+<td>M+S 併用</td>
+</tr>
+<tr>
+<td>L9</td>
+<td>ID・認可</td>
+<td>Foundry RBAC + Entra</td>
+<td>OBO / マネージド ID</td>
+<td>自前トークン交換・認可基盤</td>
+<td>M</td>
+</tr>
+<tr>
+<td>L10</td>
+<td>ネットワーク</td>
+<td>パブリック + Private Link</td>
+<td>Standard setup(BYO VNet 注入)</td>
+<td>自前 VNet に全部置く</td>
+<td>要件次第</td>
+</tr>
+<tr>
+<td>L11</td>
+<td>ゲートウェイ / 流量制御</td>
+<td>Foundry のクォータのみ</td>
+<td>APIM AI ゲートウェイ</td>
+<td>自前プロキシ</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L12</td>
+<td>可観測性</td>
+<td>Foundry Tracing + Monitor</td>
+<td>OTel 自前計装 → App Insights</td>
+<td>自前ログ基盤</td>
+<td>M+H</td>
+</tr>
+<tr>
+<td>L13</td>
+<td>評価</td>
+<td>Foundry Evaluations</td>
+<td>evals API を CI から呼ぶ</td>
+<td>自前評価ハーネス</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L14</td>
+<td>UI・チャネル</td>
+<td>Teams / M365 公開</td>
+<td>自作 Web + Responses API</td>
+<td>既存システムに組込み</td>
+<td>要件次第</td>
+</tr>
+<tr>
+<td>L15</td>
+<td>実行基盤(コンピュート)</td>
+<td>Hosted agents</td>
+<td>Container Apps / App Service</td>
+<td>AKS / オンプレ</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L16</td>
+<td>IaC・CI/CD</td>
+<td>ポータル手動</td>
+<td>Bicep / Terraform + azd</td>
+<td>既存 IaC 基盤に統合</td>
+<td>S</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="l1-モデル提供-推論エンドポイント">L1. モデル提供(推論エンドポイント)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Global Standard デプロイ</td>
+<td>Foundry リソースへのモデルデプロイ。グローバルルーティング従量課金</td>
+<td><span class="badge ga">GA</span></td>
+<td>大半の新規案件。最大クォータが取れる</td>
+<td>データ処理リージョンを限定できない</td>
+</tr>
+<tr>
+<td>M: Data Zone Standard</td>
+<td>EU / US / APAC のデータゾーン内で処理</td>
+<td><span class="badge ga">GA</span></td>
+<td>国内・域内処理を求められるが単一リージョンだと容量が足りない案件</td>
+<td>対応モデル・ゾーンが限られる</td>
+</tr>
+<tr>
+<td>M: Regional Standard</td>
+<td>単一リージョン処理</td>
+<td><span class="badge ga">GA</span></td>
+<td>厳格なリージョン指定</td>
+<td>新モデルの提供が最後になりがち。クォータが小さい</td>
+</tr>
+<tr>
+<td>M: Provisioned (PTU)</td>
+<td>予約スループット。時間課金 + Reservations</td>
+<td><span class="badge ga">GA</span></td>
+<td>レイテンシ SLA・安定スループットが要る本番</td>
+<td><strong>モデル自動アップグレード対象外(手動移行)</strong>。最低 PTU 単位あり</td>
+</tr>
+<tr>
+<td>M: Batch</td>
+<td>非同期一括、24h ターゲット、50% 割引</td>
+<td><span class="badge ga">GA</span></td>
+<td>夜間バッチ、大量分類・要約</td>
+<td>リアルタイム SLA なし</td>
+</tr>
+<tr>
+<td>M: Instant models</td>
+<td>デプロイ不要でモデル名指定のみ</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>検証・試作</td>
+<td>プレビュー中は <strong>West US 3 のみ</strong>。FT モデル・カスタムガードレール不可</td>
+</tr>
+<tr>
+<td>M: Model router</td>
+<td>単一デプロイで品質/コスト基準の自動振り分け</td>
+<td><span class="badge ga">GA</span>(非 OpenAI モデルのルーティングはプレビュー)</td>
+<td>コスト最適化。モデル選定を運用で回したい</td>
+<td>対応リージョン 5 つ。Claude は事前デプロイ必須</td>
+</tr>
+<tr>
+<td>H: Foundry + APIM ゲートウェイ</td>
+<td>複数デプロイ / 複数リージョンを APIM で束ねる</td>
+<td><span class="badge ga">GA</span>(APIM 側機能)</td>
+<td>複数チームへの払い出し、トークン課金の可視化、フェイルオーバー</td>
+<td>APIM の運用コストと単一障害点化に注意</td>
+</tr>
+<tr>
+<td>S: 他クラウド / セルフホスト</td>
+<td>OpenAI 直、Bedrock、vLLM on AKS 等</td>
+<td>—</td>
+<td>マルチクラウド要件、ロックイン回避、特殊モデル</td>
+<td>Foundry のガードレール・観測・エージェント機能を一切使えない</td>
+</tr>
+<tr>
+<td>S: Foundry Local / Azure Local</td>
+<td>オンデバイス / オンプレ推論</td>
+<td><span class="badge unknown">要確認</span>(GA 明記なし)</td>
+<td>閉域・エッジ・オフライン</td>
+<td>サーバー用途は非推奨と明記。モデル選択肢が限られる</td>
+</tr>
+</tbody></table></div>
+<p><strong>Spillover(PTU→Standard 溢れ処理)</strong> は PTU 枯渇時に同一リソースの standard デプロイへ自動転送する GA 機能で、「PTU でベースライン + スパイクは従量」という現実的な構成を Foundry 側だけで組める。DeepSeek / Llama は非対応。</p>
+<p><strong>モデルライフサイクルが最大の運用リスク。</strong> GA モデルは提供開始から 18 か月でリタイア、通知は 60 日前。Standard 系は自動アップグレードされるが Provisioned は手動移行。つまり <strong>PTU を使うほどモデル更改の計画運用が必須</strong>になる。詳細は <a href="../../features/html/02-models.html">features/02-models</a>。</p>
+<hr>
+<h2 id="l2-オーケストレーション-エージェントの制御ロジック">L2. オーケストレーション(エージェントの制御ロジック)</h2>
+<p>技術選定でいちばん論点になるレイヤー。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Prompt agent</td>
+<td>指示文 + モデル + ツールの宣言的定義。ランタイムコード不要</td>
+<td><span class="badge ga">GA</span></td>
+<td>単一エージェント、ツール呼び出しループが素直、立ち上げ最優先</td>
+<td>分岐・ループ・リトライの明示制御ができない</td>
+</tr>
+<tr>
+<td>M: ビジュアル Workflows</td>
+<td>ポータルのマルチエージェントデザイナー</td>
+<td><span class="badge preview">プレビュー</span> + <strong>2026-12-01 廃止</strong></td>
+<td>(新規採用は非推奨)</td>
+<td><strong>長期案件で提案してはいけない。</strong> 移行先は MAF / Logic Apps / A2A</td>
+</tr>
+<tr>
+<td>M: Routines</td>
+<td>タイマー / cron / イベントでエージェントを起動</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>定期実行の単純な自動化</td>
+<td>1トリガー + 1アクションのみ。多段オーケストレーション不可</td>
+</tr>
+<tr>
+<td>M: A2A ツール</td>
+<td>エージェント間をプロトコルで接続</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>疎結合な委譲、組織をまたぐエージェント連携</td>
+<td>v1.0 は JSONRPC・テキストのみ・ストリーミング非対応。ポータル未対応</td>
+</tr>
+<tr>
+<td>H: Hosted agent + MAF</td>
+<td>自前オーケストレーションコードを Foundry が実行</td>
+<td><span class="badge ga">GA</span>(MAF 1.0 も GA)</td>
+<td>分岐・HITL・チェックポイント・ミドルウェアが要る本番</td>
+<td>Python / C# のみ。<strong>初期プレビュー基盤は 2026-08-20 サポート終了(要再デプロイ)</strong></td>
+</tr>
+<tr>
+<td>H: Hosted agent + LangGraph 等</td>
+<td>LangGraph / OpenAI Agents SDK / Anthropic SDK / CrewAI を持ち込み</td>
+<td><span class="badge ga">GA</span>(持ち込み枠)</td>
+<td>フレームワーク資産がある、型付きステート・タイムトラベルが要る</td>
+<td>Foundry 固有機能(Memory 等)との結合は自分で書く</td>
+</tr>
+<tr>
+<td>H: MAF + Durable Extension</td>
+<td>エージェント実行に<strong>耐久実行</strong>を付与。ステップ単位チェックポイント・障害回復・分散ホスト間スケール</td>
+<td>MAF 1.0 は GA(拡張単体の GA 表記は未確認)</td>
+<td>数時間〜数日の長時間プロセス、確実な再開が必須</td>
+<td>バックエンドは Durable Task Scheduler 推奨。ホストは Azure Functions か自前コンピュート</td>
+</tr>
+<tr>
+<td>S: 自アプリ内オーケストレーション</td>
+<td>既存アプリのコードでループを回し Responses API だけ叩く</td>
+<td><span class="badge ga">GA</span>(API)</td>
+<td>既存システム組込み、ロックイン回避、独自 SLA</td>
+<td><strong>自前オーケストレーションのメトリクスは Foundry のエージェントビューに出ない</strong>(Foundry はマネージドエージェントしか見えない)</td>
+</tr>
+<tr>
+<td>S: Logic Apps / Durable Functions</td>
+<td>ワークフローエンジン側が主で、AI は 1ステップ</td>
+<td><span class="badge ga">GA</span></td>
+<td>承認・長時間待機・既存業務フロー統合が主役</td>
+<td>AI 部分の反復開発は遅くなる</td>
+</tr>
+</tbody></table></div>
+<pre><code>   ┌── 制御をどこが持つか ───────────────────────────────────┐
+   │                                                          │
+   │  Foundry が持つ            アプリが持つ         外部が持つ │
+   │  ┌───────────────┐   ┌─────────────────┐  ┌────────────┐ │
+   │  │ Prompt agent  │   │ Hosted agent    │  │ Logic Apps │ │
+   │  │ Routines      │ ← │  (MAF/LangGraph)│ →│ Durable Fn │ │
+   │  │ Workflows(廃) │   │ 自アプリ + API  │  │ Copilot St.│ │
+   │  └───────────────┘   └─────────────────┘  └────────────┘ │
+   │   速い/軽い            制御可/テスト可       業務フロー主導 │
+   │   移植性 低            移植性 中〜高          AI は部品     │
+   └──────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>選定の決め手は「明示的な状態遷移が要るか」。</strong> 要件に「承認待ちで数時間〜数日停止」「失敗したステップだけ再開」「監査のために各ステップの入出力を保存」が含まれた瞬間に M では足りず、H(MAF / LangGraph)か S(Durable な基盤)になる。逆に「FAQ に答える」「1〜2 個のツールを呼ぶ」なら M で十分で、コードを書くのは過剰。</p>
+<p><strong>Connected agents は新 Foundry には無い。</strong> classic の機能で、移行ガイドは A2A ツールを推奨している。ポータルだけでマルチエージェントを組む前提の提案は成り立ちにくくなった。</p>
+<hr>
+<h2 id="l3-会話状態-スレッド-セッション">L3. 会話状態(スレッド / セッション)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Agent Service Conversations(basic)</td>
+<td>Microsoft 管理ストレージに会話が保存される</td>
+<td><span class="badge ga">GA</span></td>
+<td>社内利用、データ所在に強い要求がない</td>
+<td>データの所在・保持期間をこちらで制御しにくい</td>
+</tr>
+<tr>
+<td>H: standard setup(BYO)</td>
+<td>自分の Cosmos DB / Storage / AI Search に保存</td>
+<td><span class="badge ga">GA</span> 相当</td>
+<td>データ所在・バックアップ・削除要件がある案件</td>
+<td><strong>セットアップ時にしか選べない。</strong>後から basic→standard の切替は再構築</td>
+</tr>
+<tr>
+<td>S: 自前セッションストア</td>
+<td>会話は自アプリの DB に持ち、モデル呼び出しはステートレス</td>
+<td><span class="badge ga">GA</span>(API)</td>
+<td>マルチテナント分離、既存の会話履歴資産、法定保存</td>
+<td>プロンプト組み立て・トリミングを自分で実装</td>
+</tr>
+</tbody></table></div>
+<p><strong>メッセージ 10 万/スレッドなどの固定リミットは引き上げ不可。</strong> 長期にわたる 1 スレッド運用(例: 常設の業務チャネル)を想定するなら S 側に倒すか、定期的にスレッドを切る設計にする。</p>
+<hr>
+<h2 id="l4-長期記憶-ユーザープロファイル-手続き記憶">L4. 長期記憶(ユーザープロファイル / 手続き記憶)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Foundry Memory</td>
+<td>user profile / chat summary / procedural の 3 種を抽出・統合・検索</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>パーソナライズを短期で試したい</td>
+<td><strong>VNet 非対応。</strong>19 リージョン。100 scope/store・10,000 memories/scope。プレビュー中の課金体系変更が明記</td>
+</tr>
+<tr>
+<td>H: Memory + 自前ポリシー</td>
+<td>Memory を使いつつ、保存可否・削除をアプリ側で制御</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>個人情報の取扱いを自分で説明する必要がある</td>
+<td>プレビュー機能への依存は残る</td>
+</tr>
+<tr>
+<td>S: 自前記憶</td>
+<td>要約 + ベクトル検索 + 有効期限を自分で実装</td>
+<td>—</td>
+<td>規制業種、閉域(VNet 必須)、削除権対応</td>
+<td>記憶の品質チューニングを自分でやる必要</td>
+</tr>
+</tbody></table></div>
+<p><strong>閉域要件があるなら現時点で Memory は選べない</strong>(VNet 非対応)。ここは「プレビュー機能を本番に載せない」という一般則以前の、機能的な非互換。</p>
+<hr>
+<h2 id="l5-ナレッジ-rag">L5. ナレッジ / RAG</h2>
+<p>Foundry で最も選択肢が多く、コストと品質の差が出るレイヤー。3 層に整理できる。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: File Search</td>
+<td>ファイルを上げるだけでベクトルストア化・ハイブリッド検索</td>
+<td><span class="badge ga">GA</span></td>
+<td>PoC、部門内文書、数千ファイル規模</td>
+<td><strong>埋め込みは text-embedding-3-large(256次元)固定、チャンク 800 / オーバーラップ 400 固定。</strong>10,000 ファイル/ストア、エージェント・会話に各 1 ストア。追加課金あり</td>
+</tr>
+<tr>
+<td>M: Foundry IQ(knowledge bases)</td>
+<td>複数ソースを束ね agentic retrieval(クエリ分解→並列検索→再ランク)で照会</td>
+<td>一部 GA / 一部プレビュー(ポータル体験は全プレビュー)</td>
+<td>複数エージェントで同じ知識を共有、ACL / Purview 連携</td>
+<td>エージェントからは <strong>MCP ツール経由</strong>。SDK 対応は Python + REST のみ</td>
+</tr>
+<tr>
+<td>H: Azure AI Search ツール</td>
+<td>既存インデックスに直結、引用付き</td>
+<td><span class="badge ga">GA</span></td>
+<td>既に AI Search 資産がある、索引設計を自分で持ちたい</td>
+<td><strong>1 ツール 1 インデックス。</strong>同一テナント必須</td>
+</tr>
+<tr>
+<td>H: 自前索引 + Foundry から検索</td>
+<td>AI Search を自前パイプラインで作り、エージェントからは検索 API を叩く</td>
+<td><span class="badge ga">GA</span></td>
+<td>チャンク戦略・メタデータ・セキュリティトリミングを作り込む</td>
+<td>取り込みパイプラインの運用は自分持ち</td>
+</tr>
+<tr>
+<td>S: 完全自前 RAG</td>
+<td>任意のベクトルストア(Cosmos DB / PostgreSQL+pgvector 等)+ 自前検索</td>
+<td><span class="badge ga">GA</span>(各サービス)</td>
+<td>マルチクラウド、既存 DB に相乗り、コスト最適化</td>
+<td>再ランク・ハイブリッド・評価まで全部自作</td>
+</tr>
+<tr>
+<td>M: Web search / Grounding with Bing</td>
+<td>公開 Web をリアルタイム検索</td>
+<td><span class="badge ga">GA</span></td>
+<td>最新情報が要る一般用途</td>
+<td><strong>DPA 対象外・コンプライアンス境界外へデータ送信・別課金。</strong>規制業種では原則不可</td>
+</tr>
+<tr>
+<td>M: SharePoint / Work IQ / Fabric IQ</td>
+<td>M365・Fabric のデータに OBO で接続</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>社内文書・業務データの横断</td>
+<td><strong>M365 Copilot ライセンス必須</strong>(SharePoint / Work IQ)。Work IQ は VNet 非対応。app-only 不可(ユーザー ID 必須)</td>
+</tr>
+</tbody></table></div>
+<p><strong>File Search の固定パラメータが一次判断ポイント。</strong> 「日本語の長文契約書」「表が多い技術文書」のように、チャンク 800 トークン固定では品質が出ないと分かっている文書群では、最初から H 以上を選ぶ。逆に FAQ・議事録・マニュアル程度なら M で十分なことが多い。</p>
+<p><strong>取り込み(ingestion)は Foundry の外側の話</strong>である点に注意。Document Intelligence(決定論的な OCR・レイアウト抽出)と Content Understanding(LLM によるスキーマ抽出)の使い分け、そのバッチ実行基盤(Functions / Container Apps jobs / Data Factory)は自分で設計する。詳細は <a href="08-usecase-specialized.html">08 の IDP ユースケース</a>。</p>
+<hr>
+<h2 id="l6-ツール実行-外部システム連携">L6. ツール実行(外部システム連携)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: OpenAPI ツール</td>
+<td>OpenAPI 3.0/3.1 仕様で外部 API に接続</td>
+<td><span class="badge ga">GA</span></td>
+<td>仕様が整備された社内 API</td>
+<td>認証は anonymous / API キー / マネージド ID。API キーは 1 スキーム/ツール</td>
+</tr>
+<tr>
+<td>M: MCP ツール</td>
+<td>リモート MCP サーバーのツール群に接続</td>
+<td><span class="badge ga">GA</span></td>
+<td>SaaS 連携、再利用可能なツール群</td>
+<td>長時間実行はプレビュー。個別サーバーにプレビューあり</td>
+</tr>
+<tr>
+<td>M: Azure Functions ツール</td>
+<td>キュー経由で Functions を非同期呼び出し</td>
+<td><span class="badge ga">GA</span></td>
+<td>独自ロジック、既存 Functions 資産</td>
+<td><strong>standard セットアップのみ(basic 不可)</strong></td>
+</tr>
+<tr>
+<td>M: Logic Apps コネクタ → MCP 変換</td>
+<td>1,400+ コネクタのアクションをツール化</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>SaaS・基幹の広範な接続を短期で</td>
+<td>1 コネクタ/ツール、<strong>OAuth 2.0 コネクタ非対応</strong>、マネージドコネクタのみ</td>
+</tr>
+<tr>
+<td>H: Toolbox</td>
+<td>複数ツールを 1 つの MCP 互換エンドポイントに束ね、バージョニング・集中認証</td>
+<td>ステータス曖昧(GA 相当の記述だが REST は <code>V1Preview</code> ヘッダー要求)</td>
+<td>ツールの再利用と統制、MAF / LangGraph からも同じツールを使いたい</td>
+<td>Code Interpreter / File Search を toolbox 経由で使うと<strong>ユーザー分離なし</strong></td>
+</tr>
+<tr>
+<td>S: アプリ内 function calling</td>
+<td>ツール定義とディスパッチを自アプリで実装</td>
+<td><span class="badge ga">GA</span></td>
+<td>既存の権限モデルに合わせた細かい認可、監査</td>
+<td>ツールカタログ・集中管理の恩恵はない</td>
+</tr>
+</tbody></table></div>
+<p><strong>Hosted agent はツールを直付けできない。</strong> 「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」と明記されており、<code>create_version</code> の <code>tools</code> パラメータは削除済み。<strong>コードファーストを選んだ時点で、ツール層は Toolbox(MCP エンドポイント)経由が前提</strong>になる。Toolbox はバージョニングと集中認証(資格情報の注入・トークン更新・ポリシー適用)を担うため、これは制約であると同時に統制上は利点でもある。</p>
+<p><strong>ツール設定は実行時に上書きできる。</strong> <code>file_search.vector_store_ids</code>、<code>code_interpreter.container</code>、<code>mcp.server_label/server_url/headers</code> はリクエスト単位で差し替えられる。<strong>テナントごとにナレッジベースを切り替える、dev/stg/prod で同じエージェント定義を使い回す</strong>といった構成が、エージェントのバージョンを増やさずに組める。</p>
+<p><strong>認可の設計が本命の論点。</strong> エージェントが基幹システムを叩くとき、「エージェントのマネージド ID で叩く(app-only)」のか「ログインユーザーの権限で叩く(OBO)」のかで監査要件の満たし方が変わる。SharePoint / Fabric IQ / Work IQ は <strong>OBO 必須で app-only 不可</strong>であり、バッチ的な無人実行ができない。</p>
+<hr>
+<h2 id="l7-コード実行サンドボックス">L7. コード実行サンドボックス</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Code Interpreter</td>
+<td>サンドボックスで Python 実行(データ分析・作図)</td>
+<td><span class="badge ga">GA</span></td>
+<td>アドホック分析、グラフ生成</td>
+<td>セッション課金(アクティブ 1h / アイドル 30min)。<strong>アウトバウンド通信不可</strong>。リージョン制限</td>
+</tr>
+<tr>
+<td>H: Custom Code Interpreter</td>
+<td>独自 Python パッケージ・コンピュート・Container Apps 環境を指定。コンテナは MCP サーバーとして公開される</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>独自ライブラリが要る分析</td>
+<td><strong>standard setup のみ。</strong><code>az feature register --namespace Microsoft.App --name SessionPoolsSupportMCP</code> が事前に必要。Foundry Owner + Container Apps ManagedEnvironment Contributor ロール。<strong>デプロイに最大 1 時間。</strong>ファイル入出力は API 非対応で <strong>URL 経由(大きいファイルは Blob の SAS URL)</strong></td>
+</tr>
+<tr>
+<td>S: Container Apps dynamic sessions を直接使う</td>
+<td>Hyper-V 分離のセッションプールを自アプリから呼ぶ。プレウォームでミリ秒起動</td>
+<td><span class="badge ga">GA</span>(ACA 側)</td>
+<td>実行の課金・監査・ネットワークを自分で制御したい。数百〜数千の同時セッション</td>
+<td>自分でセッション管理</td>
+</tr>
+</tbody></table></div>
+<p>Code Interpreter の基盤は Container Apps dynamic sessions なので、<strong>「Foundry 経由で使う」か「ACA を直接使う」かは同じ技術の窓口違い</strong>である。untrusted なコードを実行する要件なら、どちらでも Hyper-V によるカーネルレベルの分離が効く(Well-Architected でも「ユーザー投稿 / AI 生成コードには dynamic sessions を使え」と推奨されている)。<strong>閉域構成では Code Interpreter はファイルの上り下りを伴わないシナリオしか動かない</strong>点に注意。</p>
+<hr>
+<h2 id="l8-ガードレール・安全性">L8. ガードレール・安全性</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: 既定ガードレール(Microsoft.DefaultV2)</td>
+<td>4 カテゴリのコンテンツフィルター。編集不可</td>
+<td>既定適用</td>
+<td>全案件のベースライン</td>
+<td>テキスト Medium / 画像 Low 閾値固定</td>
+</tr>
+<tr>
+<td>M: カスタムガードレール</td>
+<td>リスク × 介入ポイント × アクションで構成</td>
+<td>モデル向けは GA 相当 / <strong>エージェント向けはプレビュー</strong></td>
+<td>閾値調整、PII、Prompt Shields、ブロックリスト</td>
+<td>介入点は User input / Tool call / Tool response / Output。Tool 系はプレビュー</td>
+</tr>
+<tr>
+<td>M: ブロックリスト</td>
+<td>完全一致 / 正規表現の禁止語</td>
+<td><span class="badge ga">GA</span> 相当</td>
+<td>固有名詞・禁則語の統制</td>
+<td><strong>Azure OpenAI モデル限定。</strong>1 リスト 1 万語、反映まで約 5 分</td>
+</tr>
+<tr>
+<td>S: Content Safety API を自前で呼ぶ</td>
+<td>ガードレールの分類器をアプリから直接使う</td>
+<td><span class="badge ga">GA</span></td>
+<td>Claude 等の非対象モデル、独自の前後処理</td>
+<td>レイテンシとコストを自分で管理</td>
+</tr>
+<tr>
+<td>S: 自前ポリシーエンジン</td>
+<td>出力の業務ルール検証、承認フロー</td>
+<td>—</td>
+<td>業種固有の禁止事項、金額・権限チェック</td>
+<td>実装・保守コスト</td>
+</tr>
+</tbody></table></div>
+<p><strong>Claude を使うなら自前実装が必須。</strong> 「Foundry doesn't provide built-in content filtering for Claude models at deployment time」と明記されており、Claude を選んだ時点で L8 は M から S に落ちる。これはモデル選定がアーキテクチャを変える典型例で、提案時に見落としやすい。</p>
+<p><strong>エージェントに明示割当てしたガードレールは、基盤モデル側の設定を完全に上書きする。</strong> Tool call / Tool response にコントロールを置き忘れると、その経路が未スキャンになる。</p>
+<hr>
+<h2 id="l9-id・認証・認可">L9. ID・認証・認可</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Entra ID + 組込み RBAC</td>
+<td>Foundry User / Project Manager / Account Owner / Owner / Agent Consumer の 5 ロール</td>
+<td><span class="badge ga">GA</span></td>
+<td>標準的なエンタープライズ</td>
+<td><strong>ロール割り当ては SDK 非対応</strong>。改名ロールアウト中のため IaC は GUID 指定推奨</td>
+</tr>
+<tr>
+<td>M: API キー</td>
+<td>キー認証</td>
+<td><span class="badge ga">GA</span></td>
+<td>検証用途のみ</td>
+<td><strong>Agents / Evaluations / Content Understanding / workflows は Entra 必須でキー不可。</strong>本番は <code>disableLocalAuth</code> を推奨</td>
+</tr>
+<tr>
+<td>H: OBO(ユーザー委任)</td>
+<td>ログインユーザーの権限で下流データにアクセス</td>
+<td>ツール依存</td>
+<td>「ユーザーが見える情報しか答えない」要件</td>
+<td>SharePoint / Fabric IQ / Work IQ は OBO 必須。無人バッチと両立しない</td>
+</tr>
+<tr>
+<td>S: 自前認可レイヤー</td>
+<td>アプリでテナント・ロールを判定し、検索フィルタや権限に反映</td>
+<td>—</td>
+<td>マルチテナント SaaS、細粒度 ACL</td>
+<td>セキュリティトリミングの正しさを自分で保証</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="l10-ネットワーク">L10. ネットワーク</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: パブリックエンドポイント</td>
+<td>既定</td>
+<td><span class="badge ga">GA</span></td>
+<td>PoC、社外公開サービス</td>
+<td>—</td>
+</tr>
+<tr>
+<td>M: Private Link(インバウンド)</td>
+<td>プライベートエンドポイント + 3 種の DNS ゾーン</td>
+<td><span class="badge ga">GA</span> 相当</td>
+<td>社内からのみアクセス</td>
+<td><strong>全パブリックアクセス遮断構成はポータル UI では組めず SDK/CLI が必要</strong></td>
+</tr>
+<tr>
+<td>H: Standard setup / BYO VNet 注入</td>
+<td><code>Microsoft.App/environments</code> 委任サブネット(/27 以上、推奨 /24)にコンテナ注入</td>
+<td><span class="badge ga">GA</span> 相当</td>
+<td>エージェントのアウトバウンドを自社 VNet 内に維持</td>
+<td><strong>後付け・変更不可(再デプロイ必要)。</strong>リソースと VNet は同一リージョン。サブネットは Foundry リソース専用</td>
+</tr>
+<tr>
+<td>H: Managed Virtual Network</td>
+<td>Microsoft 管理 VNet + マネージド Azure Firewall</td>
+<td><span class="badge unknown">要確認</span>(ラベルなし)・<strong>ポータル UI 未対応</strong></td>
+<td>VNet 運用を持ちたくないが外向き統制は要る</td>
+<td>有効化後の無効化不可、BYO VNet からの移行パスなし。対応 18 リージョン</td>
+</tr>
+<tr>
+<td>S: すべて自社 VNet 内</td>
+<td>Foundry を使わずセルフホスト</td>
+<td>—</td>
+<td>完全閉域・オフライン</td>
+<td>Foundry の機能を捨てる</td>
+</tr>
+</tbody></table></div>
+<p><strong>ネットワーク分離で使えなくなるツールがある</strong>のが最大の落とし穴。Traces は VNet 非対応、Memory は VNet 非対応、Work IQ は VNet 統合非対応、File Search / Logic Apps / Browser Automation / Computer Use / Image Generation は「Not supported / Under development」と明記されている。<strong>閉域案件では「使える機能の一覧」から設計を始める</strong>必要がある。</p>
+<p>閉域固有の実務上の落とし穴を 4 つ挙げる。</p>
+<ul>
+<li><strong>hosted agent のエンドポイント自体は現在のプレビューでは公開のまま。</strong> セッションはユーザー ID で分離されるが、「エンドポイントをプライベートにする」のはプラットフォーム側の未提供機能と明記されている。「閉域なのでエンドポイントも内部だけ」という前提で設計すると崩れる。</li>
+<li><strong>ACR のプライベート化は 2026-06-25 以降に作成したプロジェクトのみ。</strong> それ以前のプロジェクトは ACR にパブリックエンドポイントが必要。</li>
+<li><strong>VNet 化後は公開インターネット上の端末から <code>azd up</code> / <code>azd deploy</code> ができない</strong>(データプレーン呼び出しが 403)。VNet 内のセルフホスト GitHub Actions runner / Azure DevOps agent が公式の推奨パターンで、<strong>CI/CD 基盤の追加コストとして見積もりに入れる必要がある。</strong></li>
+<li><strong>Azure Firewall と併用する場合、TLS インスペクション(自己署名証明書の挿入)は不可。</strong> Container Apps のマネージド ID 系 FQDN、または <code>AzureActiveDirectory</code> サービスタグの許可が要る。</li>
+</ul>
+<hr>
+<h2 id="l11-ゲートウェイ・流量制御">L11. ゲートウェイ・流量制御</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Foundry のクォータのみ</td>
+<td>デプロイ単位の TPM/RPM</td>
+<td>単一アプリ・単一チーム</td>
+<td>チーム別の配分・課金按分ができない</td>
+</tr>
+<tr>
+<td>H: APIM AI ゲートウェイ</td>
+<td>トークンレート制限、トークン課金メトリクス、セマンティックキャッシュ、複数バックエンドの負荷分散・サーキットブレーカー</td>
+<td>複数チーム / 複数テナントへの払い出し、リージョン跨ぎ冗長</td>
+<td>APIM 自体の可用性設計・コストが乗る</td>
+</tr>
+<tr>
+<td>H: Front Door / App Gateway + WAF</td>
+<td>外部公開時のグローバル分散と WAF</td>
+<td>顧客向け公開</td>
+<td>L7 の保護は AI 特有の攻撃(プロンプトインジェクション)には効かない</td>
+</tr>
+<tr>
+<td>S: 自前プロキシ</td>
+<td>独自のルーティング・課金</td>
+<td>特殊な課金モデル</td>
+<td>実装・運用コスト</td>
+</tr>
+</tbody></table></div>
+<p><strong>「複数の部門が同じ Foundry を使う」案件では L11 が事実上必須</strong>になる。Foundry のクォータはデプロイ単位でしか切れないため、部門別のレート制限・使用量可視化・上限超過時の挙動を成立させるには APIM 層が要る。</p>
+<hr>
+<h2 id="l12-l13-可観測性・評価">L12〜L13. 可観測性・評価</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Foundry Tracing</td>
+<td>OTel 準拠で App Insights に送信。ポータルで 90 日閲覧</td>
+<td><span class="badge ga">GA</span>(prompt / hosted agent)、workflow / 外部エージェントはプレビュー</td>
+<td><strong>VNet 対応はプレビュー</strong></td>
+</tr>
+<tr>
+<td>M: Trace Replay</td>
+<td>会話トレースの再生</td>
+<td>prompt / hosted は実質 GA</td>
+<td>Log Analytics Reader ロール必須。2 スパン以上必要</td>
+</tr>
+<tr>
+<td>M: Monitoring ダッシュボード</td>
+<td>トークン・レイテンシ・成功率・評価スコア</td>
+<td><strong>プレビュー</strong></td>
+<td>本番の運用監視をこれ 1 本に依存しない</td>
+</tr>
+<tr>
+<td>M: Evaluations</td>
+<td>組込み評価器 + クラウド評価</td>
+<td><span class="badge ga">GA</span>(一部評価器はプレビュー)</td>
+<td><strong>Entra ID 必須(キー不可)</strong></td>
+</tr>
+<tr>
+<td>M: 継続的評価</td>
+<td>本番トラフィックのサンプリング評価</td>
+<td><span class="badge unknown">要確認</span>(周辺は プレビュー)</td>
+<td>既定 100 回/時</td>
+</tr>
+<tr>
+<td>M: AI Red Teaming Agent</td>
+<td>PyRIT ベースの自動敵対スキャン</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge ok">対応</span> 5 リージョン。workflow / 非 Foundry エージェント・Function ツールは非対応</td>
+</tr>
+<tr>
+<td>H: 自前 OTel 計装</td>
+<td>アプリ側で GenAI セマンティック規約に沿って計装</td>
+<td>—</td>
+<td>Foundry 外の処理も 1 本のトレースに乗せられる</td>
+</tr>
+<tr>
+<td>S: 自前評価ハーネス</td>
+<td>pytest 等で回帰テスト化</td>
+<td>—</td>
+<td>CI に組み込みやすい。評価器は自作</td>
+</tr>
+</tbody></table></div>
+<p><strong>本番の監視は M だけでは足りない。</strong> Monitoring がプレビュー、Tracing の VNet 対応がプレビューである以上、閉域・本番案件では Azure Monitor + App Insights を主系として設計し、Foundry のダッシュボードは開発時の可視化と位置づけるのが安全。</p>
+<hr>
+<h2 id="l14-ui・チャネル">L14. UI・チャネル</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Teams / M365 Copilot へ公開</td>
+<td>安定エンドポイントを Teams アプリ化</td>
+<td><span class="badge ga">GA</span></td>
+<td>Bot Service リソース必要。組織公開は M365 管理者承認。<strong>パブリックネットワーク無効プロジェクトはポータル不可・REST のみ</strong></td>
+</tr>
+<tr>
+<td>M: ポータルの Playground</td>
+<td>検証用 UI</td>
+<td><span class="badge ga">GA</span></td>
+<td>本番 UI ではない</td>
+</tr>
+<tr>
+<td>H: 自作 Web / モバイル + Responses API</td>
+<td>独自 UI から直接</td>
+<td><span class="badge ga">GA</span></td>
+<td>認証・ストリーミング・引用表示を自作</td>
+</tr>
+<tr>
+<td>S: 既存システムに組込み</td>
+<td>業務画面の一機能として</td>
+<td>—</td>
+<td>既存の認可・監査に統合しやすい</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="l15-実行基盤-コンピュート">L15. 実行基盤(コンピュート)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>向く要件</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>M: Hosted agents</td>
+<td>コンテナ(ACR)または zip を Foundry が実行</td>
+<td><span class="badge ga">GA</span></td>
+<td>エージェント本体のホスティングを持ちたくない</td>
+<td><strong>Python / C# のみ。</strong>31 リージョン(Japan East/West 含む)。<strong>初期プレビュー基盤は 2026-08-20 サポート終了</strong></td>
+</tr>
+<tr>
+<td>H: Container Apps</td>
+<td>自前コンテナ。サーバーレス GPU、dynamic sessions</td>
+<td><span class="badge ga">GA</span></td>
+<td>言語自由、スケール制御、既存 CI/CD、非信頼コード実行</td>
+<td>ネットワーク・ID を自分で設計</td>
+</tr>
+<tr>
+<td>H: App Service / Functions</td>
+<td>Web アプリ / イベント駆動</td>
+<td><span class="badge ga">GA</span></td>
+<td>既存資産が乗っている。Functions は Durable の標準ホスト</td>
+<td>長時間実行の制約(Durable で回避)</td>
+</tr>
+<tr>
+<td>S: AKS</td>
+<td>フル制御</td>
+<td><span class="badge ga">GA</span></td>
+<td>大規模、既存 K8s 基盤</td>
+<td>運用負荷が最大。<strong>エージェント用途で AKS を推奨する一次ドキュメントは確認できず</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>Hosted agent のスケール単位は「レプリカ」ではなく「セッション」。</strong> 課金はアクティブな全セッションの CPU + メモリ合計で、サイズは 0.5vCPU/1GiB・1vCPU/2GiB・2vCPU/4GiB の 3 種のみ。<strong>オーバーサイジングは同時実行数の倍率でコストに効く。</strong>セッションごとに VM 分離サンドボックス + 永続 <code>$HOME</code> / <code>/files</code> を持ち、アイドル 15 分で計算はデプロビジョンされるが状態は保持、30 日無活動で恒久削除(セッション最大寿命も 30 日)。ディスクはセッションあたり最大 20GiB(1vCPU 以上)で、うち約 20% はシステム予約。</p>
+<p><strong>Hosted agent は「デプロイ先」であって「フレームワーク」ではない。</strong> MAF でも LangGraph でも OpenAI Agents SDK でも CrewAI でも持ち込める。逆に MAF を Container Apps に置くこともできる。この 2 軸(何で書くか × どこで動かすか)は独立している。</p>
+<p><strong>バージョンは不変で、トラフィック分割はできない。</strong> hosted agent の各バージョンはコンテナイメージ・リソース割当・環境変数・プロトコル構成のスナップショットで、<strong>1 エンドポイント = 1 バージョン</strong>。カナリアリリースをやるなら、エージェントを別名で立てて呼び出し側で振り分ける設計が要る(prompt agent は <code>FixedRatio</code> でトラフィック % 指定が可能なので、ここは prompt / hosted で挙動が違う)。</p>
+<hr>
+<h2 id="l16-iac・ci-cd">L16. IaC・CI/CD</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>選択肢</th>
+<th>実体</th>
+<th>ステータス</th>
+<th>制約・地雷</th>
+</tr></thead><tbody>
+<tr>
+<td>S: Bicep / ARM</td>
+<td><code>Microsoft.CognitiveServices/accounts</code> + <code>accounts/projects</code> + <code>accounts/deployments</code></td>
+<td><span class="badge ga">GA</span></td>
+<td>ネットワーク注入は<strong>作成時のみ</strong>設定可</td>
+</tr>
+<tr>
+<td>S: Terraform</td>
+<td><code>azurerm_cognitive_account</code>(kind AIServices + <code>project_management_enabled</code>)+ <code>azurerm_cognitive_account_project</code></td>
+<td><span class="badge ga">GA</span> 相当</td>
+<td>プレビュー機能は AzAPI 併用。AVM モジュール <code>Azure/avm-ptn-aiml-ai-foundry</code> あり</td>
+</tr>
+<tr>
+<td>H: azd Foundry 拡張</td>
+<td><code>azd ai agent init/run/invoke/monitor</code> 等</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>エージェント開発ライフサイクル向け。<strong>az CLI に <code>az foundry</code> は存在しない</strong></td>
+</tr>
+<tr>
+<td>M: ポータル手動</td>
+<td>—</td>
+<td>—</td>
+<td>再現性なし。PoC 限定</td>
+</tr>
+</tbody></table></div>
+<p><strong>環境分離の単位を最初に決める。</strong> プロジェクト単位 / リソース単位 / サブスクリプション単位のどれで dev-stg-prod を切るかで、クォータ・ネットワーク・RBAC の設計が全部変わる。<strong>最初の「default」プロジェクトだけが OpenAI Batch / Fine-tuning / Stored completions に対応する</strong>という非対称もあるため、「プロジェクトを増やせば済む」と考えると詰まる。</p>
+<hr>
+<h2 id="組合せの典型パターン-このカタログの使い方の例">組合せの典型パターン(このカタログの使い方の例)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>パターン名</th>
+<th>L2 オーケストレーション</th>
+<th>L5 RAG</th>
+<th>L10 ネットワーク</th>
+<th>L12 観測</th>
+<th>想定</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>最小 PoC</strong></td>
+<td>M(Prompt agent)</td>
+<td>M(File Search)</td>
+<td>M(パブリック)</td>
+<td>M</td>
+<td>2 週間で動くものを見せる</td>
+</tr>
+<tr>
+<td><strong>社内本番(標準)</strong></td>
+<td>M または H</td>
+<td>H(AI Search 自前索引)</td>
+<td>M(Private Link)</td>
+<td>M + H</td>
+<td>情シス主導の社内展開</td>
+</tr>
+<tr>
+<td><strong>基幹連携・承認付き</strong></td>
+<td>H(MAF hosted)</td>
+<td>H</td>
+<td>H(BYO VNet)</td>
+<td>H</td>
+<td>業務システムに書き込む</td>
+</tr>
+<tr>
+<td><strong>規制業種・閉域</strong></td>
+<td>H または S</td>
+<td>S</td>
+<td>H(BYO VNet)/ S</td>
+<td>H + S</td>
+<td>金融・公共</td>
+</tr>
+<tr>
+<td><strong>既存システム組込み</strong></td>
+<td>S(自アプリ)</td>
+<td>S</td>
+<td>S</td>
+<td>S</td>
+<td>Foundry はモデル供給元</td>
+</tr>
+<tr>
+<td><strong>マルチテナント SaaS</strong></td>
+<td>H</td>
+<td>S(テナント別索引)</td>
+<td>M + APIM</td>
+<td>H</td>
+<td>外部顧客に販売</td>
+</tr>
+</tbody></table></div>
+<p>各パターンの詳細な構成図・コンポーネント一覧・見積もり観点は <a href="index.html#ドキュメント一覧">04〜08 のユースケース編</a>を参照。</p>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

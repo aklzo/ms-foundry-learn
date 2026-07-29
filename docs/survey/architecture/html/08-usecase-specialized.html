@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08. ユースケース編 E — 音声・文書処理(IDP)・大量バッチ・マルチモーダル・M365 連携</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html" class="current">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="08-ユースケース編-e-音声・文書処理-idp-・大量バッチ・マルチモーダル・m365-連携">08. ユースケース編 E — 音声・文書処理(IDP)・大量バッチ・マルチモーダル・M365 連携</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</a></li><li><a href="#e2-文書処理・idp-intelligent-document-processing">E2. 文書処理・IDP(Intelligent Document Processing)</a></li><li><a href="#e3-大量バッチ処理">E3. 大量バッチ処理</a></li><li><a href="#e4-マルチモーダル生成-画像・動画">E4. マルチモーダル生成(画像・動画)</a></li><li><a href="#e5-m365-teams-連携">E5. M365 / Teams 連携</a></li><li><a href="#この章の未確認事項-次回更新時の重点">この章の未確認事項(次回更新時の重点)</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29<br><br>⚠ <strong>本ページの信頼度について:</strong> この領域を担当した調査エージェントが完了しなかったため、本ページは <a href="../../features/html/07-foundry-tools.html">features/07-foundry-tools</a>・<a href="../../features/html/02-models.html">features/02-models</a>・<a href="../../features/html/03-agent-service.html">features/03-agent-service</a> の記載と、他エージェントが副次的に確認した情報に基づく。<strong>他ページより一次情報の裏取りが薄い。</strong>特に音声とマルチモーダル生成は、実案件で使う前に公式ページの再確認が必要。次回更新時の重点項目。</p></blockquote>
+<p>チャット / RAG / 業務自動化に収まらない類型をまとめる。共通するのは、<strong>Foundry Agent Service の外側にある Foundry Tools(旧 Azure AI Services)やモデル固有の API が主役になる</strong>点で、エージェント中心の設計論がそのままは当てはまらない。</p>
+<h2 id="パターン一覧">パターン一覧</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>パターン</th>
+<th>中核サービス</th>
+<th>決め手になる要件</th>
+</tr></thead><tbody>
+<tr>
+<td>E1</td>
+<td>音声エージェント / コンタクトセンター</td>
+<td>Voice Live API</td>
+<td>リアルタイム音声対話</td>
+</tr>
+<tr>
+<td>E2</td>
+<td>文書処理・IDP</td>
+<td>Document Intelligence / Content Understanding</td>
+<td>帳票・契約書からの構造化抽出</td>
+</tr>
+<tr>
+<td>E3</td>
+<td>大量バッチ処理</td>
+<td>Batch デプロイ + Model router</td>
+<td>数万〜数百万件の分類・要約</td>
+</tr>
+<tr>
+<td>E4</td>
+<td>マルチモーダル生成</td>
+<td>画像 / 動画モデル</td>
+<td>生成コンテンツの非同期処理と安全性</td>
+</tr>
+<tr>
+<td>E5</td>
+<td>M365 / Teams 連携</td>
+<td>公開フロー + Work IQ</td>
+<td>業務ツール内でエージェントを使わせたい</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</h2>
+<h3 id="voice-live-api">Voice Live API</h3>
+<p><strong>フルマネージドの speech-to-speech 統合 API。</strong>STT + 生成 AI + TTS + アバターを<strong>単一の WebSocket インターフェース</strong>で提供する。従来のように「STT → LLM → TTS」を自分でつなぐ必要がない。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>ステータス</td>
+<td><strong>GA 相当・要確認</strong>(安定版 API <code>2025-10-01</code> / <code>2026-04-10</code> が存在し <code>-preview</code> が付かないが、「generally available」の明文は未確認。最新プレビューは <code>2026-06-01-preview</code>)</td>
+</tr>
+<tr>
+<td>リソース</td>
+<td><strong>Foundry リソースに最適化。</strong>Speech リソースでは <strong>Foundry Agent Service 統合と BYOM が使えない</strong>と明記</td>
+</tr>
+<tr>
+<td>モデル</td>
+<td>GPT-Realtime / GPT-5 系 / Phi 等をマネージド提供。<strong>BYOM はプレビュー</strong></td>
+</tr>
+<tr>
+<td>SDK</td>
+<td>Python / C# は安定版、<strong>Java / JS はプレビュー</strong></td>
+</tr>
+<tr>
+<td>エージェント統合</td>
+<td>MCP は Foundry(新)のエージェントで対応</td>
+</tr>
+<tr>
+<td><strong>制約</strong></td>
+<td><strong>SIP 非対応</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>SIP 非対応が意味すること:</strong> 既存の PBX / IP 電話網に直接つなぐことができない。電話系のコンタクトセンター案件では、<strong>Azure Communication Services など別のテレフォニー層を挟む構成</strong>が必要になる(※この具体的な接続パターンは本調査で一次情報を確認できていない — <strong>要確認</strong>)。</p>
+<h3 id="関連する音声モデルの状況">関連する音声モデルの状況</h3>
+<p><code>gpt-realtime</code>(GA)/ <code>gpt-realtime-1.5</code>(GA)/ <code>gpt-realtime-2</code> <code>2.1</code>(プレビュー)/ <code>gpt-audio</code>(GA)/ <code>gpt-4o-transcribe</code> 系(プレビュー)。<strong><code>whisper</code> / <code>tts</code> / <code>tts-hd</code> は 2026-12-15 リタイア予定。</strong><code>gpt-realtime-translate</code> / <code>-whisper</code> は時間課金。</p>
+<p><strong>Fast transcription</strong>(録音済み音声をリアルタイム超の速度で同期文字起こし、GA)は<strong>新ポータルのみ対応で classic は非対応。</strong><strong>LLM speech</strong>(LLM 強化の transcribe / translate)はプレビュー。</p>
+<h3 id="音声とガードレールの重大な非対称">⚠ 音声とガードレールの重大な非対称</h3>
+<p><strong>ガードレールは音声モデル(Whisper 等)が処理するプロンプト・完了には適用されない</strong>と明記されている。<strong>音声エージェントでは、Foundry の統一ガードレールに頼れない。</strong>テキスト化した後の経路で Content Safety を自分で噛ませる設計になる。</p>
+<h3 id="設計上の論点">設計上の論点</h3>
+<ul>
+<li><strong>レイテンシが主要な非機能要件になる。</strong>ガードレール処理は介入点あたり約 50〜100ms 加算される。PTU の検討が早い段階で必要。</li>
+<li><strong>会話の永続化と監査。</strong>音声の場合、文字起こしテキストを監査ログに残すのか、音声そのものを残すのかで、ストレージとプライバシーの設計が変わる。</li>
+<li><strong>Language サービスの位置づけ変化に注意。</strong>CLU(会話言語理解)・要約・感情分析・QA は「<strong>legacy capabilities</strong>」に降格し、コア機能は PII 検出・言語検出・NER・Text analytics for health のみになった。<strong>従来型のインテント分類ベースの IVR 設計は、エージェント時代の推奨経路ではない。</strong>代わりに <strong>Language MCP server(プレビュー)</strong> と <strong>Intent Routing agent / Exact Question Answering agent(いずれもプレビュー)</strong> が Foundry Tool Catalog に登場している。</li>
+</ul>
+<hr>
+<h2 id="e2-文書処理・idp-intelligent-document-processing">E2. 文書処理・IDP(Intelligent Document Processing)</h2>
+<h3 id="まず-document-intelligence-と-content-understanding-の使い分けを決める">まず Document Intelligence と Content Understanding の使い分けを決める</h3>
+<p><strong>公式は「新しいスキルセットには Content Understanding を使え」と方向を示しつつ、Document Intelligence は廃止ではない</strong>と明記している。</p>
+<blockquote><p>既に Document Intelligence を本番で動かしているなら、API・エンドポイント・SDK・課金は変わらない。<strong>移行は不要。</strong></p></blockquote>
+<p><strong>公式の選択マトリクス:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>シナリオ</th>
+<th>推奨</th>
+<th>理由(公式表現)</th>
+</tr></thead><tbody>
+<tr>
+<td>OCR / レイアウト抽出のみ</td>
+<td><strong>CU <code>prebuilt-read</code> / <code>prebuilt-layout</code></strong></td>
+<td>「より低コストでリッチなレイアウト抽出」</td>
+</tr>
+<tr>
+<td><strong>マルチモーダル / RAG 前処理</strong></td>
+<td><strong>CU プリビルト or カスタム</strong></td>
+<td>「検索の取り込み、根拠付き要約」</td>
+</tr>
+<tr>
+<td><strong>定型帳票(請求書・領収書・ID・税)</strong></td>
+<td><strong>DI プリビルトモデル</strong></td>
+<td>「一般的で構造化された文書テンプレートに対する高精度」</td>
+</tr>
+<tr>
+<td>非構造化(契約・法務)</td>
+<td>CU <code>prebuilt-contract</code></td>
+<td>推論 + 推定フィールド</td>
+</tr>
+<tr>
+<td>ラベルなしカスタム抽出</td>
+<td>CU カスタム(ゼロショット)</td>
+<td>「フィールドを平易な言葉で記述するだけ」</td>
+</tr>
+<tr>
+<td>ラベルありカスタム抽出</td>
+<td>DI カスタムモデル</td>
+<td>「わずか 5 件のラベル付きサンプルで」</td>
+</tr>
+<tr>
+<td><strong>オンプレ / 閉域(エアギャップ)</strong></td>
+<td><strong>DI コンテナ</strong></td>
+<td><strong>「現時点で唯一の選択肢」</strong></td>
+</tr>
+</tbody></table></div>
+<h3 id="上限値の比較-サイジングに直結">上限値の比較(サイジングに直結)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>Document Intelligence (S0)</th>
+<th>Content Understanding (S0)</th>
+</tr></thead><tbody>
+<tr>
+<td>最大文書サイズ</td>
+<td><strong>500 MB</strong></td>
+<td>200 MB(PDF/TIFF/画像)</td>
+</tr>
+<tr>
+<td><strong>最大ページ数</strong></td>
+<td><strong>2,000</strong></td>
+<td><strong>300</strong></td>
+</tr>
+<tr>
+<td>Office ファイル</td>
+<td>800 万文字</td>
+<td>100 万文字</td>
+</tr>
+<tr>
+<td>TXT/HTML/MD 等</td>
+<td>—</td>
+<td><strong>1 MB</strong></td>
+</tr>
+<tr>
+<td>音声</td>
+<td>—</td>
+<td>300MB 推奨(最大 1GB)、2 時間推奨(最大 4 時間)</td>
+</tr>
+<tr>
+<td>動画</td>
+<td>—</td>
+<td><code>analyzeBinary</code> で 200MB / 30 分、URL 指定で 4GB / 2 時間</td>
+</tr>
+<tr>
+<td>スループット</td>
+<td>15 TPS(申請で調整可)</td>
+<td>1,000 ページ・画像/分</td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>⚠ ページ上限の逆転:</strong> <strong>Content Understanding は 300 ページ、Document Intelligence Layout は 2,000 ページ。</strong>超長尺 PDF は上流で分割するか DI Layout を選ぶ。Content Understanding スキルのトラブルシュートでも「インデックス前にソース文書を小さいファイルに分割せよ」と推奨されている。</p></blockquote>
+<p><strong>ページ単位課金の換算(DI):</strong> PDF = 1 ページ、<strong>DOCX / HTML = 3,000 文字で 1 ページ単位</strong>、XLSX = 1 ワークシート、PPTX = 1 スライド。</p>
+<h3 id="content-understanding-の-ga-での破壊的変更-見落とすと詰まる">Content Understanding の GA での破壊的変更(見落とすと詰まる)</h3>
+<p>API <code>2025-11-01</code> で GA(2025 年 11 月)。プレビュー版 API は 2026-07-15 までに廃止済み。</p>
+<ul>
+<li><strong>Pro モード(クロスファイル推論)と Face API はプレビュー限りで GA に持ち越されなかった。</strong></li>
+<li><strong>プレビュー期のマネージド生成モデルキャパシティが廃止された</strong> → <strong>自分の Foundry の LLM デプロイと埋め込みデプロイを持ち込む必要がある</strong>(<code>prebuilt-read</code> / <code>prebuilt-layout</code> / <code>prebuilt-layoutWithFigures</code> のみモデル不要)。</li>
+<li>専用分類 API が廃止され、アナライザ API の <code>contentCategories</code> に統合(カテゴリ上限 50 → 200)。</li>
+</ul>
+<p><strong>課金モデル:</strong> (1) content extraction(文書は 1,000 ページ単位、音声 / 動画は分単位、<strong>画像は無料</strong>)、(2) contextualization(固定: 1,000 トークン/ページ、10 万トークン/時間の音声、100 万トークン/時間の動画)、(3) <strong>LLM / 埋め込みトークンは自分の Foundry デプロイに課金。</strong>コスト倍率は source grounding + confidence で約 2 倍、extractive モードで約 1.5 倍、segmentation で約 2 倍。<strong>ミニモデルで LLM コストを最大 80% 削減できる</strong>と明記されている。</p>
+<h3 id="取り込みパイプラインのアーキテクチャ">取り込みパイプラインのアーキテクチャ</h3>
+<pre><code> [文書投入: Blob / SharePoint / メール / スキャナ]
+        │
+        ▼
+ [キュー(Service Bus / Storage Queue)]  ← バックプレッシャーとリトライの受け皿
+        │
+        ▼
+ [処理ワーカー]
+   選択肢: Durable Functions / Container Apps jobs / Logic Apps / AI Search インデクサ
+        │
+        ├─&gt; [Document Intelligence Layout or Content Understanding]  構造抽出
+        ├─&gt; [チャンク分割 + 埋め込み]  ← 埋め込みは Batch デプロイに回すとコスト半減
+        └─&gt; [Azure AI Search インデックス] / [Cosmos DB]
+        │
+        ▼
+ [Foundry エージェント]  ← 検索・質問応答</code></pre>
+<p><strong>公式リファレンスが 2 つある:</strong></p>
+<ul>
+<li><strong>Durable Functions 版</strong>(文書分類):Web アプリ → Blob + Service Bus → Durable Functions(analyze / metadata store / embedding)→ AI Search。注目点は「<strong>Agent Framework にはテキスト分割プリミティブがないため Semantic Kernel の <code>TextChunker</code> を使う</strong>」ことと、<strong>埋め込み工程を Batch デプロイ(<code>GlobalBatch</code>、24 時間ターンアラウンド)に回してコスト削減する</strong>推奨。</li>
+<li><strong>Container Apps 版</strong>(マルチモーダル):Container Apps + Queue Storage + Content Understanding + Azure OpenAI + Cosmos DB。公式に「ワークフローが単純 / ビジュアル設計を好む / ローコード寄りチームなら <strong>Logic Apps か Azure Functions に置き換えよ</strong>」と代替案が示されている。</li>
+</ul>
+<p><strong>AI Search のスキルとして組み込む場合の比較:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th></th>
+<th>Document Layout skill</th>
+<th><strong>Content Understanding skill</strong></th>
+</tr></thead><tbody>
+<tr>
+<td>ステータス</td>
+<td>既存パイプライン向け</td>
+<td><strong>GA(2026-04-01)。</strong>セマンティックチャンキングはプレビュー</td>
+</tr>
+<tr>
+<td>表・図の出力</td>
+<td><strong>プレーンテキスト(情報欠落)</strong></td>
+<td><strong>Markdown</strong></td>
+</tr>
+<tr>
+<td>ページ跨ぎの表</td>
+<td>分断される</td>
+<td><strong>単一単位で抽出</strong></td>
+</tr>
+<tr>
+<td>チャンクのページ跨ぎ</td>
+<td><span class="badge no">不可</span></td>
+<td>可</td>
+</tr>
+<tr>
+<td>無料枠</td>
+<td>インデクサあたり 20 文書/日</td>
+<td><strong>なし(全文書課金)</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>両スキル共通の罠:</strong> <strong>レイアウト処理に 5 分以上かかる文書はタイムアウトし、しかも課金される。</strong></p>
+<p><strong>Markdown 出力の挙動変更(DI v4.0 GA):</strong> <strong>表は HTML テーブルとして出力される</strong>(パイプ表ではない。結合セル・複数行ヘッダー対応のため)。選択マークは Unicode <code>☒</code> / <code>☐</code>(旧 <code>:selected:</code>)。<strong>後段のパーサを書くときにここを間違えやすい。</strong></p>
+<h3 id="vision-の世代交代に注意">Vision の世代交代に注意</h3>
+<p><strong>Azure AI Vision Image Analysis 4.0/3.2 は 2028-09-25 廃止</strong>で、「2026-09-25 までに移行計画を」と記載されている。公式の移行先は OCR → Document Intelligence、顔 → Face API、埋め込み → Cohere Embed、汎用 → GPT 系 Foundry Models / Content Understanding。<strong>既存の画像解析パイプラインを持つ顧客には、この期限を提示する。</strong></p>
+<hr>
+<h2 id="e3-大量バッチ処理">E3. 大量バッチ処理</h2>
+<p><strong>「リアルタイムでなくてよい処理」を切り出すだけでモデルコストが半減する。</strong>PoC 段階でこの切り分けを設計に入れる。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>レバー</th>
+<th>効果</th>
+<th>注意</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Batch デプロイ</strong></td>
+<td><strong>Global Standard 比 50% 割引</strong>、24 時間目標</td>
+<td><code>completion_window</code> は <strong><code>24h</code> 固定</strong>(他の値を指定するとジョブ失敗)。<strong>enqueued tokens クォータはオンライン系と完全分離</strong></td>
+</tr>
+<tr>
+<td><strong>Model router(Cost モード)</strong></td>
+<td>品質 5〜6% 帯で最安モデルを選択</td>
+<td><strong>有効コンテキストウィンドウが最小の下位モデルに制限される。</strong>大きなコンテキストなら model subset で絞る</td>
+</tr>
+<tr>
+<td><strong>小型モデル</strong></td>
+<td>gpt-4.1-nano は PTU 効率が gpt-4.1 の約 20 倍</td>
+<td>品質検証が前提</td>
+</tr>
+<tr>
+<td><strong>Prompt caching</strong></td>
+<td>共通プレフィックスの再利用</td>
+<td><strong>先頭 1,024 トークンが完全一致</strong>する設計にする</td>
+</tr>
+</tbody></table></div>
+<p><strong>Batch の制限:</strong> 入力ファイル最大 200MB(BYO Blob なら 1GB)、<strong>1 ファイル最大 100,000 リクエスト</strong>、有効期限未設定なら入力ファイル 500 個 / リソース(<code>expires_after</code> を設定すると 10,000 個)。24 時間を超えてもジョブは失効せず実行を継続する。</p>
+<p><strong>運用推奨:</strong> <strong>Dynamic quota を ON</strong> にして余剰容量を機会的に利用する。一部リージョンでは <code>token_limit_exceeded</code> を即時返す <strong>fail-fast + 指数バックオフ</strong>でジョブをキューイングできる。</p>
+<p><strong>アーキテクチャの骨格:</strong></p>
+<pre><code> [投入: Blob / DB / イベント]
+        │
+        ▼
+ [ジョブ生成(JSONL 作成)] ← Functions / Container Apps jobs
+        │
+        ▼
+ [Batch デプロイに投入] ──&gt; 24h 以内に完了 ──&gt; [結果 JSONL]
+        │                                            │
+        │ fail-fast + 指数バックオフでリトライ           ▼
+        └────────────────────────────────&gt;  [結果取り込み・後処理]</code></pre>
+<p><strong>リアルタイム経路との共存:</strong> Batch とオンラインでクォータプールが分離されているため、<strong>バッチが暴走してもリアルタイム側のクォータを食わない。</strong>これは設計上の大きな利点で、「日中はチャット、夜間は一括処理」を同一リソースで安全に同居させられる。</p>
+<hr>
+<h2 id="e4-マルチモーダル生成-画像・動画">E4. マルチモーダル生成(画像・動画)</h2>
+<blockquote><p>⚠ この節は特に一次情報の裏取りが薄い。実案件では公式ページの再確認が必要。</p></blockquote>
+<p><strong>モデルの現況:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>種別</th>
+<th>状況</th>
+</tr></thead><tbody>
+<tr>
+<td>画像生成</td>
+<td><code>gpt-image-2</code> は GA(2026-04-21)。<code>gpt-image-1</code> のみプレビュー。<strong><code>gpt-image-1</code> は 2026-10-23、<code>gpt-image-1.5</code> は 2026-12-16 リタイア予定</strong></td>
+</tr>
+<tr>
+<td>画像生成(パートナー)</td>
+<td>BFL FLUX.2-pro / flex 等が GA(マルチ参照画像はプレビュー扱い)</td>
+</tr>
+<tr>
+<td>動画生成</td>
+<td><strong>Sora / Sora 2 はパブリックプレビュー。</strong>非同期ジョブ API。API は <code>api-version=preview</code></td>
+</tr>
+<tr>
+<td>画像生成ツール(エージェント)</td>
+<td><strong>プレビュー。</strong><code>gpt-image-1</code> + LLM オーケストレータが同一プロジェクトに必要</td>
+</tr>
+</tbody></table></div>
+<p><strong>アーキテクチャ上の含意:</strong></p>
+<ul>
+<li><strong>非同期ジョブとして設計する。</strong>特に動画生成はジョブ投入 → ポーリング → 成果物取得の流れになるため、<strong>同期 API の裏に隠すとタイムアウトする。</strong>キュー + ワーカー + 成果物ストレージ(Blob)が基本形。</li>
+<li><strong>Image Generation ツールは閉域で使えない</strong>(ネットワーク分離下で「Not supported / 開発中」)。</li>
+<li><strong>リタイア日が近いモデルが多い。</strong>特に画像生成系は 2026 年後半に複数のリタイアが予定されており、<strong>モデル固定でプロンプトを作り込むと更改コストが読めなくなる。</strong></li>
+<li>生成物の安全性・権利関係(protected material 検出、content credentials 等)については、本調査で十分な一次情報を確認できていない。<strong>要確認。</strong></li>
+</ul>
+<hr>
+<h2 id="e5-m365-teams-連携">E5. M365 / Teams 連携</h2>
+<h3 id="エージェントを-teams-m365-copilot-に公開する">エージェントを Teams / M365 Copilot に公開する</h3>
+<p><strong>公開フロー自体は GA。</strong>安定エンドポイントを Teams アプリマニフェスト化して M365 / Teams のエージェントストアへ公開する。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>必要リソース</td>
+<td><strong>Bot Service リソース</strong>(<code>Microsoft.BotService</code>)</td>
+</tr>
+<tr>
+<td>承認</td>
+<td>組織公開は <strong>M365 管理者承認</strong></td>
+</tr>
+<tr>
+<td><strong>閉域での制約</strong></td>
+<td><strong>パブリックネットワーク無効プロジェクトはポータルからの公開が不可・REST のみ</strong></td>
+</tr>
+<tr>
+<td>Azure Government</td>
+<td><strong>非対応</strong></td>
+</tr>
+<tr>
+<td>旧形式</td>
+<td>旧 Agent Applications 形式は新規公開不可(フォーマット移行が必要)</td>
+</tr>
+</tbody></table></div>
+<p><strong>プロトコル:</strong> Teams / M365 チャネル配信には <strong>Activity プロトコル</strong>が使われ、Responses プロトコルから自動ブリッジされる。</p>
+<p><strong>認証は 2 モード:</strong> OAuth 2.0 の <strong>OBO</strong>(ユーザートークンあり)と、<strong>エージェント自身の ID</strong>(自律 / バックグラウンド)。</p>
+<p><strong>課金は publisher-pays</strong>(発行者がインフラ費用を負担し、エンドユーザーは既定で課金されない)。<strong>社内展開のコスト設計で見落としやすい。</strong></p>
+<h3 id="copilot-studio-との棲み分け">Copilot Studio との棲み分け</h3>
+<ul>
+<li><strong>Copilot Studio から Foundry エージェントへの接続はプレビュー</strong>(新 Foundry ポータルで作成されたエージェントのみ)。</li>
+<li>逆方向(<strong>Foundry → M365 Copilot / Teams の publish)は GA。</strong></li>
+<li>CAF は SaaS(Copilot Studio)vs PaaS(Foundry)として整理し、ハイブリッド運用も推奨している。ただし「<strong>Low-code SaaS 開発は重いカスタマイズで限界に達し、マネージドプラットフォームへの移行が必要になる</strong>」とも明記。</li>
+<li><strong>Copilot Studio / Foundry のエージェントセキュリティ機能は Microsoft Agent 365 へ移行中。</strong></li>
+</ul>
+<h3 id="work-iq-m365-のコラボレーション文脈を使う">Work IQ(M365 のコラボレーション文脈を使う)</h3>
+<p><strong>成立条件が厳しいので先に確認する:</strong></p>
+<ul>
+<li><strong>M365 Copilot ライセンスが必須</strong>(開発者・エンドユーザー双方)</li>
+<li><strong>Entra Global Administrator による <code>WorkIQAgent.Ask</code> のテナント同意が必須</strong></li>
+<li><strong>BYO Entra アプリ(OBO)のみ</strong>サポート</li>
+<li><strong>VNet 統合非対応</strong></li>
+<li>データレジデンシは Foundry プロジェクトのリージョンではなく <strong>M365 テナントの構成に従う</strong></li>
+<li>接続は A2A プロトコル。Java SDK 非対応</li>
+</ul>
+<p>M365 の権限・秘密度ラベル・情報バリアを自動適用し、顧客コンテンツはモデル学習に使われない。</p>
+<h3 id="m365-agents-sdk-という選択肢">M365 Agents SDK という選択肢</h3>
+<p>M365 Copilot / Teams / パートナープラットフォーム / 独自アプリ / Web にまたがるフルスタック・マルチチャネル向け。<strong>Semantic Kernel や MAF をオーケストレータとして内部で使える。</strong>公式の使い分けは「<strong>AI モデルやオーケストレーションを完全に制御したいなら、M365 Agents SDK か Agents Toolkit 経由の Foundry によるプロコード方式を選べ。</strong>」</p>
+<hr>
+<h2 id="この章の未確認事項-次回更新時の重点">この章の未確認事項(次回更新時の重点)</h2>
+<p>本ページは一次情報の裏取りが他ページより薄い。以下は<strong>特に再確認が必要:</strong></p>
+<ol>
+<li><strong>Voice Live の GA 明文表記</strong>(安定版 API の存在から実質 GA と判断できるが「generally available」の文言自体は未確認)</li>
+<li><strong>音声エージェントとテレフォニー(ACS / SIP 相当)の公式な接続パターン</strong></li>
+<li><strong>リアルタイム音声のセッション上限・レイテンシ目標値</strong></li>
+<li><strong>マルチモーダル生成の安全性まわり</strong>(content credentials、透かし、protected material 検出の適用範囲)</li>
+<li><strong>Foundry Local のライフサイクル表記</strong>(現行ページに preview / GA の明記なし)</li>
+<li><strong>Foundry Local on Azure Local の具体的な構成要件</strong></li>
+<li><strong>マルチテナント SaaS 向けの Azure Architecture Center 公式ガイダンス</strong>(<code>secure-multitenant-rag</code> の存在は確認済みだが内容は未取得)</li>
+<li><strong>ファインチューニング / 蒸留の運用アーキテクチャ</strong>(FT モデルのホスティング課金が発生することは確認済み。RFT・蒸留のパイプライン設計は未確認)</li>
+</ol>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

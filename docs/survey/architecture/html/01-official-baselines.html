@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01. 公式ベストプラクティス(リファレンスアーキテクチャ / WAF / CAF)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html" class="current">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="01-公式ベストプラクティス-リファレンスアーキテクチャ-waf-caf">01. 公式ベストプラクティス(リファレンスアーキテクチャ / WAF / CAF)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#公式ドキュメントの三層構造-まずここを理解する">公式ドキュメントの三層構造(まずここを理解する)</a></li><li><a href="#1-aac-リファレンスアーキテクチャ-実装トポロジーの正">1. AAC リファレンスアーキテクチャ(実装トポロジーの正)</a></li><li><a href="#2-aac-のガイド類-リファレンスアーキテクチャではないが判断材料として重要">2. AAC のガイド類(リファレンスアーキテクチャではないが判断材料として重要)</a></li><li><a href="#3-waf-well-architected-framework-ai-ワークロード">3. WAF(Well-Architected Framework)— AI ワークロード</a></li><li><a href="#4-caf-cloud-adoption-framework-組織・配置・リソース粒度">4. CAF(Cloud Adoption Framework)— 組織・配置・リソース粒度</a></li><li><a href="#5-foundry-製品側の公式アーキテクチャ概念ページ">5. Foundry 製品側の公式アーキテクチャ概念ページ</a></li><li><a href="#6-アクセラレータ-リファレンス実装-avm-の現況">6. アクセラレータ / リファレンス実装 / AVM の現況</a></li><li><a href="#7-日本の案件で特に効く公式事実">7. 日本の案件で特に効く公式事実</a></li><li><a href="#8-どの公式資料を出発点にするか-決定表">8. どの公式資料を出発点にするか(決定表)</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com / GitHub 現行ページ確認)</p></blockquote>
+<p>本ページは <strong>Microsoft が公式に出している</strong>ものだけを扱う。想定ユースケース別の設計(<a href="index.html#ドキュメント一覧">04〜08</a>)は、ここを土台にした上での応用と位置づける。</p>
+<h2 id="公式ドキュメントの三層構造-まずここを理解する">公式ドキュメントの三層構造(まずここを理解する)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>層</th>
+<th>何の根拠になるか</th>
+<th>主な所在</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>CAF</strong>(Cloud Adoption Framework)</td>
+<td>組織・ガバナンス・ランディングゾーン配置・リソース粒度</td>
+<td><code>/azure/cloud-adoption-framework/ai/</code></td>
+</tr>
+<tr>
+<td><strong>WAF</strong>(Well-Architected Framework)</td>
+<td>非機能設計の原則(信頼性・セキュリティ・コスト・運用・性能)</td>
+<td><code>/azure/well-architected/ai/</code></td>
+</tr>
+<tr>
+<td><strong>AAC</strong>(Azure Architecture Center)</td>
+<td>実装トポロジー(どのサービスをどう並べるか)</td>
+<td><code>/azure/architecture/ai-ml/</code></td>
+</tr>
+</tbody></table></div>
+<p>2026 年 4〜5 月に CAF の application landing zone accelerator 記事群が廃止され、「<strong>ワークロード設計のガイダンスは AAC と WAF が primary source</strong>」と明記された。提案書では <strong>CAF = 組織・配置の根拠、AAC/WAF = 実装の根拠</strong>として使い分けるのが現行構造に整合する。</p>
+<hr>
+<h2 id="1-aac-リファレンスアーキテクチャ-実装トポロジーの正">1. AAC リファレンスアーキテクチャ(実装トポロジーの正)</h2>
+<p><strong>Foundry チャット系の「リファレンスアーキテクチャ」は 3 本しかない。</strong>それ以外は「ガイド」または「ソリューションアイデア」で、検証レベルが下がる(ソリューションアイデアは「設計の出発点として使え」と明記されている)。顧客提案で引用するときはこの区別を守る。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>名称</th>
+<th>変種</th>
+<th>URL</th>
+</tr></thead><tbody>
+<tr>
+<td>A</td>
+<td>Basic Microsoft Foundry Chat</td>
+<td>パブリック・単一リージョン・ゾーン冗長なし</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/architecture/basic-microsoft-foundry-chat" title="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/architecture/basic-microsoft-foundry-chat">basic-microsoft-foundry-chat</a></td>
+</tr>
+<tr>
+<td>B</td>
+<td><strong>Baseline Microsoft Foundry Chat</strong></td>
+<td><strong>ネットワーク分離・単一リージョン・ゾーン冗長</strong></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/architecture/baseline-microsoft-foundry-chat" title="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/architecture/baseline-microsoft-foundry-chat">baseline-microsoft-foundry-chat</a></td>
+</tr>
+<tr>
+<td>C</td>
+<td>Baseline Microsoft Foundry Chat in an Azure Landing Zone</td>
+<td>ネットワーク分離・hub-spoke</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/architecture/baseline-microsoft-foundry-landing-zone" title="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/architecture/baseline-microsoft-foundry-landing-zone">baseline-microsoft-foundry-landing-zone</a></td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>URL 改称に注意:</strong> 旧 <code>baseline-openai-e2e-chat</code> は <code>baseline-microsoft-foundry-chat</code> にリネームされた(リダイレクトは生存)。過去資料の URL をそのまま引用すると古い前提で読まれる。</p></blockquote>
+<h3 id="a-basic-poc-専用-本番非推奨と記事自身が明言">A. Basic — PoC 専用。本番非推奨と記事自身が明言</h3>
+<p><strong>構成:</strong> App Service(Basic tier、Easy Auth で Entra ID 認証)+ Foundry リソース/プロジェクト 1 個 + Prompt agent + Azure OpenAI(Global Standard、既定ガードレール <code>DefaultV2</code>)+ AI Search(Basic tier)+ Application Insights。</p>
+<p><strong>意図的に欠けているもの(記事が明示):</strong></p>
+<ul>
+<li>ネットワークセキュリティが皆無。「<strong>identity as its perimeter</strong>」であり、AI Search / Foundry / App Service がインターネットから到達可能。</li>
+<li><strong>egress 制御がない</strong> → 「グラウンディングデータの持ち出しをネットワーク統制では防げない」と明記。</li>
+<li>Agent Service は <strong>basic setup</strong>(Microsoft ホストの依存サービス)。Cosmos DB / Storage / AI Search が自サブスクリプションに見えず、<strong>信頼性特性を制御できない。</strong></li>
+</ul>
+<p>実装: <a href="https://github.com/Azure-Samples/microsoft-foundry-basic" title="https://github.com/Azure-Samples/microsoft-foundry-basic">microsoft-foundry-basic</a></p>
+<h3 id="b-baseline-本番の出発点-waf-が-ai-ワークロードの推奨アーキテクチャ-と名指し">B. Baseline — 本番の出発点。WAF が「AI ワークロードの推奨アーキテクチャ」と名指し</h3>
+<pre><code> Internet
+    │
+    ▼
+ [Azure DDoS Protection] ── パブリック IP を保護
+ [Application Gateway + WAF]  ← 唯一のインターネット公開リソース。TLS 終端
+    │  (snet-appGateway)
+    ▼
+ [App Service (3ゾーン, マネージドID)]  ← チャット UI
+    │  (snet-appServicePlan / NSG: inbound 全拒否)
+    │  Private Endpoint 経由
+    ▼
+ [Foundry リソース + プロジェクト + Agent Service (standard setup)]
+    │
+    ├─ [Cosmos DB for NoSQL]  会話履歴・エージェント定義 (enterprise_memory DB)
+    ├─ [Azure Storage (Blob)] アップロードファイル
+    ├─ [Azure AI Search]      File Search のチャンク索引・静的ナレッジ
+    │        すべて Private Endpoint (snet-privateEndpoints)
+    │
+    └─ 外部ツール呼び出し (MCP / カスタム API)
+             │ snet-agentsEgress (Microsoft.App/environments へ委任, /24 推奨)
+             ▼
+        [Azure Firewall] ── 許可した公開 FQDN のみ
+             │
+             ▼         [Azure Bastion] → [jump box VM] → ポータル/データプレーンへ
+          Internet      [build agent VM] → VNet 内 CI/CD</code></pre>
+<p><strong>サブネットと統制(記事の表):</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>サブネット</th>
+<th>NSG inbound</th>
+<th>NSG outbound</th>
+<th>Firewall への UDR</th>
+<th>Firewall egress</th>
+</tr></thead><tbody>
+<tr>
+<td><code>snet-privateEndpoints</code></td>
+<td>VNet</td>
+<td>全拒否</td>
+<td>Yes</td>
+<td>全拒否</td>
+</tr>
+<tr>
+<td><code>snet-appGateway</code></td>
+<td>UI 利用者の送信元 IP + サービス必須</td>
+<td>PE サブネット + サービス必須</td>
+<td>No</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>snet-appServicePlan</code></td>
+<td>全拒否</td>
+<td>PE + Azure Monitor</td>
+<td>Yes</td>
+<td>Azure Monitor 宛のみ</td>
+</tr>
+<tr>
+<td><code>snet-agentsEgress</code></td>
+<td>全拒否</td>
+<td>PE + インターネット</td>
+<td>Yes</td>
+<td><strong>許可した公開 FQDN のみ</strong></td>
+</tr>
+<tr>
+<td><code>snet-jumpBoxes</code> / <code>snet-buildAgents</code></td>
+<td>Bastion サブネットのみ</td>
+<td>PE + インターネット</td>
+<td>Yes</td>
+<td>VM の必要範囲</td>
+</tr>
+</tbody></table></div>
+<p><strong>この記事から拾うべき「明示された地雷」</strong>(そのまま提案レビューのチェック項目になる):</p>
+<ul>
+<li><strong>web search ツールは <code>api.bing.microsoft.com</code> を内部機構で呼び、egress サブネットを完全にバイパスする。</strong>「443 を開ければ Firewall を通るはず」という前提が成り立たない。<strong>全ツールについて egress ポリシー適合を実測せよ</strong>と書かれている。</li>
+<li><strong>Azure Firewall の TLS インスペクションを適用してはならない。</strong>検査時に挿入される証明書がエージェントの接続を壊す。<code>AzureActiveDirectory</code> サービスタグの許可が必要。</li>
+<li>Private Endpoint + UDR を使うため、<strong>Foundry の Network Security Perimeter 機能は併用できない。</strong></li>
+<li><strong>WAF チューニングが実務上必須。</strong>チャット本文に含まれるコード片・SQL・HTML がマネージドルールの誤検知を誘発し、<strong>多ターン会話で OWASP anomaly score が累積して、ある時点で突然 HTTP 403 になる。</strong>チャット本文フィールドに限定した exclusion をルールグループ単位で設定し、リクエストボディ検査サイズ上限も確認する。</li>
+<li><strong>会話の per-user 認可を Foundry は行わない。</strong>クライアントから来た conversation ID をそのまま渡すと <strong>OWASP Broken Object Level Authorization</strong> 脆弱性になる。会話の所有権をリクエストごとに検証するのはアプリサーバーの責任。</li>
+<li><strong>Foundry ポータルは従業員 ID ではなくサービス ID で多くの操作を行う</strong>ため、限定的な RBAC しか持たない従業員が会話内容やエージェント定義を閲覧できてしまう。<strong>本番ではポータルアクセスを原則遮断し、IaC/パイプライン運用に寄せる。</strong></li>
+<li><strong>プロジェクト作成は特権操作として扱う。</strong>ポータルで作ったプロジェクトは Private Endpoint / NSG を継承せず、そこに作られたエージェントはセキュリティ境界を迂回する。</li>
+<li><strong>接続(Connections)はプロジェクトレベルでのみ作る。</strong>リソースレベル接続は現在と将来の全プロジェクトに波及し、最小権限に反する。</li>
+<li><strong>1 プロジェクト内の全 prompt agent は同一マネージド ID を共有する。</strong>アクセスパターンが違うならプロジェクトを分ける。hosted agent は個別の Entra Agent ID を持つのでこの制約を受けない。</li>
+</ul>
+<p><strong>DR に関する最重要の記述(そのまま顧客に開示すべき):</strong></p>
+<blockquote><p>Foundry Agent Service には組み込みの DR 機能がない。状態のレプリケーション・バックアップ・ポイントインタイム復元のいずれも持たない。<strong>復旧はレプリカの昇格ではなく再構築で行う。インシデントによってエージェント・会話・ナレッジデータが恒久的に失われうる。</strong></p></blockquote>
+<p>補償策として記事が挙げるのは、Cosmos DB の継続バックアップ(PITR)、AI Search は復元機能が無いため<strong>別途 source of truth を維持</strong>、Storage は GRS + customer-managed failover、<strong>エージェント定義を as code で管理</strong>(ポータルでの未追跡変更を避ける)、プロジェクトにユーザー割当マネージド ID を使う(誤削除時にロール割当を再利用できる)、依存 3 サービスに削除ロック。</p>
+<p><strong>コストについての記述:</strong> 最も高いのは <strong>Cosmos DB / AI Search / DDoS Protection</strong>、次いで UI コンピュートと Application Gateway。ファイルアップロードが不要なら Storage を LRS、AI Search をレプリカ 1 に落とせる。さらに「<strong>エージェントは非決定的にツールを呼ぶため、無関係なクエリでも外部 API を叩いてコストが跳ねる</strong>」「<code>max_output_tokens</code> / <code>truncation</code> によるトークン制御はセルフホストのオーケストレーションでしか実現できない」「<strong>予測可能なコストが必要ならセルフホストのオーケストレータを検討せよ</strong>」と明記されている。</p>
+<p>実装: <a href="https://github.com/Azure-Samples/microsoft-foundry-baseline" title="https://github.com/Azure-Samples/microsoft-foundry-baseline">microsoft-foundry-baseline</a> (Bicep、活発に更新中)</p>
+<h3 id="c-baseline-in-azure-landing-zone-hub-spoke-版-ただしコードは記事から消えた">C. Baseline in Azure Landing Zone — hub-spoke 版。ただしコードは記事から消えた</h3>
+<p><strong>冒頭で明示的に否定されているトポロジー</strong>(SI 判断で最重要):</p>
+<blockquote><p>ランディングゾーン実装では「<strong>Foundry リソースをビジネスグループ単位の中央リソースとし、プロジェクトをワークロードごとの委譲単位にする</strong>」構成が考えられるが、<strong>リソース組織上の要因とコスト配賦の限界により、このトポロジーは推奨しない。</strong>代わりに本アーキテクチャは<strong>ワークロードを Foundry リソースの所有者として扱う。</strong></p></blockquote>
+<p><strong>所有権の分界:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>プラットフォームチーム</th>
+<th>ワークロードチーム</th>
+</tr></thead><tbody>
+<tr>
+<td>Azure Firewall(hub)、Azure Bastion、spoke VNet 本体とピアリング・DNS、UDR、<strong>Azure Private DNS ゾーン</strong>、DNS Private Resolver、DDoS Protection、Azure Policy</td>
+<td>Foundry リソース + プロジェクト + Agent Service、<strong>Cosmos DB / Storage / AI Search(エージェント専用、他ワークロードと共有禁止)</strong>、App Service、<strong>Application Gateway + WAF とそのパブリック IP(spoke 側)</strong>、Key Vault、監視、spoke のサブネットと NSG、Private Endpoint</td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>明示的な警告:</strong> 「Foundry の依存リソースをプラットフォームリソースに集約してコストを最適化しようとするな。これらはワークロードリソースのままでなければならない。」</p></blockquote>
+<p><strong>サブスクリプション vending でプラットフォームチームに出す要件:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>要求値</th>
+</tr></thead><tbody>
+<tr>
+<td>spoke VNet</td>
+<td>単一専用 spoke、<strong><code>/22</code> の連続アドレス空間</strong>(side-by-side デプロイに対応するため)</td>
+</tr>
+<tr>
+<td>アドレス範囲</td>
+<td>Agent Service は <strong>RFC1918 のみ</strong>。agent サブネットは <code>/24</code> プレフィックス内</td>
+</tr>
+<tr>
+<td>リージョン</td>
+<td>hub をワークロードと同一リージョンに。<strong>AZ 対応必須</strong></td>
+</tr>
+<tr>
+<td>Private Endpoint</td>
+<td>AI Search / Cosmos DB / Key Vault / Foundry / Storage</td>
+</tr>
+<tr>
+<td>ingress</td>
+<td>データサイエンティストが社内網から Foundry ポータルへ、運用者が jump box 経由</td>
+</tr>
+</tbody></table></div>
+<p><strong>egress を hub Firewall に強制できないコンポーネントがある:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>強制手段</th>
+</tr></thead><tbody>
+<tr>
+<td>Application Gateway</td>
+<td><strong>なし(強制不可)</strong></td>
+</tr>
+<tr>
+<td>AI Search</td>
+<td><strong>なし(強制不可)</strong></td>
+</tr>
+<tr>
+<td>App Service</td>
+<td>Regional VNet integration + <code>vnetRouteAllEnabled</code></td>
+</tr>
+<tr>
+<td>Agent Service</td>
+<td><code>snet-agentsEgress</code> の UDR</td>
+</tr>
+</tbody></table></div>
+<p>強制できない部分は「補償統制」「機能除外による再設計」「正式な例外申請」のいずれかで組織要件に整合させる。</p>
+<p><strong>DNS の落とし穴(デプロイ失敗の直接原因になる):</strong></p>
+<blockquote><p><strong>Agent Service は spoke VNet の DNS 構成を使わない。</strong>プラットフォームチームが DNS Private Resolver にワークロードのプライベート DNS ゾーン用ルールセットを構成し、spoke にリンクすることを推奨する。<strong>プライベート DNS レコードがサブネット内から解決可能になる前に Agent Service をデプロイしようとすると、デプロイは失敗する。</strong></p></blockquote>
+<p>DNS を VNet から継承するのは Application Gateway / App Service / jump box / build agent のみ。<strong>AI Search / Foundry / Agent Service / Cosmos DB は上書き不可で Azure DNS を使う。</strong></p>
+<p><strong>既存 ALZ ポリシーとの衝突例</strong>(記事が挙げる 3 つ): Key Vault シークレットの最大有効期間ポリシー(Foundry が保存する接続シークレットに有効期限が付かない)、AI Search の CMK 必須ポリシー、<strong>「Foundry models should not be preview」</strong>(開発時にプレビューモデルを使い本番までに GA する想定と衝突)。</p>
+<blockquote><p><strong>⚠ リファレンス実装が削除されている。</strong> この記事には GitHub リンクが 1 つも無く、2026-07-01 のコミットで「Remove reference to implementation」が入っている。旧リポジトリ(<code>azure-openai-chat-baseline-landing-zone</code> 等)は 404。<strong>ALZ 配下の案件では、この記事は設計ガイドとしてのみ使い、コードは後述の AI-Landing-Zones / AVM を見る。</strong></p></blockquote>
+<hr>
+<h2 id="2-aac-のガイド類-リファレンスアーキテクチャではないが判断材料として重要">2. AAC のガイド類(リファレンスアーキテクチャではないが判断材料として重要)</h2>
+<h3 id="2-1-ai-agent-orchestration-patterns-マルチエージェント判断の一次資料">2.1 AI Agent Orchestration Patterns — マルチエージェント判断の一次資料</h3>
+<p>URL: <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns" title="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns">ai-agent-design-patterns</a></p>
+<p><strong>まず複雑度の段階を選ぶ:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>レベル</th>
+<th>使う条件</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Direct model call</strong></td>
+<td>分類・要約・翻訳などの単発タスク。「<strong>プロンプトエンジニアリングで解けるならエージェントは要らない</strong>」</td>
+</tr>
+<tr>
+<td><strong>Single agent with tools</strong></td>
+<td><strong>「エンタープライズユースケースではしばしばこれが正しい既定」</strong>と明記。無限ループ防止に iteration limit を設定</td>
+</tr>
+<tr>
+<td><strong>Multiagent orchestration</strong></td>
+<td>部門横断、<strong>エージェントごとに異なるセキュリティ境界が必要</strong>、並列特化が有利な場合</td>
+</tr>
+</tbody></table></div>
+<p><strong>5 パターンの比較:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>パターン</th>
+<th>ルーティング</th>
+<th>適する対象</th>
+<th>注意点</th>
+</tr></thead><tbody>
+<tr>
+<td>Sequential</td>
+<td>決定的・事前定義順</td>
+<td>段階的な品質向上、明確な依存関係</td>
+<td>前段の失敗が伝播、並列性なし</td>
+</tr>
+<tr>
+<td>Concurrent</td>
+<td>決定的 or 動的選択</td>
+<td>複数視点の独立分析、レイテンシ重視</td>
+<td>結果矛盾時の解決が必要、リソース消費大</td>
+</tr>
+<tr>
+<td>Group chat</td>
+<td>chat manager がターン制御</td>
+<td>合意形成、maker-checker 検証</td>
+<td>会話ループ、多数エージェントで制御困難</td>
+</tr>
+<tr>
+<td>Handoff</td>
+<td>エージェントが移譲を判断</td>
+<td>適切な専門家が処理中に判明する場合</td>
+<td><strong>無限 handoff ループ</strong>、経路が予測不能</td>
+</tr>
+<tr>
+<td>Magentic</td>
+<td>manager が task ledger を動的に構築</td>
+<td>解法が事前に定まらない open-ended 問題</td>
+<td>収束が遅い、曖昧なゴールで停滞</td>
+</tr>
+</tbody></table></div>
+<p><strong>実装手段との対応:</strong></p>
+<ul>
+<li><strong>Microsoft Agent Framework</strong> — <strong>5 パターンすべてを workflow orchestration として組み込みサポート。</strong>HITL 対応。</li>
+<li><strong>Foundry Agent Service</strong> — 「マネージドでノーコードなエージェント連鎖を connected agents 機能で提供する。<strong>このサービスのワークフローは主に非決定的で、完全に実装できるパターンの範囲が限られる。</strong>マネージド環境が必要で、オーケストレーション要件が単純な場合に使え」。</li>
+<li><strong>LangChain / CrewAI / OpenAI Agents SDK</strong> も名指しで併記され、「本記事のオーケストレーションパターンは Microsoft SDK 固有ではない。<strong>どの SDK を選んでも設計ガイダンスは適用できる</strong>」と中立を明示している。</li>
+</ul>
+<p><strong>セキュリティ上の必須事項:</strong> 「エージェントは全ユーザーの要求を扱うためナレッジストアへの広いアクセスを持たざるを得ないが、ユーザーがアクセスできないデータを返してはならない。<strong>セキュリティトリミングはパターン内のすべてのエージェントで実装しなければならない。</strong>」</p>
+<h3 id="2-2-ゲートウェイ-apim-を挟むかどうか">2.2 ゲートウェイ(APIM)を挟むかどうか</h3>
+<p>URL: <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/azure-openai-gateway-guide" title="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/azure-openai-gateway-guide">azure-openai-gateway-guide</a></p>
+<p><strong>重要な留保:</strong> 「大半のワークロードは、この問題(スロットリング)を <strong>Global および Data Zone デプロイで解決すべきである。Global / Data Zone デプロイ自体がゲートウェイ実装である。</strong>」→ <strong>スロットリング対策だけが目的ならカスタムゲートウェイは不要。</strong></p>
+<p><strong>「入れるな」と明記されている 3 条件:</strong></p>
+<ul>
+<li>ワークロードが<strong>合意済み SLO を満たせなくなる</strong>なら導入するな</li>
+<li>ワークロード自身または利用者データの<strong>機密性・完全性・可用性を守れなくなる</strong>なら導入するな</li>
+<li><strong>交渉済みの性能目標が達成不能になる</strong>、あるいは他のトレードオフが多すぎるなら導入するな</li>
+</ul>
+<p><strong>見落としやすい制約:</strong> ストリーミング応答には長時間接続の維持が要り、<strong>Responses API のようなステートフルな対話にはセッションアフィニティが必要。</strong>また Foundry のデータプレーン認証は<strong>リソースまたはプロジェクト単位で行われ、個別モデルデプロイ単位ではない</strong>ため、デプロイ単位の最小権限や ID スコープ分離が複雑になる。</p>
+<h3 id="2-3-agentic-rag-を使うかどうか">2.3 Agentic RAG を使うかどうか</h3>
+<p>URL: <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-agentic" title="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-agentic">rag-agentic</a></p>
+<p>標準 RAG は固定パイプライン(検索するか / どのインデックスか / 何回検索するかを設計時に決定)。Agentic RAG は検索をツールとして扱い、エージェントが推論ループで反復する。</p>
+<p><strong>明示された定量トレードオフ:</strong> 「標準 RAG のリクエストは 1 回の検索と 1 回の生成で <strong>2〜3 秒</strong>。3〜5 回のツール呼び出しを伴う agentic RAG のリクエストは <strong>8〜15 秒</strong>。」</p>
+<p><strong>ツール数の指針:</strong> 複数の retrieval ツールを持たせる場合、<strong>合計ツール数は 20 未満</strong>に保つ(モデルの選択精度維持のため)。反復上限は 5〜10 回が典型。</p>
+<hr>
+<h2 id="3-waf-well-architected-framework-ai-ワークロード">3. WAF(Well-Architected Framework)— AI ワークロード</h2>
+<p>入口: <a href="https://learn.microsoft.com/en-us/azure/well-architected/ai/get-started" title="https://learn.microsoft.com/en-us/azure/well-architected/ai/get-started">get-started</a></p>
+<h3 id="3-1-まず知っておくべき-無いもの">3.1 まず知っておくべき「無いもの」</h3>
+<ul>
+<li><strong>Foundry の WAF service guide は存在しない。</strong><code>service-guides/azure-ai-foundry</code> も <code>service-guides/microsoft-foundry</code> も 404。Azure OpenAI の service guide は 2025 年 9 月に「内容が古く WAF に整合しなくなった」として廃止された。</li>
+<li><strong>ピラー別の AI ページも存在しない</strong>(<code>ai/reliability</code> <code>ai/security</code> 等はすべて 404)。5 本柱は <code>ai/design-principles</code> の 1 ページに集約されている。</li>
+<li>したがって「Foundry を WAF 準拠で設計する根拠」を service guide に求めることは<strong>現状できない。</strong>代替の一次資料は、WAF の <code>ai/architecture-pattern</code> が「<strong>これらの baseline の例が AI ワークロードの推奨アーキテクチャである</strong>」として指す <strong>Baseline Microsoft Foundry chat</strong>(前節 B)。</li>
+</ul>
+<h3 id="3-2-foundry-か-azure-ml-か-waf-空間で唯一の明示的な棲み分け">3.2 Foundry か Azure ML か — WAF 空間で唯一の明示的な棲み分け</h3>
+<p>Azure Machine Learning の service guide にある注記:</p>
+<blockquote><p><strong>生成 AI アプリケーションと AI エージェントには Microsoft Foundry を推奨の開発プラットフォームとして検討せよ。</strong>Azure Machine Learning は、従来型の機械学習ワークロード、エンドツーエンドの MLOps パイプライン、カスタムモデル訓練、高度なデータ準備・特徴量エンジニアリングを要するシナリオのための包括的プラットフォームであり続ける。</p></blockquote>
+<h3 id="3-3-application-design-の推奨-技術選定に直結">3.3 Application Design の推奨(技術選定に直結)</h3>
+<p>URL: <a href="https://learn.microsoft.com/en-us/azure/well-architected/ai/application-design" title="https://learn.microsoft.com/en-us/azure/well-architected/ai/application-design">application-design</a></p>
+<p><strong>5 レイヤー:</strong> Client(薄く保つ)/ <strong>Intelligence</strong>(ルーティング・オーケストレーション・エージェント)/ Inferencing / <strong>Knowledge</strong>(ここでデータアクセスポリシーと認可を強制する)/ Tools。</p>
+<p><strong>最重要の警告:</strong></p>
+<blockquote><p><strong>タスクとモデル呼び出しの間に自動的にエージェントを挟むな。</strong>提供したいインテリジェンスがエージェントパターンの複雑さを本当に必要とするのか、直接のモデル呼び出しで十分なのかを評価せよ。<strong>エージェント層はレイテンシを増やし、攻撃面を広げ、テストを複雑にする。</strong></p></blockquote>
+<p><strong>オーケストレータ vs エージェント協調:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>オーケストレータを使う</th>
+<th>エージェント協調を使う</th>
+</tr></thead><tbody>
+<tr>
+<td>予測可能なワークフロー / <strong>コンプライアンス上、特定ステップの実行保証が必要</strong> / レイテンシとリソースの厳密制御 / 単純なタスク委譲</td>
+<td>多段推論 / 複数専門ツールの協調 / 中間結果に応じた適応的挙動 / 会話状態とユーザーコンテキストの維持</td>
+</tr>
+</tbody></table></div>
+<blockquote><p>トレードオフ: 「オーケストレーションは予測可能性と制御をもたらすが適応性を制限する。エージェント協調は動的な問題解決を可能にするが、ばらつきと複雑さを持ち込む。」</p></blockquote>
+<p><strong>その他の明示的推奨:</strong> 「セキュリティと安全性の統制は検証されなければならず、<strong>マネージドサービスだから備わっていると仮定してはならない</strong>」/ データストアへの直接アクセス禁止(必ず認可を強制する API 抽象を経由)/ モデルとツールを抽象化 / prebuilt(SaaS/PaaS)を優先。</p>
+<p><strong>プロトコルへの警告:</strong> 「独自形式よりオープンで文書化されたインターフェースを選べ。業界には新興プロトコルが多数ある。<strong>急速に進化中あるいは廃止されつつあるプロトコルから来る技術的負債を考慮せよ。</strong>」標準指定はツール定義 = <strong>OpenAPI</strong>、モデル可搬性 = <strong>ONNX</strong>、テレメトリ = <strong>OpenTelemetry</strong>。</p>
+<p><strong>モデルルーターの非採用条件:</strong> 「<strong>狭い SLO を持つファインチューン済みモデルを使う場合、あるいは一貫した性能を含む決定的な挙動が重要な場合はモデルルーターを使うな。</strong>」</p>
+<p><strong>キャッシュのリスク:</strong> キャッシュキーに <strong>tenant/user identity、policy context、model version、prompt version</strong> を含めよ。「<strong>多くの状況で単一ユーザー向けのキャッシュはするな。</strong>」</p>
+<h3 id="3-4-5-本柱の設計原則から拾うべき点">3.4 5 本柱の設計原則から拾うべき点</h3>
+<ul>
+<li><strong>信頼性:</strong> 推論 API に高可用性が要るなら、ホスティングプラットフォームが<strong>可用性ゾーンまたはマルチリージョン設計をサポートしなければならない。</strong></li>
+<li><strong>セキュリティ:</strong> 全推論エンドポイントに認証必須、<strong>匿名エンドポイント禁止。</strong>トレードオフとして「最高レベルのセキュリティを実装すると、暗号化データの分析・検査・ログ取得が制限されるため、コストと精度でトレードオフが生じる」と明記。</li>
+<li><strong>コスト:</strong> <strong>オーケストレーションツールは always-on なので elastic compute を優先。</strong>「フルタイム稼働にサーバーレスコンピュートを避けよ。コストが跳ね上がりうる。」<strong>GPU は AI 機能にのみ使う。</strong>Azure OpenAI の負荷試験は課金されるため、<strong>未使用 PTU をテスト環境で使うかエンドポイントをシミュレートせよ。</strong></li>
+<li><strong>運用:</strong> 「設計を単純化し、ワークフローのオーケストレーションを自動化し、day-2 運用を容易にするため、<strong>セルフホストより PaaS を優先せよ。</strong>」</li>
+<li><strong>性能:</strong> モデルの訓練・ファインチューニングには GPU 最適化コンピュートが必要になることが多いが、<strong>オーケストレーションツールには汎用 SKU で十分。</strong></li>
+</ul>
+<h3 id="3-5-architecture-pattern-2026-05-新設-最新ページ">3.5 Architecture pattern(2026-05 新設、最新ページ)</h3>
+<p>URL: <a href="https://learn.microsoft.com/en-us/azure/well-architected/ai/architecture-pattern" title="https://learn.microsoft.com/en-us/azure/well-architected/ai/architecture-pattern">architecture-pattern</a></p>
+<ul>
+<li><strong>レイヤーごとに変化速度が違う:</strong> Intelligence API は安定のためゆっくり進化、オーケストレーションとエージェント層はより速く進化、推論層は新モデル投入時に更新、ナレッジ層は継続的に進化。<strong>デプロイの調整を意図的に設計せよ。</strong></li>
+<li><strong>Tools layer が最高リスク:</strong> 「アクションは実世界に、場合によっては不可逆な結果をもたらす。<strong>高リスク操作には人間の承認ステップを追加せよ。</strong>統合前にすべてのツールを評価し、ガバナンスをワークロード境界の外まで拡張せよ。」</li>
+</ul>
+<h3 id="3-6-waf-側の陳腐化-引用時の注意">3.6 WAF 側の陳腐化(引用時の注意)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>ページ</th>
+<th>問題</th>
+</tr></thead><tbody>
+<tr>
+<td><code>ai/application-platform</code>(2024-11)</td>
+<td>オーケストレーション節が「<strong>prompt flow のような既製ソリューションを優先せよ</strong>」のまま。<strong>prompt flow は 2027-04-20 廃止決定済み</strong>で、2026-04 更新の <code>ai/application-design</code> と矛盾する。この節は引用しないほうが安全</td>
+</tr>
+<tr>
+<td><code>ai/mlops-genaiops</code>(2024-11)</td>
+<td>同様に GenAIOps ツールとして prompt flow を推奨</td>
+</tr>
+<tr>
+<td><code>ai/design-principles</code>(2024-04)</td>
+<td>5 本柱の唯一のページだが agentic な内容がほぼない</td>
+</tr>
+<tr>
+<td><code>ai/architecture-pattern</code> 内リンク</td>
+<td>baseline 記事へのリンクが<strong>旧名 URL のまま</strong>(リブランドが全ページに未反映)</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="4-caf-cloud-adoption-framework-組織・配置・リソース粒度">4. CAF(Cloud Adoption Framework)— 組織・配置・リソース粒度</h2>
+<p>入口: <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai/" title="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai/">learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai</a></p>
+<p>構成は <strong>Strategy → Plan → Ready → Govern → Secure → Manage</strong> の 6 ステージ。別体系として <strong>Agent adoption</strong>(<code>/cloud-adoption-framework/ai-agents/</code>)が 2025-12 に新設された。</p>
+<h3 id="4-1-4-つの採用モデル-技術選定の最上位軸">4.1 4 つの採用モデル(技術選定の最上位軸)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>モデル</th>
+<th>トレードオフ(原文の趣旨)</th>
+</tr></thead><tbody>
+<tr>
+<td>Ready-to-use Copilots(SaaS)</td>
+<td>最速だがカスタマイズ性が最小</td>
+</tr>
+<tr>
+<td>Low-code SaaS 開発(Copilot Studio / M365 Copilot 拡張)</td>
+<td>業務部門に開発を開放できるが、<strong>重いカスタマイズは限界に達しマネージドプラットフォームへの移行が必要になる</strong></td>
+</tr>
+<tr>
+<td><strong>Managed PaaS(Foundry / Agent Service / Azure ML)</strong></td>
+<td>SaaS より制御が効くが、SaaS では不要なエンジニアリング能力を要求する</td>
+</tr>
+<tr>
+<td>Azure インフラ(VM / AKS / ACA)</td>
+<td>最大の制御だが運用オーナーシップ最大</td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>CAF 全体を通じて LangGraph・CrewAI 等サードパーティオーケストレータへの言及はゼロ。</strong>オーケストレータの選択肢として名前が出るのは Foundry Agent Service と Microsoft Agent Framework のみ。AAC の orchestration patterns 記事だけが中立に併記している。<strong>この非対称性が実質的な選定コスト</strong>(ランディングゾーン統合・ポリシー・監視の既製品が無い)になる。</p></blockquote>
+<h3 id="4-2-ai-専用ランディングゾーンは必要か-公式回答は-no">4.2 「AI 専用ランディングゾーンは必要か」— 公式回答は NO</h3>
+<blockquote><p>よくある質問は「Azure ランディングゾーンとは別に専用の AI ランディングゾーンが必要か」だ。答えは「<strong>別の AI ランディングゾーンは必要ない</strong>」。既存の Azure ランディングゾーンアーキテクチャを使って、AI ワークロードをアプリケーションランディングゾーンにデプロイする。<strong>Azure ランディングゾーンの観点では、AI は単に別のワークロードまたはサービスにすぎない。</strong></p></blockquote>
+<p>learn.microsoft.com 上に「AI landing zone accelerator」「Azure OpenAI landing zone accelerator」といった名称の CAF ページは<strong>存在しない。</strong></p>
+<h3 id="4-3-ai-platform-sharing-decision-guidance-foundry-リソース粒度の一次資料">4.3 AI Platform Sharing Decision Guidance — Foundry リソース粒度の一次資料</h3>
+<p>URL: <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai/platform/ai-platform-sharing-isolation-colocation" title="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai/platform/ai-platform-sharing-isolation-colocation">ai-platform-sharing-isolation-colocation</a></p>
+<p>前提定義: 「<strong>AI プラットフォームインスタンスがネットワーク境界・ID 境界・クォータ境界を定義する。</strong>」</p>
+<p><strong>① 共有境界モデル</strong>(Business unit / Data domain / Product owner のどれかを全社で選ぶ)。「<strong>どのモデルが普遍的に正しいということはない。どれを選ぶかより一貫性のほうが重要。</strong>」</p>
+<p><strong>② 本番の既定 = ワークロードごとに 1 インスタンス</strong></p>
+<blockquote><p>複数の本番ワークロードを同一の Microsoft Foundry リソースに同居させるな(文書化された例外がない限り)。<strong>AI プラットフォームの共有は既定の慣行ではなく例外として扱え。</strong></p></blockquote>
+<blockquote><p>トレードオフ: 分離はコストと管理オーバーヘッドを増やす。各プラットフォームインスタンスがネットワーク・ID・監視・運用の運用オーバーヘッドを個別に抱える。</p></blockquote>
+<p><strong>③ 本番で同居させる例外条件(5 つすべて充足が必要)</strong></p>
+<ol>
+<li>全ワークロードが同一の規制スコープ・データ分類・レジデンシー要件・データ取扱標準</li>
+<li>同一ネットワーク境界・同一 DNS 名前空間・同一 ID 境界</li>
+<li>共有障害リスクと共有クォータ枯渇リスクを受容</li>
+<li>分離のコスト / 運用オーバーヘッドが便益を実質的に上回る。<strong>コスト圧力だけでは正当化として不十分</strong></li>
+<li>後からの分割が高コストであることを受容(<strong>AI プラットフォームの状態はインスタンス間できれいに移らず、再作成や再構成を要することが多い</strong>)</li>
+</ol>
+<p><strong>④ インスタンス内のセグメンテーション = プロジェクト。</strong>分離・同居いずれでも、Foundry では<strong>ユースケースごとに 1 プロジェクト</strong>を切る。</p>
+<p><strong>⑤ 非本番は既定が逆転。</strong> dev/test/stage は<strong>環境ティアごとに共有インスタンスが既定。</strong>ただしトレードオフとして「他チームの実験からの干渉に全ワークロードが晒される。設定を誤ったファインチューニングジョブや暴走した評価実行が共有クォータを食い潰し他チームを遅くする。<strong>共有インスタンスで取ったテスト結果が本番挙動を予測できるとは限らない</strong>」と明記。</p>
+<h3 id="4-4-caf-と-aac-の緊張-アーキテクトが解決すべき点">4.4 CAF と AAC の緊張(アーキテクトが解決すべき点)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>論点</th>
+<th>CAF(AI Platform Sharing)</th>
+<th>AAC(Baseline in ALZ)</th>
+</tr></thead><tbody>
+<tr>
+<td>本番の既定</td>
+<td>ワークロードごとに専用インスタンス</td>
+<td>ワークロードが Foundry リソースを所有</td>
+</tr>
+<tr>
+<td><strong>複数ワークロードでの Foundry リソース共有</strong></td>
+<td><strong>文書化された例外として許可</strong>(5 条件)</td>
+<td><strong>非推奨</strong>(コスト配賦・リソース組織の限界)</td>
+</tr>
+<tr>
+<td>非本番</td>
+<td><strong>環境ティアごとに共有が既定</strong></td>
+<td>言及なし</td>
+</tr>
+</tbody></table></div>
+<p>両者は「本番はワークロード所有が既定」で一致する。食い違うのは「ビジネスグループ単位の中央 Foundry リソース + ワークロード = プロジェクト」というパターンの扱い。<strong>決定打は AAC が挙げた否定理由(コスト配賦)</strong> — Foundry リソース単位でしかコストを分離できないため、プロジェクト単位のチャージバックが成立しない。</p>
+<p><strong>中央集約したい顧客への公式代替:</strong> 「組織の AI Center of Excellence がモデルデプロイへのアクセスを制限する場合、AI hub のような中央集約リソースが必要になることがある。このシナリオでは、通常すべてのモデル消費が <strong>AI プラットフォームチームが提供する AI ゲートウェイ</strong>を通る。」→ <strong>「Foundry リソースを共有する」のではなく「プラットフォーム側に APIM を AI ゲートウェイとして置きモデル消費を通す」</strong>のが公式の推奨形。</p>
+<h3 id="4-5-govern-secure-manage-の実務的な要点">4.5 Govern / Secure / Manage の実務的な要点</h3>
+<ul>
+<li><strong>Govern:</strong> <strong>NIST AI RMF</strong> 準拠。高リスク AI ワークロードは四半期ごと、低リスクは年次でリスク評価。独立レビュー(外部監査人または非関与の内部レビュアー)。</li>
+<li><strong>Platform Governance:</strong> ALZ の「Workload Specific Compliance」policy initiative を名指し(<code>Enforce-Guardrails-MachineLearning</code> / <code>Enforce-Guardrails-CognitiveServices</code> / <code>Enforce-Guardrails-BotService</code>)。<strong>Microsoft Entra Agent ID</strong> で Foundry と Copilot Studio が作った AI エージェントのインベントリを一元管理。<strong>非本番の自動シャットダウンをポリシーで強制。</strong></li>
+<li><strong>Secure:</strong> <strong>既存の STRIDE から開始</strong>し、<strong>MITRE ATLAS</strong> と <strong>OWASP Generative AI risk</strong> を<strong>補完として</strong>参照(置換ではないと明記)。Purview Insider Risk Management でプロンプト経由のデータ持ち出しを検出。エージェントがコード実行する場合は <strong>Container Apps の Dynamic Sessions。</strong></li>
+<li><strong>Manage:</strong> <strong>Foundry Control Plane</strong> で AI エージェント fleet を集中管理。<strong>四半期ごとの DR テスト。</strong>Foundry ポータルで全デプロイのモデル引退日を確認。</li>
+<li><strong>AI CoE:</strong> 既に CCoE があるなら<strong>そこに統合せよ。</strong>独立 AI チームは既存チームが支えられない場合や重大リスクがある場合に<strong>のみ。</strong>初期は中央集権 → 成熟に伴いアドバイザリ型へ移行し AI デリバリをプラットフォームチームへ移管。</li>
+</ul>
+<hr>
+<h2 id="5-foundry-製品側の公式アーキテクチャ概念ページ">5. Foundry 製品側の公式アーキテクチャ概念ページ</h2>
+<h3 id="5-1-foundry-architecture">5.1 Foundry architecture</h3>
+<p>URL: <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/architecture" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/architecture">architecture</a></p>
+<ul>
+<li>階層は <strong>Foundry リソース(ガバナンス境界: ネットワーク・セキュリティ・モデルデプロイ)→ プロジェクト(開発境界)→ プロジェクトアセット。</strong>接続先リソース(Storage / Key Vault / AI Search)は独立した Azure リソースで独自のガバナンス境界を持つ。</li>
+<li><strong>Azure OpenAI と同一のプロバイダー名前空間を共有する</strong>ため、「Azure OpenAI から Foundry にアップグレードしても、既存のカスタム Azure Policy と RBAC アクションはそのまま効く」。</li>
+<li><strong>API スコープの罠:</strong> Azure OpenAI / Speech / Vision / Language でアカウントレベルにあった一部機能は「<strong>Foundry リソースレベルでのみ利用可能で、プロジェクトスコープでは使えない</strong>」(例: Translator API)。</li>
+<li><strong>マルチリージョン:</strong> 「<strong>Foundry はリージョン間の自動フェイルオーバーをサポートしない。</strong>マルチリージョン可用性が必要なら、対象リージョンごとに別々の Foundry リソースをデプロイし、データ同期とルーティングをアプリケーション層で管理せよ。」</li>
+</ul>
+<h3 id="5-2-rollout-planning-トポロジー決定表">5.2 Rollout planning — トポロジー決定表</h3>
+<p>URL: <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/planning" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/planning">planning</a></p>
+<div class="tablewrap"><table><thead><tr>
+<th>決定パス</th>
+<th>推奨構成</th>
+<th>最適な場面</th>
+<th>主なトレードオフ</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Co-located workloads</strong></td>
+<td>1 Foundry リソース + 複数プロジェクト</td>
+<td>実験中心、初期プロトタイプ、共有デプロイ・共有データの恩恵を受けるチーム</td>
+<td><strong>本番インシデント・クォータ枯渇・設定ミスの blast radius を共有</strong></td>
+</tr>
+<tr>
+<td><strong>Fully isolated workloads</strong></td>
+<td><strong>本番ワークロード境界ごとに 1 Foundry リソース</strong></td>
+<td>厳格な運用封じ込め、独立したアクセス制御・クォータ・コスト境界</td>
+<td>セルフサービス化が難しくなり、管理対象リソース増とセットアップ負荷増</td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>本番では分離を既定として扱え。</strong>同居は、ワークロード境界・データ要件・リスク受容が揃っている場合の意図的な例外としてのみ使え。</p></blockquote>
+<p><strong>能力別のトポロジー制約(見落とすと設計をやり直す)</strong>:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>能力領域</th>
+<th>プロジェクト単位で整理</th>
+<th>プロジェクトレベル RBAC 分離</th>
+<th>計画上の含意</th>
+</tr></thead><tbody>
+<tr>
+<td>Agent 系(agents / responses / evaluations / datasets / files)</td>
+<td>Yes</td>
+<td><strong>Yes</strong></td>
+<td>「ユースケースごとにプロジェクト」に適合</td>
+</tr>
+<tr>
+<td><strong>Fine-tune training</strong></td>
+<td><strong>No(既定プロジェクトのみ)</strong></td>
+<td><strong>No</strong></td>
+<td><strong>チームごとに独立してファインチューニングするなら Foundry リソースを分けるしかない</strong></td>
+</tr>
+<tr>
+<td><strong>OpenAI image / video / batch</strong></td>
+<td>No</td>
+<td>No</td>
+<td>分離ワークロード構成を使う</td>
+</tr>
+<tr>
+<td>Content Understanding</td>
+<td>Yes</td>
+<td><strong>No</strong></td>
+<td>厳格なユースケース単位のアクセス分離が要るならリソースを分ける</td>
+</tr>
+<tr>
+<td><strong>Translator</strong></td>
+<td>No</td>
+<td>No</td>
+<td><strong>分離が必須ならリソースを分ける</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>RBAC の落とし穴:</strong> 「Owner や Contributor のような管理ロールは<strong>すべての開発シナリオに十分ではない。</strong>例えばリソースは管理できてもエージェントとチャットするにはデータプレーンのロールが要る。」</p>
+<hr>
+<h2 id="6-アクセラレータ-リファレンス実装-avm-の現況">6. アクセラレータ / リファレンス実装 / AVM の現況</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>用途</th>
+<th>使うもの</th>
+<th>状態</th>
+</tr></thead><tbody>
+<tr>
+<td>Basic 実装</td>
+<td><code>Azure-Samples/microsoft-foundry-basic</code></td>
+<td>稼働中(旧 <code>openai-end-to-end-basic</code> からリネーム)</td>
+</tr>
+<tr>
+<td><strong>Baseline 実装</strong></td>
+<td><strong><code>Azure-Samples/microsoft-foundry-baseline</code></strong></td>
+<td>稼働中・活発(旧 <code>openai-end-to-end-baseline</code>)</td>
+</tr>
+<tr>
+<td>ALZ 版実装</td>
+<td>—</td>
+<td><strong>削除済み・後継なし</strong></td>
+</tr>
+<tr>
+<td>Foundry 公式サンプル</td>
+<td><strong><code>microsoft-foundry/foundry-samples</code></strong></td>
+<td>極めて活発。<code>infrastructure/infrastructure-setup-bicep/</code> に番号付きシナリオ(private network / CMK / RBAC / APIM 併用 / 評価専用など)</td>
+</tr>
+<tr>
+<td><strong>AI ランディングゾーン</strong></td>
+<td><strong><code>Azure/AI-Landing-Zones</code></strong></td>
+<td><strong>Preview。</strong>Bicep / Terraform / ポータルの 3 系統、AVM ベース。standalone と hub-integrated の切替あり。「最新機能を提供するためプレビューのサービスを利用することがある」と明記</td>
+</tr>
+<tr>
+<td>IaC モジュール(Bicep)</td>
+<td><code>avm/ptn/ai-ml/ai-foundry</code></td>
+<td>Available</td>
+</tr>
+<tr>
+<td>IaC モジュール(Terraform)</td>
+<td><code>avm-ptn-aiml-ai-foundry</code> / <strong><code>avm-ptn-aiml-landing-zone</code></strong></td>
+<td>ともに Available(<strong>LZ モジュールは Terraform のみ</strong>。Bicep 側は Proposed のまま)</td>
+</tr>
+<tr>
+<td>LangChain / LangGraph 併用</td>
+<td><code>Azure-Samples/foundry-hosted-langchain-demos</code> ほか</td>
+<td>公式サンプルとして存在</td>
+</tr>
+</tbody></table></div>
+<p><strong>使うべきでないもの:</strong> <code>Azure/azure-openai-landing-zone</code>(2024-10 以降更新なし、Foundry 改称未反映)、<code>Azure-Samples/ai-landing-zone-in-a-box</code>(アーカイブ済み)。なお「AI Foundry Jumpstart」という独立プロダクトは<strong>存在しない</strong>(Arc Jumpstart は Arc / エッジ / K8s が主題の別物)。</p>
+<p><strong>主なソリューションアクセラレータ:</strong> Conversation Knowledge Mining / Document Knowledge Mining / Content Processing / <strong>Multi-Agent Custom Automation Engine (MACAE、AutoGen → Microsoft Agent Framework + Foundry に移行済み)</strong> / Modernize Your Code / Chat with your data(<code>Azure-Samples</code> org)。RAG デモの事実上の最有力リファレンスは <code>Azure-Samples/azure-search-openai-demo</code>。</p>
+<hr>
+<h2 id="7-日本の案件で特に効く公式事実">7. 日本の案件で特に効く公式事実</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>論点</th>
+<th>事実</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>APAC データゾーンが存在する</strong></td>
+<td>Data Zone デプロイの処理範囲は US / EU / <strong>APAC</strong> の 3 つ。APAC は<strong>オーストラリア・日本・韓国・シンガポール・インド</strong>を含む</td>
+</tr>
+<tr>
+<td><strong>⚠ 公式ドキュメント間の不整合</strong></td>
+<td><code>foundry/concepts/architecture</code> は「data zone は US または EU 内に留まる」と書いており <strong>APAC に触れていない。</strong><code>deployment-types</code> 側(US/EU/APAC を明記)が正</td>
+</tr>
+<tr>
+<td><strong>「国内処理」の唯一の解</strong></td>
+<td><strong>APAC Data Zone は日本以外も含むため「日本国内処理」にはならない。</strong>国内限定が要件なら <code>Standard</code>(リージョナル)または <code>ProvisionedManaged</code> 一択で、その代償としてモデル可用性・クォータ・レイテンシ安定性が劣後する</td>
+</tr>
+<tr>
+<td><strong>Japan East は Agent Service フル対応</strong></td>
+<td>Responses API / Agents / <strong>Class A プライベート IP(10.x)対応</strong>すべて Yes。ツールも Computer Use 以外すべて Yes</td>
+</tr>
+<tr>
+<td><strong>Japan West は制約あり</strong></td>
+<td>Agents は使えるが <strong>Class A プライベート IP 範囲が非対応。</strong>国内 DR で West を使うなら委任サブネットは 172.16-31.x か 192.168.x を割り当てる</td>
+</tr>
+<tr>
+<td>ネットワーク分離時のリージョン制約</td>
+<td><strong>Foundry リソースは VNet と同一リージョン必須。</strong>Cosmos DB / AI Search / Storage は別リージョン可だがクロスリージョン帯域コストがかかる</td>
+</tr>
+<tr>
+<td><strong>評価の日本リージョン非対応</strong></td>
+<td><strong>リスク・安全性評価器と AI Red Teaming は日本リージョンで実行できない</strong>(East US 2 / Sweden Central / Australia East 等)。本番推論は Japan East、評価は別リージョンのプロジェクトという分離設計になり、<strong>プロンプト・応答が評価のために国外に渡る点の法務確認が要る</strong></td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="8-どの公式資料を出発点にするか-決定表">8. どの公式資料を出発点にするか(決定表)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>顧客状況</th>
+<th>使うもの</th>
+<th>根拠</th>
+</tr></thead><tbody>
+<tr>
+<td>PoC・学習</td>
+<td><strong>Basic Foundry chat</strong> + <code>microsoft-foundry-basic</code></td>
+<td>記事自身が本番非推奨と明言</td>
+</tr>
+<tr>
+<td>本番、ALZ なし、ネットワーク分離必須</td>
+<td><strong>Baseline Foundry chat</strong> + <code>microsoft-foundry-baseline</code></td>
+<td>WAF が「推奨アーキテクチャ」と名指し</td>
+</tr>
+<tr>
+<td>本番、ALZ あり(hub-spoke)</td>
+<td><strong>Baseline in ALZ を設計ガイドとして読み、コードは <code>Azure/AI-Landing-Zones</code>(Preview)または AVM <code>avm-ptn-aiml-landing-zone</code>(Terraform)</strong></td>
+<td>記事から実装リンクが削除済み</td>
+</tr>
+<tr>
+<td>自社 IaC に組み込む</td>
+<td><strong>AVM <code>avm/ptn/ai-ml/ai-foundry</code>(Bicep)/ <code>avm-ptn-aiml-ai-foundry</code>(Terraform)</strong></td>
+<td>ともに Available</td>
+</tr>
+<tr>
+<td>マルチエージェントで決定的制御が必要</td>
+<td><strong>Agent Framework + Container Apps</strong>、または hosted agent</td>
+<td>AAC のソリューションアイデアと baseline の Alternatives</td>
+</tr>
+<tr>
+<td>エージェントが数十〜数百</td>
+<td>Dynamic AI Agents at Scale(AKS + セマンティックキャッシュ)</td>
+<td>「エージェントが 5 未満なら使うな」と明記</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

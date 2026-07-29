@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01. プラットフォーム基盤・プロジェクト・コントロールプレーン</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry 機能一覧・ステ…</a><a href="01-platform-projects.html" class="current">01. プラットフォーム基盤・プロジェクト・コント…</a><a href="02-models.html">02. Foundry Models</a><a href="03-agent-service.html">03. Foundry Agent Service</a><a href="04-tools-knowledge.html">04. エージェントツール・ナレッジ</a><a href="05-observability-evaluation.html">05. オブザーバビリティ・評価</a><a href="06-safety-guardrails.html">06. 安全性・ガードレール</a><a href="07-foundry-tools.html">07. Foundry Tools</a><a href="08-developer-experience.html">08. 開発者サーフェス</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="01-プラットフォーム基盤・プロジェクト・コントロールプレーン">01. プラットフォーム基盤・プロジェクト・コントロールプレーン</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#リソース・プロジェクト">リソース・プロジェクト</a></li><li><a href="#ポータル・移行">ポータル・移行</a></li><li><a href="#コントロールプレーン・ガバナンス">コントロールプレーン・ガバナンス</a></li><li><a href="#rbac・認証">RBAC・認証</a></li><li><a href="#ネットワーク・暗号化">ネットワーク・暗号化</a></li><li><a href="#接続・iac">接続・IaC</a></li><li><a href="#ステータスを横断確認できる公式ページ">ステータスを横断確認できる公式ページ</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
+<p><a href="index.html">← 機能一覧 TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<h2 id="概要">概要</h2>
+<p>Foundry リソース・プロジェクトのモデル、新旧ポータルの関係、コントロールプレーン(Operate)、RBAC・ネットワーク・暗号化・ポリシーなどのガバナンス機能を扱う。<strong>新 Microsoft Foundry ポータルは GA 宣言済み</strong>(「The new Microsoft Foundry portal is generally available (GA).」)だが、GA はコアシナリオ範囲であり、Operate(コントロールプレーン)の大半など一部機能はプレビュー継続である(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">general-availability</a> )。</p>
+<h2 id="リソース・プロジェクト">リソース・プロジェクト</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Foundry resource</td>
+<td>エージェント/モデル/ツールを単一リソースで統合管理。実体は <code>Microsoft.CognitiveServices/accounts</code>(kind: <code>AIServices</code>)で、旧 AI Services リソースの後継。プロジェクトは子リソース <code>accounts/projects</code></td>
+<td><span class="badge ga">GA</span>(GAページで「Foundry projects: Fully supported at GA」)</td>
+<td>新/classic 両方+Azure portal</td>
+<td><span class="badge ok">対応</span> <code>az cognitiveservices account create --kind AIServices --allow-project-management</code></td>
+<td><span class="badge ok">対応</span> <code>azure-mgmt-cognitiveservices</code> 13.7+</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/architecture" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/architecture">architecture</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/create-projects" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/create-projects">create-projects</a></td>
+<td>RP は Microsoft.CognitiveServices を継続。既存の RBAC/Policy がそのまま適用</td>
+</tr>
+<tr>
+<td>Upgrade Azure OpenAI → Foundry resource</td>
+<td>AOAI リソースをエンドポイント・キー・状態(fine-tune、batch 等)を保持したまま Foundry リソースへ変換(kind: <code>OpenAI</code>→<code>AIServices</code> + <code>allowProjectManagement: true</code>)</td>
+<td><span class="badge ga">GA</span>(「Both services are generally available and supported before and after the upgrade」。opt-in)</td>
+<td>classic ポータル+Azure portal(新ポータルの手順は記載なし)</td>
+<td><span class="badge na">記載なし</span>(Bicep/Terraform 推奨)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/upgrade-azure-openai" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/upgrade-azure-openai">upgrade-azure-openai</a></td>
+<td>ロールバック可(プロジェクト等の削除が前提)。CMK 利用リソースは申請フォーム経由のみ。既存 Private Endpoint 付きはポータル経由不可(削除→再作成 or IaC)。<code>previousKind</code> プロパティで判別可</td>
+</tr>
+<tr>
+<td>Auto-upgrade(AOAI→Foundry 自動アップグレード)</td>
+<td>Microsoft が適格な AOAI リソースを自動アップグレード。<code>foundryAutoUpgrade</code> プロパティ(API <code>2026-01-15-preview</code>)で状態確認、延期(Defer)・ロールバック可</td>
+<td><span class="badge unknown">要確認</span>(段階的ロールアウト中。ページに preview/GA ラベルなし)</td>
+<td>Azure portal(「Resource upgrade」ブレード)</td>
+<td>Bicep/Terraform で <code>foundryAutoUpgrade.mode: Deferred</code> 設定可</td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/upgrade-azure-openai-auto" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/upgrade-azure-openai-auto">upgrade-azure-openai-auto</a></td>
+<td>Private networking / CMK / W&amp;B 利用リソースは初期波では対象外。事前通知あり</td>
+</tr>
+<tr>
+<td>Foundry project</td>
+<td>Foundry リソース配下の子リソース(<code>accounts/projects</code>)。アクセス制御・データ分離の単位。親のネットワーク/セキュリティ設定を継承</td>
+<td><span class="badge ga">GA</span>(「Fully supported at GA with end-to-end coverage」)</td>
+<td>新ポータル(Operate &gt; Admin)+classic+Azure portal</td>
+<td><span class="badge ok">対応</span> <code>az cognitiveservices account project create</code></td>
+<td><span class="badge ok">対応</span> <code>azure-mgmt-cognitiveservices</code></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/create-projects" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/create-projects">create-projects</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">general-availability</a></td>
+<td>最初の「default」プロジェクトのみ OpenAI Batch / Fine-tuning / Stored completions、Speech fine-tuning 等に対応(非 default プロジェクトは機能制限あり)</td>
+</tr>
+<tr>
+<td>Hub-based project(ハブベース)</td>
+<td>Azure ML ワークスペース基盤(<code>Microsoft.MachineLearningServices/workspaces</code>)の旧型プロジェクト。classic ポータルでのみ利用可</td>
+<td><span class="badge deprecated">非推奨予定</span>(正式な廃止日は<strong>未発表</strong>のレガシー扱い。「New investments are focused on Foundry projects」「Not supported in the new Foundry portal」)</td>
+<td>classic のみ(新ポータルでは非表示)</td>
+<td><span class="badge ok">対応</span>(AML CLI/SDK 経由で継続利用可)</td>
+<td><span class="badge ok">対応</span>(同左)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry" title="https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry">what-is-foundry</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry" title="https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry">what-is-foundry</a></td>
+<td>残す理由: prompt flow、マネージドコンピュートのモデルデプロイ、Azure Language リソース等が未対応のため。Agents は hub-based だと「Preview only」</td>
+</tr>
+<tr>
+<td>Migrate hub-based → Foundry project</td>
+<td>ハブベースから Foundry プロジェクトへの移行ガイド(手動、5–10分想定)。移行対象: モデルデプロイ、データファイル、fine-tuned モデル、Assistants、vector store</td>
+<td>提供中(移行自体に preview 表記なし)</td>
+<td>classic ポータル+Azure portal</td>
+<td>Bicep 例あり</td>
+<td>SDK 移行ガイドあり</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/migrate-project" title="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/migrate-project">migrate-project</a></td>
+<td>自動移行ツールはなし(新規プロジェクト作成+接続再作成方式)。プレビュー Agent の state、OSS モデルデプロイは移行対象外</td>
+</tr>
+</tbody></table></div>
+<h2 id="ポータル・移行">ポータル・移行</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Foundry portal(新)</td>
+<td>ai.azure.com の新体験。Home / Discover / Build / Operate / Docs の5セクション構成。Foundry プロジェクトのみ表示</td>
+<td><span class="badge ga">GA</span>(コアシナリオ。一部機能は preview — 詳細は Feature readiness 表)</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">general-availability</a></td>
+<td>「New Foundry」トグルで classic と相互切替。sovereign cloud は <a href="https://ai.azure.us/" title="https://ai.azure.us/">ai.azure.us</a> (US Gov Virginia/Arizona)</td>
+</tr>
+<tr>
+<td>Foundry (classic) portal</td>
+<td>旧ポータル。hub-based プロジェクト、スタンドアロン AOAI リソース、prompt flow、マネージドコンピュート等、新ポータル未対応機能の受け皿</td>
+<td>継続提供(廃止日<strong>未発表</strong>。「legacy hub-based project workflows」の位置づけ)</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry" title="https://learn.microsoft.com/en-us/azure/foundry-classic/what-is-foundry">what-is-foundry</a></td>
+<td>classic の what-is ページは NOINDEX 設定。ドキュメント更新周期も classic は 365 日(新は 90 日)で投資差が明確</td>
+</tr>
+<tr>
+<td>Navigate from classic(移行ガイド)</td>
+<td>用語・機能・SDK・ポータルナビの新旧対応表。Assistants API→Responses API、Threads→Conversations 等</td>
+<td>提供中</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/navigate-from-classic" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/navigate-from-classic">navigate-from-classic</a></td>
+<td>重要日程: Assistants API 廃止 2026-08-26 / Workflows 廃止 2026-12-01(詳細は <a href="index.html">TOP の期限表</a>)</td>
+</tr>
+</tbody></table></div>
+<h2 id="コントロールプレーン・ガバナンス">コントロールプレーン・ガバナンス</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Foundry Control Plane(Operate)</td>
+<td>サブスクリプション横断でエージェント・モデル・ツールのフリート管理(インベントリ、可観測性、コンプライアンス、セキュリティ)。Defender / Purview / Entra 統合</td>
+<td>ペイン別に混在: Overview / Assets / Compliance = パブリックプレビュー、Quota / Admin = GA</td>
+<td>新 Foundry ポータルのみ(「available through the Foundry portal only」)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/control-plane/overview" title="https://learn.microsoft.com/en-us/azure/foundry/control-plane/overview">overview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">general-availability</a></td>
+<td>高度なガバナンス機能には AI gateway(APIM)の構成が前提。カスタムエージェント登録、Copilot Studio エージェントの取り込み等を含む</td>
+</tr>
+<tr>
+<td>Management center(classic)</td>
+<td>classic ポータルの管理ハブ(全リソース表示、クォータ、ユーザー/ロール管理)。新ポータルでは Operate セクションに置換</td>
+<td>classic のみ提供</td>
+<td>classic のみ</td>
+<td>—</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/management-center" title="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/management-center">management-center</a></td>
+<td>新旧マッピング: Quota → Operate &gt; Quota、Users → Operate &gt; Admin</td>
+</tr>
+<tr>
+<td>Azure Policy(組み込み: 承認済みモデル)</td>
+<td>「Foundry model deployments should only use approved models」— 承認済み発行元/モデル ID のみデプロイ許可</td>
+<td><span class="badge ga">GA</span>(「Generally available」明記)</td>
+<td>Azure portal (Policy)</td>
+<td><span class="badge ok">対応</span> <code>az policy</code></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/model-deployment-policy" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/model-deployment-policy">model-deployment-policy</a></td>
+<td>旧名「Cognitive Services Deployments should only use approved Registry Models」(定義 ID は不変)</td>
+</tr>
+<tr>
+<td>Azure Policy(組み込み: 適格性要件)</td>
+<td>「Foundry model deployments must meet eligibility requirements」— <code>onlyAllowDirectFromAzure</code> / <code>denyPreviewModels</code> 属性ベースの制御</td>
+<td><span class="badge preview">パブリックプレビュー</span>(「This policy is in preview」明記)</td>
+<td>Azure portal (Policy)</td>
+<td><span class="badge ok">対応</span> <code>az policy</code></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/model-deployment-policy" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/model-deployment-policy">model-deployment-policy</a></td>
+<td>「プレビューモデルの本番デプロイ禁止」をポリシーで強制可能</td>
+</tr>
+<tr>
+<td>プレビュー機能の無効化</td>
+<td>タグ <code>AZML_DISABLE_PREVIEW_FEATURE=true</code>(サブスク/RG/リソース単位)でポータルのプレビュー UI を非表示化。カスタム RBAC(<code>notDataActions</code>/<code>notActions</code>)で API レベルのブロックも可</td>
+<td>提供中(それ自体のプレビュー表記なし)</td>
+<td>新/classic 両ポータルで有効</td>
+<td><span class="badge ok">対応</span> <code>az tag update</code> / <code>az role definition create</code></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/disable-preview-features" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/disable-preview-features">disable-preview-features</a></td>
+<td>ブロック可能な機能とリソースプロバイダーパスの一覧あり(Agent Service, Content Understanding, Fine-tuning, Evaluations, Content Safety, Tracing)</td>
+</tr>
+</tbody></table></div>
+<h2 id="rbac・認証">RBAC・認証</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Built-in RBAC roles</td>
+<td>組み込みロール5種: <strong>Foundry User / Foundry Project Manager / Foundry Account Owner / Foundry Owner / Foundry Agent Consumer</strong>。スコープは Foundry resource / project / 個別 agent</td>
+<td><span class="badge ga">GA</span>(ただしロール名を旧名〈Azure AI User 等〉から改名ロールアウト中。ロール ID・権限は不変)</td>
+<td>新ポータル(Operate &gt; Admin)+Azure portal IAM</td>
+<td><span class="badge ok">対応</span> <code>az role assignment create</code>(改名中は GUID 指定を推奨)</td>
+<td><span class="badge no">未対応</span>(ロール割り当ては SDK 非対応と明記)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/rbac-foundry" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/rbac-foundry">rbac-foundry</a></td>
+<td>fine-tune には data+control 両権限が必要(単独では Foundry Owner のみ)。classic の hub 向け RBAC は別ページ(foundry-classic/concepts/hub-rbac-foundry)</td>
+</tr>
+<tr>
+<td>Microsoft Entra 認証 / キーレス</td>
+<td>Entra ID(OAuth2、スコープ <code>https://ai.azure.com/.default</code>)と API キーの2方式。本番は Entra ID 推奨。<code>disableLocalAuth</code> でキー無効化可</td>
+<td><span class="badge ga">GA</span></td>
+<td>全サーフェス</td>
+<td><span class="badge ok">対応</span></td>
+<td><span class="badge ok">対応</span> <code>azure-identity</code></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/authentication-authorization-foundry" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/authentication-authorization-foundry">authentication-authorization-foundry</a></td>
+<td><strong>Agents / Evaluations / Content Understanding / workflows / dataset タブは Entra ID 必須</strong>(API キー不可)。カスタムサブドメインがトークン認証の前提</td>
+</tr>
+</tbody></table></div>
+<h2 id="ネットワーク・暗号化">ネットワーク・暗号化</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Private Link(インバウンド)</td>
+<td>Foundry リソース/プロジェクトへのプライベートエンドポイント。DNS ゾーン3種(cognitiveservices / openai / services.ai の privatelink)</td>
+<td>GA相当(ページにプレビュー表記なし)</td>
+<td>Azure portal(全パブリックアクセス遮断の PE 構成はポータル UI 不可で SDK/CLI が必要)</td>
+<td>Bicep/Terraform サンプルあり</td>
+<td>同左</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link">configure-private-link</a></td>
+<td>制限: Traces(VNet 非対応)、Workflow Agents(アウトバウンド注入非対応)、AI Gateway は部分対応。Agent ツール個別の対応可否表あり(File Search / Logic Apps / Browser Automation / Computer Use / Image Generation は「Not supported / Under development」)</td>
+</tr>
+<tr>
+<td>Agent Service ネットワーク分離(Standard Setup / BYO VNet 注入)</td>
+<td><code>Microsoft.App/environments</code> に委任したサブネット(/27 以上、推奨 /24)へコンテナ注入しエージェントのアウトバウンドを顧客 VNet 内に維持。Standard setup は Storage / AI Search / Cosmos DB の BYO 必須</td>
+<td>GA相当(本文にプレビュー表記なし。ただし関連ページ間で hosted agents の表記揺れあり)</td>
+<td>Azure portal+Bicep+Terraform+azd</td>
+<td><span class="badge ok">対応</span>(azd 拡張、<code>az provider register</code> 等)</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/virtual-networks" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/virtual-networks">virtual-networks</a></td>
+<td>サブネットは Foundry リソースごとに専用。<strong>アウトバウンド設定の後付け・変更は不可(再デプロイ必要)</strong>。リソースと VNet は同一リージョン必須。2026-06-25 以降作成のプロジェクトはプライベート ACR 対応</td>
+</tr>
+<tr>
+<td>Managed Virtual Network</td>
+<td>Microsoft 管理 VNet でエージェントのアウトバウンドを自動分離。モード: Allow Internet Outbound / Allow Only Approved Outbound(マネージド Azure Firewall 自動作成)</td>
+<td><span class="badge unknown">要確認</span>(ページに preview/GA ラベルなし)。<strong>ポータル UI 未対応</strong>(「There is no Azure Portal UI support to create the managed network yet」)</td>
+<td><span class="badge no">未対応</span>(対応予定)</td>
+<td><span class="badge ok">対応</span> <code>az cognitiveservices account managed-network</code> + <code>az rest</code>(API <code>2026-03-01</code>)、Bicep/Terraform サンプルあり</td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/managed-virtual-network" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/managed-virtual-network">managed-virtual-network</a></td>
+<td>対応リージョン限定(East US, Japan East 他 18 リージョン)。有効化後の無効化不可、BYO VNet からの移行パスなし。<code>Azure AI Enterprise Network Connection Approver</code> ロールの割り当てが必要</td>
+</tr>
+<tr>
+<td>Customer-Managed Keys (CMK)</td>
+<td>Key Vault / Managed HSM の顧客管理キーで保存データを暗号化(プロジェクト成果物、アップロードファイル、評価データ等)</td>
+<td>GA相当(プレビュー表記なし。ただし AI Search 基盤の容量制約により<strong>一部リージョンのみ提供</strong>と明記)</td>
+<td>Azure portal(作成時ウィザード or Encryption ブレード)</td>
+<td><span class="badge na">記載なし</span>(テンプレート言及あり)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/encryption-keys-portal" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/encryption-keys-portal">encryption-keys-portal</a></td>
+<td>Key Vault は同一リージョン+ソフトデリート/パージ保護必須。MMK→CMK は可、<strong>逆方向(CMK→MMK)は不可</strong>。RSA 2048bit 以上</td>
+</tr>
+</tbody></table></div>
+<h2 id="接続・iac">接続・IaC</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Connections</td>
+<td>外部リソースへの認証済み接続(リソースレベル/プロジェクトレベル)。シークレットはマネージド Key Vault に保存(BYO Key Vault 接続も可、1リソース1接続)</td>
+<td>機能自体は GA 相当。<strong>接続タイプ別にプレビューあり</strong>: Cosmos DB、Serverless Model、Databricks、SharePoint、Microsoft Fabric、Bing Custom Search、Azure APIM、Model Gateway = プレビュー(いずれも<strong>コード(Bicep)でのみ作成可</strong>)</td>
+<td>新ポータル(Operate &gt; Admin &gt; Connected resources)。classic は Management center</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span>(利用は SDK 経由の型あり)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/connections-add" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/connections-add">connections-add</a></td>
+<td>モデルデプロイ用のクロスサブスクリプション接続は非対応。BYO Key Vault はシークレット移行非対応(接続の再作成が必要)</td>
+</tr>
+<tr>
+<td>Bicep / ARM / Terraform デプロイ</td>
+<td><code>microsoft.cognitiveservices/accounts</code> + <code>accounts/projects</code> のテンプレートデプロイ。Azure portal の Export template (Bicep) 対応。公式サンプル: github.com/microsoft-foundry/foundry-samples</td>
+<td><span class="badge ga">GA</span></td>
+<td>Azure portal (Export template)</td>
+<td><span class="badge ok">対応</span> <code>az deployment</code> / Azure PowerShell</td>
+<td><span class="badge ok">対応</span>(管理 SDK)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/create-resource-template" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/create-resource-template">create-resource-template</a></td>
+<td>Terraform: AzureRM は 4.57.0 超で非破壊更新(kind 変更)、AzAPI も可。ネットワーク注入は作成時のみ設定可(後付け不可)</td>
+</tr>
+</tbody></table></div>
+<h2 id="ステータスを横断確認できる公式ページ">ステータスを横断確認できる公式ページ</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>ページ</th>
+<th>内容</th>
+<th>URL</th>
+</tr></thead><tbody>
+<tr>
+<td><span class="badge ga">GA</span>/プレビュー ステータス一覧(最重要)</td>
+<td>新ポータルの GA 宣言と「Feature readiness at GA」表(Home/Discover/Build/Operate の機能別 GA / Preview / Limited preview)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">general-availability</a></td>
+</tr>
+<tr>
+<td>リージョン別 feature availability</td>
+<td>プロジェクト作成可能リージョン一覧と機能別リージョン対応。Azure Government の対応/非対応一覧あり</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/reference/region-support" title="https://learn.microsoft.com/en-us/azure/foundry/reference/region-support">region-support</a></td>
+</tr>
+<tr>
+<td>プレビュー機能の管理(無効化)</td>
+<td>タグ+カスタム RBAC によるプレビュー抑止方法</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/disable-preview-features" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/disable-preview-features">disable-preview-features</a></td>
+</tr>
+<tr>
+<td>What's new(月次)</td>
+<td><span class="badge ga">GA</span>/プレビュー開始のトラッキング</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/whats-new-foundry" title="https://learn.microsoft.com/en-us/azure/foundry/whats-new-foundry">whats-new-foundry</a></td>
+</tr>
+</tbody></table></div>
+<h2 id="補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</h2>
+<ul>
+<li><strong>リソースモデルは連続性重視</strong>: 改称・新ポータル化されても ARM 上は <code>Microsoft.CognitiveServices/accounts</code> のままで、既存の Azure Policy / RBAC / ネットワーク構成資産がそのまま効く。AOAI からのアップグレードは kind 変更のパッチ操作(非破壊)で、ロールバック手段も提供。</li>
+<li><strong>ハブベースの終息は「投資停止」段階</strong>: 廃止日は未発表だが、新規投資は Foundry プロジェクトに集中と明言され、classic ドキュメントは NOINDEX・更新周期 365 日。一方 prompt flow・マネージドコンピュート・Azure Language 等はまだハブ側にしかない。</li>
+<li><strong>表記揺れへの注意</strong>: hosted agents は navigate-from-classic で「GA」、configure-private-link 内では「hosted (preview) agents」と記載が混在。RBAC ロール名も改名ロールアウト中のため、IaC/スクリプトではロール ID(GUID)指定が公式推奨。</li>
+<li><strong>要確認として残る項目</strong>: (1) Managed VNet のライフサイクルラベル(ページに明記なし・ポータル UI 未対応)、(2) Auto-upgrade プログラム自体のラベル、(3) custom-policy-definition ページの内容(存在のみ確認: <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/custom-policy-definition" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/custom-policy-definition">custom-policy-definition</a> )。</li>
+</ul>
+</main>
+<footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

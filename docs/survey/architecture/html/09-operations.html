@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09. 運用アーキテクチャ(キャパシティ・BCDR・可観測性・評価・コスト・CI/CD)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html" class="current">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="09-運用アーキテクチャ-キャパシティ・bcdr・可観測性・評価・コスト・ci-cd">09. 運用アーキテクチャ(キャパシティ・BCDR・可観測性・評価・コスト・CI/CD)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この章の要点-先に結論">この章の要点(先に結論)</a></li><li><a href="#1-キャパシティ設計">1. キャパシティ設計</a></li><li><a href="#2-信頼性・bcdr">2. 信頼性・BCDR</a></li><li><a href="#3-可観測性">3. 可観測性</a></li><li><a href="#4-評価と-llmops">4. 評価と LLMOps</a></li><li><a href="#5-コストアーキテクチャ">5. コストアーキテクチャ</a></li><li><a href="#6-プラットフォーム自体の-ci-cd">6. プラットフォーム自体の CI/CD</a></li><li><a href="#7-運用設計チェックリスト">7. 運用設計チェックリスト</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<p>ユースケースを問わず横断で効く運用設計をまとめる。<strong>この領域は「Foundry がやってくれない範囲」が広く、見積もりの抜けが出やすい。</strong></p>
+<h2 id="この章の要点-先に結論">この章の要点(先に結論)</h2>
+<ol>
+<li><strong>Foundry は自動フェイルオーバーも DR も提供しない。</strong>「Foundry itself doesn't provide automatic failover or disaster recovery」と明記されている。マルチリージョンは自前設計。</li>
+<li><strong>Agent Service の状態(会話・エージェント定義)には DR 機能がない。</strong>「復旧はレプリカの昇格ではなく再構築で行う」。Cosmos DB の継続バックアップが唯一の救済で、<strong>インシデント発生後には有効化できない。</strong></li>
+<li><strong>エージェントの blue-green / canary は組み込み機能がない。</strong>必要ならエージェント API の前段にルーティング層(APIM 等)を自分で置く。</li>
+<li><strong>Azure Monitor のレガシー <code>Latency</code> メトリクスを使ってはいけない。</strong>Azure OpenAI 用に設計されておらず誤った診断になると明記されている。</li>
+<li><strong>リスク・安全性評価と AI Red Teaming は日本リージョンで実行できない。</strong>評価用に別リージョンのプロジェクトを構える設計になる。</li>
+<li><strong>capabilityHost は作成後に更新できない。</strong>構成変更はプロジェクト再作成が前提で、IaC の冪等更新が効かない。</li>
+</ol>
+<hr>
+<h2 id="1-キャパシティ設計">1. キャパシティ設計</h2>
+<h3 id="1-1-デプロイ種別の選択">1.1 デプロイ種別の選択</h3>
+<p>デプロイ種別は「<strong>データ処理範囲(Global / Data Zone / Regional)× 課金形態(Standard / Provisioned / Batch)</strong>」のマトリクスで決まる。SKU 名がそのまま ARM 上の識別子になる。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>種別</th>
+<th>SKU コード</th>
+<th>データ処理</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>Global Standard</td>
+<td><code>GlobalStandard</code></td>
+<td>任意の Azure リージョン</td>
+<td>従量。最大クォータ</td>
+</tr>
+<tr>
+<td>Global Provisioned</td>
+<td><code>GlobalProvisionedManaged</code></td>
+<td>任意の Azure リージョン</td>
+<td>PTU 予約</td>
+</tr>
+<tr>
+<td>Global Batch</td>
+<td><code>GlobalBatch</code></td>
+<td>任意の Azure リージョン</td>
+<td><strong>50% 割引</strong>・24h 目標</td>
+</tr>
+<tr>
+<td>Data Zone Standard</td>
+<td><code>DataZoneStandard</code></td>
+<td>データゾーン内(US / EU / APAC)</td>
+<td>従量</td>
+</tr>
+<tr>
+<td>Data Zone Provisioned</td>
+<td><code>DataZoneProvisionedManaged</code></td>
+<td>データゾーン内</td>
+<td>PTU 予約</td>
+</tr>
+<tr>
+<td>Standard(リージョナル)</td>
+<td><code>Standard</code></td>
+<td>単一リージョン</td>
+<td>従量</td>
+</tr>
+<tr>
+<td>Regional Provisioned</td>
+<td><code>ProvisionedManaged</code></td>
+<td>単一リージョン</td>
+<td>PTU 予約</td>
+</tr>
+<tr>
+<td>Developer</td>
+<td><code>DeveloperTier</code></td>
+<td>任意の Azure リージョン</td>
+<td>従量。<strong>FT モデル評価専用・SLA なし・24 時間で自動削除</strong></td>
+</tr>
+<tr>
+<td>Instant(プレビュー)</td>
+<td>(デプロイ不要)</td>
+<td>任意の Azure リージョン</td>
+<td>従量。<strong>West US 3 のみ</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>Global / Data Zone の可用性トレードオフ:</strong> 「Global Standard と Data Zone Standard では、プライマリリージョンでサービス中断が起きると、そのリージョンにルーティングされた全トラフィックが影響を受ける」と明記。</p>
+<h3 id="1-2-クォータ">1.2 クォータ</h3>
+<ul>
+<li><strong>Quota Tiers(Tier 0〜6)</strong>に移行済み。初期割当は現使用量と Microsoft との契約関係(EA / MCA-E)で決まり、<strong>使用量増加で自動昇格する。</strong>オプトアウトは <code>Microsoft.CognitiveServices/quotaTiers</code> API(プレビュー)。</li>
+<li><strong>2026-05-07 以降、サブスクリプション単位のクォータプールへ順次移行中。</strong>Global Standard は同一モデル・バージョンで<strong>全リージョン共通の単一プール</strong>、Data Zone Standard はデータゾーンごとのプール。ポータルの Quota ページの <code>Scope</code> 列が <code>Global</code> / <code>Data Zone</code> なら移行済み、リージョン名なら旧方式。</li>
+<li><strong>Usage tiers(レイテンシ変動の閾値):</strong> テナント全体の月間トークンが一定量(モデルにより 250 億〜1,500 億トークン/月)を超えると、<strong>レイテンシが 2 倍以上に振れうる</strong>と明記されている。Batch と Provisioned には適用されない。</li>
+</ul>
+<p><strong>アーキテクチャに効くハードリミット:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>値</th>
+</tr></thead><tbody>
+<tr>
+<td>Foundry リソース / リージョン / サブスクリプション</td>
+<td>100</td>
+</tr>
+<tr>
+<td>プロジェクト / リソース</td>
+<td>250(<strong>フルスケール時の実効は約 25</strong>)</td>
+</tr>
+<tr>
+<td>モデルデプロイ / リソース</td>
+<td>32</td>
+</tr>
+<tr>
+<td>PTU / デプロイ 最大</td>
+<td>100,000</td>
+</tr>
+<tr>
+<td>カスタム HTTP ヘッダー数</td>
+<td>10(超過で <strong>HTTP 431</strong>)。<strong>将来 API ではパススルー廃止予定のため依存禁止</strong></td>
+</tr>
+<tr>
+<td><strong>同時エージェントセッション</strong></td>
+<td><strong>50 / サブスクリプション / リージョン</strong></td>
+</tr>
+<tr>
+<td>クライアントタイムアウト推奨</td>
+<td>推論モデル最大 29 分 / 非ストリーミング 29 分 / <strong>ストリーミング 60 秒</strong></td>
+</tr>
+</tbody></table></div>
+<h3 id="1-3-ptu-サイジング">1.3 PTU サイジング</h3>
+<p><strong>基本性質:</strong> PTU は<strong>モデル非依存</strong>(同じクォータで任意の対応モデルをデプロイ可)。ただし <strong>Global / Data Zone / Regional は別クォータプール</strong>で相互流用できない。そして <strong>クォータ ≠ キャパシティ</strong> — 「PTU クォータがあってもキャパシティが利用可能とは限らない」。削除・縮小で解放したキャパシティが戻る保証もない。</p>
+<p><strong>最小デプロイ単位:</strong> Global / Data Zone = <strong>15 PTU(増分 5)</strong>、Regional = <strong>25〜50 PTU(増分 25〜50)</strong>。</p>
+<p><strong>サイジング式:</strong></p>
+<pre><code>Input TPM       = Peak RPM × 平均プロンプトトークン
+Output TPM      = Peak RPM × 平均応答トークン
+Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × Output TPM)
+必要 PTU        = Normalized TPM ÷ (Input TPM per PTU)  → 増分単位に切り上げ</code></pre>
+<p>公式のワークショップ例(gpt-5.2、Data Zone Provisioned、1,000 RPM / プロンプト 200 トークン / 応答 20 トークン):</p>
+<ul>
+<li>キャッシュなし: 200,000 + 8×20,000 = 360,000 → 360,000 ÷ 3,400 = 105.88 → <strong>110 PTU</strong></li>
+<li>キャッシュ率 50%: 100,000 + 160,000 = 260,000 → 76.47 → <strong>80 PTU</strong>(<strong>約 27% 削減</strong>)</li>
+</ul>
+<p><strong>モデル選択が PTU 効率を大きく変える。</strong>同じ 1 PTU あたりの Input TPM が、gpt-4.1 = 3,000 に対し gpt-4.1-nano = 59,400(約 20 倍)。<strong>小型モデルで足りるタスクを大型モデルに投げると PTU コストが桁で変わる。</strong></p>
+<p><strong>運用上の注意:</strong> PTU デプロイは<strong>一時停止できない(削除のみが課金停止)。</strong>課金は分単位で即時反映されるが、「トラフィックに合わせて PTU を上下させる運用は非推奨」(コストで Reservation に劣り、スケールアップ時にキャパシティが無い可能性がある)。推奨形は <strong>PTU でベースライン + Standard でスパイク。</strong></p>
+<h3 id="1-4-spillover-ptu-standard-の溢れ処理">1.4 Spillover(PTU → Standard の溢れ処理)</h3>
+<p><strong>前提:</strong> 同一 Foundry リソース内に、同一モデル・同一バージョンの Provisioned デプロイと Standard デプロイの両方が必要。</p>
+<ul>
+<li>設定は ARM の <code>properties.spilloverDeploymentName</code>(デプロイ単位)またはヘッダー <code>x-ms-spillover-deployment</code>(リクエスト単位)。<strong>両方設定するとデプロイプロパティが優先。</strong></li>
+<li>発動条件は <code>429</code>(PTU 枯渇)/ <code>400</code>(長コンテキスト)/ <code>500</code> / <code>503</code>。</li>
+<li><strong>監視上の落とし穴:</strong> 溢れた分は <strong>PTU 側の 429 としてカウントされない</strong>(Standard 側に <code>IsSpillover=True</code> の <code>200</code> として記録される)。<strong>PTU の 429 件数で飽和を判断すると誤る。</strong></li>
+<li>公式推奨は「<strong>すべての global / data zone provisioned デプロイで spillover を有効にせよ</strong>」。ただし PTU 優先処理のため追加レイテンシが発生しうる。</li>
+<li>Azure OpenAI モデルのみ。DeepSeek / Llama は非対応。</li>
+</ul>
+<h3 id="1-5-prompt-caching">1.5 Prompt caching</h3>
+<ul>
+<li><strong>条件:</strong> プロンプト最低 <strong>1,024 トークン</strong>、かつ<strong>先頭 1,024 トークンが完全一致。</strong>以降は 128 トークン単位でヒット。<strong>1 文字違えばヒットしない。</strong></li>
+<li><strong>保持ポリシー:</strong> <code>in_memory</code>(非アクティブ 5〜10 分、最終使用から 1 時間以内に必ず消去)/ <code>24h</code>(最大 24 時間)。<strong>gpt-5.4 以前の既定は <code>in_memory</code>、それより新しいモデルは既定 <code>24h</code> で <code>in_memory</code> 非対応。</strong></li>
+<li><strong>課金:</strong> Standard はキャッシュ読取が入力単価から割引、<strong>Provisioned は最大 100% 割引(PTU 使用率から全額控除)。</strong></li>
+<li><strong>⚠ gpt-5.6 以降はキャッシュ書き込みが課金対象</strong>(それ以前は無料)。<code>usage</code> にキャッシュ書き込みは別掲されないため <code>cached_tokens</code>(読取)でしか監視できない。</li>
+<li><strong>設計への効き方:</strong> システムプロンプト・ツール定義・共通コンテキストを<strong>プロンプトの先頭に固定配置</strong>し、可変部分を後ろに置く。これだけで PTU 必要量が 2〜3 割変わる。</li>
+</ul>
+<h3 id="1-6-batch">1.6 Batch</h3>
+<ul>
+<li>Global Standard 比 <strong>50% 割引</strong>、<strong>24 時間目標。</strong><code>completion_window</code> は <strong><code>24h</code> 固定</strong>(他の値を指定するとジョブが失敗する)。</li>
+<li>24 時間を超えてもジョブは失効せず実行継続する。<code>expired</code> は「24 時間ウィンドウ内に完了できなかった」の意味。</li>
+<li><strong>クォータは「enqueued tokens」でオンライン系と完全分離。</strong>ファイル投入時にトークン数がカウントされ終端状態まで占有する。</li>
+<li>入力ファイル最大 200MB(BYO Blob なら 1GB)、1 ファイル最大 100,000 リクエスト。</li>
+<li><strong>設計への効き方:</strong> 「夜間に全文書を分類する」「過去ログを一括要約する」といった処理を<strong>リアルタイム経路から切り離して Batch に回すだけでモデルコストが半減する。</strong>PoC 段階でこの切り分けを設計に入れておく。</li>
+</ul>
+<hr>
+<h2 id="2-信頼性・bcdr">2. 信頼性・BCDR</h2>
+<h3 id="2-1-責任分界">2.1 責任分界</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>層</th>
+<th>責任</th>
+<th>対応</th>
+</tr></thead><tbody>
+<tr>
+<td>Agent Service コントロールプレーン / capability host</td>
+<td>Microsoft</td>
+<td>ゾーン冗長(Microsoft 側で担保)</td>
+</tr>
+<tr>
+<td><strong>状態ストア(Cosmos DB / AI Search / Storage)</strong></td>
+<td><strong>顧客</strong></td>
+<td>冗長化・バックアップ・レプリケーション設定</td>
+</tr>
+<tr>
+<td>Key Vault</td>
+<td>Microsoft(自動フェイルオーバー)</td>
+<td>両リージョンで同一インスタンス使用</td>
+</tr>
+<tr>
+<td>Application Insights</td>
+<td>顧客</td>
+<td><strong>リージョンごとに作成</strong></td>
+</tr>
+<tr>
+<td>Container Registry</td>
+<td>顧客</td>
+<td>geo-replication 有効化</td>
+</tr>
+<tr>
+<td>Foundry プロジェクト</td>
+<td>顧客</td>
+<td>各リージョンで作成</td>
+</tr>
+</tbody></table></div>
+<p><strong>Basic セットアップは「人的ミスや自動化による損失に対してほぼ復旧能力を提供しない」</strong>と明記。本番は Standard 一択。</p>
+<h3 id="2-2-マルチリージョン戦略と-rto-rpo-公式目安">2.2 マルチリージョン戦略と RTO/RPO(公式目安)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>戦略</th>
+<th>概算 RTO</th>
+<th>概算 RPO</th>
+<th>相対コスト</th>
+</tr></thead><tbody>
+<tr>
+<td>Hot/hot</td>
+<td>数分</td>
+<td>ほぼゼロ</td>
+<td>最高</td>
+</tr>
+<tr>
+<td>Hot/warm</td>
+<td><strong>30 分〜2 時間</strong></td>
+<td>数分〜数時間</td>
+<td>中</td>
+</tr>
+<tr>
+<td>Hot/cold</td>
+<td><strong>2〜8 時間</strong></td>
+<td>数時間</td>
+<td>最低</td>
+</tr>
+</tbody></table></div>
+<p><strong>復旧できないもの:</strong> Foundry プロジェクトのサービス側メタデータ(タグ・アセット名・説明)はリージョン障害時に復旧不可。また <strong>Foundry プロジェクトは GRS/GZRS/RA-GRS による既定のストレージアカウントフェイルオーバーをサポートしない。</strong></p>
+<h3 id="2-3-モデルデプロイの冗長化パターン">2.3 モデルデプロイの冗長化パターン</h3>
+<p><strong>Standard デプロイ:</strong></p>
+<ol>
+<li>データレジデンシが許すなら <strong>Global Standard を第一候補</strong>、次点 Data Zone。</li>
+<li>同一サブスクリプション内にプライマリ / セカンダリ 2 リージョンのリソースを配置。</li>
+<li>各リージョンで同一モデルのデプロイを作り、<strong>利用可能クォータを全量 1 デプロイに割り当てる</strong>(分割より高スループット)。</li>
+<li>前段に <strong>APIM(ロードバランス + サーキットブレーカー)</strong>。</li>
+</ol>
+<p><strong>Provisioned — 「エンタープライズ PTU プール」パターン:</strong></p>
+<ul>
+<li>単一の Data Zone PTU デプロイを全社共通プールとし、APIM でアプリ別のスループット制限・優先度・フェイルオーバーを制御。</li>
+<li><strong>エンタープライズ PTU プールは、プライマリの Standard デプロイとは別リージョンに配置</strong>(同時被災回避)。</li>
+<li><strong>フェイルオーバーチェーン:</strong> ワークロード専用 PTU → エンタープライズ PTU プール → Standard デプロイ。<strong>PTU 間で溢れる限りレイテンシ SLA が維持される。</strong></li>
+</ul>
+<h3 id="2-4-apim-をゲートウェイに置く場合の設計ルール-公式">2.4 APIM をゲートウェイに置く場合の設計ルール(公式)</h3>
+<ul>
+<li><strong><code>Retry-After</code> を必ず尊重する。</strong>429 を返すエンドポイントを叩き続けず、そのモデルインスタンスのサーキットを開く。<strong>ヘルスチェック専用エンドポイントは存在しない</strong>ため、<code>429</code> / <code>500</code> / <code>503</code> を回路遮断シグナルとして扱う(合成トランザクションはモデル容量を消費してしまう)。</li>
+<li><strong>ラウンドロビン / フェイルオーバー先は必ず同一モデル・同一バージョン。</strong>バージョン X と X+1 の間でロードバランスしてはならない(クライアント挙動が不定になる)。</li>
+<li><strong>全インスタンスでデプロイ名を統一</strong>してルーティングロジックを単純化する。</li>
+<li><strong>ステートフル API はバックエンドをピン留めし、切替不能なら別インスタンスへ回さず 429 を返す</strong>(履歴のないインスタンスへ隠蔽リダイレクトしない)。</li>
+<li><strong>データ主権:</strong> 地政学的境界を独立したスタンプとして扱い、境界内でのみ active-active / active-passive を適用。<strong>性能ベースルーティングはデータ主権要件と衝突する。</strong>最も確実なのは地政学的リージョンごとに完全独立のゲートウェイを建てること。</li>
+<li><strong>ゲートウェイ冗長性:</strong> APIM は 2 ユニット以上 × 2 ゾーン以上、カスタム実装なら最低 3 インスタンスを AZ 分散。</li>
+</ul>
+<p><strong>APIM の主要ポリシー:</strong> <code>llm-token-limit</code>(TPM 上限とトークンクォータ。<code>estimate-prompt-tokens</code> で<strong>バックエンド到達前にプロンプトを弾ける</strong>)/ <code>llm-emit-token-metric</code>(カスタムディメンション付きで App Insights へ)/ <code>llm-semantic-cache-store</code> <code>-lookup</code>(Azure Managed Redis 必須)/ <code>llm-content-safety</code> / backend pool(round-robin / weighted / <strong>priority-based</strong> / session-aware)/ circuit breaker(<strong>バックエンドの <code>Retry-After</code> 値を動的トリップ期間として適用</strong>)。</p>
+<h3 id="2-5-agent-状態の-dr-最重要のリスク開示">2.5 Agent 状態の DR(最重要のリスク開示)</h3>
+<blockquote><p><strong>Foundry Agent Service には組み込みの DR 機能がない。状態のレプリケーション、バックアップ、ポイントインタイム復元のいずれもできない。復旧は再構築で行う。インシデントによってエージェント・会話・ナレッジデータが恒久的に失われうる。</strong></p></blockquote>
+<p><strong>Standard セットアップが要求するリソース構成:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>リソース</th>
+<th>格納内容</th>
+<th>要件</th>
+</tr></thead><tbody>
+<tr>
+<td>Cosmos DB for NoSQL</td>
+<td>メッセージ・会話履歴・エージェントメタデータ(<code>enterprise_memory</code> DB)</td>
+<td><strong>アカウント合計 3,000 RU/s 以上</strong>(1,000 RU/s × 5 コンテナー)。<strong>プロジェクト数だけ倍増が必要</strong></td>
+</tr>
+<tr>
+<td>Azure Storage</td>
+<td>アップロードファイル</td>
+<td>Blob コンテナー 2 種(<code>azureml-blobstore</code> / <code>agents-blobstore</code>)</td>
+</tr>
+<tr>
+<td>Azure AI Search</td>
+<td>エージェントが作ったベクトルストア</td>
+<td>Search Index Data Contributor + Search Service Contributor</td>
+</tr>
+</tbody></table></div>
+<p>Cosmos DB の RU/s 不足は <strong>capability host のプロビジョニング失敗の直接原因</strong>になる。コンテナーは Classic ランタイムと New ランタイムで異なる(<code>thread-message-store</code> 系 vs <code>agent-definitions-v1</code> / <code>run-state-v1</code>)点にも注意。</p>
+<p><strong>DR 補償策(公式リスト):</strong></p>
+<ol>
+<li><strong>Cosmos DB: 継続バックアップ(7 日 or 30 日)を事前に有効化。インシデント発生後には有効化できない。</strong>PITR 復元は同一アカウント・同一 DB へ。復元後は Foundry プロジェクトの Connected resources でエンドポイントを更新。<strong>組織固有のユニークなアカウント名を使う</strong>(PITR は元名の新アカウントを作るため名前衝突で復元失敗する)。</li>
+<li><strong>AI Search: 組み込みのリストアがない。</strong>データ損失時は Microsoft サポート依頼のみで <strong>RTO に重大な影響。</strong><strong>AI Search を一次データストアとして扱わず、元データからの再構築パイプラインを常備する。</strong></li>
+<li><strong>Storage: GZRS + customer-managed failover。</strong>ZRS のみだとサポート依頼が必要で RTO が伸びる。</li>
+<li><strong>スレッドに添付されたユーザーアップロードファイルは原則復旧不可。</strong>「一時的(transient)なもの」であることをステークホルダーに合意させる。</li>
+<li><strong>エージェント定義をコードとして管理する</strong>(定義・接続・システムプロンプト・パラメータをソース管理へ。<strong>ポータル経由の未追跡変更を避ける</strong>)。</li>
+<li>プロジェクトには<strong>ユーザー割当マネージド ID</strong> を使う(誤削除時に既存のロール割当を再利用できる)。</li>
+<li>Foundry アカウント / Cosmos DB / AI Search / Storage に<strong>削除ロック。</strong>ただしコンテナー内データ・個別エージェント・スレッドは保護されない。</li>
+<li><strong>単一責務原則:</strong> Cosmos DB / AI Search / Storage はこのワークロード専用にする(爆発半径の限定)。</li>
+</ol>
+<h3 id="2-6-可用性ゾーンと-sla">2.6 可用性ゾーンと SLA</h3>
+<ul>
+<li>Microsoft 管理の Agent Service コンポーネントはゾーン冗長。<strong>顧客管理の依存(Cosmos DB / AI Search / Storage)は自分でゾーン冗長設定が必要。</strong></li>
+<li><strong>Foundry ポータル・データプレーン API・Agent Service はゾーン冗長の直接制御を提供しない。</strong></li>
+<li><strong>Standard モデルデプロイは単一リージョンで AZ 非対応。</strong>マルチデータセンター可用性を得るには Global または Data Zone デプロイが必須。</li>
+<li><strong>Foundry はモデルデプロイに対するラウンドロビンやサーキットブレーカーを提供しない。</strong>リージョン内の粒度細かい冗長性が要るなら APIM 等の自前ゲートウェイが必要。</li>
+<li>AI Search は Standard ティア以上 + AZ 対応リージョン + レプリカ 3 以上でゾーン分散。</li>
+<li>SLA: Azure OpenAI は可用性 <strong>99.9%</strong>、Provisioned-Managed デプロイには<strong>トークン生成の 99% レイテンシ SLA</strong> が付く。</li>
+<li><strong><code>learn.microsoft.com/azure/reliability/reliability-foundry</code> は存在しない</strong>(404)。Foundry 専用の Azure Reliability ハブページは未整備。</li>
+</ul>
+<h3 id="2-7-早期検知の運用設定">2.7 早期検知の運用設定</h3>
+<ol>
+<li>全 Foundry ワークロードの Azure サービスに <strong>Service Health アラート</strong></li>
+<li>Cosmos DB / Azure OpenAI / Storage に <strong>Resource Health アラート</strong></li>
+<li>App Insights の<strong>可用性テスト</strong>(複数地点からエージェントエンドポイントを常時プローブ)</li>
+<li>アクショングループ(メール / SMS / インシデント管理)でフェイルオーバー判断を迅速化</li>
+<li><strong>委任サブネットの IP 使用率は Azure portal に露出していない。</strong>枯渇の先行指標は「data proxy の HTTP 5xx」「hosted agent のセッション作成失敗」「新規プロジェクトのプロビジョニング失敗」の 3 つのみで、<strong>プラットフォームからの事前警告はない。</strong>定期的にエージェントセッションを作る合成監視で補う。</li>
+</ol>
+<hr>
+<h2 id="3-可観測性">3. 可観測性</h2>
+<h3 id="3-1-トレーシング">3.1 トレーシング</h3>
+<ul>
+<li><strong>ステータス:</strong> prompt / hosted エージェントは <strong>GA</strong>、<strong>workflow と外部エージェントはプレビュー。Tracing の VNet 対応もプレビュー。</strong></li>
+<li><strong>サーバーサイドトレースが出発点:</strong> Foundry プロジェクトに Application Insights を接続するだけで<strong>コード変更なしに</strong>数分でトレースが出る。<strong>ポータルでは直近 90 日分</strong>を検索・フィルタできる。</li>
+<li><strong>キャプチャ内容:</strong> ユーザー入力とエージェント出力、ツール呼び出しと結果、<strong>トークン消費</strong>、所要時間・レイテンシ、リトライ、コスト。</li>
+<li><strong>Conversation ビュー(トレースリプレイ相当):</strong> Response ID / Trace ID から Conversation ID を辿り、会話履歴・順序付きアクション・ツール呼び出し・入出力を再生できる。</li>
+<li><strong>保存先は App Insights。</strong>保持期間・サンプリング・課金は App Insights / Log Analytics の設定に従う(<strong>Foundry 側の上乗せ課金はない</strong>)。</li>
+<li><strong>必要ロール:</strong> ログ参照に <strong>Log Analytics Reader</strong>。対象テーブルが Protected なら Privileged Monitoring Data Reader も必要。</li>
+<li><strong>セキュリティ:</strong> トレースはプロンプト・出力・ツール引数などの機微情報を含みうる。<strong>テレメトリ到達前にマスクする</strong>のが公式ベストプラクティス。</li>
+</ul>
+<h3 id="3-2-opentelemetry-genai-セマンティック規約のステータス-設計に効く">3.2 OpenTelemetry GenAI セマンティック規約のステータス(設計に効く)</h3>
+<p>Foundry は OpenTelemetry のセマンティック規約に従ってトレースを保存するが、<strong>規約側の成熟度は「Development(非安定)」</strong>である。<code>gen_ai.provider.name</code> / <code>gen_ai.operation.name</code> / <code>gen_ai.usage.input_tokens</code> / <code>gen_ai.conversation.id</code> / <code>gen_ai.agent.name</code> などはすべて Development バッジで、<strong><code>gen_ai.system</code> は既に非推奨(<code>gen_ai.provider.name</code> に置換)。</strong>2026 年に GenAI 規約は専用リポジトリへ分離され、コア規約とは別リリースサイクルになった。</p>
+<blockquote><p><strong>設計上の含意:</strong> KQL クエリ・Grafana ダッシュボード・アラートを <code>gen_ai.*</code> 属性名に直接ハードコードすると、SDK / 規約の更新で壊れる。<strong>属性名を 1 箇所に抽象化する</strong>か、Foundry ポータル側の抽象化に寄せる。</p></blockquote>
+<h3 id="3-3-azure-monitor-メトリクス">3.3 Azure Monitor メトリクス</h3>
+<p><strong>⚠ 最重要の落とし穴:</strong> <code>Cognitive Services - HTTP Requests</code> カテゴリの<strong>レガシー <code>Latency</code> / <code>BlockedCalls</code> / <code>TotalCalls</code> は Azure OpenAI 用に設計されておらず、使うと誤った診断になる</strong>と明記されている。</p>
+<p><strong>使うべきメトリクス:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>目的</th>
+<th>メトリクス</th>
+</tr></thead><tbody>
+<tr>
+<td>リクエスト数・エラー</td>
+<td><code>AzureOpenAIRequests</code>(ディメンション: <code>StatusCode</code>、<strong><code>IsSpillover</code></strong>、<code>ServiceTierRequest/Response</code>、<code>StreamType</code>)</td>
+</tr>
+<tr>
+<td>可用性</td>
+<td><code>AzureOpenAIAvailabilityRate</code></td>
+</tr>
+<tr>
+<td>総応答時間</td>
+<td><code>AzureOpenAITTLTInMS</code></td>
+</tr>
+<tr>
+<td>初回トークン応答性</td>
+<td><code>AzureOpenAITimeToResponse</code></td>
+</tr>
+<tr>
+<td>トークン生成速度</td>
+<td><code>AzureOpenAINormalizedTBTInMS</code></td>
+</tr>
+<tr>
+<td><strong>PTU 使用率</strong></td>
+<td><strong><code>AzureOpenAIProvisionedManagedUtilizationV2</code></strong>(V1 は非推奨)</td>
+</tr>
+<tr>
+<td>キャッシュヒット率</td>
+<td><code>AzureOpenAIContextTokensCacheMatchRate</code></td>
+</tr>
+<tr>
+<td>トークン数</td>
+<td><code>ProcessedPromptTokens</code> / <code>GeneratedTokens</code> / <code>TokenTransaction</code></td>
+</tr>
+<tr>
+<td>ガードレール</td>
+<td><code>RAIHarmfulRequests</code>(<code>Category</code> / <code>Severity</code> で split)/ <code>RAIRejectedRequests</code></td>
+</tr>
+</tbody></table></div>
+<p>新しい <code>Models -*</code> カテゴリ(<code>ModelRequests</code> / <code>InputTokens</code> / <code>ProvisionedUtilization</code> 等)は Azure OpenAI 以外のモデルも含み、ポータルはこちらへの切替を推奨している。</p>
+<p><strong>診断ログ:</strong> <code>Audit Logs</code>(無料)/ <code>Request and Response Logs</code>(無料)/ <code>Trace Logs</code>(無料)/ <code>Azure OpenAI Request Usage</code>(課金)/ <code>Managed Network Events</code>(課金)。出力先は <code>AzureDiagnostics</code> テーブル。<strong>Basic log plan と ingestion-time transformation はいずれも非対応。</strong>Metrics Explorer では Resource types を「<strong>Foundry Tools</strong>」に設定する。</p>
+<h3 id="3-4-自前オーケストレーション時の可観測性ギャップ">3.4 自前オーケストレーション時の可観測性ギャップ</h3>
+<blockquote><p>アプリケーション内でオーケストレーションするコードを App Service 上で動かす場合、<strong>エージェントのメトリクスは Azure AI Foundry には表示されない。Foundry は完全マネージドの Foundry エージェントしか見えないからである。</strong></p></blockquote>
+<p>OpenTelemetry の GenAI セマンティック規約に沿って計装すれば、Application Insights 側と App Service の Agents タブでは集計される。<strong>「Foundry のダッシュボードを見せる」ことが要件に入っていないかを事前に確認する。</strong></p>
+<h3 id="3-5-agent-monitoring-dashboard-プレビュー">3.5 Agent Monitoring Dashboard(プレビュー)</h3>
+<p>Foundry ポータル → Build → エージェント → Monitor タブ。データソースは接続済み App Insights。</p>
+<p><strong>公式が示す運用閾値:</strong></p>
+<ul>
+<li><strong>Latency: 10 秒超</strong>ならモデルのスロットリング、複雑なツール呼び出し、ネットワーク問題の兆候</li>
+<li><strong>Run success rate: 95% 未満</strong>なら失敗した run を調査すべき</li>
+<li>Token usage が多すぎる = 冗長なプロンプト / 応答の兆候</li>
+</ul>
+<p>設定パネルの内訳: Continuous evaluation(GA 相当)/ Scheduled evaluations(プレビュー)/ Red team scans(プレビュー)/ Alerts(プレビュー)。<strong>継続的評価の <code>max_hourly_runs</code> 既定は 100/時</strong>で、到達すると評価 run がスキップされる。<strong>プロジェクトのマネージド ID に Foundry User ロールが必要</strong>(未付与だとルール作成が失敗する)。</p>
+<p><strong>Foundry 外のエージェントも監視できる:</strong> Foundry Control Plane に AI Gateway 経由で登録し、同一 App Insights に OTel GenAI 規約準拠のテレメトリを送れば、継続的評価とエラーレート追跡が使える。</p>
+<hr>
+<h2 id="4-評価と-llmops">4. 評価と LLMOps</h2>
+<h3 id="4-1-評価器の選び方-公式の組み合わせ推奨">4.1 評価器の選び方(公式の組み合わせ推奨)</h3>
+<ul>
+<li><strong>RAG アプリ:</strong> Retrieval + Groundedness + Relevance + Content Safety</li>
+<li><strong>エージェントアプリ:</strong> Tool Call Accuracy + Task Adherence + Intent Resolution + Rubric + Content Safety</li>
+<li>全アプリ共通でリスク・安全性評価器(Hate / Sexual / Violence / Self-Harm)を追加</li>
+</ul>
+<p><strong>評価レベル:</strong> <code>turn</code>(既定)と <code>conversation</code> がある。<strong>レベルの異なる評価器を同一 run に混在させられない。</strong></p>
+<p><strong>RAG 評価器の精度側と再現側:</strong> Groundedness は<strong>精度</strong>(応答がコンテキストに沿っているか)、Response Completeness は<strong>再現</strong>(正解データを網羅しているか)を測る。検索パラメータのスイープに使えるのは <strong>Document Retrieval</strong>(正解ラベル必要、LLM 不要で NDCG / XDCG / fidelity を数値計算)。</p>
+<h3 id="4-2-ツールによって使えない評価器がある">4.2 ⚠ ツールによって使えない評価器がある</h3>
+<p>公式に明記:</p>
+<blockquote><p><code>tool_call_accuracy</code>、<code>tool input accuracy</code>、<code>tool_output_utilization</code>、<code>tool_call_success</code>、<code>groundedness</code> の各評価器は、<strong>エージェントの会話に Azure AI Search / Bing Grounding / Bing Custom Search / SharePoint Grounding / Code Interpreter / Fabric Data Agent / Web Search への呼び出しが含まれる場合は使うな。</strong></p></blockquote>
+<p>完全サポートは <strong>File Search / Function Tool / MCP / Knowledge-based MCP。</strong></p>
+<blockquote><p><strong>設計への含意:</strong> 「Foundry Agent + Azure AI Search ツール」構成は、<strong>エージェント評価のストーリーが File Search / MCP(= Foundry IQ)構成より弱い。</strong>評価自動化が要件に入っているなら、この非対称性が RAG 方式の選定に効いてくる。</p></blockquote>
+<h3 id="4-3-クラウド評価の実行">4.3 クラウド評価の実行</h3>
+<ul>
+<li><strong><code>azure-ai-projects&gt;=2.2.0</code> + OpenAI 互換 evals API</strong>(<code>client.evals.create</code>、評価器は <code>builtin.*</code> 名で指定)。<strong>Entra ID 認証必須(キー不可)。</strong></li>
+<li>上限: <strong>1 行あたり最大 2MB / バッチ評価あたり最大 100,000 行。</strong>評価 run 作成はテナント / サブスクリプション / プロジェクトの各レベルでレート制限され、超過時は <code>retry-after</code> 付きで返る(<strong>指数バックオフ必須</strong>)。</li>
+<li>6 シナリオ: データセット評価(GA)/ モデルターゲット評価(GA)/ エージェントターゲット評価(GA)/ エージェント応答評価(GA)/ <strong>トレース評価(プレビュー)</strong> / <strong>会話レベル評価(プレビュー)</strong>。</li>
+<li><strong><code>azure-ai-evaluation</code> はローカル評価専用。</strong>クラウド / バッチ評価は <code>azure-ai-projects</code> を使う。</li>
+</ul>
+<h3 id="4-4-リージョン制約-日本の案件で必ず効く">4.4 リージョン制約(日本の案件で必ず効く)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>機能</th>
+<th>対応リージョン</th>
+</tr></thead><tbody>
+<tr>
+<td>バッチ評価</td>
+<td>広範(<strong>Japan East / Japan West を含む</strong>)</td>
+</tr>
+<tr>
+<td><strong>リスク・安全性評価器</strong></td>
+<td><strong>East US 2 / North Central US / France Central / Sweden Central / Switzerland West / Australia East のみ</strong></td>
+</tr>
+<tr>
+<td>Groundedness Pro</td>
+<td>East US 2 / Sweden Central のみ</td>
+</tr>
+<tr>
+<td>Protected material</td>
+<td><strong>East US 2 のみ</strong></td>
+</tr>
+<tr>
+<td><strong>AI Red Teaming</strong></td>
+<td><strong>East US 2 / North Central US のみ</strong></td>
+</tr>
+<tr>
+<td>Agent playground 評価</td>
+<td>米国 8 + 欧州 7 リージョン(<strong>APAC なし</strong>)</td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>設計への含意:</strong> 本番推論は Japan East、<strong>安全性評価と Red Teaming は別リージョンの評価専用プロジェクト</strong>という分離構成になる。<strong>プロンプト・応答が評価のために国外に渡る</strong>ため、法務確認が必須。評価だけなら Agent 用のフル構成(Cosmos DB / AI Search / capability host)は不要で、評価専用の Bicep テンプレートが用意されている。</p></blockquote>
+<h3 id="4-5-ai-red-teaming-agent">4.5 AI Red Teaming Agent</h3>
+<p>PyRIT ベース。<strong>Attack Success Rate = 成功攻撃数 ÷ 総攻撃数</strong>を算出する。</p>
+<ul>
+<li><strong>エージェント固有リスク(クラウドのみ):</strong> Prohibited actions(禁止 / 高リスク / 不可逆アクション)、Sensitive data leakage、Task adherence。</li>
+<li><strong>XPIA(間接プロンプトインジェクション):</strong> メールや文書などツール経由の外部データに悪意ある指示を埋め込み、エージェントが不正実行するかを検証。攻撃戦略に <code>Indirect Jailbreak</code> がある。</li>
+<li><strong>サポート対象:</strong> hosted prompt agent / hosted container agent は対応。<strong>workflow エージェント・非 Foundry エージェント・Function tool 呼び出し・Browser automation・Connected Agent・Computer Use は非対応。</strong></li>
+<li><strong>既知の限界:</strong> 合成データのため実データ分布を代表しない、<strong>生成モデルで ASR を判定するため非決定的で偽陽性がありうる(対処前に必ずレビュー)。</strong></li>
+<li><strong>「purple environment」(本番相当リソースの非本番環境)での実行を推奨。</strong></li>
+</ul>
+<hr>
+<h2 id="5-コストアーキテクチャ">5. コストアーキテクチャ</h2>
+<h3 id="5-1-何に課金されるか">5.1 何に課金されるか</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>要素</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>モデルトークン</td>
+<td>入力 / 出力 / キャッシュ読取(<strong>gpt-5.6 以降はキャッシュ書込も</strong>)</td>
+</tr>
+<tr>
+<td><strong>Foundry Agent Service 本体</strong></td>
+<td><strong>プロンプトとワークフローを使う Foundry ネイティブエージェントの作成・実行に追加課金はない</strong></td>
+</tr>
+<tr>
+<td><strong>Hosted agents</strong></td>
+<td><strong>vCPU 時間 + メモリ GiB 時間</strong></td>
+</tr>
+<tr>
+<td>File Search ストレージ</td>
+<td><strong>ベクトルストレージ GB/日</strong></td>
+</tr>
+<tr>
+<td>Code Interpreter</td>
+<td><strong>セッション単位</strong></td>
+</tr>
+<tr>
+<td>Web Search / Custom Search</td>
+<td><strong>1,000 トランザクション単位</strong></td>
+</tr>
+<tr>
+<td>Logic Apps コネクタ / Fabric data agent / SharePoint / Bing grounding / Foundry IQ</td>
+<td>いずれも別課金</td>
+</tr>
+<tr>
+<td>Cosmos DB / Storage / AI Search</td>
+<td>各サービスの通常課金</td>
+</tr>
+<tr>
+<td>Application Insights / Log Analytics</td>
+<td>取込データ量と保持設定。<strong>Foundry 側の上乗せなし</strong></td>
+</tr>
+<tr>
+<td><strong>Foundry Observability</strong></td>
+<td><strong>課金対象は safety / red teaming / playground 評価のみ。</strong>品質評価と継続的評価は自分のモデルデプロイのトークン課金のみ。<strong>モニタリングとトレーシングは無料</strong></td>
+</tr>
+<tr>
+<td>ファインチューニング</td>
+<td>Training + <strong>Hosting(デプロイ中は未使用でも時間課金)</strong> + Inference</td>
+</tr>
+</tbody></table></div>
+<p><strong>⚠ 見落としがちな課金:</strong></p>
+<ul>
+<li><strong>ファインチューニング済みモデルのホスティング料は未使用でも発生する。</strong></li>
+<li><strong>Agents playground の評価は全 Foundry プロジェクトで既定 ON。</strong>停止するには playground の metrics から全評価器を選択解除する必要がある。</li>
+<li><strong>PTU は削除するまで課金が止まらない</strong>(一時停止不可)。</li>
+</ul>
+<p><strong>⚠ 実単価が公開されていない:</strong> Foundry Agent Service / Foundry Observability の公開料金ページは<strong>メーター名と単位のみで金額が <code>$-</code> プレースホルダ。</strong>見積時は Azure 料金計算ツールにサインインするか営業経由で取得する必要がある。<strong>Foundry は料金計算ツールに専用ページを持たない</strong>(複数のオプションサービスの組合せのため)。</p>
+<h3 id="5-2-finops-レバー">5.2 FinOps レバー</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>レバー</th>
+<th>効果</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Batch API</strong></td>
+<td>Global Standard 比 <strong>50% 割引</strong></td>
+</tr>
+<tr>
+<td><strong>Prompt caching</strong></td>
+<td>Provisioned は最大 100% 割引。<strong>サイジング例で必要 PTU 110 → 80(-27%)</strong></td>
+</tr>
+<tr>
+<td><strong>Model router</strong></td>
+<td>Balanced モードで品質 1〜2% 以内、Cost モードで 5〜6% 帯の最安モデルを選択</td>
+</tr>
+<tr>
+<td><strong>PTU Reservations</strong></td>
+<td>1 か月 / 1 年コミットで時間課金より割引(<strong>割引率は公開ドキュメントに記載なし</strong>)</td>
+</tr>
+<tr>
+<td><strong>Spillover</strong></td>
+<td>PTU 使用率を最大化(バースト分だけ Standard へ)</td>
+</tr>
+<tr>
+<td><strong>小型モデル</strong></td>
+<td>gpt-4.1-nano は PTU 効率が gpt-4.1 の約 20 倍</td>
+</tr>
+<tr>
+<td><strong>APIM セマンティックキャッシュ</strong></td>
+<td>近傍プロンプトの応答再利用で<strong>バックエンド呼び出し自体を削減</strong></td>
+</tr>
+<tr>
+<td><strong>APIM <code>llm-token-limit</code></strong></td>
+<td><code>estimate-prompt-tokens=true</code> で<strong>上限超過プロンプトをバックエンド到達前に遮断</strong></td>
+</tr>
+</tbody></table></div>
+<h3 id="5-3-ショーバック-チャージバック">5.3 ショーバック / チャージバック</h3>
+<ul>
+<li><strong>プロジェクト単位の配賦(プレビュー):</strong> 全 Foundry プロジェクトの使用量に<strong>自動的に <code>project</code> タグが付く</strong>(手動タグ付け不要)。Cost analysis で Tag フィルタを使う。<strong>⚠ Models sold by Azure のみ対応で、Azure Marketplace 経由のモデルは未対応。</strong></li>
+<li><strong>メーターの見え方の罠:</strong> Cost Analysis のサービスフィルタに「Azure OpenAI」は無い(Cognitive Services 分類の下の Service tier で絞る)。<strong>パートナー / コミュニティモデルのメーターは Foundry リソースではなくリソースグループ配下に出る</strong>ため、<strong>Cost Analysis はリソースグループスコープにする。</strong></li>
+<li><strong>概算値と実請求はズレる:</strong> ポータルの Estimated cost は<strong>割引や契約価格を反映せず、Provisioned(PTU)も含まない。</strong>課金イベントが Cost Analysis に現れるまで<strong>約 5 時間の遅延。</strong>財務照合には Cost Management と請求書を使う。<strong>さらに prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。</strong></li>
+<li><strong>⚠ ハードリミットが無い:</strong> 「OpenAI にはハードリミットがあるが、<strong>Azure OpenAI には現状その機能がない</strong>」。予算超過での自動停止が要件なら、予算アラートのアクショングループから起動する<strong>自動化を自作する必要がある。</strong></li>
+<li><strong>消費者別の粒度が要るなら APIM。</strong><code>llm-emit-token-metric</code> にカスタムディメンション(User ID / API ID / Client IP)を付ければ、Foundry が提供しない粒度でチャージバックできる。</li>
+</ul>
+<h3 id="5-4-ptu-reservations-の注意点">5.4 PTU Reservations の注意点</h3>
+<ul>
+<li><strong>デプロイ種別ごとに別購入</strong>(Global / Data Zone / Regional は相互流用不可)。<strong>Global 予約はリージョン非依存</strong>で、複数リージョンの Global PTU デプロイを 1 つの予約でカバーできる。</li>
+<li>マッチング条件は「<strong>デプロイ種別 × リージョン × スコープ</strong>」の 3 つで、<strong>モデルやデプロイ ID では一致させない</strong>(モデル非依存なので新モデル追加時も自動的にカバーされる)。</li>
+<li><strong>予約はキャパシティを保証しない。必ずデプロイを先に作ってから予約を買う。</strong></li>
+<li><strong>余剰予約は失効し翌期に繰り越されない</strong>(24×7 稼働前提の価格)。</li>
+<li><strong>デプロイを削除しても予約は自動解約されない。</strong></li>
+<li><strong>⚠ ドキュメント間の食い違い:</strong> デプロイ種別間の交換について、Reservations 側は可能と読め、provisioned-throughput-billing 側は不可と明記している。<strong>実行前にサポート確認を推奨。</strong></li>
+</ul>
+<hr>
+<h2 id="6-プラットフォーム自体の-ci-cd">6. プラットフォーム自体の CI/CD</h2>
+<h3 id="6-1-環境分離">6.1 環境分離</h3>
+<p><strong>公式指針:</strong> 「実験・テスト・本番の環境を計画するとき、<strong>依存リソースを含めて Foundry リソースを明確に分離せよ。</strong>」つまりプロジェクト分割ではなく<strong>リソースごと分離</strong>する。</p>
+<p><strong>プロジェクトは共有 / 分離の単位:</strong> 「同一プロジェクト内の全エージェントは同じファイルストレージ・スレッドストレージ・検索インデックスにアクセスする。データはプロジェクト間で分離される。<strong>プロジェクトが現時点での共有と分離の単位である。</strong>」</p>
+<p><strong>⚠ プロジェクト RBAC の限界:</strong> 「Foundry プロジェクトに <strong>Foundry User</strong> ロールを持つプリンシパルは、<strong>そのプロジェクト内のすべてのエージェントと対話できる。</strong>」どのユーザーがどのエージェント / 会話にアクセスできるかを制御するのは Foundry の RBAC ではなく<strong>自社アプリの認証認可層。</strong></p>
+<h3 id="6-2-移植できるもの-できないもの">6.2 移植できるもの / できないもの</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>移植できる</th>
+<th>移植できない / 手動</th>
+</tr></thead><tbody>
+<tr>
+<td>エージェント定義・接続・システムプロンプト・パラメータ(<strong>as code で管理していれば</strong>)</td>
+<td><strong>capabilityHost(更新不可)</strong></td>
+</tr>
+<tr>
+<td>モデルデプロイ(IaC で再作成)</td>
+<td>Foundry プロジェクトのサービス側メタデータ(タグ・アセット名・説明)</td>
+</tr>
+<tr>
+<td>Bicep 化した接続、共有 Key Vault</td>
+<td>会話スレッドと添付ファイル</td>
+</tr>
+<tr>
+<td>geo-replication 済み ACR イメージ</td>
+<td>AI Search インデックス(再構築のみ)</td>
+</tr>
+<tr>
+<td>リージョンを跨いで参照可能な Storage 接続</td>
+<td>Application Insights(リージョンごとに作成)</td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>⚠ capabilityHost は作成後に更新できない</strong>(<code>400 BadRequest</code>)。「構成変更が必要ならプロジェクトを削除して再作成せよ」。<strong>IaC の冪等更新が効かない最大のポイント</strong>で、パイプラインは「作り直し」を前提に設計する。</p></blockquote>
+<h3 id="6-3-エージェントのバージョニングとリリース">6.3 エージェントのバージョニングとリリース</h3>
+<ul>
+<li><strong>Foundry はイミュータブルなエージェントバージョンをネイティブサポートする。</strong>定義を変更するたびにバージョンスナップショットが作られ、監査証跡とロールバック先になる。hosted agent のロールバックは<strong>エンドポイントのバージョンセレクタを過去バージョンに向け直すだけ</strong>(リビルド不要)。</li>
+<li><strong>Structured inputs</strong> でエージェント定義をパラメータ化でき、1 バージョンでユーザー別 / 文脈別の構成を再デプロイなしに提供できる。<strong>⚠ ただし instruction テキストに限定すべき。</strong>MCP サーバー URL などツールエンドポイントをテンプレート化すると、呼び出し側が実行時に任意の外部サービスへエージェントをリダイレクトでき、静的ガバナンスが崩れる。</li>
+<li><strong>⚠ カナリア / ブルーグリーンは組み込み機能がない:</strong></li>
+</ul>
+<p>  &gt; Foundry はエージェントの blue-green / canary デプロイの組み込みサポートを提供しない。これらのデプロイパターンや、ユーザーのエージェントバージョン間の制御された移行が必要なら、<strong>エージェント API の前段に API ゲートウェイやカスタムルーターのようなルーティング層を実装せよ。</strong></p>
+<ul>
+<li>なお prompt agent は <code>FixedRatio</code> によるトラフィック % 指定ができるが、<strong>hosted agent は 1 エンドポイント = 1 バージョンで分割できない。</strong></li>
+<li><strong>モデルデプロイの version upgrade を自動アップグレードにしない</strong>(テストスイート検証前に応答が変わるのを防ぐ)。</li>
+<li><strong>非決定性への対処:</strong> 「Foundry Agent Service で定義したエージェントは非決定的に振る舞うため、望ましい品質水準をどう測り維持するかを決めなければならない。<strong>現実的なユーザーの質問とシナリオに対する理想的な応答をチェックするテストスイートを作って実行せよ。</strong>」→ §4 のクラウド評価を CI のゲートに組み込む形になる。</li>
+</ul>
+<h3 id="6-4-iac">6.4 IaC</h3>
+<ul>
+<li><strong>Bicep テンプレート集:</strong> <code>microsoft-foundry/foundry-samples</code> の <code>infrastructure/infrastructure-setup-bicep/</code> に番号付きシナリオ(private network basic / standard agent setup / APIM 併用 / managed VNet / 評価専用など)。既存リソースの ARM Resource ID を渡して再利用できる。</li>
+<li>主要リソース種別: <code>Microsoft.CognitiveServices/accounts</code>(kind <code>AIServices</code>)/ <code>accounts/projects</code> / <code>accounts/deployments</code>(<code>sku.name</code> でデプロイ種別、<code>properties.spilloverDeploymentName</code> で spillover)/ <code>capabilityHosts</code>(アカウントスコープとプロジェクトスコープの 2 階層)。</li>
+<li><strong>推奨プラクティス:</strong> ARM/Bicep で両リージョンへ同一デプロイし、<strong>CI/CD パイプラインを両リージョンにデプロイしてドリフトを防ぐ。</strong>ロール割当・VNet / Private Endpoint / DNS も両方に用意する。</li>
+<li><strong>閉域環境では公開端末から <code>azd up</code> / <code>azd deploy</code> ができない。</strong>VNet 内のセルフホスト GitHub Actions runner / Azure DevOps agent が公式の推奨パターンで、<strong>CI/CD 基盤の追加コストとして見積もりに入れる。</strong></li>
+</ul>
+<hr>
+<h2 id="7-運用設計チェックリスト">7. 運用設計チェックリスト</h2>
+<p><strong>キャパシティ</strong></p>
+<ul>
+<li>[ ] データレジデンシ要件を確認(「日本国内処理」なら APAC Data Zone は不可)</li>
+<li>[ ] Quota Tier を確認し、自動昇格をオプトアウトするか判断</li>
+<li>[ ] PTU サイジングを式で算出し、<strong>キャッシュ率を織り込む</strong></li>
+<li>[ ] PTU 購入前に<strong>必ずデプロイを先に作成</strong>してキャパシティ確認 → その後 Reservation 購入</li>
+<li>[ ] Batch に回せる処理を切り分けた(50% 割引)</li>
+</ul>
+<p><strong>信頼性</strong></p>
+<ul>
+<li>[ ] PTU デプロイ全てに <strong>spillover を有効化</strong></li>
+<li>[ ] APIM: backend pool(priority-based)+ circuit breaker(<code>Retry-After</code> 尊重)、2 ユニット × 2 AZ 以上</li>
+<li>[ ] <strong>Cosmos DB の継続バックアップをインシデント前に有効化</strong>、ゾーン冗長、ユニークなアカウント名</li>
+<li>[ ] Cosmos DB RU/s = 1,000 × コンテナー数 × プロジェクト数(最低 3,000 RU/s)</li>
+<li>[ ] Storage は GZRS、AI Search は Standard 以上 + レプリカ 3</li>
+<li>[ ] Foundry アカウント / Cosmos DB / AI Search / Storage に削除ロック</li>
+<li>[ ] <strong>スレッド添付ファイルは復旧不可</strong>であることをステークホルダーと合意</li>
+</ul>
+<p><strong>可観測性</strong></p>
+<ul>
+<li>[ ] App Insights を接続、Log Analytics Reader を配布</li>
+<li>[ ] <strong>レガシー <code>Latency</code> を使わず</strong> <code>AzureOpenAITimeToResponse</code> / <code>TTLTInMS</code> / <code>NormalizedTBTInMS</code> を使用</li>
+<li>[ ] PTU は <code>ProvisionedManagedUtilizationV2</code>(V1 は非推奨)</li>
+<li>[ ] <strong>spillover は 429 として計上されない</strong>点をダッシュボードに明記</li>
+<li>[ ] トレースの PII / シークレット redaction をテレメトリ到達前に実装</li>
+<li>[ ] <code>gen_ai.*</code> 属性名への直接依存を 1 箇所に抽象化</li>
+<li>[ ] 委任サブネットの IP 枯渇に対する合成監視</li>
+</ul>
+<p><strong>評価</strong></p>
+<ul>
+<li>[ ] 評価器の組み合わせを決定(RAG / エージェントで別)</li>
+<li>[ ] <strong>使用ツールが評価器の限定サポートリストに入っていないか確認</strong></li>
+<li>[ ] <strong>安全性評価と Red Teaming 用に別リージョンのプロジェクトを設計</strong>し、越境の法務確認</li>
+<li>[ ] 継続的評価の <code>max_hourly_runs</code> をトラフィックに合わせて調整</li>
+<li>[ ] Agents playground の既定 ON 評価をコスト観点で棚卸し</li>
+</ul>
+<p><strong>コスト</strong></p>
+<ul>
+<li>[ ] <code>project</code> タグでプロジェクト別チャージバック(<strong>Marketplace モデルは対象外</strong>)</li>
+<li>[ ] Cost Analysis は<strong>リソースグループスコープ</strong></li>
+<li>[ ] FT モデルのホスティング料、PTU の削除忘れ、playground 評価を定期棚卸し</li>
+<li>[ ] 予算アラート + 自動化(<strong>ハードリミットは存在しない</strong>)</li>
+</ul>
+<p><strong>CI/CD</strong></p>
+<ul>
+<li>[ ] dev/stg/prod は <strong>Foundry リソースごと分離</strong></li>
+<li>[ ] <strong>capabilityHost 更新不可</strong>を前提にパイプライン設計(作り直し前提)</li>
+<li>[ ] エージェント定義を as-code 化(ポータルでの未追跡変更を禁止)</li>
+<li>[ ] モデルデプロイの自動アップグレードを OFF</li>
+<li>[ ] カナリア / ブルーグリーンが要るなら<strong>ルーティング層を自前で用意</strong></li>
+</ul>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

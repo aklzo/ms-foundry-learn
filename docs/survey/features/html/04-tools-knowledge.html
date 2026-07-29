@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04. エージェントツール・ナレッジ(RAG)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry 機能一覧・ステ…</a><a href="01-platform-projects.html">01. プラットフォーム基盤・プロジェクト・コント…</a><a href="02-models.html">02. Foundry Models</a><a href="03-agent-service.html">03. Foundry Agent Service</a><a href="04-tools-knowledge.html" class="current">04. エージェントツール・ナレッジ</a><a href="05-observability-evaluation.html">05. オブザーバビリティ・評価</a><a href="06-safety-guardrails.html">06. 安全性・ガードレール</a><a href="07-foundry-tools.html">07. Foundry Tools</a><a href="08-developer-experience.html">08. 開発者サーフェス</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="04-エージェントツール・ナレッジ-rag">04. エージェントツール・ナレッジ(RAG)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#ツールカタログ掲載ツールとステータス-カタログ表記ベース">ツールカタログ掲載ツールとステータス(カタログ表記ベース)</a></li><li><a href="#ツール個別詳細">ツール個別詳細</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
+<p><a href="index.html">← 機能一覧 TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認。ツールカタログページの更新日: 2026-07-11)</p></blockquote>
+<h2 id="概要">概要</h2>
+<p>Foundry Agent Service のツール群とナレッジ(RAG)機構を扱う。ツールカタログのページ冒頭に「<strong>The Foundry tool catalog and the core tools framework are generally available. Some individual tools are still in preview</strong>」と明記されており、<strong>カタログとコアツール基盤は GA、個別ツールは一部プレビュー</strong>という構図(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/tool-catalog" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/tool-catalog">tool-catalog</a> )。</p>
+<p>カタログのエントリ種別は Remote MCP server / Local MCP server / Custom(Logic Apps コネクタから変換した MCP サーバー)の3種。組織限定の Private tool catalog あり。ポータル操作は新ポータルの Build &gt; Tools。</p>
+<h2 id="ツールカタログ掲載ツールとステータス-カタログ表記ベース">ツールカタログ掲載ツールとステータス(カタログ表記ベース)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>分類</th>
+<th>ツール</th>
+<th>カタログ上の表記</th>
+</tr></thead><tbody>
+<tr>
+<td>Built-in</td>
+<td>Web search</td>
+<td><span class="badge ga">GA</span>(表記なし)</td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Code Interpreter</td>
+<td><span class="badge ga">GA</span>(表記なし)</td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Custom Code Interpreter</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>File Search</td>
+<td><span class="badge ga">GA</span>(表記なし)</td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Azure AI Search</td>
+<td><span class="badge ga">GA</span>(表記なし)</td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Azure Functions</td>
+<td><span class="badge ga">GA</span>(表記なし)</td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Function calling</td>
+<td><span class="badge ga">GA</span>(表記なし)</td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Image Generation</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Browser Automation</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Computer Use</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Microsoft Fabric (data agent)</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>SharePoint</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>Model Context Protocol (MCP)</td>
+<td><span class="badge ga">GA</span>(表記なし)</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>OpenAPI tool</td>
+<td><span class="badge ga">GA</span>(表記なし)</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>Agent-to-Agent (A2A)</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>Toolbox</td>
+<td>表記なし(下記「Toolbox のステータスの読み方」参照)</td>
+</tr>
+</tbody></table></div>
+<p>※ 旧来の「Grounding with Bing Search」は built-in 表から外れ <strong>Web search が推奨経路</strong>。高度シナリオ向けに「Grounding with Bing tools」ページが別途存在。<strong>Deep Research と Logic Apps 専用ツールはカタログに存在しない</strong>(後述)。</p>
+<h2 id="ツール個別詳細">ツール個別詳細</h2>
+<p>凡例: SDK 列は Python SDK の対応(各ページの Usage support 表に基づく。多くは C#/JS/Java/REST も対応)。Azure CLI はツール実行用の記載はどのページにもなし(接続作成に <code>az cognitiveservices</code> を使う例のみ)。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>File Search</td>
+<td>アップロードしたファイルをベクトルストア化しハイブリッド検索で回答を根拠付ける</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge na">記載なし</span>(コード中心)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(basic/standard 両対応)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/file-search" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/file-search">file-search</a></td>
+<td>モデル利用料と別に<strong>追加課金</strong>。埋め込みは text-embedding-3-large(256次元)、チャンク 800 / オーバーラップ 400 トークン。standard セットアップでは自前の AI Search + Blob にデータ保持</td>
+</tr>
+<tr>
+<td>Azure AI Search</td>
+<td>既存の Azure AI Search インデックスで回答をグラウンディング(引用付き)</td>
+<td><span class="badge ga">GA</span></td>
+<td>接続作成はポータル可</td>
+<td>接続作成のみ <code>az cognitiveservices ... connection create</code></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/ai-search" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/ai-search">ai-search</a></td>
+<td>1ツール1インデックスのみ。同一テナント必須。private VNet では Entra 認証必須。「マネージドなナレッジベース体験は Foundry IQ 参照」と誘導あり</td>
+</tr>
+<tr>
+<td>Web search</td>
+<td>パブリック Web をリアルタイム検索し引用付き回答(Web グラウンディングの<strong>推奨手段</strong>)</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td>管理者用に <code>az feature register</code>(サブスクリプション単位で無効化可)</td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/web-search" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/web-search">web-search</a></td>
+<td>内部は Grounding with Bing (Custom) Search を使用。<strong>追加課金あり・DPA 対象外・データはコンプライアンス境界外へ</strong>。<code>o3-deep-research</code> モデル+Web search が旧 Deep Research ツールの後継</td>
+</tr>
+<tr>
+<td>Grounding with Bing Search</td>
+<td>Bing 検索による Web グラウンディング(市場指定などの高度シナリオ向け)</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/bing-tools" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/bing-tools">bing-tools</a></td>
+<td>課金あり。モデル制限あり(limits-quotas-regions の「Tool support by region and model」参照)。送信されるのは検索クエリ・ツールパラメータ・リソースキーのみ</td>
+</tr>
+<tr>
+<td>Grounding with Bing Custom Search</td>
+<td>指定ドメイン集合に限定した Web グラウンディング</td>
+<td><span class="badge preview">パブリックプレビュー</span>(tool type: <code>bing_custom_search_preview</code>)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/bing-tools" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/bing-tools">bing-tools</a></td>
+<td>Web search の <code>custom_search_configuration</code> としても利用可。Bing がインデックス済みの公開ページのみ</td>
+</tr>
+<tr>
+<td>Code Interpreter</td>
+<td>サンドボックスで Python を書き実行(データ分析・グラフ生成)</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/code-interpreter" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/code-interpreter">code-interpreter</a></td>
+<td>セッション単位の<strong>追加課金</strong>(アクティブ1時間/アイドル30分)。Azure Container Apps dynamic sessions 基盤・Hyper-V 分離・アウトバウンド通信不可。リージョン制限あり</td>
+</tr>
+<tr>
+<td>Custom Code Interpreter</td>
+<td>Code Interpreter のパッケージ/リソース/Container Apps 環境をカスタマイズ</td>
+<td><span class="badge preview">パブリックプレビュー</span>(カタログ表記)</td>
+<td><span class="badge unknown">要確認</span></td>
+<td><span class="badge unknown">要確認</span></td>
+<td><span class="badge unknown">要確認</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/custom-code-interpreter" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/custom-code-interpreter">custom-code-interpreter</a> (確認URL)</td>
+<td>カタログ表記に基づく。個別ページ詳細は未取得</td>
+</tr>
+<tr>
+<td>OpenAPI tool</td>
+<td>OpenAPI 3.0/3.1 仕様で外部 HTTP API に接続</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(basic/standard 両対応)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/openapi" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/openapi">openapi</a></td>
+<td>認証: anonymous / API key / managed identity(Bearer トークンは Custom keys 接続で)。API key 1スキーム/ツール</td>
+</tr>
+<tr>
+<td>Azure Functions</td>
+<td>Storage キュー経由で Azure Functions をツールとして非同期呼び出し</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/azure-functions" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/azure-functions">azure-functions</a></td>
+<td><strong>standard セットアップのみ(basic 非対応)</strong>。応答に CorrelationId 必須。MCP サーバーとして Functions をホストする選択肢も併記</td>
+</tr>
+<tr>
+<td>Azure Logic Apps(コネクタ→MCP 変換)</td>
+<td>Logic Apps コネクタ(1,400+)のアクションを <strong>MCP サーバーに変換</strong>してツール化</td>
+<td><span class="badge preview">パブリックプレビュー</span>(Logic Apps 側ページに「This capability is in preview」)</td>
+<td>新 Foundry ポータルのみ(classic 不可)+ Azure ポータルの登録ウィザード</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span>(ポータル操作)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/logic-apps/add-agent-tools-connector-actions" title="https://learn.microsoft.com/en-us/azure/logic-apps/add-agent-tools-connector-actions">add-agent-tools-connector-actions</a></td>
+<td>旧来の専用「Logic Apps ツール」は新ポータルのカタログに存在せず、「Custom(Logic Apps connectors)」枠に移行。現状 1コネクタ/ツール、OAuth 2.0 コネクタ非対応、マネージドコネクタのみ</td>
+</tr>
+<tr>
+<td>SharePoint</td>
+<td>SharePoint サイト/フォルダーの文書を OBO(ID パススルー)で検索しグラウンディング</td>
+<td><span class="badge preview">パブリックプレビュー</span>(<code>sharepoint_grounding_preview</code>)</td>
+<td>セットアップ手順あり(接続作成)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/sharepoint" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/sharepoint">sharepoint</a></td>
+<td><strong>M365 Copilot ライセンスまたは Retrieval API 従量課金が必須</strong>。同一テナント必須・app-only 不可・1エージェント1ツール。基盤は M365 Copilot Retrieval API</td>
+</tr>
+<tr>
+<td>Microsoft Fabric (data agent)</td>
+<td>Fabric データエージェントに委任して企業データを対話分析(NL2SQL 等)</td>
+<td><span class="badge preview">パブリックプレビュー</span>(<code>fabric_dataagent_preview</code>)</td>
+<td>接続作成はポータル</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric">fabric</a></td>
+<td>ID パススルー(OBO)必須、サービスプリンシパル不可。同一テナント必須。データソースごとに最低権限要件あり(PBI semantic model は Build 権限)</td>
+</tr>
+<tr>
+<td>Browser Automation</td>
+<td>Playwright Workspaces 基盤のリモートブラウザで自然言語からブラウザ操作</td>
+<td><span class="badge preview">パブリックプレビュー</span>(<code>browser_automation_preview</code>)</td>
+<td><span class="badge ok">対応</span>(Build &gt; Tools &gt; Create a toolbox 経由で接続)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/browser-automation" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/browser-automation">browser-automation</a></td>
+<td>基盤の Playwright Workspaces 自体は GA サービス(課金はそちらで発生)。プライベートサイト対応は限定プレビュー。重大なセキュリティリスク警告あり</td>
+</tr>
+<tr>
+<td>Computer Use</td>
+<td>スクリーンショットを解釈しクリック/入力等の UI 操作を提案</td>
+<td><span class="badge preview">パブリックプレビュー</span>(<code>computer-use-preview</code> モデル必須)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/computer-use" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/computer-use">computer-use</a></td>
+<td><strong>限定アクセス(登録申請制、o3 アクセス済みでも要申請)</strong>。対応リージョン限定(モデル配置に依存)。safety checks 内蔵</td>
+</tr>
+<tr>
+<td>Deep Research</td>
+<td>Web ベースの多段リサーチ(旧ツール)</td>
+<td><span class="badge deprecated">非推奨</span>(「The Deep Research tool is deprecated. We recommend that you use the <code>o3-deep-research</code> model with web search or an MCP tool instead.」)</td>
+<td>classic のみ(コードオンリー)</td>
+<td>—</td>
+<td><span class="badge ok">対応</span>(旧 SDK)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/agents/how-to/tools-classic/deep-research" title="https://learn.microsoft.com/en-us/azure/foundry-classic/agents/how-to/tools-classic/deep-research">deep-research</a></td>
+<td>新パス(/azure/foundry/agents/how-to/tools/deep-research)は 404。<code>2025-05-15-preview</code> API 限定。後継 = Web search ツール + <code>o3-deep-research</code> モデル(web-search ページに移行例あり)</td>
+</tr>
+<tr>
+<td>MCP ツール(リモート MCP サーバー接続)</td>
+<td>MCP サーバーエンドポイント上のツールにエージェントを接続</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge ok">対応</span>(カタログから構成)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(basic/standard 両対応)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol">model-context-protocol</a></td>
+<td>認証: キー / Entra(マネージド ID)/ OAuth ID パススルー。<strong>長時間実行(long-running operations)はプレビュー</strong>。カタログ個別サーバーにプレビューあり(例: Azure DevOps MCP Server)。classic 版 MCP ページは「(Preview) (classic)」のまま</td>
+</tr>
+<tr>
+<td>Toolbox(intent-based toolbox)</td>
+<td>複数ツールを1つの MCP 互換エンドポイントに束ね、バージョニング・集中認証を提供。MAF / LangGraph / GitHub Copilot SDK 等の外部ランタイムからも消費可</td>
+<td><span class="badge unknown">要確認</span>(GA 相当の記載だが完全な GA 宣言なし。ページに preview バナーなし・「Available today」表記の一方、REST 例は <code>Foundry-Features: Toolboxes=V1Preview</code> ヘッダーを要求)</td>
+<td><span class="badge ok">対応</span>(Build &gt; Tools &gt; Create a toolbox。作成手順は VS Code Foundry Toolkit 中心)</td>
+<td><strong>azd</strong>(<code>microsoft.foundry</code> 拡張)対応。Azure CLI 記載なし</td>
+<td><span class="badge ok">対応</span>(<code>client.beta.toolboxes.create_version</code> — beta 名前空間)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox">toolbox</a></td>
+<td>バージョン作成→バージョン別エンドポイントでテスト→default へ昇格。Code Interpreter / File Search を toolbox 経由で使うと<strong>ユーザー分離なし</strong>。unnamed ツールは各タイプ1個まで</td>
+</tr>
+<tr>
+<td>Tool search(<code>toolbox_search</code>)</td>
+<td>Toolbox 内ツールを隠し、<code>tool_search</code> / <code>call_tool</code> の2メタツールで意図ベース発見(BM25)</td>
+<td>Toolbox に準ずる(対応表で「Available」・preview 表記なしだが、Toolbox 本体と同じ V1Preview フィーチャーヘッダー配下)</td>
+<td>VS Code Foundry Toolkit 対応(「Tool search」チェックボックス)</td>
+<td>azd 対応</td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/tool-search" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/tool-search">tool-search</a></td>
+<td><code>pin</code> / <code>additional_search_text</code> / 自動ピン(利用頻度ベース)で調整可。limit 既定5・最大10。Responses API 版の tool search は別ページ(/azure/foundry/openai/how-to/tool-search)</td>
+</tr>
+<tr>
+<td>Work IQ</td>
+<td>M365(メール・会議・ファイル・チャット)を横断するインテリジェンス層に A2A で委任。全リクエストがサインインユーザー文脈で実行</td>
+<td><span class="badge preview">パブリックプレビュー</span>(<code>work_iq_preview</code>)</td>
+<td>接続作成はポータル(Settings &gt; Connections &gt; Work IQ)。ツール追加は VS Code Toolkit / コード</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(C#/JS/REST 対応、Java 非対応)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/work-iq" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/work-iq">work-iq</a></td>
+<td><strong>M365 Copilot ライセンス必須</strong>(エンドユーザーも)。BYO Entra アプリ + <code>WorkIQAgent.Ask</code> 委任権限 + Global Admin の同意が必須。<strong>VNet 統合非対応</strong>。データは M365 テナント内・モデル学習に不使用</td>
+</tr>
+<tr>
+<td>Fabric IQ</td>
+<td>Fabric のオントロジー/データエージェント/PBI セマンティックモデルに MCP で接続し、業務語彙(NL2Ontology)でデータ推論</td>
+<td><span class="badge preview">パブリックプレビュー</span>(<code>fabric_iq_preview</code>。Fabric IQ ワークロード自体もプレビュー)</td>
+<td>VS Code Toolkit 対応(OneLake Catalog 接続はポータルで作成)+ ポータル playground 手順あり</td>
+<td>azd で接続作成例あり</td>
+<td><span class="badge ok">対応</span>(C#/JS/REST 対応、Java 非対応)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric-iq" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric-iq">fabric-iq</a></td>
+<td>Fabric ライセンス必須。OBO のみ(app-only 不可)。data agent エンドポイントのみ background mode(長時間実行)対応。VNet 対応はアイテム種別で異なる</td>
+</tr>
+<tr>
+<td>Foundry IQ / ナレッジベース (knowledge bases)</td>
+<td>Azure AI Search を基盤とするマネージドナレッジ層。複数ナレッジソース(Blob・SharePoint・OneLake・Web 等)を束ねた knowledge base を agentic retrieval(クエリ分解→並列検索→再ランク→統合)で照会。複数エージェントで共有可</td>
+<td>一部 GA / 一部プレビュー: 「Some Foundry IQ features are now generally available, while others remain in preview.」agentic retrieval の一部は <strong>2026-04-01 REST API で GA</strong>、フル機能は 2026-05-01-preview。<strong>ポータル体験は全機能プレビュー扱い</strong></td>
+<td><span class="badge ok">対応</span>(新ポータル Build &gt; Knowledge タブで KB 作成・エージェント接続)</td>
+<td><span class="badge na">記載なし</span>(接続作成に az CLI トークン取得例のみ)</td>
+<td><span class="badge ok">対応</span>(接続ページの Usage support: Python + REST のみ。C#/JS/Java 未対応)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/what-is-foundry-iq" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/what-is-foundry-iq">what-is-foundry-iq</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/foundry-iq-connect" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/foundry-iq-connect">foundry-iq-connect</a></td>
+<td>エージェントからは <strong>MCP ツールとして接続</strong>(<code>{search-endpoint}/knowledgebases/{name}/mcp?api-version=2026-05-01-preview</code>、公開ツールは <code>knowledge_base_retrieve</code> のみ)。GA/プレビューの内訳は移行ガイド(/azure/search/agentic-retrieval-how-to-migrate)参照</td>
+</tr>
+<tr>
+<td>ベクトルストア / 埋め込み(ナレッジ接続基盤)</td>
+<td>File search を支えるベクトルストア(解析→チャンク→埋め込み→索引を自動実行)</td>
+<td>GA相当(preview 表記なし。File search に付随)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(OpenAI 互換 <code>vector_stores</code> API 経由)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/vector-stores" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/vector-stores">vector-stores</a></td>
+<td>10,000 ファイル/ストア、エージェント・会話に各1ストアまで。会話由来ストアは既定7日で失効。basic = Microsoft 管理ストレージ、standard = 自前 Blob + Azure AI Search。埋め込みは text-embedding-3-large(256次元)固定(既定)</td>
+</tr>
+</tbody></table></div>
+<h2 id="補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</h2>
+<p><strong>(a) Deep Research の廃止と後継</strong> 「Deep Research をツールとして使う」構成は今後組めない。web-search ページが「This approach replaces the deprecated Deep Research tool」と明言し、<code>o3-deep-research</code> モデル + Web search ツール(Responses API)への移行コードを掲載。</p>
+<p><strong>(b) Web search と Grounding with Bing の関係</strong> Web search(GA)が推奨経路で、Bing リソース接続不要のシンプル構成。市場フィルタ等の細かい制御が要るときのみ Grounding with Bing Search(GA)/ Bing Custom Search(プレビュー)。<strong>いずれも DPA 対象外・コンプライアンス境界外へのデータ送信・別課金</strong>という制約は共通で、規制業種の SI では要注意。</p>
+<p><strong>(c) Toolbox のステータスの読み方(重要な曖昧さ)</strong> ドキュメント上は preview バナーなし・「Available today」表記だが、REST/MCP 検証例に <code>Foundry-Features: Toolboxes=V1Preview</code> ヘッダーが残り、SDK も <code>client.beta.toolboxes</code> 名前空間。「明確な GA 宣言は確認できず」が正確な状態。</p>
+<p><strong>(d) ナレッジ(RAG)の3層構造</strong></p>
+<ol>
+<li><strong>File search + ベクトルストア</strong>(GA)— 手軽なマネージド RAG。1ストア/エージェント制限あり。</li>
+<li><strong>Azure AI Search ツール</strong>(GA)— 既存インデックス直結。1インデックス制限。</li>
+<li><strong>Foundry IQ knowledge bases</strong>(一部 GA / 一部プレビュー)— マルチソース+agentic retrieval+ACL/Purview 対応の上位層。接続は MCP 経由で、<strong>Foundry Agent Service 以外(Microsoft Agent Framework、カスタムアプリ)からも同じ KB を利用可能</strong> — MAF / LangGraph 比較の観点では、ナレッジ層をエージェントフレームワークから切り離せるのが設計上のポイント。</li>
+</ol>
+<p><strong>(e) IQ ファミリーの整理</strong> Foundry IQ = エンタープライズデータのナレッジ層(一部 GA)、Fabric IQ = Fabric の分析データ層(プレビュー)、Work IQ = M365 のコラボレーション文脈層(プレビュー)。3つは独立だが併用可能。</p>
+<p><strong>(f) サーフェス全般の傾向</strong> ツール個別ページの Usage support 表は「Python / C# / JS / Java SDK + REST + basic/standard setup」形式で、<strong>Azure CLI 列は存在しない</strong>。Work IQ・Fabric IQ 接続は Java SDK 非対応、Foundry IQ 接続は C#/JS SDK も未対応(Python + REST のみ)という偏りがある。</p>
+</main>
+<footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

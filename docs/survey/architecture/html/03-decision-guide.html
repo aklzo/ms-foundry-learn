@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03. 選定ガイド — 要件からアーキテクチャを決める</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html" class="current">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="03-選定ガイド-要件からアーキテクチャを決める">03. 選定ガイド — 要件からアーキテクチャを決める</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#決定順序-5-つのゲート">決定順序 — 5 つのゲート</a></li><li><a href="#要件キーワード-効いてくるレイヤー-逆引き">要件キーワード → 効いてくるレイヤー(逆引き)</a></li><li><a href="#判断軸マトリクス-方式の比較">判断軸マトリクス(方式の比較)</a></li><li><a href="#提案時チェックリスト">提案時チェックリスト</a></li><li><a href="#よくある-決めきれない-論点への回答">よくある「決めきれない」論点への回答</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<p><a href="02-building-blocks.html">02. 構成要素カタログ</a> がレイヤーごとの選択肢の一覧なら、本ページは<strong>どの順番で何を決めるか</strong>の手順書である。順番を間違えると手戻りが大きい項目があるため、決定順序そのものが設計判断になる。</p>
+<h2 id="決定順序-5-つのゲート">決定順序 — 5 つのゲート</h2>
+<p>後戻りコストの大きい順に並べている。<strong>上から順に閉じていく。</strong></p>
+<pre><code> G1 データ・規制ゲート        「そのデータを、どこで、誰に処理させてよいか」
+        │                     → モデル・デプロイタイプ・外部ツール可否が決まる
+        ▼
+ G2 ネットワークゲート        「閉域か、パブリックか」
+        │                     → 使える Foundry 機能の一覧が決まる(後付け不可)
+        ▼
+ G3 制御ゲート                「明示的な状態遷移・承認・再開が要るか」
+        │                     → ポータル完結か、コードファーストかが決まる
+        ▼
+ G4 統合ゲート                「既存システムとの主従はどちらか」
+        │                     → Foundry をプラットフォームとして使うか、部品として使うか
+        ▼
+ G5 ライフサイクルゲート      「いつまで、誰が保守するか」
+                              → プレビュー機能の可否・IaC の作り込み度が決まる</code></pre>
+<h3 id="g1-データ・規制ゲート">G1. データ・規制ゲート</h3>
+<p>最初に「扱うデータの機密区分」と「処理してよい地理的範囲」を確定する。ここが決まらないとモデルすら選べない。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>要件</th>
+<th>帰結</th>
+</tr></thead><tbody>
+<tr>
+<td>国内処理が必須</td>
+<td>Data Zone(APAC)または Regional Standard。Global Standard は不可。使えるモデルが絞られる</td>
+</tr>
+<tr>
+<td>外部インターネットへのデータ送出が不可</td>
+<td><strong>Web search / Grounding with Bing は使用不可</strong>(DPA 対象外・境界外送信と明記)。Browser Automation も同様に要注意</td>
+</tr>
+<tr>
+<td>顧客の個人情報を扱う</td>
+<td>Guardrails の PII 検出(プレビュー)+ アプリ側のマスキング。会話ログの保持場所(basic か standard か)を確定</td>
+</tr>
+<tr>
+<td>監査で「誰の権限で何を見たか」の証跡が要る</td>
+<td>OBO(ユーザー委任)前提。app-only で動くバッチ的エージェントとは両立しない</td>
+</tr>
+<tr>
+<td>Claude を使いたい</td>
+<td><strong>Foundry 組込みコンテンツフィルターが効かない。</strong>Content Safety を自前で呼ぶ設計が必須。課金も Marketplace 経由</td>
+</tr>
+<tr>
+<td>M365 のデータを使いたい</td>
+<td>SharePoint / Work IQ ツール → <strong>M365 Copilot ライセンスが前提</strong>。ライセンス費が案件コストに乗る</td>
+</tr>
+</tbody></table></div>
+<h3 id="g2-ネットワークゲート">G2. ネットワークゲート</h3>
+<p><strong>このゲートの結論は後から変えられない。</strong> Standard setup(BYO VNet 注入)は後付け・変更不可で再デプロイが必要、Managed VNet は有効化後の無効化不可、BYO VNet からの移行パスもない。</p>
+<p>閉域を選んだ時点で使えなくなる主な機能:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>機能</th>
+<th>閉域での状態</th>
+</tr></thead><tbody>
+<tr>
+<td>Tracing</td>
+<td><strong>VNet 対応はプレビュー</strong></td>
+</tr>
+<tr>
+<td>Memory</td>
+<td><strong>VNet 非対応</strong></td>
+</tr>
+<tr>
+<td>Work IQ</td>
+<td><strong>VNet 統合非対応</strong></td>
+</tr>
+<tr>
+<td>File Search / Logic Apps / Browser Automation / Computer Use / Image Generation</td>
+<td>Private Link 環境で「Not supported / Under development」と明記</td>
+</tr>
+<tr>
+<td>Foundry MCP Server</td>
+<td>ネットワーク分離未対応(Private Link 裏のリソース不可)</td>
+</tr>
+<tr>
+<td>Teams / M365 への公開</td>
+<td>パブリックネットワーク無効プロジェクトは<strong>ポータルからの公開不可・REST のみ</strong></td>
+</tr>
+<tr>
+<td>Workflow Agents</td>
+<td>アウトバウンド注入非対応</td>
+</tr>
+</tbody></table></div>
+<p><strong>判断:</strong> 閉域が必須なら、RAG は File Search ではなく自前索引(L5 の H/S)、記憶は自前(L4 の S)、観測は自前 OTel(L12 の H)に倒す前提でコストを積む。「閉域だが Foundry のマネージド機能をフルに使う」は成立しない。</p>
+<h3 id="g3-制御ゲート">G3. 制御ゲート</h3>
+<p><strong>「明示的な状態遷移が要るか」の一点で判断する。</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>要件に含まれる言葉</th>
+<th>帰結</th>
+</tr></thead><tbody>
+<tr>
+<td>「FAQ に答える」「文書を検索して要約する」「1〜2 個の API を呼ぶ」</td>
+<td><strong>Prompt agent(M)で足りる。</strong>コードを書くのは過剰</td>
+</tr>
+<tr>
+<td>「条件によって処理を分ける」「失敗したら別の手順を試す」</td>
+<td>コードファースト(H)。MAF か LangGraph</td>
+</tr>
+<tr>
+<td>「担当者が承認してから実行」「承認待ちで数時間〜数日止まる」</td>
+<td>H 以上。チェックポイント / 永続化のあるフレームワーク、または Logic Apps / Durable Functions</td>
+</tr>
+<tr>
+<td>「失敗したステップだけ再開したい」</td>
+<td>H 以上。チェックポイント必須</td>
+</tr>
+<tr>
+<td>「各ステップの入出力を監査ログに残す」</td>
+<td>H 以上(ミドルウェアで挟む)、または S</td>
+</tr>
+<tr>
+<td>「CI で回帰テストしたい」</td>
+<td>H 以上。ポータル定義はテストしにくい</td>
+</tr>
+<tr>
+<td>「複数のエージェントが協調する」</td>
+<td><strong>ポータルのビジュアル Workflows は 2026-12-01 廃止のため選ばない。</strong>MAF、または A2A(プレビュー)</td>
+</tr>
+</tbody></table></div>
+<pre><code>       要件に「承認」「再開」「分岐」「監査」があるか？
+                    │
+         ┌── No ────┴──── Yes ──┐
+         ▼                       ▼
+   Prompt agent            既存の業務フローエンジンが主役か？
+   (ポータル / SDK)              │
+                     ┌── Yes ───┴─── No ──┐
+                     ▼                     ▼
+              Logic Apps /          コードファースト
+              Durable Functions     (MAF / LangGraph)
+              + Foundry を1ステップ         │
+                                  どこで動かす？
+                                  ┌────────┴────────┐
+                                  ▼                 ▼
+                          Hosted agent      Container Apps / AKS
+                          (Foundry が実行)   (自分で実行)</code></pre>
+<p><strong>「長時間・確実な再開」だけが要件なら、フレームワークを乗り換える前に耐久実行の拡張を検討する。</strong> Microsoft Agent Framework には Durable Extension があり、<strong>エージェントのコアロジックを変えずに</strong>チェックポイント・障害回復・分散ホスト間スケールを付与できる。ホストは Azure Functions(マネージド・scale-to-zero)か自前コンピュート、バックエンドは Durable Task Scheduler が推奨で、専用ダッシュボードで会話履歴とオーケストレーションを可視化できる。「MAF では長時間処理が無理だから LangGraph へ」と結論する前に、ここを確認する。</p>
+<p><strong>自前オーケストレーションを選ぶと Foundry の可観測性から外れる。</strong> 「When you build your agent in code that runs on App Service (orchestration in your application), the agent metrics aren't visible in Azure AI Foundry because Foundry only sees fully managed Foundry agents」と公式に明記されている。OpenTelemetry の GenAI セマンティック規約(<code>gen_ai.agent.name</code>、<code>gen_ai.usage.*</code> 等)に沿って計装すれば Application Insights 側や App Service の Agents タブでは集計されるので、<strong>「Foundry のダッシュボードを見せる」ことが要件に入っているかを事前に確認する。</strong></p>
+<h3 id="g4-統合ゲート">G4. 統合ゲート</h3>
+<p>既存システムとの主従関係で、Foundry の使い方が変わる。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>状況</th>
+<th>構成</th>
+<th>Foundry の役割</th>
+</tr></thead><tbody>
+<tr>
+<td>新規の AI アプリが主役</td>
+<td>フル統合。Prompt / Hosted agent として Foundry 上で実行</td>
+<td>プラットフォーム(ID・スケール・観測・公開まで)</td>
+</tr>
+<tr>
+<td>既存業務システムに機能追加</td>
+<td>Responses API のみ利用。オーケストレーションは既存アプリ内</td>
+<td>モデル + プラットフォームツールの供給元</td>
+</tr>
+<tr>
+<td>マルチクラウド / ロックイン回避が要件</td>
+<td>Foundry 非依存。抽象レイヤーを自前で持つ</td>
+<td>モデル供給元の 1 つ(差し替え可能に保つ)</td>
+</tr>
+<tr>
+<td>業務部門がノーコードで育てたい</td>
+<td>Copilot Studio / Logic Apps 側を主に、Foundry エージェントを部品として呼ぶ</td>
+<td>高度な処理を担う部品</td>
+</tr>
+</tbody></table></div>
+<p><strong>「既存システム組込み」は SI で最頻出だが、Foundry の運用機能(Tracing / Evaluations / エージェント公開)を捨てることになる</strong>点を提案時に明示する。トレースだけは自前 OTel 計装 → App Insights で部分的に取り戻せる。</p>
+<h3 id="g5-ライフサイクルゲート">G5. ライフサイクルゲート</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>状況</th>
+<th>帰結</th>
+</tr></thead><tbody>
+<tr>
+<td>PoC / 3 か月で捨てる</td>
+<td>プレビュー機能の使用可。ポータル手動構成でよい。速度優先</td>
+</tr>
+<tr>
+<td>1〜2 年運用、内製チームが保守</td>
+<td>プレビューは代替可能な範囲に限定。IaC 必須。評価の自動化を入れる</td>
+</tr>
+<tr>
+<td>5 年以上 / 顧客に納品して保守を離れる</td>
+<td><strong>プレビュー機能を必須経路に置かない。</strong>廃止予定の機能を使わない。移植性を確保(オーケストレーションを Foundry 固有機能に依存させない)</td>
+</tr>
+<tr>
+<td>顧客の内製化前提</td>
+<td>ポータルで触れる範囲を意図的に広く取る。ただし Workflows 廃止があるため、ノーコードの受け皿は Logic Apps / Copilot Studio 側に置く</td>
+</tr>
+</tbody></table></div>
+<h2 id="要件キーワード-効いてくるレイヤー-逆引き">要件キーワード → 効いてくるレイヤー(逆引き)</h2>
+<p>RFP や要件定義の言葉から、どのレイヤーの判断が必要になるかを引く表。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>要件の言葉</th>
+<th>効くレイヤー</th>
+<th>判断すべきこと</th>
+</tr></thead><tbody>
+<tr>
+<td>「社内文書を検索して答える」</td>
+<td>L5</td>
+<td>File Search で品質が出るか。出ないなら AI Search 自前索引</td>
+</tr>
+<tr>
+<td>「最新のニュースも踏まえて」</td>
+<td>L5 / G1</td>
+<td>Web search は境界外送信。規制業種なら別手段</td>
+</tr>
+<tr>
+<td>「担当者の承認を経て実行」</td>
+<td>L2</td>
+<td>コードファースト確定。チェックポイントのある基盤</td>
+</tr>
+<tr>
+<td>「基幹システムに書き込む」</td>
+<td>L6 / L9</td>
+<td>ツールの認可を app-only にするか OBO にするか。冪等性・リトライ</td>
+</tr>
+<tr>
+<td>「Teams から使いたい」</td>
+<td>L14</td>
+<td>Bot Service + M365 管理者承認。閉域なら REST 公開のみ</td>
+</tr>
+<tr>
+<td>「音声で対話したい」</td>
+<td>特化</td>
+<td>Voice Live。SIP 非対応などの制約(<a href="08-usecase-specialized.html">08</a>)</td>
+</tr>
+<tr>
+<td>「請求書を読み取って」</td>
+<td>特化</td>
+<td>Document Intelligence(決定論的)か Content Understanding(LLM)か</td>
+</tr>
+<tr>
+<td>「複数のお客様に SaaS として提供」</td>
+<td>L9 / L11 / L3</td>
+<td>テナント分離の単位。APIM でのレート制限・課金按分</td>
+</tr>
+<tr>
+<td>「オンプレでも動かしたい」</td>
+<td>L1</td>
+<td>Foundry Local / Azure Local。モデル選択肢が絞られる</td>
+</tr>
+<tr>
+<td>「응答が 1 秒以内」</td>
+<td>L1 / L11</td>
+<td>PTU 検討。ガードレールは介入点あたり 50〜100ms 加算</td>
+</tr>
+<tr>
+<td>「月間 N 万リクエスト」</td>
+<td>L1 / L11</td>
+<td>クォータ設計。PTU + Spillover。Batch に回せる処理の切り分け</td>
+</tr>
+<tr>
+<td>「AI の回答品質を継続的に測りたい」</td>
+<td>L13</td>
+<td>Evaluations(Entra 必須)。継続的評価は既定 100 回/時</td>
+</tr>
+<tr>
+<td>「情報漏えいを防ぎたい」</td>
+<td>L8 / L9</td>
+<td>Prompt Shields、PII、Purview / Defender for Cloud</td>
+</tr>
+<tr>
+<td>「コストを部門別に按分したい」</td>
+<td>L11 / L16</td>
+<td>Foundry のクォータはデプロイ単位。APIM のトークンメトリクスが実質必須</td>
+</tr>
+</tbody></table></div>
+<h2 id="判断軸マトリクス-方式の比較">判断軸マトリクス(方式の比較)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>軸</th>
+<th>Prompt agent(M)</th>
+<th>Hosted agent + MAF(H)</th>
+<th>Hosted agent + LangGraph(H)</th>
+<th>自アプリ + Responses API(S)</th>
+</tr></thead><tbody>
+<tr>
+<td>立ち上がり速度</td>
+<td>最速</td>
+<td>中</td>
+<td>中</td>
+<td>遅い</td>
+</tr>
+<tr>
+<td>制御の細かさ</td>
+<td>低</td>
+<td>高</td>
+<td>高</td>
+<td>最高</td>
+</tr>
+<tr>
+<td>状態・チェックポイント</td>
+<td>なし</td>
+<td>あり</td>
+<td>あり(成熟)</td>
+<td>自作</td>
+</tr>
+<tr>
+<td>ローカルテスト</td>
+<td>難</td>
+<td>可</td>
+<td>可</td>
+<td>容易</td>
+</tr>
+<tr>
+<td>運用負荷</td>
+<td>最小</td>
+<td>小(ホスティングは Foundry)</td>
+<td>小</td>
+<td>大</td>
+</tr>
+<tr>
+<td>移植性 / ロックイン</td>
+<td>低 / 強</td>
+<td>中</td>
+<td>高 / 弱</td>
+<td>高 / 弱</td>
+</tr>
+<tr>
+<td>Foundry 運用機能(観測・評価・公開)</td>
+<td>フル</td>
+<td>フル</td>
+<td>フル</td>
+<td>自前</td>
+</tr>
+<tr>
+<td>言語</td>
+<td>—</td>
+<td>Python / C#(Go はプレビュー)</td>
+<td>Python 中心</td>
+<td>任意</td>
+</tr>
+<tr>
+<td>エコシステム成熟度</td>
+<td>—</td>
+<td>新しい(1.0 が 2026-04)</td>
+<td>成熟</td>
+<td>—</td>
+</tr>
+<tr>
+<td>費用構造</td>
+<td>推論 + ツール</td>
+<td>上記 + コンピュート</td>
+<td>上記 + コンピュート</td>
+<td>上記 + 自前基盤</td>
+</tr>
+</tbody></table></div>
+<p><strong>「MAF か LangGraph か」は「Foundry を使うか」とは独立した判断</strong>である点に注意。Hosted agent は MAF 専用ではなく、LangGraph / OpenAI Agents SDK / Anthropic SDK / 完全自前コードも公式にサポートされる。</p>
+<h2 id="提案時チェックリスト">提案時チェックリスト</h2>
+<p>設計レビューで潰しておく項目。</p>
+<ul>
+<li>[ ] 扱うデータの機密区分と処理可能リージョンを確定したか(G1)</li>
+<li>[ ] ネットワーク要件を確定し、<strong>閉域で使えない機能の一覧</strong>を顧客と合意したか(G2)</li>
+<li>[ ] 「ポータルで出来る範囲」と「コードが要る範囲」を線引きした表を提示したか(G3)</li>
+<li>[ ] 2026-12-01 の Workflows 廃止を前提にした構成になっているか</li>
+<li>[ ] 使用するプレビュー機能を列挙し、代替手段を用意したか(G5)</li>
+<li>[ ] モデルのリタイア日を確認し、更改の運用を設計に入れたか(PTU なら手動移行)</li>
+<li>[ ] クォータ設計と 429 時の挙動を決めたか</li>
+<li>[ ] 会話ログ・トレースの保存場所と保持期間を決めたか</li>
+<li>[ ] コストの内訳(推論・ツール・コンピュート・検索・ストレージ)を分解して見積もったか</li>
+<li>[ ] IaC の範囲(基盤 / エージェント定義 / ナレッジ)と、手動運用に残す部分を決めたか</li>
+<li>[ ] 評価(品質・安全性)を CI に組み込む計画があるか</li>
+</ul>
+<h2 id="よくある-決めきれない-論点への回答">よくある「決めきれない」論点への回答</h2>
+<p><strong>Q. とりあえず Prompt agent で始めて、後で MAF に移せるか。</strong> 移せるが、無料ではない。ツール定義・ナレッジ接続・ガードレールは概ね引き継げる一方、オーケストレーションのロジックは書き直しになる。<strong>要件に承認・分岐・再開が入っているなら最初から H を選ぶほうが安い。</strong></p>
+<p><strong>Q. Foundry IQ を使うか、AI Search を自前で組むか。</strong> 「複数のエージェント / アプリで同じナレッジを共有する」「ACL・Purview 連携が要る」なら Foundry IQ の価値が出る。逆に「1 つのアプリのための索引」「チャンク戦略を作り込みたい」なら自前。なお <strong>Foundry IQ の knowledge base は MCP 経由で Foundry Agent Service 以外(MAF・LangGraph・自作アプリ)からも使える</strong>ため、「ナレッジ層だけ Foundry IQ、オーケストレーションは自前」という組合せが成立する。</p>
+<p><strong>Q. マルチエージェントは本当に必要か。</strong> 多くの案件では単一エージェント + 複数ツールで足りる。マルチエージェントが要るのは「担当領域ごとにプロンプト・ナレッジ・権限を分けたい」「並列に調査させたい」場合。<strong>ポータルのビジュアル Workflows が廃止される以上、マルチエージェントを選ぶ = コードファーストを選ぶ</strong>とほぼ同義になった。</p>
+<p><strong>Q. コストはどこで効くか。</strong> 推論トークンだけを見積もると外す。実際には (1) ツールの追加課金(File Search / Web search / Code Interpreter / Bing)、(2) hosted agent のコンピュート、(3) AI Search のティア、(4) Cosmos DB、(5) App Insights の取り込み量、が積み上がる。<strong>ツールを増やすほど従量が増える構造</strong>である点を最初に共有する。</p>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

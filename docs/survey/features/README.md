@@ -1,0 +1,94 @@
+# Microsoft Foundry 機能一覧・ステータス調査
+
+> **最終更新:** 2026-07-29(learn.microsoft.com 現行ページを直接確認)/ **版:** 初版
+> 本ドキュメント群は SI の技術選定・アーキテクチャ選定基準の構築を目的に、Microsoft Foundry の機能と GA / プレビューのステータスを整理したものです。**定期更新を前提**としています(更新手順は本ページ末尾)。
+
+## このドキュメント群について
+
+- **正(マスター)は Markdown**(生成 AI 用)。人間用 HTML は `tools/md2html.py` で `html/` 配下に自動生成します。HTML を直接編集しないでください。
+- 各機能について「全体ステータス」に加え、**サーフェス別(ポータル / Azure CLI / Python SDK / REST)の対応状況**を、公式ドキュメントに記載がある範囲で記録しています。記載がない場合は「記載なし」、確認できなかった場合は「要確認」と正直に書きます(推測でステータスを書かない)。
+- すべての行に出典(learn.microsoft.com 等の公式 URL)を付けています。
+
+## 前提知識: 2025年11月(Ignite)の大改編
+
+調査の前提として、以下の再編を把握しておく必要があります(出典: [What is Microsoft Foundry?](https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry)、[新旧ナビゲーションガイド](https://learn.microsoft.com/en-us/azure/foundry/how-to/navigate-from-classic))。
+
+| 観点 | 旧 | 現行 |
+| --- | --- | --- |
+| ブランド | Azure AI Studio / Azure AI Foundry | **Microsoft Foundry** |
+| ブランド | Azure AI Services | **Foundry Tools** |
+| ポータル | Foundry (classic)(ハブベースプロジェクト) | **Foundry ポータル(新)= GA**(Foundry プロジェクト) |
+| ドキュメント | /azure/ai-foundry/ | **/azure/foundry/**(新)+ /azure/foundry-classic/(旧) |
+| エージェント API | Assistants API(Agents v0.5/v1) | **Responses API(Agents v2)** |
+| API バージョニング | 月次 `api-version` | **v1 安定ルート(`/openai/v1/`)** |
+| リソースモデル | Hub + Azure OpenAI + AI Services | **Foundry リソース**(単一。ARM 上は `Microsoft.CognitiveServices/accounts` を継続) |
+| SDK | `azure-ai-inference` 等 複数パッケージ | **`azure-ai-projects` 2.x + `openai`** を単一プロジェクトエンドポイントへ |
+| 用語 | Threads / Messages / Runs / Assistants | **Conversations / Items / Responses / Agent Versions** |
+
+## ステータス凡例
+
+| 表記 | 意味 |
+| --- | --- |
+| GA | 一般提供(General Availability)。SLA・サポート対象 |
+| パブリックプレビュー | 公開プレビュー。SLA なし・仕様変更あり得る。本番利用は原則非推奨 |
+| 限定プレビュー | 申請制・招待制のプレビュー(limited access / gated) |
+| 非推奨 | Deprecated。廃止日が予告されている(新規利用を避ける) |
+| 廃止 | Retired。利用不可 |
+| 要確認 | 公式ページ上にライフサイクル明記が見つからなかったもの(確認した URL を併記) |
+
+**注意:** 公式ドキュメント間でステータス表記が揺れている機能があります(例: Trace Replay、hosted agents、Claude モデルのライフサイクル)。その場合は両方の出典を併記しています。最も体系的な一次情報は [Feature readiness at GA(GA/プレビュー一覧表)](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability) です。
+
+## カテゴリ別ドキュメント
+
+| # | ドキュメント | 内容 |
+| --- | --- | --- |
+| 01 | [プラットフォーム基盤・プロジェクト](./01-platform-projects.md) | Foundry リソース、プロジェクト(新旧)、ポータル、コントロールプレーン、RBAC、ネットワーク、CMK、Azure Policy、接続、IaC |
+| 02 | [Foundry Models(モデル)](./02-models.md) | モデルカタログ、モデルファミリ別提供状況(OpenAI / Claude / Grok / DeepSeek 等)、デプロイタイプ、Model router、ライフサイクル、ファインチューニング、Foundry Local |
+| 03 | [Foundry Agent Service](./03-agent-service.md) | Agents v2(Responses API)、prompt/hosted エージェント、ワークフロー、Memory、Routines、A2A、M365/Teams 公開、廃止スケジュール |
+| 04 | [エージェントツール・ナレッジ(RAG)](./04-tools-knowledge.md) | ツールカタログ、File Search、AI Search、Web search、MCP、Toolbox、Work IQ / Fabric IQ、Foundry IQ(ナレッジベース) |
+| 05 | [オブザーバビリティ・評価](./05-observability-evaluation.md) | トレーシング、Trace Replay、評価(評価器・クラウド評価・継続的評価)、AI Red Teaming、モニタリング、Purview / Defender 連携 |
+| 06 | [安全性・ガードレール](./06-safety-guardrails.md) | Guardrails and controls 枠組み、コンテンツフィルター、Prompt Shields、Groundedness、PII、Task adherence、ブロックリスト |
+| 07 | [Foundry Tools(旧 Azure AI Services)](./07-foundry-tools.md) | Speech(Voice Live)、Language、Translator、Vision / Face、Document Intelligence、Content Understanding の Foundry 統合状況 |
+| 08 | [開発者サーフェス(SDK / CLI / API)](./08-developer-experience.md) | v1 API、各言語 SDK、Azure CLI / azd 拡張、Bicep / Terraform、VS Code 拡張、Foundry MCP Server、Microsoft Agent Framework、LangGraph 統合 |
+
+## ハイライト(SI 選定観点の要点)
+
+- **新ポータルは GA、ただし機能単位で GA / プレビューが混在。** [Feature readiness at GA](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability) の表が唯一の体系的な一覧。Operate(コントロールプレーン)の大半・Monitoring・Workflows・Memory 等はプレビュー継続。
+- **Agent Service はサービスとして GA**(Responses API ベースの v2)。ただし hosted agents は 2026-08-20 に初期プレビュー基盤のサポート終了(再デプロイ必要)、ビジュアル Workflows は**プレビューのまま 2026-12-01 廃止**で Microsoft Agent Framework へ誘導、という「GA だが足元が動いている」状態。
+- **ハブベースプロジェクト(classic)は廃止日未発表のレガシー扱い。** 新規投資は Foundry プロジェクトに集中と明言。ただし prompt flow・マネージドコンピュート・serverless API デプロイ等は classic にしか残っていない。
+- **CLI は一級市民ではない。** 専用の `az foundry` は存在せず、リソース管理は `az cognitiveservices`(GA)、エージェント開発は azd 拡張(プレビュー)、それ以外の多くの機能は「ポータル + SDK/REST のみ」でドキュメントに CLI 手順がない。
+- **Claude(Anthropic)が 2026 年に本格参入。** 「Hosted on Azure」形態の claude-opus-5 / sonnet-5 等は GA + Data Zone (US) 対応。ただし Anthropic SDK + Marketplace 課金 + Foundry 組み込みコンテンツフィルター非適用という独自制約あり。
+- **確定済みの廃止日程が多数**(下表)。移行設計を伴う提案では必読。
+
+## 重要期限(廃止・移行スケジュール)
+
+| 期限 | 対象 | 影響・移行先 | 出典 |
+| --- | --- | --- | --- |
+| 2026-08-20 | Hosted agents 初期プレビュー基盤 | サポート終了。新基盤へ再デプロイ必須 | https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-hosted-agent-preview |
+| 2026-08-26 | Assistants API(Azure OpenAI) | 廃止。Responses API(Agents v2)へ移行 | https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/assistants |
+| 2026-08-26 | `azure-ai-inference` SDK | 廃止(beta のまま GA せず終了)。OpenAI SDK + v1 API へ移行。※一部ページに 2026-05-30 表記もあり要再確認 | https://learn.microsoft.com/en-us/azure/foundry-classic/foundry-models/supported-languages |
+| 2026-12-01 | ビジュアル Workflows(マルチエージェント) | 廃止。Microsoft Agent Framework / Logic Apps / A2A へ移行 | https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/workflow |
+| 2027-03-31 | Agents (classic)(v1、Threads/Runs) | 廃止。Agents v2 へ移行(状態データは自動移行されない) | https://learn.microsoft.com/en-us/azure/foundry-classic/agents/whats-new |
+| 2026-10-01 前後 | gpt-4o / o1 / o3 / o4-mini 等の旧モデル群 | リタイア(詳細は [02-models](./02-models.md)) | https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule |
+| 2028-09-25 | Azure AI Vision Image Analysis 4.0/3.2 | 廃止。Document Intelligence / Content Understanding / Foundry Models へ移行 | https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview |
+
+## 更新運用ガイド(定期更新の手順)
+
+**推奨頻度:** 月1回(Microsoft の What's new が月次更新のため)。Ignite(11月)・Build(5月)直後は必ず更新。
+
+1. **一次情報の差分確認**(下記ウォッチリストを上から順に)
+   - [What's new in Microsoft Foundry](https://learn.microsoft.com/en-us/azure/foundry/whats-new-foundry) — 月次の新機能・ステータス変更
+   - [Feature readiness at GA(GA/プレビュー一覧)](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability) — 機能別ステータスの最重要ページ
+   - [Model retirement schedule](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule) — モデルのリタイア日
+   - [Microsoft Foundry Blog](https://devblogs.microsoft.com/foundry/) — 発表の背景・詳細
+   - [リージョン別 feature availability](https://learn.microsoft.com/en-us/azure/foundry/reference/region-support)
+2. **各カテゴリ MD の該当行を更新**(ステータス変更・新機能追加・廃止済み行の整理)。出典 URL も再確認し、リンク切れ(ドキュメント再編)があれば新 URL に差し替える。
+3. **各ページ冒頭の「最終更新」日付を更新**し、本ページの更新履歴に1行追記する。
+4. **HTML を再生成:** リポジトリルートで `python3 docs/survey/features/tools/md2html.py` を実行。
+5. 生成 AI に更新作業を依頼する場合は、本ページと対象カテゴリ MD を読ませた上で「出典 URL を WebFetch で再確認し、ステータス変化のみ差分更新。推測でステータスを書かない」ことを指示する。
+
+## 更新履歴
+
+| 日付 | 内容 |
+| --- | --- |
+| 2026-07-29 | 初版作成(全8カテゴリ、learn.microsoft.com 現行ページを確認) |

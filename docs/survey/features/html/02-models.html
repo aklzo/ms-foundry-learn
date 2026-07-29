@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02. Foundry Models(モデルカタログ・デプロイ・ファインチューニング)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry 機能一覧・ステ…</a><a href="01-platform-projects.html">01. プラットフォーム基盤・プロジェクト・コント…</a><a href="02-models.html" class="current">02. Foundry Models</a><a href="03-agent-service.html">03. Foundry Agent Service</a><a href="04-tools-knowledge.html">04. エージェントツール・ナレッジ</a><a href="05-observability-evaluation.html">05. オブザーバビリティ・評価</a><a href="06-safety-guardrails.html">06. 安全性・ガードレール</a><a href="07-foundry-tools.html">07. Foundry Tools</a><a href="08-developer-experience.html">08. 開発者サーフェス</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="02-foundry-models-モデルカタログ・デプロイ・ファインチューニング">02. Foundry Models(モデルカタログ・デプロイ・ファインチューニング)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#モデルカタログ全体像">モデルカタログ全体像</a></li><li><a href="#azure-openai-モデルファミリ">Azure OpenAI モデルファミリ</a></li><li><a href="#anthropic-claude-パートナーモデル">Anthropic Claude(パートナーモデル)</a></li><li><a href="#その他モデルファミリ-azure-direct-パートナー">その他モデルファミリ(Azure Direct / パートナー)</a></li><li><a href="#デプロイタイプ">デプロイタイプ</a></li><li><a href="#model-router">Model router</a></li><li><a href="#モデルライフサイクル・リタイアメント">モデルライフサイクル・リタイアメント</a></li><li><a href="#ファインチューニング">ファインチューニング</a></li><li><a href="#foundry-local-オンデバイス">Foundry Local(オンデバイス)</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
+<p><a href="index.html">← 機能一覧 TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<h2 id="概要">概要</h2>
+<p>モデルカタログ(1,900+ モデル)、モデルファミリ別の提供状況、デプロイタイプ、Model router、モデルライフサイクル、ファインチューニング、Foundry Local を扱う。カタログは「<strong>Models sold by Azure(Azure Direct)</strong>」(Microsoft がホスト・販売、MS サポート・SLA・Responsible AI 審査付き)と「<strong>Models from partners and community</strong>」(第三者提供、Azure Marketplace 課金)の2区分で整理される。</p>
+<h2 id="モデルカタログ全体像">モデルカタログ全体像</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Model catalog (Foundry Models)</td>
+<td>1,900+ モデル(基盤/推論/SLM/マルチモーダル/業界特化)。2区分制</td>
+<td><span class="badge ga">GA</span>(カタログ自体)</td>
+<td>新/classic 両対応</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-models-overview" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-models-overview">foundry-models-overview</a></td>
+<td>用語は "sold directly by Azure" から「Models sold by Azure(Azure Direct)」表記に統一されつつある</td>
+</tr>
+<tr>
+<td>Models sold by Azure (Azure Direct)</td>
+<td>MS がホスト・販売。OpenAI / xAI / DeepSeek / Meta / Mistral / Cohere / BFL / Moonshot / Microsoft 等</td>
+<td><span class="badge ga">GA</span>(枠組み)</td>
+<td>新ポータル「Discover &gt; Models」</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure">models-sold-directly-by-azure</a></td>
+<td>一部モデルで PTU が fungible(モデル間流用可)</td>
+</tr>
+<tr>
+<td>Models from partners and community</td>
+<td>第三者提供。Azure Marketplace 課金。<strong>Anthropic Claude はこちら</strong>(Azure Direct ではない)。Hugging Face は managed compute</td>
+<td><span class="badge ga">GA</span>(枠組み)</td>
+<td>HF / managed compute 系は <strong>classic(hub-based project)必須</strong></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners">models-from-partners</a></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Model leaderboards / benchmarks</td>
+<td>カタログ内で品質・安全性・コスト・性能のリーダーボード比較</td>
+<td><span class="badge preview">パブリックプレビュー</span></td>
+<td>Foundry ポータル</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/model-benchmarks" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/model-benchmarks">model-benchmarks</a></td>
+<td>品質指標は bigbench_hard, GPQA, MMLU-Pro 等</td>
+</tr>
+<tr>
+<td>Instant access (instant models)</td>
+<td><strong>デプロイ不要</strong>でモデル名指定だけで推論。新モデルは既定で instant 対応</td>
+<td><span class="badge preview">パブリックプレビュー</span></td>
+<td>新ポータル(playground 対応)</td>
+<td><code>az rest</code> で列挙可</td>
+<td><code>azure-ai-projects</code> 対応(C#/TS/Java/REST も)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/instant-models" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/instant-models">instant-models</a></td>
+<td>プレビュー中は <strong>West US 3 のみ</strong>。fine-tuned モデル・カスタム guardrails 不可。グローバルクォータ消費</td>
+</tr>
+</tbody></table></div>
+<h2 id="azure-openai-モデルファミリ">Azure OpenAI モデルファミリ</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>GPT-5.6 series (<code>gpt-5.6-sol/terra/luna</code>)</td>
+<td>最新フラッグシップ(2026-07-09)。1.05M context、reasoning / Responses / computer use</td>
+<td><span class="badge ga">GA</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure">models-sold-directly-by-azure</a></td>
+<td>Tier1-4 はクォータ申請要。リタイア 2027-07-09</td>
+</tr>
+<tr>
+<td>GPT-5.5 / 5.4 / 5.3-codex / 5.2 / 5.1 / 5</td>
+<td><span class="badge ga">GA</span> 世代群</td>
+<td><span class="badge ga">GA</span>(<code>*-chat</code> 系はプレビュー扱い)</td>
+<td>同上</td>
+<td><code>gpt-5-chat</code>〜<code>gpt-5.3-chat</code> は 2026-05〜06 に<strong>リタイア済</strong>、後継は <code>gpt-chat-latest</code></td>
+</tr>
+<tr>
+<td><code>gpt-chat-latest</code></td>
+<td>継続更新型チャットモデル(OpenAI の chat-latest 相当)</td>
+<td><span class="badge preview">パブリックプレビュー</span></td>
+<td>同上</td>
+<td><span class="badge preview">Preview</span> ライフサイクル(随時更新)</td>
+</tr>
+<tr>
+<td>o-series (o1 / o3 / o3-mini / o4-mini 等)</td>
+<td>旧 reasoning 系</td>
+<td><span class="badge deprecated">非推奨</span>(大半)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule">model-retirement-schedule</a></td>
+<td>o1/o3→2026-10-21(後継 gpt-5.6-sol)、o3-mini→2026-10-01、o4-mini→2026-10-16</td>
+</tr>
+<tr>
+<td>GPT-4o / GPT-4.1</td>
+<td>旧世代</td>
+<td><span class="badge deprecated">非推奨</span></td>
+<td>同上</td>
+<td>gpt-4o(2024-05-13)は 2026-10-01 リタイア→gpt-5.1 へ自動アップグレード。gpt-4.1 は 2027-04-14</td>
+</tr>
+<tr>
+<td>gpt-image 系</td>
+<td>画像生成: <code>gpt-image-1</code>(プレビュー)、<code>gpt-image-1-mini</code> / <code>gpt-image-1.5</code> / <code>gpt-image-2</code></td>
+<td><span class="badge ga">GA</span>(gpt-image-2 は 2026-04-21 GA。gpt-image-1 のみプレビュー)</td>
+<td>同上</td>
+<td>gpt-image-1 は 2026-10-23、gpt-image-1.5 は 2026-12-16 リタイア予定</td>
+</tr>
+<tr>
+<td>Sora / Sora 2(動画生成)</td>
+<td>テキスト/画像/動画→動画。音声付き生成・Remix 対応。非同期ジョブ API</td>
+<td><span class="badge preview">パブリックプレビュー</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/video-generation" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/video-generation">video-generation</a></td>
+<td>API は <code>api-version=preview</code>(v1 API)。sora-2 (2025-10-06) は 2026-07-15 リタイア→sora-2 (2025-12-08、retire 2026-09-15) へ</td>
+</tr>
+<tr>
+<td>音声系(realtime / audio / transcribe / tts)</td>
+<td><code>gpt-realtime</code>(GA)、<code>gpt-realtime-1.5</code> GA、<code>gpt-realtime-2</code>/<code>2.1</code> プレビュー、<code>gpt-audio</code> GA、<code>gpt-4o-transcribe</code> 系プレビュー、<code>tts</code>/<code>tts-hd</code> プレビュー</td>
+<td>モデル別に混在</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure">models-sold-directly-by-azure</a></td>
+<td>whisper / tts / tts-hd は 2026-12-15 リタイア予定。<code>gpt-realtime-translate</code> / <code>-whisper</code> は時間課金</td>
+</tr>
+</tbody></table></div>
+<h2 id="anthropic-claude-パートナーモデル">Anthropic Claude(パートナーモデル)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Claude models on Foundry</td>
+<td>パートナー枠。<strong>2ホスティング形態</strong>: 「Hosted on Anthropic infrastructure」/「Hosted on Azure」(<strong>Hosted on Azure は全て GA</strong>)</td>
+<td>モデル別(下記)</td>
+<td>新ポータルで Deploy(New Foundry トグル ON)</td>
+<td>Bicep/Terraform スターターキットあり</td>
+<td><strong>Anthropic SDK</strong>(<code>anthropic</code> の <code>AnthropicFoundry</code>、JS は <code>@anthropic-ai/foundry-sdk</code>)+REST</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/use-foundry-models-claude" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/use-foundry-models-claude">use-foundry-models-claude</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models">claude-models</a></td>
+<td>課金は Azure Marketplace + <strong>CCU (Claude Consumption Units)</strong>。CSP・クレジットのみのサブスクリプションは不可</td>
+</tr>
+<tr>
+<td>主なモデル</td>
+<td><code>claude-opus-5</code>, <code>claude-opus-4-8</code>, <code>claude-sonnet-5</code>, <code>claude-haiku-4-5</code>(Hosted on Azure + Anthropic 両方 GA)。<code>claude-opus-4-7/4-6/4-5/4-1</code>, <code>claude-sonnet-4-6/4-5</code>(Anthropic infra GA)。<code>claude-fable-5</code>(プレビュー)。<code>claude-mythos-5</code> / <code>claude-mythos-preview</code>(限定プレビュー〈gated research preview〉、Entra ID 認証のみ)</td>
+<td>上記の通り</td>
+<td>同上</td>
+<td>—</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models">claude-models</a></td>
+<td>注意: リタイアスケジュール側では Anthropic 掲載分が「Preview」ライフサイクル扱いで、<code>claude-opus-4-1</code> は <strong>2026-08-05 リタイア予定</strong>(後継 opus-4-8)、haiku-4-5 / opus-4-5 / sonnet-4-5 は 2026-10-19 予定。concepts ページ(GA 表記)と食い違いがあるため利用時は両方参照</td>
+</tr>
+<tr>
+<td>デプロイタイプ/リージョン</td>
+<td>Global Standard(全 Claude)+ <strong>Data Zone Standard (US)</strong>(Hosted on Azure の opus-5 / opus-4-8 / sonnet-5)</td>
+<td><span class="badge ga">GA</span>(デプロイ形態)</td>
+<td>同上</td>
+<td>—</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners">models-from-partners</a></td>
+<td>Anthropic infra 版は eastus2 / swedencentral のみ。Azure 版は US 広域</td>
+</tr>
+<tr>
+<td>API/機能</td>
+<td>Messages API・Token counting。streaming、prompt caching、tool use、extended/adaptive thinking、effort(<code>xhigh</code>/<code>max</code>)、PDF/画像入力、1M context</td>
+<td><span class="badge ga">GA</span>(モデル準拠)</td>
+<td>—</td>
+<td>—</td>
+<td>Anthropic SDK</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models">claude-models</a></td>
+<td>Sonnet 4.5 の 1M context beta は 2026-04-30 廃止。<strong>Foundry 側の組み込みコンテンツフィルターなし</strong>(自前で AI Content Safety を構成 → <a href="06-safety-guardrails.html">06-safety-guardrails</a>)</td>
+</tr>
+</tbody></table></div>
+<h2 id="その他モデルファミリ-azure-direct-パートナー">その他モデルファミリ(Azure Direct / パートナー)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>xAI Grok</td>
+<td><code>grok-4</code>, <code>grok-4.1-fast-*</code>, <code>grok-code-fast-1</code> GA。<code>grok-4.3</code>, <code>grok-4-20-*</code> プレビュー</td>
+<td><span class="badge ga">GA</span>/プレビュー混在</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure">models-sold-directly-by-azure</a></td>
+<td>grok-4 / grok-code-fast-1 は登録制。grok-3 系・grok-4-fast 系は 2026-05-01 リタイア済</td>
+</tr>
+<tr>
+<td>DeepSeek</td>
+<td><code>DeepSeek-V4-Pro</code> / <code>V4-Flash</code> GA(1M ctx、retire 2028-02-20)、<code>V3.2</code> / <code>V3.2-Speciale</code> GA</td>
+<td><span class="badge ga">GA</span></td>
+<td>同上</td>
+<td>R1 は Legacy(2026-08-13 リタイア予定)、R1-0528 / V3-0324 / V3.1 はリタイア済(2026-07-13)</td>
+</tr>
+<tr>
+<td>Meta Llama</td>
+<td>Azure Direct: <code>Llama-4-Maverick-17B-128E-Instruct-FP8</code>, <code>Llama-3.3-70B-Instruct</code> GA。パートナー枠: <code>Llama-4-Scout</code> GA</td>
+<td><span class="badge ga">GA</span></td>
+<td>同上</td>
+<td>Llama 3.1/3.2 系は 2026-06-13 リタイア済</td>
+</tr>
+<tr>
+<td>Mistral</td>
+<td>Azure Direct: <code>Mistral-Large-3</code> GA、<code>mistral-document-ai-2512</code> GA、<code>mistral-medium-3-5</code> プレビュー、<code>mistral-ocr-4-0</code> プレビュー。パートナー枠: Codestral-2501 / Ministral-3B 等 GA</td>
+<td>混在</td>
+<td>同上</td>
+<td>mistral-document-ai-2505 はリタイア済</td>
+</tr>
+<tr>
+<td>Microsoft (Phi / MAI)</td>
+<td>Phi-4 ファミリ(mini/multimodal/reasoning 含む)は<strong>パートナー枠で全て GA</strong>。<code>MAI-Image-2.5</code> 系はプレビュー</td>
+<td>混在</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-from-partners">models-from-partners</a></td>
+<td>MAI-Image-2/2e は 2026-08-15 リタイア予定</td>
+</tr>
+<tr>
+<td>BFL FLUX / Cohere / Moonshot / Stability</td>
+<td>FLUX.2-pro/flex ほか GA(マルチ参照画像はプレビュー扱い)。Cohere rerank v4 / command-a GA、<code>command-a-plus</code> プレビュー。Kimi K2.5/2.6/2.7-Code プレビュー。Stability SD3.5 系は非推奨(2026-07-31 リタイア予定)</td>
+<td>混在</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure">models-sold-directly-by-azure</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule">model-retirement-schedule</a></td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h2 id="デプロイタイプ">デプロイタイプ</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Global Standard</td>
+<td>グローバルルーティング・従量課金。最大クォータ</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge ok">対応</span>(SKU: <code>GlobalStandard</code>)</td>
+<td>Azure Policy / ARM 対応</td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types">deployment-types</a></td>
+<td>新モデルは Global Standard から順に展開。Priority processing はプレビュー</td>
+</tr>
+<tr>
+<td>Global / Data Zone / Regional Provisioned (PTU)</td>
+<td>予約キャパシティ。PTU は<strong>モデル非依存(fungible)</strong>・リージョン別クォータ</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><span class="badge ok">対応</span>(sku-name 指定)</td>
+<td>REST/ARM</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/provisioned-throughput" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/provisioned-throughput">provisioned-throughput</a></td>
+<td>時間課金 + Azure Reservations(1か月/1年)。モデル自動アップグレード対象外(手動移行)</td>
+</tr>
+<tr>
+<td>Global Batch / Data Zone Batch</td>
+<td>非同期一括処理、24h ターゲット、<strong>50%割引</strong></td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge ok">対応</span></td>
+<td>—</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types">deployment-types</a></td>
+<td>リアルタイム SLA なし</td>
+</tr>
+<tr>
+<td>Data Zone Standard</td>
+<td>EU / US / <strong>APAC</strong> データゾーン内処理</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge ok">対応</span></td>
+<td>—</td>
+<td>—</td>
+<td>同上</td>
+<td>APAC ゾーン(豪・日・韓・星・印)の追加が比較的新しい</td>
+</tr>
+<tr>
+<td>Standard (Regional)</td>
+<td>単一リージョン処理・従量課金</td>
+<td><span class="badge ga">GA</span></td>
+<td><span class="badge ok">対応</span></td>
+<td>—</td>
+<td>—</td>
+<td>同上</td>
+<td>旧モデルのリタイアに伴い提供順は最後</td>
+</tr>
+<tr>
+<td>Developer (<code>DeveloperTier</code>)</td>
+<td><strong>fine-tuned モデル評価専用</strong>。SLA・データ所在保証なし</td>
+<td><span class="badge ga">GA</span>(用途限定)</td>
+<td><span class="badge ok">対応</span></td>
+<td>—</td>
+<td>—</td>
+<td>同上</td>
+<td><strong>24時間で自動削除</strong></td>
+</tr>
+<tr>
+<td>Serverless API deployments(旧 MaaS)</td>
+<td>hub-based プロジェクトでのサーバーレスエンドポイント</td>
+<td><span class="badge deprecated">非推奨予定</span>(明示的な deprecated 表記はないが <strong>classic 限定+「Foundry resources へのデプロイを推奨」と明記</strong> → 実質レガシー)</td>
+<td>classic のみ</td>
+<td><code>az ml serverless-endpoint</code></td>
+<td><code>azure-ai-ml</code> (ServerlessEndpoint)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/deploy-models-serverless" title="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/deploy-models-serverless">deploy-models-serverless</a></td>
+<td>新規設計では Foundry リソース + Global Standard / Data Zone を選ぶのが現行ガイダンス</td>
+</tr>
+<tr>
+<td>Managed compute</td>
+<td>モデル重みを専用 VM にデプロイ(HF 等)</td>
+<td><span class="badge ga">GA</span></td>
+<td><strong>classic(hub-based project)必須</strong></td>
+<td><span class="badge ok">対応</span></td>
+<td><span class="badge ok">対応</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-models-overview" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-models-overview">foundry-models-overview</a></td>
+<td>pay-go 課金の managed compute もあり(classic 文書)</td>
+</tr>
+<tr>
+<td>Spillover(PTU→Standard 溢れ処理)</td>
+<td>PTU 枯渇時(429/400/500/503)に同一リソースの standard デプロイへ自動転送</td>
+<td><span class="badge ga">GA</span></td>
+<td>新ポータル対応(Traffic spillover トグル)</td>
+<td>REST (<code>spilloverDeploymentName</code>)</td>
+<td>ヘッダー <code>x-ms-spillover-deployment</code> で per-request 制御</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/spillover-traffic-management" title="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/spillover-traffic-management">spillover-traffic-management</a></td>
+<td>PTU 対応の Azure OpenAI モデルは全対応。DeepSeek / Llama は非対応。Agent Service とも併用可</td>
+</tr>
+</tbody></table></div>
+<h2 id="model-router">Model router</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Model router</td>
+<td>プロンプトを品質/コスト基準で最適モデルへ自動ルーティング。単一デプロイで複数モデル</td>
+<td><span class="badge ga">GA</span>(version <code>2025-11-18</code>。retire 2027-05-20)。<strong>非 OpenAI モデル(Grok / DeepSeek / Llama / gpt-oss / Claude)のルーティングはプレビュー</strong></td>
+<td>新ポータル(Quick/Custom deploy)</td>
+<td>Azure CLI・ARM で Policy 統制可</td>
+<td>通常のチャット API 経由</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-router" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-router">model-router</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule">model-retirement-schedule</a></td>
+<td>旧版 2025-05-19 / 2025-08-07 はプレビューのまま 2026-08-30 リタイア予定。ルーティングモード(Balanced/Quality/Cost)、model subset、自動フェイルオーバー、エージェント対応。Claude は事前デプロイ必須。リージョン: Australia East / East US 2 / South India / Sweden Central / West US 3</td>
+</tr>
+</tbody></table></div>
+<h2 id="モデルライフサイクル・リタイアメント">モデルライフサイクル・リタイアメント</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Model lifecycle &amp; support policy</td>
+<td>5段階: Preview → GA → Legacy(任意)→ Deprecated → Retired。GA は起点から 18 か月でリタイア(12 か月で新規顧客不可)、Preview は 90 日目安+強制アップグレード</td>
+<td><span class="badge ga">GA</span>(ポリシー)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirements" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirements">model-retirements</a></td>
+<td>通知: GA 60 日前 / Preview 30 日前。Standard 系は自動アップグレード、<strong>Provisioned は手動</strong>。Models API の <code>lifecycleStatus</code> は表記が異なる(<code>Deprecating</code>=非推奨、<code>Deprecated</code>=廃止済)点に注意</td>
+</tr>
+<tr>
+<td>Model retirement schedule</td>
+<td>全モデルのリタイア日一覧</td>
+<td>随時更新</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule">model-retirement-schedule</a></td>
+<td>直近の要注意: gpt-4o 2026-10-01、o1/o3 2026-10-21、o4-mini 2026-10-16。embeddings 系は 2028-02-09 まで延長</td>
+</tr>
+</tbody></table></div>
+<h2 id="ファインチューニング">ファインチューニング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>SFT (Supervised fine-tuning)</td>
+<td>ラベル付きデータで教師あり FT</td>
+<td><span class="badge ga">GA</span></td>
+<td>新ポータル(Build &gt; Fine-tune)</td>
+<td>REST</td>
+<td>OpenAI SDK v1 / <code>azure-ai-projects</code></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/fine-tuning" title="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/fine-tuning">fine-tuning</a></td>
+<td><span class="badge ok">対応</span>: gpt-4o(-mini), gpt-4.1(-mini/-nano)。OSS 系(Ministral-3B, Qwen-32B, Llama-3.3-70B, gpt-oss-20b)は<strong>パブリックプレビュー</strong>かつ新 Foundry UI + Foundry リソース限定・Global training のみ</td>
+</tr>
+<tr>
+<td>DPO (Direct Preference Optimization)</td>
+<td>選好データでアライメント</td>
+<td><span class="badge ga">GA</span></td>
+<td>同上</td>
+<td>同上</td>
+<td>同上</td>
+<td>同上</td>
+<td><span class="badge ok">対応</span>: gpt-4o, gpt-4.1, gpt-4.1-mini/nano</td>
+</tr>
+<tr>
+<td>RFT (Reinforcement fine-tuning)</td>
+<td>グレーダー報酬で最適化</td>
+<td><span class="badge ga">GA</span></td>
+<td>同上</td>
+<td>同上</td>
+<td>同上</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure">models-sold-directly-by-azure</a></td>
+<td><span class="badge ok">対応</span>: o4-mini (GA)、gpt-5(GA だが招待制・アカウントチーム経由)</td>
+</tr>
+<tr>
+<td>Global Training</td>
+<td>リージョン横断トレーニング(割安、データ所在保証なし)</td>
+<td>GA相当(明示的プレビュー表記なし)</td>
+<td><span class="badge ok">対応</span></td>
+<td>REST (<code>trainingType: GlobalStandard</code>)</td>
+<td><code>extra_body={&quot;trainingType&quot;: &quot;GlobalStandard&quot;}</code></td>
+<td>同上</td>
+<td>対応リージョン 25(Japan East 含む。Japan East は vision 非対応)</td>
+</tr>
+<tr>
+<td>Developer tier(FT 用)</td>
+<td>アイドル容量利用の最安トレーニング+評価用デプロイ</td>
+<td><span class="badge ga">GA</span>(用途限定)</td>
+<td><span class="badge ok">対応</span></td>
+<td>REST</td>
+<td><code>trainingType: developerTier</code></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types">deployment-types</a></td>
+<td>SLA なし・プリエンプションあり・デプロイは 24h で削除</td>
+</tr>
+<tr>
+<td>Fine-tuned モデルのリタイア</td>
+<td>training と deployment の2段階リタイア</td>
+<td>ポリシー</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirements" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirements">model-retirements</a></td>
+<td>例: gpt-4o FT は deployment 2027-10-01 まで。15 日未使用デプロイは自動削除</td>
+</tr>
+</tbody></table></div>
+<h2 id="foundry-local-オンデバイス">Foundry Local(オンデバイス)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Foundry Local</td>
+<td>オンデバイス AI 実行(ONNX Runtime、約 20MB ランタイム)。GPT-OSS / Qwen / DeepSeek / Mistral / Phi / Whisper 等の最適化カタログ。OpenAI 互換 API(Responses API 形式含む)</td>
+<td><span class="badge unknown">要確認</span>(現行ページに preview 表記なし・GA 宣言の明記もなし。確認 URL: <a href="https://learn.microsoft.com/en-us/azure/foundry-local/what-is-foundry-local" title="https://learn.microsoft.com/en-us/azure/foundry-local/what-is-foundry-local">what-is-foundry-local</a> )</td>
+<td>同左</td>
+<td>Windows / macOS (Apple silicon) / Linux。SDK: C#, JavaScript, Rust, Python。Azure サブスクリプション不要。サーバー用途は非推奨(vLLM 等を案内)。企業向けに別製品「Foundry Local on Azure Local」(Arc 対応 K8s)あり</td>
+</tr>
+</tbody></table></div>
+<h2 id="補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</h2>
+<ul>
+<li><strong>Claude の位置づけ</strong>: Claude は「Models sold by Azure」ではなく Marketplace 経由のパートナーモデル。ただし「Hosted on Azure」形態が登場し opus-5 / opus-4-8 / sonnet-5 / haiku-4-5 は Azure 基盤で GA + Data Zone (US) 対応まで来ており、「パートナーモデルはデータ所在が弱い」という従来の前提が変わっている。SDK は Azure OpenAI SDK ではなく <strong>Anthropic SDK(AnthropicFoundry)+ Entra ID</strong> という点が実装上の分岐点。</li>
+<li><strong>serverless API deployments は実質レガシー</strong>: classic 専用記事となり「Foundry resources への standard deployment を推奨」と明記。新規設計では選ばない。</li>
+<li><strong>ドキュメント間の齟齬</strong>: Claude 各モデルのライフサイクルは concepts ページ(GA 表記)とリタイアスケジュール(Preview 表記+リタイア日)で食い違いあり。本番採用時は retirement schedule 側の日付を確認する。</li>
+<li><strong>ページ不在</strong>: 新ドキュメント側の <code>/azure/foundry/concepts/fine-tuning-overview</code> は 404(FT 概要は <code>/azure/foundry/openai/how-to/fine-tuning</code> と classic 側に分散)。</li>
+</ul>
+</main>
+<footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

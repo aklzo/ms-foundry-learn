@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04. ユースケース編 A — 社内ナレッジ検索・RAG チャット</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html" class="current">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="04-ユースケース編-a-社内ナレッジ検索・rag-チャット">04. ユースケース編 A — 社内ナレッジ検索・RAG チャット</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧-先に全体像">パターン一覧(先に全体像)</a></li><li><a href="#a1-部門内-faq-チャット-file-search・最小構成">A1. 部門内 FAQ チャット(File Search・最小構成)</a></li><li><a href="#a2-全社ナレッジ検索-ai-search-自前索引・本番の標準形">A2. 全社ナレッジ検索(AI Search 自前索引・本番の標準形)</a></li><li><a href="#a3-既存-ai-search-資産の活用-ai-search-ツール直結">A3. 既存 AI Search 資産の活用(AI Search ツール直結)</a></li><li><a href="#a4-m365-sharepoint-が主データソース">A4. M365 / SharePoint が主データソース</a></li><li><a href="#a5-複数ソース横断・高精度-foundry-iq-agentic-retrieval">A5. 複数ソース横断・高精度(Foundry IQ / agentic retrieval)</a></li><li><a href="#rag-方式の比較-まとめ">RAG 方式の比較(まとめ)</a></li><li><a href="#要件別・決定表">要件別・決定表</a></li><li><a href="#品質を測る仕組み-どのパターンでも入れる">品質を測る仕組み(どのパターンでも入れる)</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<p>Foundry 案件で最も数が多い類型。<strong>同じ「社内文書に答えるチャット」でも、権限要件・文書の性質・鮮度要件によって取るべきアーキテクチャが 5 通りに分かれる。</strong>本ページはその 5 パターンを、選択理由と地雷つきで整理する。</p>
+<h2 id="パターン一覧-先に全体像">パターン一覧(先に全体像)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>パターン</th>
+<th>RAG 方式</th>
+<th>想定規模</th>
+<th>決め手になる要件</th>
+</tr></thead><tbody>
+<tr>
+<td>A1</td>
+<td>部門内 FAQ チャット</td>
+<td>File Search</td>
+<td>〜数千ファイル</td>
+<td>速度優先。権限制御なし</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>全社ナレッジ検索(本番)</td>
+<td>AI Search 自前索引</td>
+<td>数万〜数十万文書</td>
+<td><strong>ユーザーごとに見える文書が違う</strong></td>
+</tr>
+<tr>
+<td>A3</td>
+<td>既存 AI Search 資産の活用</td>
+<td>AI Search ツール直結</td>
+<td>既存インデックス</td>
+<td>索引設計を自分で持ち続けたい</td>
+</tr>
+<tr>
+<td>A4</td>
+<td>M365 / SharePoint が主データソース</td>
+<td>SharePoint ツール / remote SharePoint KB</td>
+<td>M365 テナント内</td>
+<td>権限透過。<strong>M365 Copilot ライセンス前提</strong></td>
+</tr>
+<tr>
+<td>A5</td>
+<td>複数ソース横断・高精度</td>
+<td>Foundry IQ(agentic retrieval)</td>
+<td>Blob + OneLake + Web 等</td>
+<td>複数エージェントで同じナレッジを共有</td>
+</tr>
+</tbody></table></div>
+<p><strong>まず読むべき公式の選択ガイダンス</strong>(Azure AI Search の RAG 概要より):</p>
+<blockquote><p><strong>agentic retrieval を使うとき:</strong> クライアントがエージェントかチャットボット / 可能な限り高い関連性が必要 / クエリが複雑または会話的 / 引用とクエリ詳細を含む構造化レスポンスが欲しい / <strong>新規 RAG 実装</strong><br><strong>classic RAG を使うとき:</strong> <strong>GA 機能のみが必要</strong> / 単純さと速度が高度な関連性より優先 / <strong>既存のオーケストレーションコードを保持したい</strong> / <strong>クエリパイプラインのきめ細かい制御が必要</strong><br>そして「<strong>新規 RAG 実装は agentic retrieval から始めよ</strong>」。</p></blockquote>
+<p>ただし後述のとおり <strong>Foundry IQ / agentic retrieval は「ポータル経由だと全部プレビュー」</strong>という重大な条件が付く。SLA 条項を書く案件ではここが分岐点になる。</p>
+<hr>
+<h2 id="a1-部門内-faq-チャット-file-search・最小構成">A1. 部門内 FAQ チャット(File Search・最小構成)</h2>
+<p><strong>想定:</strong> 情シスや人事が持つ規程・マニュアル・FAQ を数百〜数千ファイル。全社員が同じ文書を見てよい。2〜4 週間で立ち上げたい。</p>
+<pre><code> [ユーザー] ─ Entra ID 認証 ─&gt; [App Service / Web アプリ]
+                                     │ マネージド ID
+                                     ▼
+                          [Foundry プロジェクト]
+                             ├ Prompt agent
+                             ├ File Search ツール ─&gt; vector store(Microsoft 管理 or BYO Blob+AI Search)
+                             └ モデルデプロイ(Global Standard)
+                                     │
+                                     ▼
+                          [Application Insights](トレース)</code></pre>
+<p><strong>なぜ File Search でよいか:</strong> ファイルを上げるだけで、解析 → チャンク → 埋め込み → 索引 → <strong>ハイブリッド検索 + 再ランク + クエリ書き換え</strong>まで内蔵。引用も <code>url_citation</code> として自動生成される。ここまで自前で作ると数人月かかる。</p>
+<p><strong>受け入れることになる固定値:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>固定値</th>
+</tr></thead><tbody>
+<tr>
+<td>チャンクサイズ</td>
+<td><strong>800 トークン</strong></td>
+</tr>
+<tr>
+<td>チャンクオーバーラップ</td>
+<td><strong>400 トークン(50%)</strong></td>
+</tr>
+<tr>
+<td>埋め込みモデル</td>
+<td><strong>text-embedding-3-large @ 256 次元</strong></td>
+</tr>
+<tr>
+<td>コンテキストへの最大チャンク数</td>
+<td>20</td>
+</tr>
+</tbody></table></div>
+<blockquote><p>text-embedding-3-large の完全次元は 3,072 なので、<strong>256 次元は 1/12 に圧縮された構成。</strong>Matryoshka 表現で精度低下は限定的とはいえ、<strong>専門用語が密な日本語技術文書では検索精度に効く可能性がある。</strong>この次元数を変更する API パラメータは公式ドキュメントに存在しない。</p></blockquote>
+<p><strong>上限:</strong> 10,000 ファイル / ストア、<strong>エージェントに 1 ストアのみ</strong>、最大ファイルサイズ 512MB、全アップロード合計 300GB、バッチ追加は 1 回 500 ファイルまで。</p>
+<p><strong>このパターンが成立しない条件(先に潰す):</strong></p>
+<ul>
+<li><strong>xlsx / csv が非対応。</strong>対応形式はテキスト系と <code>.docx</code> <code>.pdf</code> <code>.pptx</code> などで、<strong>表形式データが主体なら A2 以上に上げる。</strong></li>
+<li><strong>ドキュメントレベルのアクセス制御が原理的に不可能。</strong>vector store に ACL の概念がない。「部署によって見える文書が違う」が要件に入った瞬間に A2 へ。</li>
+<li><strong>メタデータによるフィルタができない。</strong>年度別・機密区分別の絞り込みが要るなら A2/A3。</li>
+<li><strong>閉域(ネットワーク分離)では File Search が使えない。</strong>公式の互換性表で「Not supported / 開発中」と明記されている。閉域案件では A2/A3 に倒す。</li>
+<li><strong>Italy North と Brazil South では利用不可。</strong></li>
+<li><strong>会話ヘルパーで作った vector store は「最終利用から 7 日」で自動失効する。</strong>失効すると当該会話の応答生成が<strong>失敗する。</strong>長期に同じ会話を続ける想定なら、エージェント側の vector store を使う。</li>
+</ul>
+<p><strong>PoC で必ずやること:</strong> <strong>代表的に難しい文書を 20〜30 件選んで検索品質を測る。</strong>チャンク 800 トークン固定が効かないタイプ(長文契約書、条項参照が多い規程、表主体の技術文書)は早期に判明する。ここで駄目なら A2 へ切り替える。<strong>切り替えコストは後になるほど上がる。</strong></p>
+<p><strong>コスト構造:</strong> モデルトークン + <strong>File Search のベクトルストレージ(GB/日)</strong> + App Insights 取込。Standard セットアップにすると Cosmos DB(最低 3,000 RU/s)・Storage・AI Search のコストが加わる。</p>
+<hr>
+<h2 id="a2-全社ナレッジ検索-ai-search-自前索引・本番の標準形">A2. 全社ナレッジ検索(AI Search 自前索引・本番の標準形)</h2>
+<p><strong>想定:</strong> 数万〜数十万文書。<strong>ユーザーの所属や役職によって見える文書が違う。</strong>閉域または Private Link。長期運用。</p>
+<p>これが <strong>SI 案件で最も現実的な着地点</strong>になることが多い。チャンク戦略・埋め込みモデル・メタデータ・フィルタ・ACL を完全に握りつつ、統合ベクトル化・インデクサ・セマンティックランカー・ハイブリッド検索はマネージドのまま享受できる。</p>
+<pre><code> [文書ソース: Blob / SharePoint / ファイルサーバ]
+        │
+        ▼  取り込みパイプライン
+ [Document Intelligence Layout / Content Understanding スキル]  ← 構造抽出(表・見出し)
+        │
+        ▼
+ [AI Search インデクサ + スキルセット(Text Split + 埋め込み)]  ← 統合ベクトル化
+        │                                    index projections でチャンク→親子投影
+        ▼
+ [Azure AI Search インデックス]  ← ACL / メタデータ / セマンティック構成を自分で設計
+        ▲
+        │ Private Endpoint
+ [Foundry プロジェクト: Prompt agent or Hosted agent]
+        │   └ Azure AI Search ツール(top_k / query_type / filter を指定)
+        ▼
+ [App Service]  ← ユーザー ID を解決し、検索フィルタまたは
+        ▲          x-ms-query-source-authorization に反映
+ [ユーザー]</code></pre>
+<h3 id="索引設計で押さえる数値">索引設計で押さえる数値</h3>
+<p><strong>チャンキングの公式推奨:</strong></p>
+<blockquote><p>チャンクサイズは <strong>512 トークン(約 2,000 文字)</strong>、オーバーラップは <strong>25%(= 128 トークン)</strong> から始めよ。</p></blockquote>
+<p>Text Split スキルを文字ベースで使うなら <code>textSplitMode: pages</code> / <code>maximumPageLength: 2000</code> / <code>pageOverlapLength: 500</code>。パラメータの範囲は <code>maximumPageLength</code> が最小 300・最大 50,000・既定 5,000、<code>pageOverlapLength</code> は <strong><code>maximumPageLength</code> の半分未満</strong>が必須。<strong><code>defaultLanguageCode</code> は日本語で重要</strong>(単語途中での分割を避ける)。</p>
+<blockquote><p><strong>⚠ 注意点が 2 つ。</strong>(1) 同一ページ内でオーバーラップ推奨が「10〜15%」と「25% から始めよ」で食い違っている。(2) <strong>トークナイザに <code>o200k_base</code>(GPT-4o 系)が非対応</strong>で、<code>cl100k_base</code> 等しか選べない。GPT-4o 系のトークン化と完全一致するチャンキングはできない。</p></blockquote>
+<p><strong>チャンク戦略は準恒久的な選択である</strong>と公式が警告している:</p>
+<blockquote><p><strong>チャンキングのアプローチは、ソリューション設計全体における準恒久的(semipermanent)な選択である。</strong></p></blockquote>
+<p><strong>セマンティックランカーの上限(効くが万能ではない):</strong></p>
+<ul>
+<li>BM25 / RRF の結果から <strong>上位 50 件のみ</strong>が再ランクに進む。</li>
+<li>各文書の要約モデル入力は<strong>最大 2,000 トークン</strong>。フィールド別配分は <strong>title 128 / keywords 128 / content 残り</strong>で、超過分は切り捨て。<strong>→ セマンティック構成のフィールド順序が意味を持つ。</strong></li>
+<li>スコア <code>@search.rerankerScore</code> は <strong>0.00〜4.00</strong>。ただし「インフラ条件やランキングモデル更新で分布がわずかに変動しうる。<strong>閾値を細かくしすぎるな</strong>」と公式が警告している。<strong>閾値をハードコードしない。</strong></li>
+<li><strong>「セマンティックランカーはコーパス全体に対してクエリを再実行できない。」→ L1(BM25 / ベクトル)の再現率が悪ければリランカーでは救済できない。</strong></li>
+</ul>
+<p><strong>ハイブリッド検索:</strong> RRF の定数 <strong>k = 60</strong>(ベクトル検索の近傍数 k とは別物)。<code>maxTextRecallSize</code> の既定は <strong>1,000</strong> で全文検索はそこで打ち切られる。<strong>セマンティックランカーを使うならベクトルクエリの <code>k</code> を 50 に設定して入力を最大化せよ</strong>というのが公式推奨。</p>
+<p><strong>ベクトルインデックスのクォータ(パーティション単位、ハードリミット):</strong> Basic 5GB / S1 35GB / S2 150GB / S3 300GB。「上限超過後のインデックス試行は失敗する」。緩和策はベクトル文書削除・次元削減・パーティション追加のみ。</p>
+<h3 id="ドキュメントレベルアクセス制御の-4-方式">ドキュメントレベルアクセス制御の 4 方式</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>方式</th>
+<th>仕組み</th>
+<th>ステータス</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>セキュリティフィルタ</strong></td>
+<td>ID を文字列フィールドに入れてクエリフィルタで絞る</td>
+<td><strong>GA。API 非依存・push モデルでも使える</strong></td>
+</tr>
+<tr>
+<td>POSIX 風 ACL / RBAC スコープ</td>
+<td>Entra プリンシパルと索引済み権限メタデータを照合</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td>Purview 秘密度ラベル</td>
+<td>インデクサがラベル抽出 → クエリ時に Purview ポリシー評価</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+<tr>
+<td>SharePoint (M365) ACL</td>
+<td>SharePoint 権限を直接取り込み</td>
+<td><span class="badge preview">プレビュー</span></td>
+</tr>
+</tbody></table></div>
+<p><strong>GA 要件を満たせるのはセキュリティフィルタだけ。</strong>カスタム ID システムや非 Microsoft のセキュリティ基盤を使う案件でも、これが公式推奨。</p>
+<p><strong>設計上の重要な制約:</strong></p>
+<ul>
+<li><strong>権限変更はインデックスに同期されて初めて反映される。</strong>Entra グループメンバーシップや ACL の変更は次回インデクサ実行後。</li>
+<li><strong>チャンク分割している場合、権限メタデータフィールドを indexer field mappings から index projections へ移す必要がある。</strong>これを忘れるとチャンクレベルの参照がフィルタされない — <strong>静かに漏れるタイプの事故。</strong></li>
+<li>Purview 秘密度ラベル方式はシングルテナントのみで、<strong>Autocomplete / Suggest API が使えなくなる。</strong></li>
+</ul>
+<h3 id="取り込みパイプラインの選択">取り込みパイプラインの選択</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>方式</th>
+<th>使うとき</th>
+<th>注意</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>インデクサ + 統合ベクトル化</strong>(pull)</td>
+<td>ソースが Blob / Azure SQL / Cosmos DB / ADLS で、抽出と埋め込みの間に文書ごとの業務ロジックが要らない</td>
+<td><strong>最小スケジュール間隔は 5 分</strong>(全ティア)</td>
+</tr>
+<tr>
+<td><strong>自前 push</strong></td>
+<td><strong>5 分未満の鮮度が必要</strong>、ソースがインデクサ非対応、接続と文書取得の完全制御が要る</td>
+<td><strong>1 文書約 16MB 上限</strong>(インデクサ経由なら S1 で 128MB、S2 以上で 256MB)</td>
+</tr>
+<tr>
+<td>Logic Apps</td>
+<td>インデクサに無いコネクタ(SharePoint / OneDrive / Azure File Storage / Service Bus 等)が要る</td>
+<td>インデックススキーマ固定、テキスト抽出のみ、<strong>削除検出なし(孤児の手動掃除)</strong>、重複文書が既知のプレビュー問題</td>
+</tr>
+<tr>
+<td>Durable Functions</td>
+<td>文書ごとの分類・業務ロジックを挟む</td>
+<td>公式リファレンスあり。<strong>埋め込み工程を Batch デプロイに回してコスト削減</strong>が推奨されている</td>
+</tr>
+</tbody></table></div>
+<p><strong>絶対ルール:</strong> 「<strong>AI enrichment または統合ベクトル化が要件なら、pull モデル(インデクサ)を使わなければならない。スキルセットはインデクサに紐づき単独で実行できない。</strong>」</p>
+<p><strong>文書前処理は Content Understanding が新しい既定路線:</strong></p>
+<blockquote><p>このドキュメントは Document Layout skill を使う<strong>既存パイプライン</strong>向けである。<strong>新しいスキルセットには Azure Content Understanding skill を使え。</strong></p></blockquote>
+<div class="tablewrap"><table><thead><tr>
+<th></th>
+<th>Document Layout skill</th>
+<th><strong>Content Understanding skill</strong></th>
+</tr></thead><tbody>
+<tr>
+<td>表・図の出力</td>
+<td><strong>プレーンテキスト(情報欠落)</strong></td>
+<td><strong>Markdown</strong></td>
+</tr>
+<tr>
+<td>ページ跨ぎの表</td>
+<td>分断される</td>
+<td><strong>単一単位で抽出</strong></td>
+</tr>
+<tr>
+<td>チャンクのページ跨ぎ</td>
+<td><span class="badge no">不可</span></td>
+<td>可</td>
+</tr>
+<tr>
+<td>無料枠</td>
+<td>インデクサあたり 20 文書/日</td>
+<td><strong>なし(全文書課金)</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>両スキル共通の罠:</strong> <strong>レイアウト処理に 5 分以上かかる文書はタイムアウトし、しかも課金される。</strong></p>
+<p><strong>⚠ ページ上限の逆転:</strong> Content Understanding は <strong>300 ページ</strong>、Document Intelligence Layout は <strong>2,000 ページ</strong>。超長尺 PDF は上流で分割するか DI Layout を使う。</p>
+<h3 id="閉域構成での隠れた地雷">閉域構成での隠れた地雷</h3>
+<p><strong>インデクサの <code>executionEnvironment</code> を <code>&quot;Private&quot;</code> にしないと、マルチテナント実行にフォールバックして Private Endpoint を越えられず、「サイレントに失敗して空インデックス」になる。</strong>「Import data」ウィザードが生成するインデクサが該当する。ただし <strong>indexed knowledge source とその自動生成インデクサは private execution environment に非対応</strong>なので、Foundry IQ の自動生成パイプラインと閉域は相性が悪い。</p>
+<p>インデクサの最大実行時間はパブリック実行環境で <strong>2 時間</strong>、プライベート実行環境で <strong>24 時間</strong>。</p>
+<hr>
+<h2 id="a3-既存-ai-search-資産の活用-ai-search-ツール直結">A3. 既存 AI Search 資産の活用(AI Search ツール直結)</h2>
+<p>既に AI Search のインデックスがある場合、エージェントから直接つなぐのが最短。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>パラメータ</th>
+<th>既定</th>
+</tr></thead><tbody>
+<tr>
+<td><code>top_k</code></td>
+<td><strong>5</strong></td>
+</tr>
+<tr>
+<td><code>query_type</code></td>
+<td><strong><code>vector_semantic_hybrid</code></strong>(他に <code>simple</code> / <code>vector</code> / <code>semantic</code> / <code>vector_simple_hybrid</code>)</td>
+</tr>
+<tr>
+<td><code>filter</code></td>
+<td>エージェントの全クエリに適用される</td>
+</tr>
+</tbody></table></div>
+<p><strong>制約:</strong></p>
+<ul>
+<li><strong>1 つのインデックスしかターゲットにできない。</strong>複数インデックスを横断したいなら A5(Foundry IQ)か、自前オーケストレーション。</li>
+<li>AI Search リソースと Foundry エージェントは<strong>同一テナント必須。</strong></li>
+<li><strong>Basic エージェントデプロイはプライベート AI Search / パブリックアクセス無効の AI Search をサポートしない。</strong>閉域なら VNet 注入した Standard エージェントが必要。</li>
+<li>プライベート VNet では<strong>キー認証不可</strong>で、Entra のプロジェクトマネージド ID が必須。</li>
+<li><strong>プライベート AI Search をエージェントツールに使う場合、新 Foundry ポータルで新規にエージェントを作る必要がある</strong>(classic ポータルの旧 Agent Service では非対応)。</li>
+</ul>
+<p><strong>⚠ 評価との相性(見落とされやすい):</strong> 公式にこう明記されている。</p>
+<blockquote><p><code>tool_call_accuracy</code> / <code>tool input accuracy</code> / <code>tool_output_utilization</code> / <code>tool_call_success</code> / <code>groundedness</code> の各評価器は、エージェントの会話に <strong>Azure AI Search / Bing Grounding / SharePoint Grounding / Code Interpreter / Fabric Data Agent / Web Search</strong> への呼び出しが含まれる場合は使うな。</p></blockquote>
+<p>完全サポートは <strong>File Search / Function Tool / MCP / Knowledge-based MCP。</strong>つまり <strong>「Foundry Agent + AI Search ツール」はエージェント評価の自動化が弱い。</strong>評価を CI ゲートにする要件があるなら、A5(Foundry IQ = MCP 経由)を選ぶか、評価を自前ハーネスで組む。</p>
+<hr>
+<h2 id="a4-m365-sharepoint-が主データソース">A4. M365 / SharePoint が主データソース</h2>
+<p><strong>成立条件が厳しいので、まずここを確認する:</strong></p>
+<ul>
+<li><strong>Microsoft 365 Copilot ライセンスが開発者・エンドユーザー双方に必須</strong>(または Copilot Retrieval API の従量課金を有効化)。<strong>ライセンス費が案件コストに乗る。</strong></li>
+<li><strong>ユーザー ID 認証(OBO)のみ。アプリ専用(サービスプリンシパル)認証は不可。</strong>→ <strong>バッチ処理・非対話型エージェントでは使えない。</strong></li>
+<li>SharePoint テナントと Foundry プロジェクトは同一 Entra テナント。</li>
+<li><strong>1 エージェントに SharePoint ツールは 1 つのみ。</strong></li>
+<li><strong>Teams に発行したエージェントでは動作しない。</strong></li>
+<li>画像・チャートなど非テキストコンテンツからの取得は非対応。</li>
+</ul>
+<p>実体は <strong>Microsoft 365 Copilot Retrieval API</strong> で、SharePoint 側のセマンティックインデックスと権限をそのまま使う。<strong>「ユーザーが見える文書しか答えない」を自前で作らなくてよい</strong>のが最大の価値。</p>
+<p><strong>Work IQ(M365 のメール・会議・チャットまで含める)を足す場合の追加条件:</strong> 接続は A2A プロトコル。<strong>Entra Global Administrator によるテナント同意が必須。BYO Entra アプリ(OBO)のみ。VNet 統合非対応。</strong>データレジデンシは Foundry プロジェクトのリージョンではなく <strong>M365 テナントの構成に従う。</strong></p>
+<p><strong>代替案:</strong> ライセンスや OBO 制約が飲めない場合は、<strong>SharePoint の文書を AI Search に取り込み(indexed SharePoint / SharePoint ACL 方式)、A2 の構成にする。</strong>ただし SharePoint ACL 方式はプレビューで、<strong>親スコープ(サイト / ライブラリ / フォルダ)からの継承変更は明示的な <code>/resync</code> または <code>/resetdocs</code> が必要</strong>という運用上の罠がある。</p>
+<hr>
+<h2 id="a5-複数ソース横断・高精度-foundry-iq-agentic-retrieval">A5. 複数ソース横断・高精度(Foundry IQ / agentic retrieval)</h2>
+<p><strong>想定:</strong> Blob + OneLake + Web + SharePoint を横断。複数のエージェント / アプリで同じナレッジを共有したい。クエリが複雑・会話的。</p>
+<p><strong>構造:</strong> Knowledge base(最上位。どのソースを引くか、reasoning effort をどうするか)→ Knowledge source(indexed 型 / remote 型)→ agentic retrieval(クエリ分解 → 並列実行 → セマンティック再ランク → 統合)。</p>
+<p><strong>実体は Azure AI Search の agentic retrieval であり、Azure AI Search は必須。</strong>公称値は「従来の single-shot RAG より約 36% 高い応答品質」。</p>
+<h3 id="foundry-iq-ga-は誤り-ga-プレビューは-rest-api-バージョンで切れている">⚠ 「Foundry IQ = GA」は誤り。GA / プレビューは REST API バージョンで切れている</h3>
+<blockquote><p>一部の agentic retrieval 機能は <strong>2026-04-01 REST API のプログラム的アクセスで一般提供されている。Azure portal と Microsoft Foundry portal は、すべての agentic retrieval 機能に対してプレビュー限定のアクセスを提供し続ける。</strong></p></blockquote>
+<p>つまり <strong>ポータルで作った Foundry IQ 構成は全部プレビュー扱い。</strong>GA 構成が要るなら REST/SDK で <code>2026-04-01</code> を直接叩く必要がある。<strong>SLA 条項を書く案件ではここが最大の分岐点。</strong></p>
+<p><strong>ナレッジソース別の GA / プレビュー:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>GA(2026-04-01)</th>
+<th>プレビュー</th>
+</tr></thead><tbody>
+<tr>
+<td><code>searchIndex</code>(既存インデックスをラップ)、<code>azureBlob</code>、<code>indexedOneLake</code>、<code>web</code>(Bing 経由)</td>
+<td><code>azureSql</code>、<code>file</code>、<code>indexedSharePoint</code>、<code>remoteSharePoint</code>、<code>fabricDataAgent</code>、<code>fabricOntology</code>、<code>mcpServer</code>、<code>workIQ</code></td>
+</tr>
+</tbody></table></div>
+<p><strong>GA 版で失われる機能:</strong> <code>ingestionPermissionOptions</code> が非サポート = <strong>ドキュメントレベル権限を使うなら 2026-05-01-preview が必須。「GA 構成 かつ ACL 連携」は現時点で両立しない。</strong>さらに GA では <code>outputMode</code> / <code>answerInstructions</code> / <code>retrievalInstructions</code> / retrieval reasoning effort も削除される。</p>
+<h3 id="retrieval-reasoning-effort-コスト・レイテンシ・精度のダイヤル">Retrieval reasoning effort(コスト・レイテンシ・精度のダイヤル)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>レベル</th>
+<th>LLM 使用</th>
+<th>回答合成トークン</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td><code>minimal</code></td>
+<td>なし</td>
+<td><span class="badge no">不可</span></td>
+<td><code>outputMode</code> は <code>extractiveData</code> 必須。web ソース不可</td>
+</tr>
+<tr>
+<td><code>low</code>(既定)</td>
+<td>1 パス計画</td>
+<td>5,000</td>
+<td>セマンティック再ランク最大 50 件</td>
+</tr>
+<tr>
+<td><code>medium</code></td>
+<td>計画 + 反復検索</td>
+<td>10,000</td>
+<td>L3 分類器で 1 回だけ再試行。<strong>対応リージョン限定(Japan East は対応)</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>クエリ時の既定値:</strong> <code>maxRuntimeInSeconds</code> = 90 秒、<code>maxOutputSizeInTokens</code> = 5,000 トークン。<strong>⚠ この上限を超えた文書はサイレントに応答から落ちる</strong>(activity ログに警告が出るだけ)。</p>
+<p><strong>その他の注意:</strong> retrieve は knowledge source のセマンティック構成は使うが、<strong>元インデックスの scoring profile を適用しない。</strong></p>
+<h3 id="ティアと課金">ティアと課金</h3>
+<ul>
+<li><strong>S3 HD はナレッジソース / ナレッジベースの上限が 0</strong> = <strong>agentic retrieval が使えない。</strong>マルチテナント設計で S3 HD を選ぶと Foundry IQ が使えなくなる。</li>
+<li>課金は AI Search 側の<strong>トークン課金</strong>(<code>knowledgeRetrieval</code> プロパティ。<strong>無料枠は月 5,000 万トークン</strong>)+ Azure OpenAI 側のクエリ計画・回答合成トークン。公式試算例(2,000 リクエスト・3 サブクエリ・50 チャンク再ランク)で <strong>約 $4.32</strong>。</li>
+<li><strong>⚠ 移行時の落とし穴:</strong> 2026-04-01 以降 <code>semanticSearch</code> と <code>knowledgeRetrieval</code> は分離され、<strong>旧 <code>semanticSearch=standard</code> の同意は <code>knowledgeRetrieval</code> に引き継がれない。</strong></li>
+</ul>
+<h3 id="エージェントからの接続と-その制約">エージェントからの接続と、その制約</h3>
+<p>Foundry Agent Service との接続は <strong>MCP 経由</strong>(<code>knowledge_base_retrieve</code> ツールのみ)。MCP エンドポイントは <code>2026-05-01-preview</code> 必須。</p>
+<blockquote><p>このプレビューでは、<strong>Foundry Agent Service は MCP ツールのリクエスト単位ヘッダーをサポートしない。</strong>エージェント定義で設定したヘッダーは全呼び出しに適用され、ユーザーやリクエストごとに変えられない。</p></blockquote>
+<p>→ 公式は「<strong>remote SharePoint ナレッジソースでユーザー単位の権限透過をやるなら、Foundry Agent Service ではなく Azure OpenAI Responses API を使え</strong>」と明記している。<strong>エンドユーザー ID ベースの認可が要件なら、この一文が構成を決める。</strong></p>
+<p><strong>逆に価値になる点:</strong> knowledge base は <strong>MCP 経由なので Foundry Agent Service 以外(Microsoft Agent Framework / LangGraph / 自作アプリ)からも同じナレッジを使える。</strong>「ナレッジ層だけ Foundry IQ、オーケストレーションは自前」という組合せが成立する。</p>
+<hr>
+<h2 id="rag-方式の比較-まとめ">RAG 方式の比較(まとめ)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>観点</th>
+<th>A1 File Search</th>
+<th>A2 自前索引</th>
+<th>A3 AI Search ツール</th>
+<th>A5 Foundry IQ</th>
+</tr></thead><tbody>
+<tr>
+<td>立ち上がり</td>
+<td>最速</td>
+<td>遅い</td>
+<td>速い(既存資産があれば)</td>
+<td>中</td>
+</tr>
+<tr>
+<td>チャンク・埋め込みの制御</td>
+<td><strong>不可</strong></td>
+<td>完全</td>
+<td>完全</td>
+<td>生成物は編集非推奨</td>
+</tr>
+<tr>
+<td>メタデータフィルタ</td>
+<td><strong>不可</strong></td>
+<td>可</td>
+<td>可(1 インデックス)</td>
+<td><code>filterAddOn</code>(searchIndex のみ)</td>
+</tr>
+<tr>
+<td>ドキュメントレベル ACL</td>
+<td><strong>不可</strong></td>
+<td>可(GA: セキュリティフィルタ)</td>
+<td>可</td>
+<td><strong>GA 版では不可</strong>(preview 必須)</td>
+</tr>
+<tr>
+<td>複数ソース横断</td>
+<td><span class="badge no">不可</span></td>
+<td>自前実装</td>
+<td>1 インデックスのみ</td>
+<td><strong>可</strong></td>
+</tr>
+<tr>
+<td>閉域(VNet)</td>
+<td><strong>不可</strong></td>
+<td>可</td>
+<td>可(Standard セットアップ)</td>
+<td>MCP 経由で可</td>
+</tr>
+<tr>
+<td>エージェント評価器</td>
+<td><strong>完全サポート</strong></td>
+<td>—</td>
+<td><strong>限定サポート</strong></td>
+<td><strong>完全サポート(MCP)</strong></td>
+</tr>
+<tr>
+<td>ポータブル性</td>
+<td>Foundry 固有</td>
+<td>高い</td>
+<td>高い</td>
+<td>AI Search 依存</td>
+</tr>
+<tr>
+<td>レイテンシ</td>
+<td>速い</td>
+<td>速い(2〜3 秒)</td>
+<td>速い</td>
+<td><strong>遅い(8〜15 秒)</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>「マネージドを選んで失うもの」を一覧化しておくと提案時に説明しやすい:</strong></p>
+<ul>
+<li><strong>File Search で失うもの:</strong> チャンク制御、埋め込みモデル・次元選択、メタデータ / フィルタ、<strong>ドキュメントレベルアクセス制御(原理的に不可)</strong>、ハイブリッド重み・RRF・リランク閾値、コーパスの分離、コスト可視性、ポータビリティ、表形式データ対応。</li>
+<li><strong>Foundry IQ で失うもの:</strong> <strong>GA 構成の自由度</strong>(ポータル経由は全プレビュー)、インデックススキーマ制御(自動生成物は名前変更不可・直接編集非推奨)、<strong>ユーザー単位認可</strong>(Agent Service 経由の場合)、応答の完全性(<code>maxOutputSizeInTokens</code> 超過分がサイレントに落ちる)、既存 scoring profile。</li>
+<li><strong>自前で失うもの:</strong> 引用の配管、クエリ計画・分解(公称 36% の品質差)、クエリ書き換え、ACL 同期実装、リトライ / スロットリング制御、リランキング。<strong>ただし「自前 = 全部自前」ではない</strong> — インデクサ + 統合ベクトル化を使えば取り込み運用の大半はマネージドのまま残る。</li>
+</ul>
+<hr>
+<h2 id="要件別・決定表">要件別・決定表</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>要件</th>
+<th>推奨</th>
+<th>根拠</th>
+</tr></thead><tbody>
+<tr>
+<td>PoC を最速で / 数百ファイル / 権限制御不要</td>
+<td><strong>A1 File Search(Basic セットアップ)</strong></td>
+<td>設定ゼロ、引用自動</td>
+</tr>
+<tr>
+<td>データレジデンシ / CMK / 閉域が必須</td>
+<td><strong>A2</strong>(Standard セットアップ + 自前索引)。Web グラウンディングは排除</td>
+<td>File Search は閉域非対応、Web は DPA 対象外</td>
+</tr>
+<tr>
+<td>ユーザーごとに見える文書が違う</td>
+<td><strong>A2 + セキュリティフィルタ(GA)</strong></td>
+<td><span class="badge ga">GA</span> 要件を満たす唯一の方式</td>
+</tr>
+<tr>
+<td>チャンク戦略を業務文書構造に合わせたい</td>
+<td><strong>A2</strong></td>
+<td>File Search は 800/400 固定</td>
+</tr>
+<tr>
+<td>表・帳票が主体</td>
+<td><strong>A2</strong>(DI プリビルト or CU で前処理)</td>
+<td>File Search は xlsx/csv 非対応</td>
+</tr>
+<tr>
+<td>SharePoint が唯一のソース / M365 Copilot 契約済</td>
+<td><strong>A4</strong></td>
+<td>権限透過が自動。ただし OBO 必須</td>
+</tr>
+<tr>
+<td>複数ソース横断(Blob + OneLake + Web)</td>
+<td><strong>A5</strong>(GA ソースだけで組む)</td>
+<td>実用可</td>
+</tr>
+<tr>
+<td>複雑・会話的クエリ / 最高精度</td>
+<td><strong>A5</strong>(reasoning effort = medium)</td>
+<td>公称 +36%。ただしレイテンシ 8〜15 秒</td>
+</tr>
+<tr>
+<td>5 分未満の鮮度が必要</td>
+<td><strong>A2 の push モデル</strong></td>
+<td>インデクサ最小スケジュールが 5 分</td>
+</tr>
+<tr>
+<td>エージェント評価の自動化が要件</td>
+<td><strong>A1 または A5。A3 は避ける</strong></td>
+<td>評価器の限定サポートリスト</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="品質を測る仕組み-どのパターンでも入れる">品質を測る仕組み(どのパターンでも入れる)</h2>
+<p><strong>検索側とレスポンス側を分けて測る。</strong></p>
+<ul>
+<li><strong>検索側:</strong> <code>Document Retrieval</code> 評価器(正解ラベルが必要、LLM 不要で NDCG / XDCG / fidelity を算出)。<strong>検索パラメータ(検索アルゴリズム、<code>top_k</code>、チャンクサイズ)をスイープして最良値を見つける</strong>のが公式の想定用途。Architecture Center 側は Precision@K / Recall@K / MRR を規定しており、<strong>両者は相互参照していない</strong>ため、ステークホルダー向けの指標は自前計算になることがある。</li>
+<li><strong>レスポンス側:</strong> Groundedness(精度)+ Response Completeness(再現)+ Relevance + Content Safety。</li>
+<li><strong>診断の読み方(公式):</strong> 高 completeness + 低 utilization → <strong>top-k を下げる。</strong>低 completeness + 高 utilization → <strong>チャンクを大きくするか top-k を上げる。</strong></li>
+<li><strong>リランキングの原則:</strong> 「<strong>cross-encoder のスコアは相対値であり絶対値ではない。順序付けに使い、閾値判定に使うな。</strong>」</li>
+<li>「言語モデルの応答は非決定的なので、<strong>単一の目標値ではなく目標レンジを使うことを検討せよ。</strong>」</li>
+</ul>
+<p><strong>実行時のガードレール(RAG 固有):</strong> Prompt Shields の間接攻撃検出(<strong>最大 5 文書・合計 10,000 文字</strong>)は、top-50 の取得結果を 1 回では検査できない。<strong>分割呼び出しかインデックス前サニタイズが必要。</strong>Groundedness detection は<strong>ストリーミングのみ・英語のみ・対応 6 リージョンのみ</strong>という制約がある。</p>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

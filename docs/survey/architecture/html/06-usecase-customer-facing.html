@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06. ユースケース編 C — 顧客向け公開・マルチテナント SaaS・大規模トラフィック</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html" class="current">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="06-ユースケース編-c-顧客向け公開・マルチテナント-saas・大規模トラフィック">06. ユースケース編 C — 顧客向け公開・マルチテナント SaaS・大規模トラフィック</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#c1-一般顧客向けチャット-単一テナント">C1. 一般顧客向けチャット(単一テナント)</a></li><li><a href="#c2-マルチテナント-saas">C2. マルチテナント SaaS</a></li><li><a href="#c3-大規模トラフィック・複数部門への払い出し">C3. 大規模トラフィック・複数部門への払い出し</a></li><li><a href="#このパターン特有のチェックリスト">このパターン特有のチェックリスト</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<p>社内利用と外部公開の間には、<strong>アーキテクチャ上の断絶</strong>がある。社内なら「Entra ID で認証すれば概ね安全」が成り立つが、外部公開では (1) 不特定多数からの攻撃、(2) テナント間のデータ分離、(3) 一部利用者による資源の占有、(4) 利用量に応じた課金按分 — の 4 つが同時に効いてくる。</p>
+<h2 id="パターン一覧">パターン一覧</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>パターン</th>
+<th>主題</th>
+<th>決め手になる要件</th>
+</tr></thead><tbody>
+<tr>
+<td>C1</td>
+<td>一般顧客向けチャット(単一テナント)</td>
+<td>攻撃面の防御とコスト暴走の抑制</td>
+<td>不特定多数が使う</td>
+</tr>
+<tr>
+<td>C2</td>
+<td>マルチテナント SaaS</td>
+<td>テナント分離とノイジーネイバー対策</td>
+<td>複数顧客に販売する</td>
+</tr>
+<tr>
+<td>C3</td>
+<td>大規模トラフィック / 複数部門への払い出し</td>
+<td>キャパシティとチャージバック</td>
+<td>月間数百万リクエスト、部門別按分</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="c1-一般顧客向けチャット-単一テナント">C1. 一般顧客向けチャット(単一テナント)</h2>
+<pre><code> [インターネット]
+      │
+      ▼
+ [Azure Front Door]  ← グローバル分散が要る場合。X_AZURE_FDID ヘッダー検証を実装
+      │
+      ▼
+ [Azure DDoS Protection] + [Application Gateway + WAF]
+      │   ← ネットワーク観点でインターネットに露出する唯一のリソース
+      ▼
+ [App Service / Container Apps(チャット UI + BFF)]
+      │   ← ここでユーザー認証・会話所有権の検証・レート制限
+      │ Private Endpoint
+      ▼
+ [APIM(AI ゲートウェイ)]  ← トークンレート制限、セマンティックキャッシュ、Content Safety
+      │
+      ▼
+ [Foundry(Agent Service / モデルデプロイ)]
+      └ Private Endpoint 経由で Cosmos DB / AI Search / Storage</code></pre>
+<p><strong>Front Door を前段に置く場合の公式パターン:</strong> ゲートウェイインスタンスを <strong>Private Endpoint 経由でのみ到達可能にし、ゲートウェイ実装側で <code>X_AZURE_FDID</code> HTTP ヘッダーの検証を追加する。</strong>これをやらないと Application Gateway に直接アクセスされて Front Door の WAF を迂回される。</p>
+<h3 id="waf-チューニングは必須作業として工数に入れる">⚠ WAF チューニングは必須作業として工数に入れる</h3>
+<p>公式ベースラインに専用の節が立っているほど確実に踏む問題。</p>
+<blockquote><p>チャットアプリはコード片・SQL 文・HTML 断片を含むため、<strong>WAF マネージドルールの誤検知を頻発させる。</strong>リモートコード実行、ローカルファイルインクルード、脅威インテリジェンスなど複数のルールグループにまたがる。<strong>マルチターン会話では OWASP anomaly score がメッセージ間で累積し、会話が長くなるとある時点で突然 HTTP 403 でブロックされる。</strong></p></blockquote>
+<p><strong>対策(公式):</strong></p>
+<ul>
+<li>チャットメッセージを運ぶ<strong>リクエストボディフィールドにスコープした除外(exclusion)</strong>を作る</li>
+<li>ルールをグローバルに無効化せず、<strong>影響を受けるルールグループにスコープする</strong></li>
+<li><strong>リクエストボディ検査サイズ上限</strong>がチャットの典型ペイロードを収容できるか確認する</li>
+</ul>
+<p><strong>日本の金融機関などで「全ルール有効・除外禁止」が WAF の標準ポリシーになっている場合、正面衝突する。</strong>設計初期に例外承認プロセスを織り込む。</p>
+<h3 id="会話-id-の認可-bola-脆弱性">⚠ 会話 ID の認可(BOLA 脆弱性)</h3>
+<p><strong>これは Foundry が守ってくれない領域で、外部公開では致命的になる。</strong></p>
+<blockquote><p><strong>Foundry Agent Service は会話に対するユーザー単位の認可を強制しない。</strong>アプリケーションサーバーの ID はプロジェクトレベルの資格情報を持ち、<strong>ID さえ渡せば任意の会話を読み書きできる。</strong>チャット UI がクライアント提供の conversation ID を検証せずに Agent Service に渡すと、<strong>Broken Object Level Authorization (BOLA) 脆弱性</strong>になる。</p></blockquote>
+<p><strong>必須の実装:</strong> BFF 層で「この conversation ID はこのログインユーザーのものか」を<strong>リクエストごとに検証する。</strong>会話 ID とユーザー ID の対応表を自分で持つ。</p>
+<p><strong>関連する制約として、旧 Agent Application モデルが <code>/conversations</code> にアクセスできないのも同じ理由</strong>である(「Foundry Agent Service はマネージドな会話履歴をサポートするが、同一プロジェクト内の会話についてエンドユーザー間の分離をまだ強制していない」)。恒久仕様ではなく修正作業中と明記されているが、<strong>現時点では設計で埋める。</strong></p>
+<h3 id="プロンプトインジェクションと安全性">プロンプトインジェクションと安全性</h3>
+<p>外部公開では入力が完全に非信頼になる。</p>
+<ul>
+<li><strong>Prompt Shields</strong>(直接攻撃 = jailbreak、間接攻撃 = ドキュメント埋め込み)を有効にする。既定ポリシーでは jailbreak がプロンプト側で有効。</li>
+<li><strong>ガードレールの介入点を 4 つとも設計する:</strong> User input / <strong>Tool call(プレビュー)</strong> / <strong>Tool response(プレビュー)</strong> / Output。エージェントに明示割当したガードレールはモデル側の設定を<strong>完全に上書きする</strong>ため、Tool 系を置き忘れるとその経路が未スキャンになる。</li>
+<li><strong>⚠ フェイルオープンに注意:</strong> 「<strong>コンテンツフィルタリングシステムが利用不能な場合、リクエストはフィルタリングなしで完了する(HTTP 200)。</strong>」判別は <code>content_filter_results</code> 内のエラーオブジェクト(<code>code: &quot;content_filter_error&quot;</code>)でしかできない。<strong>公式のベストプラクティスは「常に <code>finish_reason</code> を確認し、<code>content_filter_results</code> にエラーが無い(= フィルターが実行された)ことを検証せよ」。</strong>規制業種ではこの検証を必須実装にする。</li>
+<li><strong>Claude を使う場合は Foundry の組込みフィルターが効かない。</strong>APIM の <code>llm-content-safety</code> ポリシーでゲートウェイ層から Content Safety を噛ませるか、アプリ層で直接呼ぶ。</li>
+<li><strong>AI Red Teaming</strong> を「purple environment」(本番相当リソースの非本番環境)で回す。ただし ASR の判定は生成モデルが行うため<strong>非決定的で偽陽性がありうる</strong>ので、対処前に必ずレビューする。</li>
+</ul>
+<h3 id="コスト暴走の抑制">コスト暴走の抑制</h3>
+<p>外部公開で最も怖いのは、悪意または無自覚な大量利用によるトークンコストの暴走。</p>
+<p><strong>⚠ Azure OpenAI にはハードリミットが存在しない。</strong>「OpenAI にはハードリミットがあるが、Azure OpenAI には現状その機能がない」と明記されている。予算超過での自動停止が要件なら、<strong>予算アラートのアクショングループから起動する自動化を自作する。</strong></p>
+<p>現実的な多層防御:</p>
+<ol>
+<li><strong>アプリ層</strong> — ユーザー単位のリクエスト数 / 日次トークン上限</li>
+<li><strong>APIM 層</strong> — <code>llm-token-limit</code> で TPM 上限とトークンクォータ。<strong><code>estimate-prompt-tokens=true</code> にすると上限超過プロンプトをバックエンド到達前に遮断できる</strong>(無駄なトークン課金を防げる)</li>
+<li><strong>Foundry 層</strong> — デプロイ単位のクォータ、Control Plane のプロジェクト単位トークン制限(<strong>TPM 超過は 429、総トークンクォータ超過は 403</strong>)</li>
+<li><strong>モデル層</strong> — Model router の Cost モード、小型モデルへの振り分け、Batch への切り出し</li>
+</ol>
+<p><strong>セマンティックキャッシュ</strong>(APIM <code>llm-semantic-cache-store</code> / <code>-lookup</code>、Azure Managed Redis 必須)は、FAQ 的な問い合わせが多い外部向けチャットで効果が大きい。<strong>バックエンド呼び出し自体を削減する</strong>ため、レイテンシとコストの両方に効く。</p>
+<p><strong>⚠ キャッシュキーの設計に注意。</strong>WAF が明記している通り、キャッシュキーには <strong>tenant/user identity、policy context、model version、prompt version</strong> を含める。「<strong>多くの状況で単一ユーザー向けのキャッシュはするな。</strong>」</p>
+<hr>
+<h2 id="c2-マルチテナント-saas">C2. マルチテナント SaaS</h2>
+<h3 id="テナント分離の-3-モデル">テナント分離の 3 モデル</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>モデル</th>
+<th>分離単位</th>
+<th>向く条件</th>
+<th>コスト・運用</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>共有デプロイ + 論理分離</strong></td>
+<td>アプリ層でテナント ID を管理</td>
+<td>テナント数が多く 1 テナントあたりの利用量が小さい</td>
+<td>最安。<strong>ノイジーネイバーとデータ混在のリスクを自前で潰す必要</strong></td>
+</tr>
+<tr>
+<td><strong>テナントごとにデプロイ</strong></td>
+<td>モデルデプロイを分ける</td>
+<td>大口テナントに SLA を約束する</td>
+<td><strong>1 リソースあたりモデルデプロイ 32 個</strong>の壁</td>
+</tr>
+<tr>
+<td><strong>テナントごとにリソース / サブスクリプション</strong></td>
+<td>Foundry リソースを分ける</td>
+<td>規制要件やデータレジデンシがテナントごとに違う</td>
+<td>最も高コスト。<strong>1 リージョン / サブスクリプションあたり Foundry リソース 100 個</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>CAF の AI Platform Sharing ガイダンスがそのまま効く:</strong> 本番では「ワークロードごとに 1 インスタンス」が既定で、同居は 5 条件すべてを満たす<strong>文書化された例外</strong>として扱う。SaaS のテナントを「ワークロード」と読み替えると、<strong>規制スコープ・データ分類・レジデンシー要件が同一のテナント群だけを同居させられる</strong>ということになる。</p>
+<h3 id="分離設計で必ず潰す点">分離設計で必ず潰す点</h3>
+<p><strong>① 会話・スレッドの分離</strong> — 前述の BOLA 対策に加え、<strong>basic セットアップでは会話が Microsoft 管理ストレージにあり所在と保持を細かく制御できない。</strong>SaaS なら standard セットアップ(BYO Cosmos DB)か自前セッションストアを選ぶ。</p>
+<p><strong>② ベクトルストア / インデックスの分離</strong> — テナントごとにインデックスを分けるか、単一インデックス + セキュリティフィルタか。<strong>⚠ AI Search の S3 HD ティアは agentic retrieval(Foundry IQ)の上限が 0</strong> なので、「マルチテナントだから S3 HD」と選ぶと Foundry IQ が使えなくなる。</p>
+<p>File Search を使うなら、<strong><code>structured_inputs</code> で <code>vector_store_ids</code> をリクエスト単位に上書きできる</strong>ため、エージェント定義を増やさずにテナント別コーパスを切り替えられる。ただし <strong>Toolbox 経由で Code Interpreter / File Search を使うとユーザー分離がない</strong>点に注意。</p>
+<p><strong>③ hosted agent のセッション多重化</strong> — コンテナプロトコル 2.0.0 では <code>x-agent-user-id</code> により <strong>1 セッション内で複数ユーザーを安全に多重化できる</strong>が、<strong>1.0.0 では不可。</strong>マルチテナントで hosted agent を使うなら 2.0.0 が前提。</p>
+<p><strong>④ セッションプールでのデータ混在</strong> — 同時エージェントセッション上限(後述)を踏まえてセッションをプールする場合、<strong>プラットフォームは会話状態を分離するが、エージェントコンテナー自身が保存するデータ(ファイル・DB 行・キャッシュ)は自動分割されない。</strong>アプリ側で <strong>agent session とエンドユーザー ID の両方でキー付け</strong>しないと、同一プールセッション内のユーザーが互いのデータを読める。</p>
+<p><strong>⑤ プロジェクト RBAC の限界</strong> — 「Foundry プロジェクトに <code>Foundry User</code> ロールを持つプリンシパルは、<strong>そのプロジェクト内のすべてのエージェントと対話できる。</strong>」テナント別のアクセス制御を Foundry の RBAC で表現するのは無理で、<strong>アプリの認証認可層が担う。</strong></p>
+<h3 id="同時エージェントセッションの上限が設計制約になる">⚠ 同時エージェントセッションの上限が設計制約になる</h3>
+<p><strong>サブスクリプション × リージョンあたり 50 セッション。</strong>これは引き上げ交渉の対象になりうるが、<strong>大規模 SaaS ではサブスクリプション分割が必要になる可能性</strong>を最初から見込む。</p>
+<p>関連する実効上限(閉域構成の場合):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>値</th>
+</tr></thead><tbody>
+<tr>
+<td>IP 予約比率</td>
+<td>約 1 IP / 10 pod</td>
+</tr>
+<tr>
+<td>Hosted agent</td>
+<td>セッションごとに Micro VM = <strong>1 IP 消費</strong>。新リビジョン展開時は新旧並走で一時的に増加</td>
+</tr>
+<tr>
+<td>Prompt agent</td>
+<td>プロジェクトあたり最大約 <strong>10 IP の静的プール</strong>(リビジョンは IP を消費しない)</td>
+</tr>
+<tr>
+<td><code>/27</code>(32 IP)</td>
+<td>約 <strong>17</strong> 同時セッション</td>
+</tr>
+<tr>
+<td><code>/26</code>(64 IP)</td>
+<td>約 <strong>50</strong>(サポート上限)</td>
+</tr>
+<tr>
+<td>Foundry インスタンスあたりプロジェクト数</td>
+<td>低負荷時 約 250、<strong>フルスケール時 約 25 まで低下</strong></td>
+</tr>
+<tr>
+<td>Foundry インスタンスあたり hosted agent</td>
+<td>約 200</td>
+</tr>
+<tr>
+<td>推奨稼働率</td>
+<td><strong>サブネット使用率 80% 未満</strong></td>
+</tr>
+</tbody></table></div>
+<p><strong>→ 閉域マルチテナントで hosted agent を使うなら、委任サブネットは <code>/24</code> を確保する。</strong></p>
+<h3 id="テナント別の計測と課金按分">テナント別の計測と課金按分</h3>
+<p><strong>Foundry の標準機能だけでは足りない。</strong></p>
+<ul>
+<li>Foundry の <code>project</code> タグによるコスト配賦は<strong>プレビューで、かつ Models sold by Azure のみ対応</strong>(Marketplace 経由のモデルは未対応)。</li>
+<li>Estimated cost は<strong>割引や契約価格を反映せず、Provisioned(PTU)も含まない。</strong>しかも <strong>prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。</strong></li>
+<li>課金イベントが Cost Analysis に現れるまで<strong>約 5 時間の遅延。</strong></li>
+</ul>
+<p><strong>→ テナント別のメータリングは APIM で取る。</strong><code>llm-emit-token-metric</code> に<strong>カスタムディメンション(User ID / Tenant ID / API ID / Client IP)</strong>を付けて App Insights に送れば、Foundry が提供しない粒度でチャージバックできる。<strong>SaaS 案件では APIM が事実上必須。</strong></p>
+<h3 id="ノイジーネイバー対策">ノイジーネイバー対策</h3>
+<ul>
+<li><strong>APIM の <code>llm-token-limit</code> の <code>counter-key</code> をテナント ID にする。</strong>TPM 上限と、時間 / 日 / 週 / 月 / 年のトークンクォータをテナント別に設定できる。</li>
+<li><strong>大口テナントには専用の PTU デプロイ</strong>を割り当て、共有テナントは Standard に載せる。APIM の backend pool を <strong>priority-based</strong> にして PTU を優先度高に設定する。</li>
+<li><strong>Spillover</strong> で PTU 枯渇時に Standard へ逃がす。</li>
+</ul>
+<hr>
+<h2 id="c3-大規模トラフィック・複数部門への払い出し">C3. 大規模トラフィック・複数部門への払い出し</h2>
+<h3 id="キャパシティ設計の骨格">キャパシティ設計の骨格</h3>
+<p><strong>「PTU でベースライン + Standard でスパイク」が推奨形。</strong>トラフィックに合わせて PTU を上下させる運用は非推奨(コストで Reservation に劣り、スケールアップ時にキャパシティが無い可能性がある)。</p>
+<p><strong>エンタープライズ PTU プールパターン(公式):</strong></p>
+<ul>
+<li>単一の Data Zone PTU デプロイを全社共通プールとし、APIM でアプリ別のスループット制限・優先度・フェイルオーバーを制御する。</li>
+<li><strong>エンタープライズ PTU プールは、プライマリの Standard デプロイとは別リージョンに配置する</strong>(同時被災回避)。</li>
+<li>ワークロード専用 PTU が必要なら、さらに別リージョンに。</li>
+<li><strong>フェイルオーバーチェーン:</strong> ワークロード専用 PTU → エンタープライズ PTU プール → Standard デプロイ。<strong>PTU 間で溢れる限りレイテンシ SLA が維持される。</strong></li>
+</ul>
+<p><strong>PTU サイジングでは必ずキャッシュ率を織り込む。</strong>公式例では 50% キャッシュで必要 PTU が 110 → 80(<strong>約 27% 削減</strong>)。システムプロンプトとツール定義を<strong>プロンプト先頭に固定配置</strong>する設計だけでここが決まる。</p>
+<p><strong>Usage tiers の存在を忘れない:</strong> テナント全体の月間トークンが一定量を超えると<strong>レイテンシが 2 倍以上に振れうる</strong>と明記されている(Batch と Provisioned には適用されない)。大規模利用では PTU への移行判断材料になる。</p>
+<h3 id="ゲートウェイを入れるかどうか">ゲートウェイを入れるかどうか</h3>
+<p><strong>入れる前に読むべき留保:</strong></p>
+<blockquote><p>大半のワークロードは、この問題(スロットリング)を <strong>Global および Data Zone デプロイで解決すべきである。Global / Data Zone デプロイ自体がゲートウェイ実装である。</strong></p></blockquote>
+<p><strong>「入れるな」の 3 条件:</strong> 合意済み SLO を満たせなくなる / 機密性・完全性・可用性を守れなくなる / 交渉済みの性能目標が達成不能になる。</p>
+<p><strong>それでもゲートウェイが要る典型:</strong> 複数チーム / 複数テナントへの払い出し、トークン課金の可視化、リージョン跨ぎ冗長、モデルデプロイ単位の ID スコープ分離(<strong>Foundry のデータプレーン認証はリソースまたはプロジェクト単位で、個別モデルデプロイ単位ではない</strong>)、blue-green / canary。</p>
+<p><strong>Foundry ネイティブの AI Gateway(プレビュー)の制約:</strong></p>
+<ul>
+<li>既存 APIM を使うには <strong>Foundry と同一 Entra テナント・同一サブスクリプション</strong>、利用者が APIM に API Management Service Contributor 以上、<strong>APIM が v2 ティア</strong>であること。</li>
+<li><strong>Foundry リソースレベルで有効化</strong>され、そのリソース内の全プロジェクトが同じゲートウェイを共有する。<strong>プロジェクトを別ゲートウェイに分けたいなら Foundry リソース自体を分けるしかない。</strong></li>
+<li>「<strong>単一の Foundry リソースへの ingress をサポートする設計で、複数リソースにまたがらない。</strong>」複数バックエンドが要るならスタンドアロン APIM。</li>
+<li><strong>⚠ Foundry がパブリックアクセス無効でも、新ポータルから作った AI Gateway は自動的にパブリックになる。</strong>データプレーン操作を完結させるには Azure portal でゲートウェイのネットワーク分離を別途設定する必要がある。</li>
+</ul>
+<p><strong>APIM をゲートウェイにする場合の設計ルール</strong>(<a href="09-operations.html#2-4-apim-をゲートウェイに置く場合の設計ルール-公式">09 章</a>)を参照。特に「<strong>ラウンドロビン / フェイルオーバー先は必ず同一モデル・同一バージョン</strong>」「<strong>ステートフル API はバックエンドをピン留めし、切替不能なら 429 を返す</strong>」の 2 点は外部公開で効いてくる。</p>
+<h3 id="モデルデプロイの冗長化">モデルデプロイの冗長化</h3>
+<ul>
+<li>同一サブスクリプション内にプライマリ / セカンダリ 2 リージョンのリソースを配置し、<strong>各リージョンで利用可能クォータを全量 1 デプロイに割り当てる</strong>(分割より高スループット)。</li>
+<li><strong>Standard モデルデプロイは単一リージョンで AZ 非対応。</strong>マルチデータセンター可用性を得るには Global または Data Zone デプロイが必須。</li>
+<li><strong>Foundry はモデルデプロイに対するラウンドロビンやサーキットブレーカーを提供しない。</strong>リージョン内の粒度細かい冗長性には APIM が要る。</li>
+<li><strong>⚠ サブスクリプション単位クォータ管理への移行に注意。</strong>Global Standard は同一モデル・バージョンで全リージョン共通の単一プールになる。「リージョンを増やせばクォータが増える」という旧来の前提が崩れている場合がある。ポータルの Quota ページの <code>Scope</code> 列で確認する。</li>
+</ul>
+<hr>
+<h2 id="このパターン特有のチェックリスト">このパターン特有のチェックリスト</h2>
+<p><strong>セキュリティ</strong></p>
+<ul>
+<li>[ ] Front Door を使うなら <code>X_AZURE_FDID</code> 検証を実装したか</li>
+<li>[ ] <strong>WAF の exclusion 設計と例外承認</strong>を工数・スケジュールに入れたか</li>
+<li>[ ] <strong>conversation ID の所有権検証</strong>をリクエストごとに実装したか(BOLA 対策)</li>
+<li>[ ] ガードレールの 4 介入点を設計したか(Tool 系はプレビュー)</li>
+<li>[ ] <strong><code>content_filter_results</code> のエラー検出</strong>を実装したか(フェイルオープン対策)</li>
+<li>[ ] Claude を使うなら Content Safety を自前で噛ませたか</li>
+<li>[ ] AI Red Teaming を purple environment で回したか</li>
+</ul>
+<p><strong>マルチテナント</strong></p>
+<ul>
+<li>[ ] テナント分離モデルを決め、CAF の同居例外条件と照合したか</li>
+<li>[ ] ベクトルストア / インデックスの分離方式を決めたか(<strong>S3 HD は Foundry IQ 不可</strong>)</li>
+<li>[ ] hosted agent を使うなら<strong>コンテナプロトコル 2.0.0</strong>(<code>x-agent-user-id</code>)か</li>
+<li>[ ] セッションプールでの<strong>エージェント自身の保存データ</strong>をユーザー ID でキー付けしたか</li>
+<li>[ ] <strong>同時セッション 50 / サブスクリプション / リージョン</strong>の上限に対する設計を持っているか</li>
+<li>[ ] 閉域なら委任サブネットを <code>/24</code> 確保したか</li>
+</ul>
+<p><strong>キャパシティとコスト</strong></p>
+<ul>
+<li>[ ] PTU サイジングにキャッシュ率を織り込んだか</li>
+<li>[ ] PTU + Spillover + Standard のフェイルオーバーチェーンを組んだか</li>
+<li>[ ] <strong>APIM でテナント別トークンメトリクス</strong>を取る設計にしたか(Foundry 単体では粒度不足)</li>
+<li>[ ] <code>llm-token-limit</code> の <code>counter-key</code> をテナント ID にしたか</li>
+<li>[ ] <strong>ハードリミットが存在しない</strong>ことを踏まえた予算超過時の自動化を用意したか</li>
+<li>[ ] セマンティックキャッシュのキーに tenant / user / model version / prompt version を含めたか</li>
+</ul>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06. 安全性・ガードレール(Trustworthy AI)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry 機能一覧・ステ…</a><a href="01-platform-projects.html">01. プラットフォーム基盤・プロジェクト・コント…</a><a href="02-models.html">02. Foundry Models</a><a href="03-agent-service.html">03. Foundry Agent Service</a><a href="04-tools-knowledge.html">04. エージェントツール・ナレッジ</a><a href="05-observability-evaluation.html">05. オブザーバビリティ・評価</a><a href="06-safety-guardrails.html" class="current">06. 安全性・ガードレール</a><a href="07-foundry-tools.html">07. Foundry Tools</a><a href="08-developer-experience.html">08. 開発者サーフェス</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="06-安全性・ガードレール-trustworthy-ai">06. 安全性・ガードレール(Trustworthy AI)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要-ignite-2025-以降の再編">概要(Ignite 2025 以降の再編)</a></li><li><a href="#機能一覧">機能一覧</a></li><li><a href="#補足ノート">補足ノート</a></li></ul></div>
+<p><a href="index.html">← 機能一覧 TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com 現行ページ確認)</p></blockquote>
+<h2 id="概要-ignite-2025-以降の再編">概要(Ignite 2025 以降の再編)</h2>
+<p>旧「コンテンツフィルター」は「<strong>Guardrails and controls</strong>」枠組みに再編された。新ドキュメントは <a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/">guardrails</a> 配下。ガードレール=コントロールの名前付きコレクションで、各コントロールは「リスク × 介入ポイント × アクション」で定義される。</p>
+<ul>
+<li><strong>介入ポイントは4つ</strong>: User input / Tool call(プレビュー・エージェントのみ)/ Tool response(プレビュー・エージェントのみ)/ Output</li>
+<li><strong>アクションは2つ</strong>: Annotate(モデルのみ)/ Annotate and block</li>
+<li>分類器は引き続き <strong>Azure AI Content Safety</strong> のモデルを利用</li>
+<li>既定ガードレールは <strong>Microsoft.DefaultV2</strong>(編集不可。テキストは Medium 閾値、画像は Low 閾値)</li>
+<li><strong>モデル向けガードレールは Azure が販売する全 Foundry Models に適用(音声モデル除く)。エージェント向けガードレールはプレビュー</strong>で、Foundry Agent Service のエージェントのみ対象</li>
+<li>エージェントに割り当てたガードレールは、基盤モデルのガードレールを<strong>完全に上書き</strong>する</li>
+<li>REST API 上の実体は従来どおり <strong>RAI policy</strong>(ARM リソース)で、デプロイの <code>raiPolicyName</code> で割当て。リクエスト単位の上書きは <code>x-policy-id</code> ヘッダー</li>
+</ul>
+<h2 id="機能一覧">機能一覧</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>機能名</th>
+<th>説明</th>
+<th>ステータス</th>
+<th>ポータル</th>
+<th>CLI</th>
+<th>Python SDK</th>
+<th>出典</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>Guardrails and controls(枠組み)</td>
+<td>リスク検出・介入ポイント・アクションを定義するコントロールの集合をモデル/エージェントに割当てる新枠組み</td>
+<td>モデル向け: GA相当(プレビュー表記なし・既定適用)/ エージェント向け: パブリックプレビュー</td>
+<td>新ポータル: Build &gt; Guardrails(作成・割当・Playground テスト)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span>(注釈読取は OpenAI SDK 経由のみ例示)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guardrails-overview" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guardrails-overview">guardrails-overview</a></td>
+<td>REST: RAI Policies Create Or Update(ARM)。<code>x-policy-id</code> でリクエスト単位上書き可(画像入力チャットでは不可)</td>
+</tr>
+<tr>
+<td>Content filters(既定フィルター/カスタム構成)</td>
+<td>Hate・Sexual・Violence・Self-harm を Safe/Low/Medium/High の4段階重大度で検出</td>
+<td>GA相当(プレビュー表記なし)</td>
+<td>新: Build &gt; Guardrails / classic: Guardrails &amp; controls</td>
+<td><span class="badge na">記載なし</span></td>
+<td>注釈取得は OpenAI SDK(Python/JS)例あり</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/how-to-create-guardrails" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/how-to-create-guardrails">how-to-create-guardrails</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/default-safety-policies" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/default-safety-policies">default-safety-policies</a></td>
+<td>「Off」は Modified Guardrails 承認顧客のみ(申請フォーム制)。4カテゴリの user input / output コントロールは削除不可・上書きのみ可</td>
+</tr>
+<tr>
+<td>Asynchronous Filter(非同期フィルター)</td>
+<td>バッファリングなしのトークン単位ストリーミング。フィルター信号は最大約 1,000 文字遅延</td>
+<td><span class="badge ga">GA</span>(比較表に「Status: GA」明記・全顧客対象)</td>
+<td>classic のコンテンツフィルター構成画面の「Streaming」セクション</td>
+<td><span class="badge na">記載なし</span></td>
+<td>OpenAI Python SDK v1.0+ / API 2024-02-01 以降</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-streaming" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-streaming">content-streaming</a></td>
+<td>テキスト・全 GPT モデル対象。遅延フラグ分は Customer Copyright Commitment 対象外の可能性と明記</td>
+</tr>
+<tr>
+<td>Prompt Shields(直接/間接攻撃検出)</td>
+<td>ジェイルブレイク(直接)とドキュメント埋込み(間接)の攻撃検出。間接攻撃は tool response 介入ポイントにも適用可</td>
+<td>GA相当(プレビュー表記なし)。モデル・エージェント両対応</td>
+<td>新: Guardrails のリスクとして構成</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-prompt-shields" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-prompt-shields">content-filter-prompt-shields</a></td>
+<td>既定ポリシーで jailbreak はプロンプト側で有効。間接攻撃注釈は API 2024-04-01-preview 以降</td>
+</tr>
+<tr>
+<td>Spotlighting</td>
+<td>間接攻撃対策の追加層。ドキュメントを base64 変換して信頼度を下げるようタグ付け</td>
+<td><span class="badge preview">パブリックプレビュー</span>。<strong>モデルのみ(エージェント非対応)</strong></td>
+<td>Guardrails のドキュメント攻撃コントロール内トグル</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-prompt-shields" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-prompt-shields">content-filter-prompt-shields</a></td>
+<td>既定オフ。Chat Completions API のみ。トークン増によるコスト増・応答内にエンコード言及の副作用あり</td>
+</tr>
+<tr>
+<td>Groundedness detection</td>
+<td>RAG 出力がソース文書に接地しているかを検出(Non-Reasoning / Reasoning モード)</td>
+<td><span class="badge preview">パブリックプレビュー</span>。<strong>モデルのみ(エージェント非対応)</strong></td>
+<td>Guardrails のリスクとして構成可</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-groundedness" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-groundedness">content-filter-groundedness</a></td>
+<td>フィルター統合時は API 2025-01-01-preview 以降・ストリーミングのみ。英語のみ。文書デリミタ書式必須</td>
+</tr>
+<tr>
+<td>Groundedness correction</td>
+<td>非接地箇所をソースに基づき自動修正</td>
+<td><span class="badge preview">パブリックプレビュー</span></td>
+<td><span class="badge na">記載なし</span>(API 機能)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview">overview</a></td>
+<td>Content Safety API の correction オプションとして提供</td>
+</tr>
+<tr>
+<td>Protected material detection(テキスト)</td>
+<td>歌詞・記事・レシピ等の既知著作物と一致する出力を検出</td>
+<td>GA相当(プレビュー表記なし)。既定で completion 側有効</td>
+<td>Guardrails で構成</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-protected-material" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-protected-material">content-filter-protected-material</a></td>
+<td>英語のみ。歌詞 11 語超・ニュース 200 字超などの閾値</td>
+</tr>
+<tr>
+<td>Protected material detection(コード)</td>
+<td>既知 GitHub リポジトリのコードとの一致を検出、引用・ライセンス注釈を返す</td>
+<td>GA相当(プレビュー表記なし)。既定で completion 側有効</td>
+<td>Guardrails で構成</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td>同上</td>
+<td>インデックスは 2023-04-06 までのコードのみ。引用表示が CCC 適用条件になり得る</td>
+</tr>
+<tr>
+<td>Custom categories(standard / rapid)</td>
+<td>独自カテゴリの学習・定義によるカスタム検出</td>
+<td><span class="badge preview">パブリックプレビュー</span>(両方)</td>
+<td>classic: Content Safety の Try it out 相当</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview">overview</a></td>
+<td><strong>新 Foundry ガードレールのリスク一覧には未統合</strong>(スタンドアロン API のみ)。standard は英語のみ・リージョン限定</td>
+</tr>
+<tr>
+<td>PII 検出/リダクション</td>
+<td>LLM 出力内の個人情報(メール・電話・政府 ID・Azure キー等)を検出・フラグ/ブロック</td>
+<td><span class="badge preview">パブリックプレビュー</span>。モデル・エージェント両対応</td>
+<td>Guardrails のリスクとして構成</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-personal-information" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-personal-information">content-filter-personal-information</a></td>
+<td>Annotate / Annotate and Block の2モード(カテゴリ別設定可)。注釈に <code>redacted</code> フラグあり。API 2025-01-01-preview 以降</td>
+</tr>
+<tr>
+<td>Task adherence</td>
+<td>エージェントのツール呼び出しがユーザー意図と整合するかを検出、HITL エスカレーション用シグナルを返す</td>
+<td><span class="badge preview">パブリックプレビュー</span>(タイトルに明記)。モデル・エージェント両対応</td>
+<td>classic: Guardrails + controls &gt; Try it out / 新: Guardrails リスクとして構成</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span>(REST + ポータル)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/task-adherence" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/task-adherence">task-adherence</a></td>
+<td>REST: <code>contentsafety/agent:analyzeTaskAdherence</code>(2024-12-15-preview)。最大 10 万字。<strong>データが指定 Geo 外(US/EU)で処理される可能性の明記あり</strong></td>
+</tr>
+<tr>
+<td>ブロックリスト</td>
+<td>用語の完全一致/正規表現によるカスタムフィルター。プロンプト側/補完側に適用可</td>
+<td>GA相当(プレビュー表記なし)。ただし <strong>Azure OpenAI モデル限定</strong>と明記</td>
+<td>新: Build &gt; Guardrails &gt; Blocklists タブ(CSV アップロード可)</td>
+<td><code>az account get-access-token</code> のみ使用(専用コマンドなし)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/use-blocklists" title="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/use-blocklists">use-blocklists</a></td>
+<td>ARM REST(<code>raiBlocklists</code>、api-version 2024-10-01)。1リスト最大1万語・反映まで約5分。Microsoft 内蔵 profanity リストあり</td>
+</tr>
+<tr>
+<td>Azure AI Content Safety(サービス本体)</td>
+<td>有害コンテンツ検出のスタンドアロン API 群(テキスト/画像/マルチモーダル)</td>
+<td><span class="badge ga">GA</span>(サービス。個別 API にプレビュー混在)。docs 上のブランドは「Foundry Tools」配下に再配置</td>
+<td>Content Safety Studio + classic ポータルの Guardrails + controls</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(Quickstart あり)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview">overview</a></td>
+<td>ガードレールの分類器として Foundry に統合。API バージョンの 90 日非推奨ポリシーを明記</td>
+</tr>
+<tr>
+<td>Risks &amp; safety モニタリング</td>
+<td>デプロイ単位のブロック率・カテゴリ別統計と「潜在的悪用ユーザー検出」ダッシュボード</td>
+<td><span class="badge unknown">要確認</span>(ページに GA/preview 表記なし)。<strong>classic ポータル専用</strong>(「新ポータルでは利用不可」と明記)</td>
+<td>classic のみ: Models + endpoints &gt; デプロイ &gt; Monitoring</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/risks-safety-monitor" title="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/risks-safety-monitor">risks-safety-monitor</a></td>
+<td>対応リージョン: East US / Switzerland North / France Central / Sweden Central / Canada East。悪用ユーザー検出は user GUID 送信 + Azure Data Explorer(BYO ストレージ)必須</td>
+</tr>
+<tr>
+<td>Abuse monitoring(サービス側悪用監視)</td>
+<td>Microsoft 側でのコンテンツ分類+使用パターンによる悪用検出</td>
+<td>稼働中(Models sold by Azure 対象)</td>
+<td>ポータル操作なし(サービス側)</td>
+<td>—</td>
+<td>—</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/abuse-monitoring" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/abuse-monitoring">abuse-monitoring</a></td>
+<td>Risks &amp; safety ダッシュボードとは別の、Code of Conduct 執行のための仕組み</td>
+</tr>
+</tbody></table></div>
+<h2 id="補足ノート">補足ノート</h2>
+<p><strong>1. エージェント/デプロイ単位の適用と継承ルール</strong> 1つのガードレールを複数のモデルデプロイ・複数のエージェントに割当て可能。エージェントに明示割当てがない場合は基盤モデルデプロイのガードレールを継承し、明示割当てがあればモデル側設定を<strong>完全に上書き</strong>(Tool call / Tool response にコントロールがなければその経路は未スキャンになる点に注意)。Spotlighting と Groundedness はエージェント未対応で、割当てても無効化される。ガードレール処理のレイテンシは介入ポイントあたり約 50〜100ms と明記。エージェント向けのガイド付きセットアップ: <a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up">guided-set-up</a></p>
+<p><strong>2. サードパーティモデルへの適用(SI 判断上の重要点)</strong></p>
+<ul>
+<li>ガードレールが自動適用されるのは「<strong>Foundry Models sold by Azure</strong>」(Azure OpenAI、DeepSeek、Grok 等の Azure 直販モデル。Whisper 等音声モデル除く)。</li>
+<li>serverless API のパートナーモデルは Content Safety の既定フィルター(テキスト Medium)が適用され、デプロイ単位でオン/オフ可・Content Safety 料金が別課金( <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/model-catalog-content-safety" title="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/model-catalog-content-safety">model-catalog-content-safety</a> )。</li>
+<li><strong>Claude は例外</strong>: Claude モデルのページに「<strong>Foundry doesn't provide built-in content filtering for Claude models at deployment time</strong>」と明記(推論時に AI Content Safety を自分で構成する)。Claude は Anthropic 自身の安全システムに依存( <a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models">claude-models</a> )。</li>
+</ul>
+<p><strong>3. サーフェスの全体傾向</strong> 構成サーフェスは「新 Foundry ポータル(Build &gt; Guardrails)」と「REST(ARM の RAI policy / raiBlocklists)」の2本柱。<strong>Azure CLI・Python SDK 専用の管理コマンド/クラスは現行ドキュメントに記載なし</strong>(Python は注釈の読取・Content Safety データプレーン呼出しの例のみ)。Risks &amp; safety モニタリングだけは classic ポータル専用のまま新ポータル未移植という非対称がある。</p>
+<p><strong>4. ステータス表記の注意</strong> 「モデル向けガードレール枠組み」自体はプレビュー表記がなく既定で全顧客に適用されているため実質 GA 扱いだが、ページに「GA」の文言があるわけではない。Risks &amp; safety モニタリングも現行ページにライフサイクル表記がなく「要確認」とした。</p>
+</main>
+<footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

@@ -1,0 +1,41 @@
+# 07. Foundry Tools(旧 Azure AI Services)
+
+[← 機能一覧 TOP](./README.md)
+
+> **最終更新:** 2026-07-29(learn.microsoft.com 現行ページ確認)
+
+## 概要
+
+旧 Azure AI Services は「**Foundry Tools**」に正式改称済み(ページタイトル「What are Foundry Tools?」。各サービスも「Azure Speech in Foundry Tools」等に改称)。ただし**ドキュメント URL は `/azure/ai-services/` 配下に残存**している。
+
+**リソースモデル**: Foundry リソース(kind = `AIServices`)1つで、**1エンドポイント・1キーにより Azure OpenAI + Foundry Tools に到達可能**。バンドル対象として公式表に明記されているのは Content Safety / Document Intelligence / Language / Speech / Translator / Agent Service / Model Inference。Content Understanding も Foundry リソースの一部として利用可能と明記。**例外は Face(個別リソース+limited access 申請制)と Custom Translator(専用ポータル)**。
+
+## サービス別ステータス
+
+| 機能名 | 説明 | ステータス | ポータル | CLI | Python SDK | 出典 | 備考 |
+|---|---|---|---|---|---|---|---|
+| Speech(Azure Speech in Foundry Tools) | STT / TTS / 翻訳 / 話者認識。「Microsoft Foundry リソース経由で提供」と overview に明記 | GA(サービス全体) | Foundry(新)で STT / TTS / アバター / Voice Live / Speech MCP server 提供。Speech Studio も継続 | Speech CLI (spx) あり | Speech SDK あり | https://learn.microsoft.com/en-us/azure/ai-services/speech-service/overview ・ https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-features-foundry | REST API もあり。コンテナ/ソブリンクラウド対応 |
+| Voice Live API | 音声エージェント向けフルマネージド speech-to-speech 統合 API(STT+生成 AI+TTS+アバターを単一 WebSocket IF で提供) | GA相当・要確認(安定版 API `2025-10-01`・`2026-04-10` が存在〈-preview なし〉だが「GA」の明文は未発見。最新プレビューは `2026-06-01-preview`) | Foundry(新)playground あり。classic の Speech playground にも Voice Live あり | 記載なし | SDK: Python / C# は安定版、Java / JS はプレビュー(FAQ 明記) | https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live ・ https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2026-06-01-preview ・ https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-faq | 「Foundry リソースに最適化。Speech リソースでは Foundry Agent Service 統合と BYOM 不可」と明記。モデルは GPT-Realtime / GPT-5 系 / Phi 等マネージド提供。BYOM はプレビュー。MCP は Foundry(新)エージェントで対応。SIP 非対応 |
+| Fast transcription | 録音済み音声をリアルタイム超の速度で同期文字起こし | GA(プレビュー表記なし) | Foundry(新)ポータルに playground あり。**classic は非対応**(新ポータルへ誘導) | 記載なし | `azure-ai-transcription` (Python) / `Azure.AI.Speech.Transcription` (.NET) | https://learn.microsoft.com/en-us/azure/ai-services/speech-service/fast-transcription-create | REST `2025-10-15`。SDK 前提条件は「Microsoft Foundry リソース」 |
+| LLM speech | LLM 強化の transcribe / translate(fast transcription 同等の高速推論) | パブリックプレビュー(overview に「LLM speech (preview)」) | 記載なし | 記載なし | 記載なし | https://learn.microsoft.com/en-us/azure/ai-services/speech-service/overview | プロンプトチューニング可 |
+| Language(Azure Language in Foundry Tools) | NLP 全般。**「コア機能」= PII 検出・言語検出・NER・Text analytics for health のみ。CLU・要約・感情分析・QA・キーフレーズ等は「legacy capabilities」に降格** | GA(サービス)。PII 匿名化(synthetic replacement)はプレビュー。Document PII playground は Foundry で GA と明記 | 「Microsoft Foundry でほとんどの機能をノーコード利用可」と明記 | 記載なし | `azure-ai-textanalytics`(C#/Java/JS/Python) | https://learn.microsoft.com/en-us/azure/ai-services/language-service/overview | **Language MCP server(プレビュー)**が Foundry Tool Catalog に登場。**Intent Routing agent / Exact Question Answering agent(いずれもプレビュー)**のプレビルトエージェントも提供。新規開発はコア機能推奨 |
+| Translator — Text translation `2026-06-06` (GA) | **新しい LLM ベース翻訳 API**。指定 LLM の選択、adaptive custom translation、拡張パラメータ | GA(overview の機能表に「version 2026-06-06 (GA)」明記) | 記載なし(開発手段は REST のみ列挙) | 記載なし | 記載なし(REST のみ) | https://learn.microsoft.com/en-us/azure/ai-services/translator/overview | v3 からの移行ガイドあり。GPT-5.1 等の LLM を翻訳に利用可能 |
+| Translator — Text translation v3 / Document translation | 従来 NMT テキスト翻訳(v3 GA)、非同期/同期ドキュメント翻訳(GA) | GA | テキスト翻訳・同期ドキュメント翻訳は **Foundry (classic) portal** と明記 | 記載なし | Text translation SDK / Document Translation SDK あり | https://learn.microsoft.com/en-us/azure/ai-services/translator/overview | 非同期バッチは Blob Storage 必要。コンテナ対応 |
+| Adaptive custom translation (AdaptCT) | 5〜10,000 の対訳ペアで LLM 翻訳出力を実行時適応(few-shot retrieval、学習・デプロイ不要) | Playground は「GA in Foundry NextGen」、**API は「v1.0 preview」**(同一機能でサーフェスによりステータスが異なる) | Foundry(新)ポータル: Build > Models > AI Services > Azure Translator > Adaptive LLM | 記載なし | 記載なし(REST v1.0 preview) | https://learn.microsoft.com/en-us/azure/ai-services/translator/foundry/adaptive-custom-translation | Foundry リソース必須。`2026-06-06` API と組み合わせて利用 |
+| Vision — Image Analysis 4.0/3.2 | 画像からのタグ/キャプション/OCR 抽出 | 非推奨 — **2028-09-25 廃止**(overview で「Image Analysis (legacy)」「OCR (legacy)」表記) | 記載なし(移行先として Foundry のモデルを案内) | 記載なし | 記載なし | https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/overview ・ https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/migration-options | 移行先の公式推奨: OCR→Document Intelligence、顔→Face API、埋め込み→Cohere Embed (Foundry)、汎用→GPT 系 Foundry Models / Content Understanding。「2026-09-25 までに移行計画を」と記載 |
+| Face | 顔検出・認識・Liveness 検出 | GA(ただし **limited access — 申請制**)。emotion/gender 属性は廃止済み | Vision Studio を案内(Foundry ポータル統合の記載なし) | 記載なし | SDK/REST あり。Liveness SDK は別途 gated | https://learn.microsoft.com/en-us/azure/ai-services/face/overview-identity | Image Analysis 廃止後の顔系シナリオの受け皿として明示的に推奨 |
+| Document Intelligence | 文書 OCR+構造化抽出(Read / Layout / プレビルト / カスタムモデル) | GA(v4.0 `2024-11-30` が現行推奨)。REST v2.1 は 2027-09-15 EOL、v3.0 は 2029-03-30 EOL | Document Intelligence Studio(documentintelligence.ai.azure.com、Foundry ポータルとは別) | 記載なし | C#/Python/Java/JS SDK + REST | https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/overview | Foundry リソースにバンドル。「Content Understanding の一部として高精度・決定論的抽出を担う。CU は LLM 分析側」という役割分担を明記 |
+| Content Understanding | ドキュメント/画像/動画/音声のマルチモーダル理解(スキーマ定義でフィールド抽出、RAG/エージェント向け出力) | GA(API `2025-11-01`、2025年11月 Ignite)。preview API(`2024-12-01-preview` / `2025-05-01-preview`)は 2026-07-15 までに廃止。SDK は 2026年3月に GA(Python/.NET/Java/JS)。Pro mode はプレビュー系で GA に未継承 | Foundry(新)ポータル: Read/Layout 提供(2025年12月〜)+ prebuilt analyzers playground(2026年4月〜)。ただし新ポータルの「Content Understanding Tool」フル体験は「coming soon」表記。Content Understanding Studio が補完 UX | 記載なし | `azure-ai-contentunderstanding`(GA) | https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/overview ・ https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/whats-new | **Foundry リソース必須**。GA でマネージド生成モデル容量は廃止 → **必ず自分の Foundry モデルデプロイ(BYO model)を接続**(Read/Layout のみモデル不要)。Agent Framework 統合(プレビュー)、LangChain/MarkItDown 統合あり。業種別プレビルトアナライザー多数 |
+| Azure AI Content Safety(位置づけのみ) | 有害コンテンツ検出。詳細は [06-safety-guardrails](./06-safety-guardrails.md) | GA(サービス。Groundedness / custom categories / multimodal / Task adherence はプレビュー) | Content Safety Studio。Foundry では Guardrails としてモデルデプロイに統合 | 記載なし | REST/SDK あり | https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview | 90 日ルールで旧 API 版を順次廃止 |
+
+## プレイグラウンド提供状況(Foundry 新ポータル)
+
+- 中核プレイグラウンドは **Model / Agents / Images / Video(プレビュー)** の4種( https://learn.microsoft.com/en-us/azure/foundry/concepts/concept-playgrounds )。
+- Foundry Tools 系: Speech(STT/TTS/アバター/Voice Live)は新ポータル提供。Language は Foundry でノーコード試用可(Document PII playground は GA 明記)。Content Understanding は新ポータルに prebuilt analyzers playground。Translator は classic ポータル+Adaptive LLM のみ新ポータル GA。Document Intelligence と Face は Foundry 外の専用 Studio(DI Studio / Vision Studio)のまま。
+
+## 補足ノート(SI 判断に効く要点)
+
+- **世代交代が進行中**: Image Analysis→Content Understanding / Foundry Models、Document Intelligence→Content Understanding と併存(決定論的抽出は DI、LLM 分析は CU)、Language の CLU / 要約系は「legacy」化(エージェント時代は MCP server+プレビルトエージェントへ)、Translator は NMT v3→LLM ベース `2026-06-06` へ。
+- **エージェント統合の形**: 各 Foundry Tool は「MCP server / Tool Catalog / プレビルトエージェント」経由で Foundry Agent Service に接続する方向(Speech MCP server、Language MCP server、Voice Live のエージェント統合)。
+- **standard setup(BYO ストレージ)**のバリアントが Speech / Language / Vision / Content Understanding 向けにあり(Speech / Language の Storage Account オプションはプレビュー)。
+- **要確認**: Voice Live の GA 明文表記(安定版 API の存在から実質 GA と判断できるが「generally available」の文言自体は未確認。確認 URL: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-api-reference-2025-10-01 )。

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10. 移行アーキテクチャとアンチパターン集</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html" class="current">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="10-移行アーキテクチャとアンチパターン集">10. 移行アーキテクチャとアンチパターン集</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-確定済み廃止スケジュールと設計への影響">1. 確定済み廃止スケジュールと設計への影響</a></li><li><a href="#2-移行パターン別アーキテクチャ">2. 移行パターン別アーキテクチャ</a></li><li><a href="#3-アンチパターン集">3. アンチパターン集</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<p>Foundry は「GA だが足元が動いている」プラットフォームで、<strong>2026 年後半から 2027 年にかけて確定済みの廃止が集中している</strong>。新規設計であっても、廃止スケジュールを知らずに選ぶと 1 年以内に作り直しになる。本ページは (1) 既存資産からの移行アーキテクチャ、(2) 廃止期限の設計への効き方、(3) 提案時に踏みやすいアンチパターン、をまとめる。</p>
+<h2 id="1-確定済み廃止スケジュールと設計への影響">1. 確定済み廃止スケジュールと設計への影響</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>期限</th>
+<th>対象</th>
+<th>設計への効き方</th>
+<th>移行先</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>2026-08-20</strong></td>
+<td>Hosted agents 初期プレビュー基盤</td>
+<td>既にプレビュー期に構築した hosted agent は<strong>再デプロイ必須</strong>。コンテナプロトコル 1.0.0 → 2.0.0</td>
+<td>新基盤へ再デプロイ</td>
+</tr>
+<tr>
+<td><strong>2026-08-26</strong></td>
+<td>Assistants API(Azure OpenAI)</td>
+<td>Threads / Runs 前提のアプリは全面改修。<strong>状態データは自動移行されない</strong></td>
+<td>Responses API(Agents v2)</td>
+</tr>
+<tr>
+<td><strong>2026-08-26</strong></td>
+<td><code>azure-ai-inference</code> SDK</td>
+<td>全言語対象。beta のまま GA せず終了</td>
+<td>OpenAI SDK + v1 API</td>
+</tr>
+<tr>
+<td><strong>2026-12-01</strong></td>
+<td>ビジュアル Workflows</td>
+<td><strong>ポータルでマルチエージェントを組む構成が消える。</strong>長期案件で提案不可</td>
+<td>Microsoft Agent Framework(推奨)/ Logic Apps / A2A</td>
+</tr>
+<tr>
+<td><strong>2027-03-31</strong></td>
+<td>Agents (classic)(v1)</td>
+<td>classic プロジェクト上のエージェント資産</td>
+<td>Agents v2</td>
+</tr>
+<tr>
+<td><strong>2026-10 前後</strong></td>
+<td>gpt-4o / o1 / o3 / o4-mini 等</td>
+<td>モデル固定でチューニングしたプロンプトの再検証が必要</td>
+<td>gpt-5.x 系</td>
+</tr>
+<tr>
+<td><strong>2028-09-25</strong></td>
+<td>Azure AI Vision Image Analysis 4.0/3.2</td>
+<td>画像解析パイプラインの作り替え</td>
+<td>Document Intelligence / Content Understanding / Foundry Models</td>
+</tr>
+<tr>
+<td><strong>日付未公表</strong></td>
+<td>コンテナプロトコル 1.0.0</td>
+<td>猶予期間後、1.0.0 のエージェントへのリクエストが<strong>ブロックされる</strong>。2.0.0 でないと 1 セッション内の複数ユーザー多重化ができない</td>
+<td>プロトコル 2.0.0</td>
+</tr>
+<tr>
+<td><strong>日付未公表(Planned/TBD)</strong></td>
+<td>Agent Applications(旧 publishing モデル)</td>
+<td>廃止告知と EOS が予告済み。レガシー ID のエージェントは<strong>インプレース昇格不可</strong>(作り直し)</td>
+<td>新オブジェクトモデル(Agent に統合)</td>
+</tr>
+<tr>
+<td>未発表(投資停止)</td>
+<td>ハブベースプロジェクト(classic)</td>
+<td>廃止日は未発表だが新規投資は停止。<strong>新規案件で選ぶ理由はほぼない</strong></td>
+<td>Foundry プロジェクト</td>
+</tr>
+</tbody></table></div>
+<p>出典・詳細は <a href="../../features/html/index.html">features/README の重要期限表</a>。</p>
+<h3 id="設計判断への翻訳">設計判断への翻訳</h3>
+<ul>
+<li><strong>「ポータルだけで完結するマルチエージェント」を提案してはいけない。</strong> 2026-12-01 で消える。単一の Prompt agent + ツールは廃止対象外なので、そこまでで足りるかを先に確認する。</li>
+<li><strong>PTU を使うなら、モデル更改が手動である前提の運用設計を入れる。</strong> Standard は自動アップグレードされるが Provisioned は手動。リタイア通知は GA モデルで 60 日前。</li>
+<li><strong>classic(ハブベース)にしかない機能に依存すると出口がない。</strong> prompt flow、マネージドコンピュートのモデルデプロイ、serverless API デプロイ、Azure Language リソース連携、Risks &amp; safety モニタリングは classic 側にしか無い。これらが要件に入るなら、classic を選ぶ判断ではなく<strong>代替手段で要件を満たす設計</strong>を先に検討する。</li>
+</ul>
+<h2 id="2-移行パターン別アーキテクチャ">2. 移行パターン別アーキテクチャ</h2>
+<h3 id="2-0-最優先-hosted-agent-初期プレビュー基盤-新基盤-期限-2026-08-20">2.0 【最優先】Hosted agent 初期プレビュー基盤 → 新基盤(期限 2026-08-20)</h3>
+<p><strong>本ドキュメント作成時点(2026-07-29)で残り約 3 週間。</strong> 2026 年 4 月より前に <code>azure-ai-agentserver-agentframework</code> / <code>azure-ai-agentserver-langgraph</code> またはプレビュー hosting API で作った hosted agent が対象で、<strong>自動移行されない</strong>。</p>
+<p>「SDK のバージョンを上げる」レベルの話ではなく、パッケージ構成・API・エンドポイント・ID・ライフサイクル管理がまとめて変わる。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>旧(初期プレビュー)</th>
+<th>新</th>
+</tr></thead><tbody>
+<tr>
+<td>サーバーパッケージ</td>
+<td><code>azure-ai-agentserver-agentframework</code> / <code>-langgraph</code>(<strong>削除済み</strong>)</td>
+<td><code>azure-ai-agentserver-responses</code> / <code>-invocations</code></td>
+</tr>
+<tr>
+<td>MAF パッケージ</td>
+<td><code>agent-framework</code> 単一</td>
+<td><code>agent-framework-core</code> / <code>-openai</code> / <code>-foundry</code> / <code>-orchestrations</code> + <code>agent-framework-foundry-hosting</code></td>
+</tr>
+<tr>
+<td>MAF API</td>
+<td><code>AzureAIAgentClient</code> / <code>ChatAgent</code> / <code>@ai_function</code></td>
+<td><code>FoundryChatClient</code> / <code>Agent</code> / <code>@tool(approval_mode=...)</code></td>
+</tr>
+<tr>
+<td>起動</td>
+<td><code>from_agent_framework(agent).run()</code></td>
+<td><code>ResponsesHostServer(agent).run()</code></td>
+</tr>
+<tr>
+<td>ルーティング</td>
+<td>共有プロジェクトエンドポイント + <code>agent_reference</code></td>
+<td><strong>エージェント専用エンドポイント</strong>(<code>project.get_openai_client(agent_name=...)</code>)</td>
+</tr>
+<tr>
+<td>実行 ID</td>
+<td>プロジェクトのマネージド ID(共有)</td>
+<td><strong>デプロイ時に専用の Entra agent identity を自動発行</strong></td>
+</tr>
+<tr>
+<td>ライフサイクル操作</td>
+<td><code>az cognitiveservices agent start/stop</code>、min/max replicas</td>
+<td><strong>全廃</strong>(自動プロビジョン / アイドル 15 分で停止)</td>
+</tr>
+<tr>
+<td>Capability host</td>
+<td>作成が必要</td>
+<td><strong>不要</strong>(削除)</td>
+</tr>
+<tr>
+<td>プロトコルバージョン</td>
+<td><code>&quot;v1&quot;</code></td>
+<td><code>&quot;1.0.0&quot;</code>(semver)</td>
+</tr>
+<tr>
+<td>CLI</td>
+<td><code>az cognitiveservices agent</code> 拡張</td>
+<td><strong>削除</strong> → <code>az rest</code> または <code>azd ai agent</code></td>
+</tr>
+<tr>
+<td>必要ロール</td>
+<td>Foundry Owner 等</td>
+<td><strong>Foundry Project Manager</strong>(プロジェクトスコープ)</td>
+</tr>
+</tbody></table></div>
+<p><strong>さらにコンテナプロトコル 1.0.0 自体も非推奨</strong>で、猶予期間後は 1.0.0 のエージェントへのリクエストがブロックされる(廃止日は未公表)。2.0.0 では <code>x-agent-foundry-call-id</code> の転送が必要になる代わりに、<code>x-agent-user-id</code> で <strong>1 セッション内の複数ユーザー多重化</strong>が安全に行える(1.0.0 では不可)。マルチテナントで hosted agent を使うなら 2.0.0 が前提。</p>
+<p><strong>LangGraph を載せている場合の追加作業:</strong> LangGraph 専用アダプタは削除されたため、<code>ResponsesAgentServerHost</code> + <code>@app.response_handler</code> で <code>context.get_history()</code> から履歴を LangChain のメッセージ型に自分で変換する実装が要る。モデル接続も <code>AzureChatOpenAI</code> ではなく <code>ChatOpenAI(base_url=f&quot;{FOUNDRY_PROJECT_ENDPOINT}/openai/v1&quot;, use_responses_api=True)</code> に変える(プロジェクトスコープ権限だけで済むようになる)。Toolbox 接続には <code>langchain-mcp-adapters</code> + <code>mcp</code> が必要。</p>
+<h3 id="2-0b-agent-applications-旧-publishing-モデル-新オブジェクトモデル">2.0b Agent Applications(旧 publishing モデル)→ 新オブジェクトモデル</h3>
+<p>エージェントの公開まわりも世代交代している。旧モデルは Agent(データプレーン)+ <strong>Agent Application</strong>(コントロールプレーンの ARM リソース)+ Deployment の 3 階層だったが、新モデルでは <strong>Agent オブジェクトに統合</strong>され、作成時点で安定エンドポイント・プロトコル構成・エージェント ID・agent card を持つ。「creating an agent is the only step needed」。</p>
+<ul>
+<li><strong>旧 Agent Application は制約が大きい:</strong> ステートレスな <code>POST /responses</code> のみ利用可で、<code>/conversations</code>・<code>/files</code>・<code>/vector_stores</code>・<code>/containers</code> にアクセスできない。理由は「プロジェクト内の会話について、エンドユーザー間の分離をまだ強制していない」ため — <strong>会話 ID を知られると他人の履歴にアクセスできてしまう</strong>からで、恒久仕様ではなく修正中と明記されている。マルチユーザーのアプリを旧モデルで組んでいるなら、会話履歴はクライアント側で持つ必要がある。</li>
+<li><strong>レガシーエージェント(<code>agent.identity == null</code>)はインプレース昇格できない。</strong>同じ定義で新規作成し直す。</li>
+<li>廃止告知と EOS は「Planned / TBD」で日付未定。<strong>日付が出る前に移行計画を立てておくべき項目。</strong></li>
+</ul>
+<h3 id="2-1-assistants-api-agents-v1-agents-v2-responses-api">2.1 Assistants API / Agents v1 → Agents v2(Responses API)</h3>
+<pre><code>  [Before]                                  [After]
+  App ──&gt; Assistants API                    App ──&gt; Responses API
+           ├ Threads      (会話)                     ├ Conversations
+           ├ Messages     (発言)                     ├ Conversation Items
+           ├ Runs         (実行)                     ├ Responses
+           └ Assistants   (定義)                     └ Agents / Agent Versions
+
+  クライアント 1 本                          クライアント 2 本
+   (OpenAI SDK beta)                          - OpenAI クライアント(会話・実行)
+                                              - プロジェクトクライアント(定義・版管理)</code></pre>
+<p><strong>移行の実務ポイント:</strong></p>
+<ul>
+<li>公式の移行ツールはコード構造を変換するが、<strong>過去の runs / threads / messages は移行されない</strong>。会話履歴を業務上残す必要があるなら、旧 API から自前ストアへエクスポートする工程を別途設計する。</li>
+<li>新 API では「会話・実行は OpenAI クライアント、エージェント定義・バージョン管理はプロジェクトクライアント」の 2 クライアント構成になる。DI やラッパーを 1 本の抽象に寄せていた実装ほど改修範囲が広い。</li>
+<li>旧 <code>create_agent()</code> は SDK v2.0.0 で削除済み。</li>
+</ul>
+<h3 id="2-2-ビジュアル-workflows-コードファースト">2.2 ビジュアル Workflows → コードファースト</h3>
+<p>移行先は 3 つあり、<strong>「ビジュアルを維持したいか」「Foundry に閉じたいか」で選ぶ</strong>。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>移行先</th>
+<th>向く場面</th>
+<th>得るもの / 失うもの</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Microsoft Agent Framework</strong>(公式推奨)</td>
+<td>今後もエージェント中心に育てる</td>
+<td>エクスポートした YAML を宣言的ワークフローとしてほぼ持ち込める。以後 VS Code で反復。ビジュアル編集は失う(Agent Inspector で可視化は可)</td>
+</tr>
+<tr>
+<td><strong>Azure Logic Apps</strong></td>
+<td>ビジュアルデザイナーを業務部門が触る前提を維持したい</td>
+<td>デザイナーと 1,400+ コネクタを維持。Foundry エージェントはワークフローの 1 ステップに降りる</td>
+</tr>
+<tr>
+<td><strong>A2A エンドポイント</strong></td>
+<td>正式なワークフローは要らず、エージェント間の軽量な委譲で足りる</td>
+<td>疎結合。ただし v1.0 は JSONRPC・テキストのみ・ストリーミング非対応</td>
+</tr>
+</tbody></table></div>
+<p>エクスポートした workflow YAML は <strong>hosted agent としてなら実行を継続できる</strong>ため、いったん hosted agent に載せて時間を稼ぎ、その後 MAF のコードへ寄せる二段構えも取れる。</p>
+<h3 id="2-3-ハブベース-classic-foundry-プロジェクト">2.3 ハブベース(classic)→ Foundry プロジェクト</h3>
+<ul>
+<li><strong>自動移行ツールはない。</strong>新規プロジェクトを作り、接続を作り直す方式(公式ガイドの想定所要は 5〜10 分だが、これはリソース作成部分の話)。</li>
+<li>移行対象: モデルデプロイ、データファイル、fine-tuned モデル、Assistants、vector store。</li>
+<li><strong>移行対象外:</strong> プレビュー期の Agent の state、OSS モデルのデプロイ。</li>
+<li>classic に残る機能(prompt flow 等)を使っている場合は、移行ではなく<strong>機能の代替設計</strong>が必要。</li>
+</ul>
+<h3 id="2-4-azure-openai-単体-foundry-リソース">2.4 Azure OpenAI 単体 → Foundry リソース</h3>
+<p>kind を <code>OpenAI</code> → <code>AIServices</code> + <code>allowProjectManagement: true</code> に変えるアップグレードが提供されており、<strong>エンドポイント・キー・fine-tune / batch の状態を保持したまま</strong>変換できる(非破壊、ロールバック可)。</p>
+<ul>
+<li>ポータル手順は classic ポータル + Azure ポータル側。新ポータルからの手順は記載なし。</li>
+<li><strong>CMK 利用リソースは申請フォーム経由のみ。既存 Private Endpoint 付きはポータル経由不可</strong>(削除→再作成 or IaC)。</li>
+<li>Microsoft 側の自動アップグレードプログラムも走っており、<code>foundryAutoUpgrade</code> プロパティで状態確認・延期(Deferred)・ロールバックが可能。<strong>顧客に予告なく変わるものではないが、IaC 側で意図しない差分が出る可能性があるため、Terraform/Bicep の drift 検知に入れておく。</strong></li>
+</ul>
+<h3 id="2-5-既存システムへの後付け-移行というより組込み">2.5 既存システムへの後付け(移行というより組込み)</h3>
+<p>既存の業務システムに AI を足す案件では、<strong>Foundry をプラットフォームとして採用せず、モデルとツールだけ借りる</strong>構成が現実的なことが多い。</p>
+<pre><code>  [既存業務システム]                    [Foundry]
+   ┌────────────────────┐              ┌──────────────────┐
+   │ 既存の認証・認可    │              │ モデルデプロイ    │
+   │ 既存の監査ログ      │  Responses   │ ガードレール      │
+   │ 既存の業務DB        │ ─── API ───&gt; │ (File Search)     │
+   │ ┌────────────────┐ │              │ (Code Interpreter)│
+   │ │ AI オーケスト  │ │              └──────────────────┘
+   │ │ レーション(自前)│ │
+   │ └────────────────┘ │              会話状態・ツール認可・監査は
+   └────────────────────┘              すべて既存システム側に残す</code></pre>
+<p>この構成の利点は、<strong>既存の認可・監査・データ保持ポリシーをそのまま使える</strong>こと。欠点は、Foundry の Tracing / Evaluations / エージェント公開といった運用機能を使えないこと(トレースは自前 OTel 計装で App Insights に寄せれば部分的に取り戻せる)。</p>
+<h2 id="3-アンチパターン集">3. アンチパターン集</h2>
+<h3 id="a1-ポータルで全部できます-と言ってしまう">A1. 「ポータルで全部できます」と言ってしまう</h3>
+<p>ポータル(構成のみ)で本当に完結するのは、<strong>単一 Prompt agent + カタログのツール + 公開</strong>まで。分岐・ループ・リトライ・承認待ちの明示制御、ミドルウェア、ローカルテストは入らない。しかもマルチエージェントのビジュアル構成は 2026-12-01 で消える。</p>
+<p><strong>対処:</strong> 提案時に「ポータル完結の範囲」と「コードが要る範囲」を線引きした表を必ず添える。</p>
+<h3 id="a2-閉域要件を後から足す">A2. 閉域要件を後から足す</h3>
+<p>Standard setup(BYO VNet 注入)は<strong>後付け・変更が不可</strong>で、再デプロイが必要。加えて、ネットワーク分離下では Traces・Memory・Work IQ・File Search・Browser Automation・Computer Use・Image Generation 等が使えない/未対応。</p>
+<p><strong>対処:</strong> ネットワーク要件はアーキテクチャ検討の最初のゲートに置く。「閉域で使える機能一覧」から設計を始める。</p>
+<h3 id="a3-file-search-で品質が出ないまま押し切る">A3. File Search で品質が出ないまま押し切る</h3>
+<p>File Search は埋め込みモデル(text-embedding-3-large / 256 次元)もチャンク設定(800 / オーバーラップ 400)も固定。日本語の長文契約書・表主体の技術文書では、この設定が合わないことがある。</p>
+<p><strong>対処:</strong> PoC 段階で<strong>代表的な難しい文書 20〜30 件</strong>で検索品質を測り、駄目なら早期に AI Search 自前索引へ切り替える。切り替えコストは後になるほど上がる。</p>
+<h3 id="a4-claude-を選んだのにガードレール設計を変えない">A4. Claude を選んだのにガードレール設計を変えない</h3>
+<p>Claude は Foundry の組み込みコンテンツフィルターが<strong>適用されない</strong>。Anthropic 自身の安全システムに依存する形になり、Foundry の Guardrails 画面で設定しても効かない。</p>
+<p><strong>対処:</strong> Claude 採用時は Content Safety API をアプリ側で呼ぶ設計を最初から入れる。あるいはモデル選定をやり直す。</p>
+<h3 id="a5-web-search-grounding-with-bing-を規制業種で使う">A5. Web search / Grounding with Bing を規制業種で使う</h3>
+<p>いずれも <strong>DPA 対象外で、データがコンプライアンス境界の外に出る</strong>と明記されている。</p>
+<p><strong>対処:</strong> 規制業種では原則不可として扱い、必要なら社内キュレーション済みの外部情報を AI Search に取り込む方式に置き換える。</p>
+<h3 id="a6-プレビュー機能を本番の必須経路に置く">A6. プレビュー機能を本番の必須経路に置く</h3>
+<p>Memory、Monitoring ダッシュボード、エージェント向けガードレールの Tool call / Tool response 介入、A2A、Routines、Foundry IQ のポータル体験はいずれもプレビュー。プレビューは SLA がなく仕様変更もあり得る。</p>
+<p><strong>対処:</strong> Azure Policy の「Foundry model deployments must meet eligibility requirements」(<code>denyPreviewModels</code>)や、タグ <code>AZML_DISABLE_PREVIEW_FEATURE=true</code> でプレビューを組織的に抑止できる。本番サブスクリプションには入れておく。</p>
+<h3 id="a7-クォータをアプリ設計で無視する">A7. クォータをアプリ設計で無視する</h3>
+<p>Foundry のクォータはデプロイ単位。複数部門・複数アプリが 1 デプロイを共有すると、1 つの暴走が全体を止める。</p>
+<p><strong>対処:</strong> 部門・アプリ別にデプロイを分けるか、APIM のトークンレート制限で切る。429 のリトライ/バックオフはアプリ側の必須実装。</p>
+<h3 id="a8-会話状態を-foundry-に預けたまま法定保存要件を受ける">A8. 会話状態を Foundry に預けたまま法定保存要件を受ける</h3>
+<p>basic セットアップの会話は Microsoft 管理ストレージにあり、所在と保持をこちらで細かく制御できない。しかも basic → standard の切替はセットアップのやり直し。</p>
+<p><strong>対処:</strong> 保存・削除・開示の要件が見えている案件は、最初から standard(BYO Cosmos DB)か自前セッションストアを選ぶ。</p>
+<h3 id="a9-az-cli-で自動化できる前提で見積もる">A9. <code>az</code> CLI で自動化できる前提で見積もる</h3>
+<p><strong>専用の <code>az foundry</code> コマンド群は存在しない。</strong>リソース管理は <code>az cognitiveservices</code>(GA)、エージェント開発は azd 拡張(プレビュー)、それ以外の多くは「ポータル + SDK/REST のみ」でドキュメントに CLI 手順がない。</p>
+<p><strong>対処:</strong> 自動化は Bicep/Terraform(基盤)+ SDK/REST(データプレーン)前提で工数を積む。</p>
+<h3 id="a10-rbac-ロール名をスクリプトに直書きする">A10. RBAC ロール名をスクリプトに直書きする</h3>
+<p>ロール名が旧名(Azure AI User 等)から Foundry User 等へ改名ロールアウト中。ID と権限は不変。</p>
+<p><strong>対処:</strong> IaC / スクリプトではロール ID(GUID)を指定する(公式推奨)。</p>
+<h3 id="a11-ドキュメントのステータス表記を-1-ページだけ見て判断する">A11. ドキュメントのステータス表記を 1 ページだけ見て判断する</h3>
+<p>hosted agents(GA と preview の混在表記)、Trace Replay、Toolbox、Claude のライフサイクルなど、<strong>公式ページ間でステータスが食い違っている</strong>箇所が複数ある。</p>
+<p><strong>対処:</strong> <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a> を一次情報とし、モデルのリタイア日は <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule">Model retirement schedule</a> 側を採用する。</p>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Microsoft Foundry アーキテクチャ設計ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html" class="current">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<main>
+<h1 id="microsoft-foundry-アーキテクチャ設計ガイド">Microsoft Foundry アーキテクチャ設計ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント一覧">ドキュメント一覧</a></li><li><a href="#アーキテクチャ一覧">アーキテクチャ一覧</a></li><li><a href="#選定早見表-3-分で当たりをつける">選定早見表 — 3 分で当たりをつける</a></li><li><a href="#全案件に共通する前提-foundry-が-やってくれないこと">全案件に共通する前提 — Foundry が「やってくれないこと」</a></li><li><a href="#重要な期限-アーキテクチャ判断に直結するもの">重要な期限(アーキテクチャ判断に直結するもの)</a></li><li><a href="#本ドキュメント群について">本ドキュメント群について</a></li></ul></div>
+<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com / Azure Architecture Center / GitHub の現行ページを確認)/ <strong>版:</strong> 初版<br>SI の技術選定・アーキテクチャ選定基準の構築を目的に、<strong>Microsoft Foundry を使ったシステムアーキテクチャ</strong>を、インフラを含めた広い視点で整理したもの。機能単位の GA / プレビュー調査は <a href="../../features/html/index.html">features/</a> を参照。</p></blockquote>
+<h2 id="ドキュメント一覧">ドキュメント一覧</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>ドキュメント</th>
+<th>内容</th>
+<th>こんなときに読む</th>
+</tr></thead><tbody>
+<tr>
+<td>—</td>
+<td><strong>本ページ(TOP)</strong></td>
+<td>アーキテクチャ一覧・選定早見表・全案件共通の前提</td>
+<td>まずここ</td>
+</tr>
+<tr>
+<td>01</td>
+<td><a href="01-official-baselines.html">公式ベストプラクティス</a></td>
+<td>AAC リファレンスアーキテクチャ(Basic / Baseline / ALZ 版)、WAF for AI、CAF、アクセラレータ・AVM の現況</td>
+<td>提案の根拠になる公式資料を探す</td>
+</tr>
+<tr>
+<td>02</td>
+<td><a href="02-building-blocks.html">構成要素カタログ</a></td>
+<td><strong>16 レイヤーごとの「Foundry 機能を使う vs 自前実装する」全選択肢</strong></td>
+<td>個別の技術要素を比較する</td>
+</tr>
+<tr>
+<td>03</td>
+<td><a href="03-decision-guide.html">選定ガイド</a></td>
+<td>5 つの決定ゲート、デシジョンツリー、要件キーワード逆引き、提案チェックリスト</td>
+<td>何から決めればいいか分からない</td>
+</tr>
+<tr>
+<td>04</td>
+<td><a href="04-usecase-chat-rag.html">UC-A 社内ナレッジ検索・RAG</a></td>
+<td>File Search / 自前索引 / AI Search ツール / SharePoint / Foundry IQ の 5 パターン</td>
+<td>文書検索チャットを作る</td>
+</tr>
+<tr>
+<td>05</td>
+<td><a href="05-usecase-agent-automation.html">UC-B 業務自動化・マルチエージェント</a></td>
+<td>基幹連携、HITL 承認フロー、長時間プロセス、マルチエージェント、業務フロー主導</td>
+<td>エージェントに業務処理をさせる</td>
+</tr>
+<tr>
+<td>06</td>
+<td><a href="06-usecase-customer-facing.html">UC-C 顧客向け公開・マルチテナント</a></td>
+<td>WAF チューニング、BOLA 対策、テナント分離、チャージバック、大規模キャパシティ</td>
+<td>外部顧客に提供する</td>
+</tr>
+<tr>
+<td>07</td>
+<td><a href="07-usecase-regulated-edge.html">UC-D 規制業種・閉域・データ主権</a></td>
+<td>3 つの egress モデル、閉域で使えない機能一覧、CMK、Purview の限界、Gov クラウド、エッジ</td>
+<td>金融・公共・医療の案件</td>
+</tr>
+<tr>
+<td>08</td>
+<td><a href="08-usecase-specialized.html">UC-E 音声・文書処理・バッチ・M365</a></td>
+<td>Voice Live、DI と Content Understanding の使い分け、Batch、マルチモーダル、Teams 公開</td>
+<td>チャット以外の類型</td>
+</tr>
+<tr>
+<td>09</td>
+<td><a href="09-operations.html">運用アーキテクチャ</a></td>
+<td>PTU サイジング、BCDR、可観測性、評価、コスト、CI/CD</td>
+<td>本番運用を設計する</td>
+</tr>
+<tr>
+<td>10</td>
+<td><a href="10-migration-antipatterns.html">移行とアンチパターン</a></td>
+<td>確定済み廃止スケジュール、移行パターン、<strong>踏みやすい 11 のアンチパターン</strong></td>
+<td>既存資産があるとき / レビュー前</td>
+</tr>
+</tbody></table></div>
+<p><strong>人間用 HTML:</strong> <code>html/index.html</code>(Markdown が正。HTML は <code>python3 docs/survey/tools/md2html.py</code> で自動生成するので直接編集しない)</p>
+<hr>
+<h2 id="アーキテクチャ一覧">アーキテクチャ一覧</h2>
+<h3 id="公式リファレンスアーキテクチャ-microsoft-が検証済み">公式リファレンスアーキテクチャ(Microsoft が検証済み)</h3>
+<p><strong>Foundry チャット系の「リファレンスアーキテクチャ」はこの 3 本しかない。</strong>それ以外の公式ページは「ガイド」または「ソリューションアイデア」で検証レベルが下がるため、顧客提案での引用時は区別する。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>記号</th>
+<th>名称</th>
+<th>変種</th>
+<th>実装コード</th>
+<th>詳細</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>公式-A</strong></td>
+<td>Basic Microsoft Foundry Chat</td>
+<td>パブリック・単一リージョン・ゾーン冗長なし。<strong>記事自身が本番非推奨と明言</strong></td>
+<td><code>Azure-Samples/microsoft-foundry-basic</code></td>
+<td><a href="01-official-baselines.html#a-basic-poc-専用-本番非推奨と記事自身が明言">01 章</a></td>
+</tr>
+<tr>
+<td><strong>公式-B</strong></td>
+<td><strong>Baseline Microsoft Foundry Chat</strong></td>
+<td><strong>ネットワーク分離・単一リージョン・ゾーン冗長。</strong>WAF が「AI ワークロードの推奨アーキテクチャ」と名指し</td>
+<td><code>Azure-Samples/microsoft-foundry-baseline</code></td>
+<td><a href="01-official-baselines.html#b-baseline-本番の出発点-waf-が-ai-ワークロードの推奨アーキテクチャ-と名指し">01 章</a></td>
+</tr>
+<tr>
+<td><strong>公式-C</strong></td>
+<td>Baseline in an Azure Landing Zone</td>
+<td>ネットワーク分離・hub-spoke</td>
+<td><strong>記事から削除済み。</strong><code>Azure/AI-Landing-Zones</code>(Preview)または AVM を使う</td>
+<td><a href="01-official-baselines.html#c-baseline-in-azure-landing-zone-hub-spoke-版-ただしコードは記事から消えた">01 章</a></td>
+</tr>
+</tbody></table></div>
+<h3 id="想定ユースケース別アーキテクチャ">想定ユースケース別アーキテクチャ</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>ID</th>
+<th>パターン</th>
+<th>オーケストレーション</th>
+<th>RAG / ナレッジ</th>
+<th>ネットワーク</th>
+<th>主な決め手</th>
+<th>詳細</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>A1</strong></td>
+<td>部門内 FAQ チャット</td>
+<td>Prompt agent</td>
+<td>File Search</td>
+<td>パブリック</td>
+<td>速度優先。権限制御なし</td>
+<td><a href="04-usecase-chat-rag.html#a1-部門内-faq-チャット-file-search・最小構成">04</a></td>
+</tr>
+<tr>
+<td><strong>A2</strong></td>
+<td>全社ナレッジ検索(本番)</td>
+<td>Prompt / Hosted agent</td>
+<td><strong>AI Search 自前索引</strong></td>
+<td>Private Link</td>
+<td><strong>ユーザーごとに見える文書が違う</strong></td>
+<td><a href="04-usecase-chat-rag.html#a2-全社ナレッジ検索-ai-search-自前索引・本番の標準形">04</a></td>
+</tr>
+<tr>
+<td><strong>A3</strong></td>
+<td>既存 AI Search 資産の活用</td>
+<td>Prompt agent</td>
+<td>AI Search ツール直結</td>
+<td>要件次第</td>
+<td>索引設計を自分で持ち続けたい</td>
+<td><a href="04-usecase-chat-rag.html#a3-既存-ai-search-資産の活用-ai-search-ツール直結">04</a></td>
+</tr>
+<tr>
+<td><strong>A4</strong></td>
+<td>M365 / SharePoint が主データ源</td>
+<td>Prompt agent</td>
+<td>SharePoint ツール(OBO)</td>
+<td>パブリック</td>
+<td>権限透過。<strong>M365 Copilot ライセンス前提</strong></td>
+<td><a href="04-usecase-chat-rag.html#a4-m365-sharepoint-が主データソース">04</a></td>
+</tr>
+<tr>
+<td><strong>A5</strong></td>
+<td>複数ソース横断・高精度</td>
+<td>任意(MCP 経由)</td>
+<td><strong>Foundry IQ</strong>(agentic retrieval)</td>
+<td>要件次第</td>
+<td>複数エージェントでナレッジ共有</td>
+<td><a href="04-usecase-chat-rag.html#a5-複数ソース横断・高精度-foundry-iq-agentic-retrieval">04</a></td>
+</tr>
+<tr>
+<td><strong>B1</strong></td>
+<td>単一エージェント + 基幹 API</td>
+<td>Prompt agent + Toolbox</td>
+<td>補助的</td>
+<td>社内網</td>
+<td>参照系中心</td>
+<td><a href="05-usecase-agent-automation.html#b1-単一エージェント-基幹-api-参照系中心">05</a></td>
+</tr>
+<tr>
+<td><strong>B2</strong></td>
+<td><strong>承認付き業務自動化(HITL)</strong></td>
+<td><strong>MAF hosted agent</strong></td>
+<td>調査工程で使用</td>
+<td>BYO VNet</td>
+<td>「担当者が承認してから実行」</td>
+<td><a href="05-usecase-agent-automation.html#b2-承認付き業務自動化-hitl">05</a></td>
+</tr>
+<tr>
+<td><strong>B3</strong></td>
+<td>長時間・確実な再開</td>
+<td><strong>MAF + Durable Extension + DTS</strong></td>
+<td>任意</td>
+<td>任意</td>
+<td>数時間〜数日停止して再開</td>
+<td><a href="05-usecase-agent-automation.html#b3-長時間・確実な再開が要る業務プロセス">05</a></td>
+</tr>
+<tr>
+<td><strong>B4</strong></td>
+<td>マルチエージェント(専門分化)</td>
+<td>MAF workflows / A2A</td>
+<td>領域別</td>
+<td>任意</td>
+<td>領域ごとに権限を分けたい</td>
+<td><a href="05-usecase-agent-automation.html#b4-マルチエージェント-専門分化">05</a></td>
+</tr>
+<tr>
+<td><strong>B5</strong></td>
+<td>業務フローエンジン主導</td>
+<td>Logic Apps / Copilot Studio</td>
+<td>任意</td>
+<td>任意</td>
+<td>業務部門がビジュアルで保守</td>
+<td><a href="05-usecase-agent-automation.html#b5-業務フローエンジン主導-logic-apps-copilot-studio">05</a></td>
+</tr>
+<tr>
+<td><strong>C1</strong></td>
+<td>一般顧客向けチャット</td>
+<td>任意</td>
+<td>任意</td>
+<td>公開 + WAF + APIM</td>
+<td>不特定多数が使う</td>
+<td><a href="06-usecase-customer-facing.html#c1-一般顧客向けチャット-単一テナント">06</a></td>
+</tr>
+<tr>
+<td><strong>C2</strong></td>
+<td>マルチテナント SaaS</td>
+<td>Hosted agent(プロトコル 2.0.0)</td>
+<td>テナント別索引</td>
+<td>公開 + APIM</td>
+<td>複数顧客に販売する</td>
+<td><a href="06-usecase-customer-facing.html#c2-マルチテナント-saas">06</a></td>
+</tr>
+<tr>
+<td><strong>C3</strong></td>
+<td>大規模 / 複数部門への払い出し</td>
+<td>任意</td>
+<td>任意</td>
+<td>APIM 必須</td>
+<td>部門別按分・キャパシティ</td>
+<td><a href="06-usecase-customer-facing.html#c3-大規模トラフィック・複数部門への払い出し">06</a></td>
+</tr>
+<tr>
+<td><strong>D1</strong></td>
+<td>規制業種・閉域</td>
+<td>Hosted agent or 自前</td>
+<td><strong>AI Search 自前索引一択</strong></td>
+<td><strong>BYO VNet</strong></td>
+<td>閉域・監査・データ主権</td>
+<td><a href="07-usecase-regulated-edge.html">07</a></td>
+</tr>
+<tr>
+<td><strong>D2</strong></td>
+<td>ソブリン(Azure Government)</td>
+<td><strong>Prompt agent のみ</strong></td>
+<td>File Search / AI Search</td>
+<td>Gov クラウド</td>
+<td><strong>hosted agent・MCP・A2A が非対応</strong></td>
+<td><a href="07-usecase-regulated-edge.html#8-ソブリンクラウド-azure-government">07</a></td>
+</tr>
+<tr>
+<td><strong>D3</strong></td>
+<td>エッジ・オンプレ</td>
+<td>Foundry 非依存</td>
+<td>自前</td>
+<td>オフライン</td>
+<td>Foundry Local / DI コンテナ</td>
+<td><a href="07-usecase-regulated-edge.html#9-エッジ・オンプレ・ハイブリッド">07</a></td>
+</tr>
+<tr>
+<td><strong>E1</strong></td>
+<td>音声エージェント</td>
+<td>Voice Live API</td>
+<td>任意</td>
+<td>要件次第</td>
+<td>リアルタイム音声対話</td>
+<td><a href="08-usecase-specialized.html#e1-音声エージェント-コンタクトセンター">08</a></td>
+</tr>
+<tr>
+<td><strong>E2</strong></td>
+<td>文書処理・IDP</td>
+<td>非同期パイプライン</td>
+<td>DI / Content Understanding</td>
+<td>要件次第</td>
+<td>帳票・契約書の構造化抽出</td>
+<td><a href="08-usecase-specialized.html#e2-文書処理・idp-intelligent-document-processing">08</a></td>
+</tr>
+<tr>
+<td><strong>E3</strong></td>
+<td>大量バッチ処理</td>
+<td>ジョブ実行基盤</td>
+<td>不要</td>
+<td>任意</td>
+<td><strong>Batch で 50% 割引</strong></td>
+<td><a href="08-usecase-specialized.html#e3-大量バッチ処理">08</a></td>
+</tr>
+<tr>
+<td><strong>E4</strong></td>
+<td>マルチモーダル生成</td>
+<td>非同期ジョブ</td>
+<td>不要</td>
+<td>公開必須(閉域不可)</td>
+<td>画像・動画生成</td>
+<td><a href="08-usecase-specialized.html#e4-マルチモーダル生成-画像・動画">08</a></td>
+</tr>
+<tr>
+<td><strong>E5</strong></td>
+<td>M365 / Teams 連携</td>
+<td>Prompt / Hosted agent</td>
+<td>Work IQ 等</td>
+<td>要件次第</td>
+<td>業務ツール内で使わせる</td>
+<td><a href="08-usecase-specialized.html#e5-m365-teams-連携">08</a></td>
+</tr>
+</tbody></table></div>
+<h3 id="foundry-機能を使う-vs-自前実装する-の全組合せ">「Foundry 機能を使う vs 自前実装する」の全組合せ</h3>
+<p>16 レイヤーそれぞれについて <strong>M(フルマネージド)/ H(ハイブリッド)/ S(自前実装)</strong> の選択肢を <a href="02-building-blocks.html">02. 構成要素カタログ</a> に整理してある。要約は下表。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>レイヤー</th>
+<th>M(フルマネージド)</th>
+<th>H(ハイブリッド)</th>
+<th>S(自前実装)</th>
+<th>迷ったら</th>
+</tr></thead><tbody>
+<tr>
+<td>L1</td>
+<td>モデル提供</td>
+<td>Foundry モデルデプロイ</td>
+<td>Foundry + APIM ゲートウェイ</td>
+<td>他クラウド / セルフホスト</td>
+<td>M</td>
+</tr>
+<tr>
+<td>L2</td>
+<td>オーケストレーション</td>
+<td>Prompt agent / Workflows(廃止予定)</td>
+<td>Hosted agent(MAF・LangGraph)</td>
+<td>自アプリ + Responses API</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L3</td>
+<td>会話状態</td>
+<td>Agent Service の Conversations</td>
+<td>standard setup の BYO Cosmos DB</td>
+<td>自前 DB</td>
+<td>M→S</td>
+</tr>
+<tr>
+<td>L4</td>
+<td>長期記憶</td>
+<td>Foundry Memory(プレビュー)</td>
+<td>Memory + 自前フィルタ</td>
+<td>自前サマライズ + ベクトル検索</td>
+<td>S(本番)</td>
+</tr>
+<tr>
+<td>L5</td>
+<td>ナレッジ / RAG</td>
+<td>File Search / Foundry IQ</td>
+<td>AI Search ツール + 自前索引</td>
+<td>自前パイプライン + 任意ベクトル DB</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L6</td>
+<td>ツール実行</td>
+<td>ツールカタログ / MCP / OpenAPI</td>
+<td>Toolbox + 自前 MCP サーバー</td>
+<td>アプリ内 function calling</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L7</td>
+<td>コード実行</td>
+<td>Code Interpreter</td>
+<td>Custom Code Interpreter</td>
+<td>ACA dynamic sessions 直</td>
+<td>M</td>
+</tr>
+<tr>
+<td>L8</td>
+<td>ガードレール</td>
+<td>Guardrails(既定 DefaultV2)</td>
+<td>カスタムガードレール</td>
+<td>Content Safety API を自前で呼ぶ</td>
+<td>M+S 併用</td>
+</tr>
+<tr>
+<td>L9</td>
+<td>ID・認可</td>
+<td>Foundry RBAC + Entra</td>
+<td>OBO / Agent identity</td>
+<td>自前認可基盤</td>
+<td>M</td>
+</tr>
+<tr>
+<td>L10</td>
+<td>ネットワーク</td>
+<td>パブリック + Private Link</td>
+<td>BYO VNet 注入</td>
+<td>自前 VNet に全部置く</td>
+<td>要件次第</td>
+</tr>
+<tr>
+<td>L11</td>
+<td>ゲートウェイ</td>
+<td>Foundry のクォータのみ</td>
+<td><strong>APIM AI ゲートウェイ</strong></td>
+<td>自前プロキシ</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L12</td>
+<td>可観測性</td>
+<td>Foundry Tracing + Monitor</td>
+<td>OTel 自前計装 → App Insights</td>
+<td>自前ログ基盤</td>
+<td>M+H</td>
+</tr>
+<tr>
+<td>L13</td>
+<td>評価</td>
+<td>Foundry Evaluations</td>
+<td>evals API を CI から呼ぶ</td>
+<td>自前評価ハーネス</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L14</td>
+<td>UI・チャネル</td>
+<td>Teams / M365 公開</td>
+<td>自作 Web + Responses API</td>
+<td>既存システムに組込み</td>
+<td>要件次第</td>
+</tr>
+<tr>
+<td>L15</td>
+<td>実行基盤</td>
+<td>Hosted agents</td>
+<td>Container Apps / App Service</td>
+<td>AKS / オンプレ</td>
+<td>H</td>
+</tr>
+<tr>
+<td>L16</td>
+<td>IaC・CI/CD</td>
+<td>ポータル手動</td>
+<td>Bicep / Terraform + azd</td>
+<td>既存 IaC 基盤に統合</td>
+<td>S</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="選定早見表-3-分で当たりをつける">選定早見表 — 3 分で当たりをつける</h2>
+<p><strong>決定は後戻りコストの大きい順に閉じていく</strong>(詳細は <a href="03-decision-guide.html">03. 選定ガイド</a>)。</p>
+<pre><code> G1 データ・規制ゲート   「そのデータを、どこで、誰に処理させてよいか」
+        │                → モデル・デプロイタイプ・外部ツール可否が決まる
+        ▼
+ G2 ネットワークゲート   「閉域か、パブリックか」
+        │                → 使える Foundry 機能の一覧が決まる（後付け不可）
+        ▼
+ G3 制御ゲート           「明示的な状態遷移・承認・再開が要るか」
+        │                → ポータル完結か、コードファーストかが決まる
+        ▼
+ G4 統合ゲート           「既存システムとの主従はどちらか」
+        │                → プラットフォームとして使うか、部品として使うか
+        ▼
+ G5 ライフサイクルゲート 「いつまで、誰が保守するか」
+                         → プレビュー機能の可否・IaC の作り込み度が決まる</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>要件の言葉</th>
+<th>当たりをつけるパターン</th>
+</tr></thead><tbody>
+<tr>
+<td>「社内文書を検索して答える」</td>
+<td><strong>A1</strong> で PoC → 品質が出なければ <strong>A2</strong></td>
+</tr>
+<tr>
+<td>「部署によって見える文書が違う」</td>
+<td><strong>A2</strong>(AI Search + セキュリティフィルタ。GA 要件を満たす唯一の方式)</td>
+</tr>
+<tr>
+<td>「担当者の承認を経て実行」</td>
+<td><strong>B2</strong>(MAF hosted agent)。承認待ちが数日なら <strong>B3</strong></td>
+</tr>
+<tr>
+<td>「複数のエージェントが協調する」</td>
+<td><strong>B4</strong>。<strong>ポータルのビジュアル Workflows は 2026-12-01 廃止なので選ばない</strong></td>
+</tr>
+<tr>
+<td>「顧客向けに公開する」</td>
+<td><strong>C1</strong>。WAF チューニングと BOLA 対策を工数に入れる</td>
+</tr>
+<tr>
+<td>「複数のお客様に SaaS として提供」</td>
+<td><strong>C2</strong>。<strong>APIM が事実上必須</strong>(テナント別メータリング)</td>
+</tr>
+<tr>
+<td>「閉域で運用する」</td>
+<td><strong>D1</strong>。<strong>まず「閉域で使えない機能の一覧」から設計を始める</strong></td>
+</tr>
+<tr>
+<td>「日本国内でデータ処理を完結」</td>
+<td><code>Standard</code>(リージョナル)または <code>ProvisionedManaged</code>。<strong>APAC Data Zone は日本以外も含むので不可</strong></td>
+</tr>
+<tr>
+<td>「音声で対話したい」</td>
+<td><strong>E1</strong>(Voice Live)。<strong>SIP 非対応</strong>、ガードレール非適用に注意</td>
+</tr>
+<tr>
+<td>「請求書を読み取って」</td>
+<td><strong>E2</strong>。定型帳票は DI プリビルト、非定型は Content Understanding</td>
+</tr>
+<tr>
+<td>「月間 N 万件を処理」</td>
+<td><strong>E3</strong>(Batch で 50% 割引)+ <a href="09-operations.html">09 章</a>の PTU サイジング</td>
+</tr>
+<tr>
+<td>「既存システムに組み込む」</td>
+<td>オーケストレーションは自前(L2 の S)。<strong>Foundry の運用機能は使えなくなる</strong></td>
+</tr>
+<tr>
+<td>「マルチクラウド / ロックイン回避」</td>
+<td>Foundry はモデル供給元として使い、抽象レイヤーを自前で持つ</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="全案件に共通する前提-foundry-が-やってくれないこと">全案件に共通する前提 — Foundry が「やってくれないこと」</h2>
+<p><strong>提案時に必ず顧客と合意しておく項目。</strong>個別の詳細は各章に散っているが、頻度と影響の大きい順に並べる。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>Foundry がやってくれないこと</th>
+<th>誰が埋めるか</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td><strong>リージョン間の自動フェイルオーバー・DR。</strong>Agent Service は状態のレプリケーション / バックアップ / PITR のいずれも持たず、「復旧は再構築で行う」</td>
+<td>アプリ層でのルーティング + Cosmos DB 継続バックアップ + 再構築パイプライン(<a href="09-operations.html#2-信頼性・bcdr">09</a>)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>会話に対するユーザー単位の認可。</strong>conversation ID を渡せば誰の会話でも読める(BOLA)</td>
+<td>アプリ側で所有権をリクエストごとに検証(<a href="06-usecase-customer-facing.html#会話-id-の認可-bola-脆弱性">06</a>)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>エージェントの blue-green / canary。</strong>組み込みサポートがない</td>
+<td>APIM 等のルーティング層を自前で用意(<a href="09-operations.html#6-3-エージェントのバージョニングとリリース">09</a>)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>モデルデプロイのラウンドロビン・サーキットブレーカー</strong></td>
+<td>APIM のバックエンドプール + circuit breaker</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>部門別・テナント別のトークン計測と課金按分</strong>(クォータはデプロイ単位、<code>project</code> タグはプレビューかつ Marketplace モデル非対応)</td>
+<td>APIM の <code>llm-emit-token-metric</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>コストのハードリミット。</strong>「Azure OpenAI には現状その機能がない」</td>
+<td>予算アラート + 自作の自動化</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>プロジェクト内のエージェント単位のアクセス制御。</strong><code>Foundry User</code> を持てばプロジェクト内の全エージェントと対話できる</td>
+<td>アプリの認証認可層、または hosted agent の Entra Agent ID</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong><code>max_output_tokens</code> / <code>truncation</code> によるトークン制御。</strong>「self-hosted orchestration でしか実現できない」</td>
+<td>自前オーケストレーション</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>閉域での Traces / Memory / File Search / Work IQ / Logic Apps / Browser Automation / Computer Use / Image Generation</strong></td>
+<td>自前実装または機能除外(<a href="07-usecase-regulated-edge.html#3-閉域で使えない機能の一覧-設計の出発点">07</a>)</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Claude モデルへのコンテンツフィルター</strong>(組込みフィルターが適用されない)</td>
+<td>APIM の <code>llm-content-safety</code> かアプリ層で Content Safety を呼ぶ</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>音声モデルへのガードレール</strong>(Whisper 等には適用されない)</td>
+<td>テキスト化後の経路で Content Safety</td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>capabilityHost の更新。</strong>作成後は変更不可でプロジェクト再作成が必要</td>
+<td>IaC を「作り直し前提」で設計</td>
+</tr>
+</tbody></table></div>
+<p><strong>加えて、コンテンツフィルターは「フェイルオープン」する。</strong>フィルタリングシステムが利用不能な場合、リクエストはフィルタリングなしで HTTP 200 で完了する。<code>content_filter_results</code> 内のエラーオブジェクトでしか判別できないため、<strong>規制業種では <code>finish_reason</code> と <code>content_filter_results</code> の検証を必須実装にする。</strong></p>
+<hr>
+<h2 id="重要な期限-アーキテクチャ判断に直結するもの">重要な期限(アーキテクチャ判断に直結するもの)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>期限</th>
+<th>対象</th>
+<th>設計への効き方</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>2026-08-20</strong></td>
+<td>Hosted agents 初期プレビュー基盤</td>
+<td><strong>自動移行されない。</strong>パッケージ・API・エンドポイント・ID・ライフサイクル管理がまとめて変わる(<a href="10-migration-antipatterns.html#2-0-最優先-hosted-agent-初期プレビュー基盤-新基盤-期限-2026-08-20">10 章 2.0</a>)</td>
+</tr>
+<tr>
+<td><strong>2026-08-26</strong></td>
+<td>Assistants API / <code>azure-ai-inference</code> SDK</td>
+<td>Threads / Runs 前提のアプリは全面改修。<strong>状態データは移行されない</strong></td>
+</tr>
+<tr>
+<td><strong>2026-12-01</strong></td>
+<td>ビジュアル Workflows</td>
+<td><strong>ポータルでマルチエージェントを組む構成が消える。</strong>長期案件で提案不可</td>
+</tr>
+<tr>
+<td><strong>2027-03-31</strong></td>
+<td>Agents (classic)(v1)</td>
+<td>classic プロジェクト上のエージェント資産</td>
+</tr>
+<tr>
+<td><strong>2027-04-20</strong></td>
+<td>prompt flow</td>
+<td><strong>新規開発に非推奨。</strong>Microsoft Agent Framework への移行を明示要求</td>
+</tr>
+<tr>
+<td><strong>2028-09-25</strong></td>
+<td>Azure AI Vision Image Analysis</td>
+<td>「2026-09-25 までに移行計画を」と記載</td>
+</tr>
+<tr>
+<td>日付未公表</td>
+<td>コンテナプロトコル 1.0.0 / Agent Applications</td>
+<td>猶予期間後にブロックされる / 廃止告知が予告済み</td>
+</tr>
+</tbody></table></div>
+<p>全体表は <a href="10-migration-antipatterns.html#1-確定済み廃止スケジュールと設計への影響">10 章</a>と <a href="../../features/html/index.html">features/README</a> を参照。</p>
+<hr>
+<h2 id="本ドキュメント群について">本ドキュメント群について</h2>
+<ul>
+<li><strong>正(マスター)は Markdown</strong>(生成 AI 用)。人間用 HTML は <code>docs/survey/tools/md2html.py</code> で <code>html/</code> 配下に自動生成する。<strong>HTML を直接編集しない。</strong></li>
+<li>公式ドキュメントに書かれている事実と、本ドキュメントの判断・推測を区別して書いている。<strong>公式に書かれていない判断には「本ドキュメントの判断」と明記</strong>している。</li>
+<li><strong>公式ドキュメント間で記述が食い違っている箇所</strong>(Data Zone の APAC 記載漏れ、hosted agents の GA / preview 表記、Reservation の交換可否など)は、その旨を併記している。</li>
+<li><strong>リンク切れ・削除済みリソース</strong>(ALZ 版 baseline の実装リポジトリなど)も、探して見つからないことに時間を使わないよう明記している。</li>
+</ul>
+<h3 id="更新運用">更新運用</h3>
+<p><strong>推奨頻度:</strong> 四半期に 1 回。Ignite(11 月)・Build(5 月)直後は必ず更新。<a href="../../features/html/index.html">features/</a> の月次更新とは別サイクルでよい(アーキテクチャの骨格は機能ステータスより変化が遅いため)。</p>
+<p><strong>更新時のウォッチリスト:</strong></p>
+<ol>
+<li><a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/ai-get-started">Azure Architecture Center の AI アーキテクチャ索引</a> — リファレンスアーキテクチャの追加・改称</li>
+<li><a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/architecture/baseline-microsoft-foundry-chat">Baseline Microsoft Foundry Chat</a> — 本ガイドの土台。<code>ms.date</code> の変化を追う</li>
+<li><a href="https://learn.microsoft.com/en-us/azure/well-architected/ai/get-started">WAF for AI workloads</a> — 特に <code>ai/architecture-pattern</code> と <code>ai/application-design</code></li>
+<li><a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai/platform/ai-platform-sharing-isolation-colocation">CAF AI Platform Sharing</a> — リソース粒度の一次資料</li>
+<li><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/limits-quotas-regions">Agent Service の limits / quotas / regions</a> — 上限値とリージョン対応</li>
+<li><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link">Private Link 構成</a> — <strong>閉域で使えない機能の一覧が更新される</strong></li>
+<li><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a> — GA / プレビューの一次情報</li>
+<li><a href="https://github.com/Azure/AI-Landing-Zones"><code>Azure/AI-Landing-Zones</code></a> — Preview から GA への昇格を追う</li>
+<li><a href="https://github.com/microsoft-foundry/foundry-samples"><code>microsoft-foundry/foundry-samples</code></a> — Bicep テンプレートの追加</li>
+</ol>
+<p><strong>HTML の再生成:</strong> リポジトリルートで <code>python3 docs/survey/tools/md2html.py</code>(引数なしで features と architecture の両方をビルド)。</p>
+<h3 id="更新履歴">更新履歴</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-07-29</td>
+<td>初版作成(全 10 章)。⚠ 08 章(特化ユースケース)は調査が不完全で、音声・マルチモーダル生成の裏取りが薄い</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>
