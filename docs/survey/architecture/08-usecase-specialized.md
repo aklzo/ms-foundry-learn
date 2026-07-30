@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-29
+> **最終更新:** 2026-07-30(Voice Live のライフサイクルを GA 一覧表の表記〈Preview〉に整合)
 
 チャット / RAG / 業務自動化に収まらない類型をまとめる。共通するのは、**Foundry Agent Service の外側にある Foundry Tools(旧 Azure AI Services)やモデル固有の API が主役になる**点で、エージェント中心の設計論がそのままは当てはまらない。
 
@@ -34,16 +34,18 @@
 | 会話品質 | ノイズ抑制、エコーキャンセル、**日本語対応のセマンティック VAD**、フィラー除去、barge-in(割り込み)、auto-truncate |
 | ツール | function calling(同期 / 非同期)、**MCP**、VoiceRAG パターン |
 
-### ⚠ ライフサイクル: GA の明文がない
+### ⚠ ライフサイクル: プレビュー(GA 一覧表で決着。ただし表記の不一致あり)
 
-**「generally available」と書かれた公式ページは見つからなかった。**ただしプレビューバナーも無く、安定版 API(`2025-10-01` / `2026-04-10`)が存在し、課金は 2025-07-01 に開始されている。
+**[GA 一覧表](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability)に「Build > Agents — Voice Live = Preview」と明記されている**(2026-07-30 確認)。**提案では Preview として扱う。**
 
-一方で**個別機能には明示的なプレビュー表記がある**(これが逆説的に「コアは非プレビュー扱い」の傍証になる):
+一方で Voice Live 自身のページには preview バナーも GA 宣言も無く、安定版 API(`2025-10-01` / `2026-04-10`)が存在し、課金は 2025-07-01 に開始されている — **ドキュメント間で表記が一致していない。**SLA を論点にする案件では Microsoft への個別確認が必要。
 
-- **WebRTC 接続は明確にパブリックプレビュー**(SLA なし・本番非推奨の標準免責文つき)
-- `phi4-mm-realtime` / `phi4-mini`、`mai-transcribe`、`MAI-Voice-2-Flash`、BYOM の Anthropic プロファイル、auto-truncation、評価機能もプレビュー
+個別機能で明示的にプレビューなのは:
 
-> **提案書に「GA」と書くなら Microsoft に確認する。**本番設計では **WebRTC を外し WebSocket に寄せる**のが安全。
+- **WebRTC 接続**(SLA なし・本番非推奨の標準免責文つき)
+- `phi4-mm-realtime` / `phi4-mini`、`mai-transcribe`、`MAI-Voice-2-Flash`、BYOM の Anthropic プロファイル、auto-truncation、評価機能
+
+> 本番設計では **WebRTC を外し WebSocket に寄せる**のが安全。
 
 ### 接続モデル
 
@@ -153,7 +155,7 @@ FAQ に明記されている:
 
 ### E1 のチェックリスト
 
-- [ ] Voice Live の GA ステータスを Microsoft に確認したか(SLA を論点にする案件)
+- [ ] Voice Live を**プレビュー前提**で扱っているか(GA 一覧表の表記。SLA を論点にするなら表記不一致について Microsoft に確認)
 - [ ] WebRTC(プレビュー)を本番設計から外したか
 - [ ] **Japan East でネイティブ speech-to-speech が使えない**前提で構成を組んだか
 - [ ] 同時コール数から必要 NCPM を逆算し(TPM = NCPM × 4,000)、増枠申請の要否を判断したか
@@ -568,7 +570,7 @@ M365 Copilot / Teams / パートナープラットフォーム / 独自アプリ
 
 | 項目 | 状況 |
 |---|---|
-| **Voice Live の GA 明文** | プレビューバナーも GA 宣言も無い。安定版 API の存在と課金開始から実質 GA と読めるが、断定できない |
+| ~~Voice Live の GA 明文~~ **解決(2026-07-30)** | GA 一覧表に「Agents — Voice Live = **Preview**」と明記。ただし Voice Live 自身のページには preview バナーが無く、表記の不一致は残る |
 | **Voice Live 固有のレイテンシ SLO** | 数値目標の記載なし。AOAI Realtime の接続方式比較(WebRTC 約 100ms / WebSocket 約 200ms)が唯一の参考値 |
 | **Voice Live のコンテンツフィルタの詳細** | 「含まれる」「変更・無効化不可」は明記。**カテゴリ・しきい値・音声への適用範囲・注釈の返却有無は不明** |
 | **Voice Live の TPM** | FAQ が 100,000、クォータページが 120,000 で不一致 |

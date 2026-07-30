@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="08-ユースケース編-e-音声・文書処理-idp-・大量バッチ・マルチモーダル・m365-連携">08. ユースケース編 E — 音声・文書処理(IDP)・大量バッチ・マルチモーダル・M365 連携</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</a></li><li><a href="#e2-文書処理・idp-intelligent-document-processing">E2. 文書処理・IDP(Intelligent Document Processing)</a></li><li><a href="#e3-大量バッチ処理">E3. 大量バッチ処理</a></li><li><a href="#e4-マルチモーダル生成-画像・動画">E4. マルチモーダル生成(画像・動画)</a></li><li><a href="#e5-m365-teams-連携">E5. M365 / Teams 連携</a></li><li><a href="#e6-ファインチューニング-モデルカスタマイズの運用">E6. ファインチューニング / モデルカスタマイズの運用</a></li><li><a href="#この章で-公式に確認できなかった-もの">この章で「公式に確認できなかった」もの</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(Voice Live のライフサイクルを GA 一覧表の表記〈Preview〉に整合)</p></blockquote>
 <p>チャット / RAG / 業務自動化に収まらない類型をまとめる。共通するのは、<strong>Foundry Agent Service の外側にある Foundry Tools(旧 Azure AI Services)やモデル固有の API が主役になる</strong>点で、エージェント中心の設計論がそのままは当てはまらない。</p>
 <h2 id="パターン一覧">パターン一覧</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -166,14 +166,15 @@ footer {
 <td>function calling(同期 / 非同期)、<strong>MCP</strong>、VoiceRAG パターン</td>
 </tr>
 </tbody></table></div>
-<h3 id="ライフサイクル-ga-の明文がない">⚠ ライフサイクル: GA の明文がない</h3>
-<p><strong>「generally available」と書かれた公式ページは見つからなかった。</strong>ただしプレビューバナーも無く、安定版 API(<code>2025-10-01</code> / <code>2026-04-10</code>)が存在し、課金は 2025-07-01 に開始されている。</p>
-<p>一方で<strong>個別機能には明示的なプレビュー表記がある</strong>(これが逆説的に「コアは非プレビュー扱い」の傍証になる):</p>
+<h3 id="ライフサイクル-プレビュー-ga-一覧表で決着-ただし表記の不一致あり">⚠ ライフサイクル: プレビュー(GA 一覧表で決着。ただし表記の不一致あり)</h3>
+<p><strong><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">GA 一覧表</a>に「Build &gt; Agents — Voice Live = Preview」と明記されている</strong>(2026-07-30 確認)。<strong>提案では Preview として扱う。</strong></p>
+<p>一方で Voice Live 自身のページには preview バナーも GA 宣言も無く、安定版 API(<code>2025-10-01</code> / <code>2026-04-10</code>)が存在し、課金は 2025-07-01 に開始されている — <strong>ドキュメント間で表記が一致していない。</strong>SLA を論点にする案件では Microsoft への個別確認が必要。</p>
+<p>個別機能で明示的にプレビューなのは:</p>
 <ul>
-<li><strong>WebRTC 接続は明確にパブリックプレビュー</strong>(SLA なし・本番非推奨の標準免責文つき)</li>
-<li><code>phi4-mm-realtime</code> / <code>phi4-mini</code>、<code>mai-transcribe</code>、<code>MAI-Voice-2-Flash</code>、BYOM の Anthropic プロファイル、auto-truncation、評価機能もプレビュー</li>
+<li><strong>WebRTC 接続</strong>(SLA なし・本番非推奨の標準免責文つき)</li>
+<li><code>phi4-mm-realtime</code> / <code>phi4-mini</code>、<code>mai-transcribe</code>、<code>MAI-Voice-2-Flash</code>、BYOM の Anthropic プロファイル、auto-truncation、評価機能</li>
 </ul>
-<blockquote><p><strong>提案書に「GA」と書くなら Microsoft に確認する。</strong>本番設計では <strong>WebRTC を外し WebSocket に寄せる</strong>のが安全。</p></blockquote>
+<blockquote><p>本番設計では <strong>WebRTC を外し WebSocket に寄せる</strong>のが安全。</p></blockquote>
 <h3 id="接続モデル">接続モデル</h3>
 <div class="tablewrap"><table><thead><tr>
 <th>方式</th>
@@ -320,7 +321,7 @@ footer {
 <p><strong>→ 金融・医療など独自ポリシーが必要な案件は BYOM が前提</strong>(= Foundry リソース必須。Azure Speech リソースでは不可)。BYOM は 3 プロファイル(Azure OpenAI realtime / Azure OpenAI chat completion / Anthropic messages〈プレビュー〉)があり、公式のユースケースとして「<strong>自分の LLM にカスタマイズしたコンテンツセーフティ構成を適用する</strong>」「PTU を使う」「ファインチューン済みモデルを使う」が挙げられている。<strong>BYOM ページは「レイテンシ削減のためフィルタを非同期モードにせよ」と推奨している。</strong></p>
 <h3 id="e1-のチェックリスト">E1 のチェックリスト</h3>
 <ul>
-<li>[ ] Voice Live の GA ステータスを Microsoft に確認したか(SLA を論点にする案件)</li>
+<li>[ ] Voice Live を<strong>プレビュー前提</strong>で扱っているか(GA 一覧表の表記。SLA を論点にするなら表記不一致について Microsoft に確認)</li>
 <li>[ ] WebRTC(プレビュー)を本番設計から外したか</li>
 <li>[ ] <strong>Japan East でネイティブ speech-to-speech が使えない</strong>前提で構成を組んだか</li>
 <li>[ ] 同時コール数から必要 NCPM を逆算し(TPM = NCPM × 4,000)、増枠申請の要否を判断したか</li>
@@ -893,8 +894,8 @@ footer {
 <th>状況</th>
 </tr></thead><tbody>
 <tr>
-<td><strong>Voice Live の GA 明文</strong></td>
-<td>プレビューバナーも GA 宣言も無い。安定版 API の存在と課金開始から実質 GA と読めるが、断定できない</td>
+<td>~~Voice Live の GA 明文~~ <strong>解決(2026-07-30)</strong></td>
+<td><span class="badge ga">GA</span> 一覧表に「Agents — Voice Live = <strong>Preview</strong>」と明記。ただし Voice Live 自身のページには preview バナーが無く、表記の不一致は残る</td>
 </tr>
 <tr>
 <td><strong>Voice Live 固有のレイテンシ SLO</strong></td>
