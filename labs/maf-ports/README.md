@@ -16,8 +16,8 @@
 
 | # | ポート | 元 | パターン | 実装 | オフラインテスト | Bicep | ライブスモーク | 学び記録 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 共有基盤 | — | — | Bicep 済(build 検証済) | — | 済 | **未デプロイ** | — |
-| 1 | trend-analysis | starter/ai_startup_trend_analysis_agent | 逐次WF | — | — | — | — | — |
+| 0 | 共有基盤 | — | — | — | — | 済 | **デプロイ済**(rg-maf-ports / gpt-5.4-mini / 疎通確認済) | — |
+| 1 | trend-analysis | starter/ai_startup_trend_analysis_agent | 逐次WF | 済 | 済(9件) | 済 | 済(3段完走+トレース) | [済](./ports/trend-analysis/README.md) |
 | 2 | mixture-of-agents | starter/mixture_of_agents | 並列+集約 | — | — | — | — | — |
 | 3 | research-handoff | starter/openai_research_agent | handoff | — | — | — | — | — |
 | 4 | corrective-rag | rag/corrective_rag | 補正ループ+AI Search | — | — | — | — | — |

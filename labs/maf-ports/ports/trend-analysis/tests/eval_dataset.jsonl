@@ -1,0 +1,6 @@
+{"topic": "AI agent developer tools", "expected_traits": ["mentions concrete companies or products", "identifies at least 3 trends", "startup ideas name a target user"]}
+{"topic": "climate tech for buildings", "expected_traits": ["evidence cited from summaries", "opportunities are sector-specific", "risks section present"]}
+{"topic": "healthcare AI in Japan", "expected_traits": ["regulatory context appears in risks", "trends grounded in articles, not generic"]}
+{"topic": "developer productivity SaaS", "expected_traits": ["distinguishes trends from fads", "ideas are actionable for a small team"]}
+{"topic": "robotics foundation models", "expected_traits": ["technical trends named", "opportunities separate hardware vs software"]}
+{"topic": "fintech compliance automation", "expected_traits": ["mentions specific regulation or standard", "risks include false-positive costs"]}
