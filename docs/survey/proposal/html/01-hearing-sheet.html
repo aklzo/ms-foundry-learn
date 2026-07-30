@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01. 要件ヒアリングシート(質問 → 構成への分岐)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html" class="current">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="01-要件ヒアリングシート-質問-構成への分岐">01. 要件ヒアリングシート(質問 → 構成への分岐)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#使い方">使い方</a></li><li><a href="#phase-0-前提確認-5分">Phase 0: 前提確認(5分)</a></li><li><a href="#phase-1-業務・目的-10分">Phase 1: 業務・目的(10分)</a></li><li><a href="#phase-2-データ-15分">Phase 2: データ(15分)</a></li><li><a href="#phase-3-ユーザー・規模・sla-10分">Phase 3: ユーザー・規模・SLA(10分)</a></li><li><a href="#phase-4-セキュリティ・規制-15分">Phase 4: セキュリティ・規制(15分)</a></li><li><a href="#phase-5-既存資産・統合先-10分">Phase 5: 既存資産・統合先(10分)</a></li><li><a href="#phase-6-運用体制・スキル-10分">Phase 6: 運用体制・スキル(10分)</a></li><li><a href="#phase-7-予算・スケジュール・リスク許容度-5分">Phase 7: 予算・スケジュール・リスク許容度(5分)</a></li><li><a href="#回答-構成クイックマップ">回答 → 構成クイックマップ</a></li><li><a href="#ヒアリング後のアウトプット-提案までの-todo">ヒアリング後のアウトプット(提案までの ToDo)</a></li></ul></div>
+<p><a href="index.html">← 提案実務ガイド TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31<br>初回〜2回目のヒアリング(60〜90分)を想定。各質問に「なぜ聞くか」と「回答が構成に与える影響」を付けてある。<strong>回答をこのシートに沿って埋めると、<a href="../../architecture/html/index.html">architecture のユースケース型</a>のどれかに落ちる</strong>ように設計している。</p></blockquote>
+<h2 id="使い方">使い方</h2>
+<ul>
+<li>Phase 0〜7 を順に聞く。全部で 30 問前後だが、Phase 1 の回答で無関係な Phase は飛ばせる。</li>
+<li><strong>太字の質問は「聞き漏らすと提案後に手戻りが発生する」地雷質問</strong>。時間がなければ太字だけでも埋める。</li>
+<li>末尾の「回答 → 構成クイックマップ」で構成候補とリスク一覧に変換する。</li>
+</ul>
+<h2 id="phase-0-前提確認-5分">Phase 0: 前提確認(5分)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>質問</th>
+<th>なぜ聞くか</th>
+<th>回答 → 構成への影響</th>
+</tr></thead><tbody>
+<tr>
+<td>0-1</td>
+<td><strong>既存の Azure 利用はあるか。あるならサブスクリプション/Landing Zone の管理体制は?</strong></td>
+<td>Foundry リソースを既存ガバナンス(Policy / RBAC / ネットワーク)に載せるか、新規に作るかが変わる</td>
+<td>既存 LZ あり → CAF 準拠で application landing zone へ配置(<a href="../../architecture/html/01-official-baselines.html">architecture 01</a>)。なし → 基盤構築から見積もりに含める</td>
+</tr>
+<tr>
+<td>0-2</td>
+<td><strong>Microsoft 365 / M365 Copilot の利用状況は?</strong>(ライセンス種別まで)</td>
+<td>SharePoint ツール・Work IQ は Copilot ライセンス or 従量課金が必要。Teams/M365 公開の可否も決まる</td>
+<td>Copilot あり → SharePoint/Work IQ 経路が最短。なし → Retrieval API 従量課金の費用を見込むか、AI Search 経由の RAG に倒す</td>
+</tr>
+<tr>
+<td>0-3</td>
+<td>既存の AI 利用(Azure OpenAI 直、他社 LLM、Copilot Studio 等)はあるか</td>
+<td>移行・共存の設計が要る。AOAI リソースは Foundry リソースへ非破壊アップグレード可</td>
+<td>AOAI あり → アップグレードパス(<a href="../../features/html/01-platform-projects.html">features 01</a>)。Copilot Studio あり → 接続はプレビュー</td>
+</tr>
+</tbody></table></div>
+<h2 id="phase-1-業務・目的-10分">Phase 1: 業務・目的(10分)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>質問</th>
+<th>なぜ聞くか</th>
+<th>回答 → 構成への影響</th>
+</tr></thead><tbody>
+<tr>
+<td>1-1</td>
+<td><strong>解決したい業務課題は何か。「誰が・何を・どれくらいの頻度で」やる業務か</strong></td>
+<td>ユースケース型の判定が全ての起点</td>
+<td>下の型判定表へ</td>
+</tr>
+<tr>
+<td>1-2</td>
+<td>人間が最終確認するか、AI の出力がそのまま業務に流れるか(HITL の有無)</td>
+<td>ガードレール・Task adherence・評価の要件レベルが変わる</td>
+<td>自動実行 → エージェント向けガードレール(プレビュー)依存のリスク説明が必須</td>
+</tr>
+<tr>
+<td>1-3</td>
+<td>失敗時の業務影響は?(誤答が金銭・法的リスクになるか)</td>
+<td>評価・観測性・段階リリースへの投資水準を決める</td>
+<td>高リスク → 評価 CI/CD ゲート + 継続的評価 + カナリア(prompt agent の FixedRatio 分割)</td>
+</tr>
+<tr>
+<td>1-4</td>
+<td>成功指標は何か(工数削減率、応答時間、解決率など)</td>
+<td>PoC の合否基準と評価器の選定に直結</td>
+<td>指標 → <a href="../../features/html/05-observability-evaluation.html">評価器マッピング</a></td>
+</tr>
+</tbody></table></div>
+<p><strong>ユースケース型判定</strong>(1-1 の回答から):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>回答の特徴</th>
+<th>型</th>
+<th>参照章</th>
+</tr></thead><tbody>
+<tr>
+<td>社内文書を検索して答えてほしい</td>
+<td>社内 RAG / チャット</td>
+<td><a href="../../architecture/html/04-usecase-chat-rag.html">architecture 04</a></td>
+</tr>
+<tr>
+<td>定型業務を自動でやってほしい(申請処理、レポート作成等)</td>
+<td>業務自動化エージェント</td>
+<td><a href="../../architecture/html/05-usecase-agent-automation.html">architecture 05</a></td>
+</tr>
+<tr>
+<td>顧客・会員向けに公開したい</td>
+<td>顧客接点(外部公開)</td>
+<td><a href="../../architecture/html/06-usecase-customer-facing.html">architecture 06</a></td>
+</tr>
+<tr>
+<td>規制業種 / 閉域必須 / オンプレ・エッジ</td>
+<td>規制・エッジ</td>
+<td><a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07</a></td>
+</tr>
+<tr>
+<td>音声・文書処理・画像生成・FT が主目的</td>
+<td>特化ユースケース</td>
+<td><a href="../../architecture/html/08-usecase-specialized.html">architecture 08</a></td>
+</tr>
+</tbody></table></div>
+<h2 id="phase-2-データ-15分">Phase 2: データ(15分)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>質問</th>
+<th>なぜ聞くか</th>
+<th>回答 → 構成への影響</th>
+</tr></thead><tbody>
+<tr>
+<td>2-1</td>
+<td><strong>根拠にしたいデータはどこにあるか</strong>(SharePoint / ファイルサーバー / DB / Fabric / SaaS / 紙)</td>
+<td>RAG の取り込み経路とツール選定が決まる</td>
+<td>SharePoint → SharePoint ツール(プレビュー・Copilot ライセンス要件)or AI Search インデクサ。DB/Fabric → Fabric data agent(プレビュー)or NL2SQL 自前。紙 → Content Understanding / DI の前処理をスコープに追加</td>
+</tr>
+<tr>
+<td>2-2</td>
+<td><strong>データ量と更新頻度は?</strong>(GB・件数、日次/週次/リアルタイム)</td>
+<td>File Search(手軽・制御弱)か AI Search(制御強)か Foundry IQ かの分岐。インデックス更新設計の工数</td>
+<td>小規模・静的 → File Search。大規模・要チューニング → AI Search。マルチソース・複数エージェント共有 → Foundry IQ(一部 GA、ポータルはプレビュー)</td>
+</tr>
+<tr>
+<td>2-3</td>
+<td><strong>データの機密区分は?(社外秘 / 個人情報 / 要配慮個人情報の有無)</strong></td>
+<td>閉域要否・ガードレール PII(プレビュー)・Purview 連携・<a href="03-japan-compliance.html">03 規制メモ</a>の適用範囲</td>
+<td>個人情報あり → 個情法整理(委託構成)+ abuse monitoring の説明を準備</td>
+</tr>
+<tr>
+<td>2-4</td>
+<td>ユーザーごとに見せてよいデータが違うか(アクセス制御の粒度)</td>
+<td>セキュリティトリミングは RAG 設計の難所</td>
+<td>ユーザー別 → OBO 系ツール(SharePoint/Fabric、サービスプリンシパル不可)か、AI Search のセキュリティフィルタ自前実装。<strong>全員同じ → 大幅に簡単になる</strong>ので必ず確認</td>
+</tr>
+<tr>
+<td>2-5</td>
+<td>データを国外に出せるか(処理・保存それぞれ)</td>
+<td>デプロイタイプと機能制約が決まる</td>
+<td>国内限定 → <strong>Regional Standard (Japan East) のみ</strong>(Data Zone APAC は豪日韓星印で処理されうる)。安全性評価・Red Teaming・Task adherence は国外処理あり → 除外 or 合意</td>
+</tr>
+</tbody></table></div>
+<h2 id="phase-3-ユーザー・規模・sla-10分">Phase 3: ユーザー・規模・SLA(10分)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>質問</th>
+<th>なぜ聞くか</th>
+<th>回答 → 構成への影響</th>
+</tr></thead><tbody>
+<tr>
+<td>3-1</td>
+<td><strong>利用者は誰で何人か。ピーク同時利用は?</strong></td>
+<td>クォータ・PTU 判断・hosted agent のセッション上限に直結</td>
+<td>hosted agent は同時セッション既定最大約50(/26 サブネット、申請で拡大可)。大規模 → prompt agent 中心 or サブスクリプション分割</td>
+</tr>
+<tr>
+<td>3-2</td>
+<td>応答時間の要求は?(対話的 / 数秒待てる / バッチで良い)</td>
+<td>モデル選定・デプロイタイプ・キャッシュ設計</td>
+<td>バッチ可 → Batch(50%引き・24h ターゲット・SLA なし)。対話 + 安定 → PTU 検討</td>
+</tr>
+<tr>
+<td>3-3</td>
+<td><strong>可用性・SLA の要求水準は?</strong></td>
+<td>プレビュー機能は SLA なし。マルチリージョン DR は「再構築」戦略が基本</td>
+<td>高 SLA → プレビュー機能を構成から排除(<a href="../../features/html/index.html">features の GA 一覧</a>)+ spillover / model router でフェイルオーバー</td>
+</tr>
+<tr>
+<td>3-4</td>
+<td>利用の波は?(営業時間集中 / 平準 / 月次ピーク)</td>
+<td>PTU の損益分岐と spillover 構成</td>
+<td>ピーク型 → PTU + Standard spillover のハイブリッド(<a href="02-cost-estimation.html">02 コスト手順</a>)</td>
+</tr>
+</tbody></table></div>
+<h2 id="phase-4-セキュリティ・規制-15分">Phase 4: セキュリティ・規制(15分)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>質問</th>
+<th>なぜ聞くか</th>
+<th>回答 → 構成への影響</th>
+</tr></thead><tbody>
+<tr>
+<td>4-1</td>
+<td><strong>閉域(インターネット非経由)が必須か。それは要件か希望か</strong></td>
+<td>BYO VNet 注入は<strong>作成後の変更不可</strong>。最初に決めないと作り直しになる</td>
+<td>必須 → <a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07</a> の「使えない機能一覧」から設計を始める(File Search / Browser Automation / Computer Use / Image Generation / Logic Apps 等が非対応)</td>
+</tr>
+<tr>
+<td>4-2</td>
+<td>業種の規制・ガイドラインは?(FISC / 3省2 / ISMAP / 社内基準)</td>
+<td><a href="03-japan-compliance.html">03 規制メモ</a>の該当節を適用</td>
+<td>政府 → ISMAP 登録状況の確認が先決。金融 → FISC 対応整理 + 閉域</td>
+</tr>
+<tr>
+<td>4-3</td>
+<td><strong>Web 検索・外部サービス呼び出しを許容するか</strong></td>
+<td>Web search / Bing 系は <strong>DPA 対象外・地理境界外送信・別課金</strong></td>
+<td>不許容 → Web グラウンディング機能を全て外す(サブスクリプション単位で無効化も可)</td>
+</tr>
+<tr>
+<td>4-4</td>
+<td>認証は?(Entra ID / 外部 IdP / 匿名)</td>
+<td>Agents は Entra ID 必須(API キー不可)。顧客向けは別途 IdP 統合</td>
+<td>外部 IdP → フロント側で変換。B2C 相当の設計を工数に</td>
+</tr>
+<tr>
+<td>4-5</td>
+<td>監査要件は?(誰が何を聞いたかの記録・保持年限)</td>
+<td>トレース(ポータル90日)+ App Insights 保持設計 + Purview</td>
+<td>長期保持 → App Insights/Log Analytics のエクスポート設計と課金を見積もりへ</td>
+</tr>
+<tr>
+<td>4-6</td>
+<td>CMK(顧客管理キー)要件はあるか</td>
+<td>CMK は一部リージョンのみ・CMK→MMK 不可逆</td>
+<td>要件あり → リージョン可否を先に確認</td>
+</tr>
+</tbody></table></div>
+<h2 id="phase-5-既存資産・統合先-10分">Phase 5: 既存資産・統合先(10分)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>質問</th>
+<th>なぜ聞くか</th>
+<th>回答 → 構成への影響</th>
+</tr></thead><tbody>
+<tr>
+<td>5-1</td>
+<td>出力先はどこか(Teams / 既存 Web / 新規 UI / API / M365 Copilot)</td>
+<td>チャネル構成が決まる</td>
+<td>Teams/M365 → 公開フロー GA(Bot Service 必要)。既存 Web → フロント実装 + WAF(<a href="../../architecture/html/06-usecase-customer-facing.html">architecture 06</a>)</td>
+</tr>
+<tr>
+<td>5-2</td>
+<td>呼び出したい既存システム・API はあるか(認証方式も)</td>
+<td>ツール選定: OpenAPI ツール(GA)/ Functions(GA・standard のみ)/ MCP(GA)/ Logic Apps コネクタ(プレビュー)</td>
+<td>OAuth2 必須の SaaS → Logic Apps コネクタは OAuth2 非対応(プレビュー)に注意</td>
+</tr>
+<tr>
+<td>5-3</td>
+<td>RPA・既存自動化(Power Automate 等)との棲み分けは?</td>
+<td>エージェント化する範囲の合意</td>
+<td>画面操作が必要 → Browser Automation / Computer Use は<strong>プレビュー+リスク警告あり</strong>。本番は避けるか限定</td>
+</tr>
+</tbody></table></div>
+<h2 id="phase-6-運用体制・スキル-10分">Phase 6: 運用体制・スキル(10分)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>質問</th>
+<th>なぜ聞くか</th>
+<th>回答 → 構成への影響</th>
+</tr></thead><tbody>
+<tr>
+<td>6-1</td>
+<td><strong>引き渡し後、誰が運用するか(顧客内製 / SI 運用委託 / ハイブリッド)</strong></td>
+<td>構成の複雑度上限が決まる</td>
+<td>顧客内製・非開発者 → ポータル中心(prompt agents)。開発チームあり → MAF / hosted agents も選択肢</td>
+</tr>
+<tr>
+<td>6-2</td>
+<td>顧客側の開発スキルは?(Python/.NET、Azure 経験)</td>
+<td>portal vs MAF vs LangGraph の分岐(<a href="../../learning-plan.md">learning-plan</a> の選定軸)</td>
+<td>LangChain 資産あり → LangGraph を hosted agent として持ち込む案</td>
+</tr>
+<tr>
+<td>6-3</td>
+<td>プロンプト・ナレッジの更新は誰がやるか</td>
+<td>運用設計(バージョニング・評価ゲート)の工数</td>
+<td>業務部門更新 → ポータルのバージョン管理 + 評価の自動ゲートを提案</td>
+</tr>
+<tr>
+<td>6-4</td>
+<td>モデル更新(リタイア強制移行)への追従体制は?</td>
+<td><span class="badge ga">GA</span> モデルは約18か月でリタイア。<strong>運用契約に「モデル移行対応」を含めるか</strong>は契約論点</td>
+<td>含める → 定期評価の再実行を運用メニュー化</td>
+</tr>
+</tbody></table></div>
+<h2 id="phase-7-予算・スケジュール・リスク許容度-5分">Phase 7: 予算・スケジュール・リスク許容度(5分)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>質問</th>
+<th>なぜ聞くか</th>
+<th>回答 → 構成への影響</th>
+</tr></thead><tbody>
+<tr>
+<td>7-1</td>
+<td>予算レンジ(初期 / 月額ランニング)</td>
+<td>構成の足切り。閉域は固定費(Firewall / PE / APIM)が支配的になる</td>
+<td><a href="02-cost-estimation.html">02 コスト手順</a>で概算</td>
+</tr>
+<tr>
+<td>7-2</td>
+<td><strong>プレビュー機能の利用を許容するか(SLA なし・仕様変更あり)</strong></td>
+<td>Foundry は有用機能の多く(Memory / Routines / Foundry IQ ポータル / エージェント向けガードレール等)がプレビュー</td>
+<td>不許容 → GA のみ構成(<a href="../../features/html/index.html">features README の Feature readiness</a>)+ プレビュー UI 無効化(<code>AZML_DISABLE_PREVIEW_FEATURE</code> タグ)を提案に含める</td>
+</tr>
+<tr>
+<td>7-3</td>
+<td>PoC → 本番のスケジュール感</td>
+<td>廃止日程(Assistants 2026-08-26、Workflows 2026-12-01 等)との衝突確認</td>
+<td>期間内に廃止到来 → 最初から後継 API で作る</td>
+</tr>
+</tbody></table></div>
+<h2 id="回答-構成クイックマップ">回答 → 構成クイックマップ</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>ヒアリング結果の組み合わせ</th>
+<th>構成候補</th>
+<th>主なリスク・確認事項</th>
+</tr></thead><tbody>
+<tr>
+<td>社内 RAG + データは SharePoint + 内製運用弱</td>
+<td>prompt agent + SharePoint ツール(or AI Search)+ ポータル運用</td>
+<td>SharePoint ツールはプレビュー / Copilot ライセンス or 従量課金</td>
+</tr>
+<tr>
+<td>社内 RAG + 大規模・検索品質重視</td>
+<td>prompt agent + AI Search(自前インデックス)、将来 Foundry IQ</td>
+<td>ベクトルクォータはサービス作成日依存 / セキュリティトリミング自前</td>
+</tr>
+<tr>
+<td>業務自動化 + 多段オーケストレーション</td>
+<td>MAF(コードファースト)+ hosted agents</td>
+<td>ビジュアル Workflows は 2026-12-01 廃止のため使わない</td>
+</tr>
+<tr>
+<td>顧客向け公開 + 大規模</td>
+<td>App Gateway/WAF + APIM + prompt agents + ガードレール</td>
+<td>WAF 誤検知チューニング / 同時セッション・クォータ設計 / BOLA 対策自前</td>
+</tr>
+<tr>
+<td>閉域必須(金融等)</td>
+<td>BYO VNet 注入 + standard setup(BYO 3点)+ PE</td>
+<td><strong>ネットワーク構成は作成時のみ</strong>・使えないツール多数・Firewall 等の固定費</td>
+</tr>
+<tr>
+<td>国内データ処理必須</td>
+<td>Regional Standard (Japan East) + 評価は国外の扱いを合意</td>
+<td>Japan East のモデル提供状況・クォータを個別確認</td>
+</tr>
+<tr>
+<td>文書処理中心</td>
+<td>Content Understanding(+ DI)+ Batch</td>
+<td>CU は BYO モデル接続必須 / ページ・サイズ上限</td>
+</tr>
+</tbody></table></div>
+<h2 id="ヒアリング後のアウトプット-提案までの-todo">ヒアリング後のアウトプット(提案までの ToDo)</h2>
+<ol>
+<li>構成候補 1〜2 案(architecture 該当章の構成図をベースに)</li>
+<li><strong>プレビュー依存リスト</strong>(機能名・現ステータス・GA 見込み不明の明記)— features から抽出</li>
+<li><strong>廃止日程との衝突チェック</strong>(features README の期限表)</li>
+<li>概算月額レンジ(<a href="02-cost-estimation.html">02</a> の手順で)</li>
+<li>規制・契約の論点リスト(<a href="03-japan-compliance.html">03</a> から該当分)</li>
+</ol>
+</main>
+<footer>このHTMLは docs/survey/proposal/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03. 日本規制対応メモ(ISMAP / FISC / 個情法 / 医療)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html" class="current">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="03-日本規制対応メモ-ismap-fisc-個情法-医療">03. 日本規制対応メモ(ISMAP / FISC / 個情法 / 医療)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#0-前提-データフローの4層整理">0. 前提: データフローの4層整理</a></li><li><a href="#1-ismap-政府情報システム">1. ISMAP(政府情報システム)</a></li><li><a href="#2-データ所在-全規制共通の土台">2. データ所在(全規制共通の土台)</a></li><li><a href="#3-個人情報保護法">3. 個人情報保護法</a></li><li><a href="#4-金融-fisc-安全対策基準">4. 金融(FISC 安全対策基準)</a></li><li><a href="#5-医療-3省2ガイドライン">5. 医療(3省2ガイドライン)</a></li><li><a href="#6-契約・知財まわり-業種横断">6. 契約・知財まわり(業種横断)</a></li><li><a href="#7-顧客からの定番質問と回答の型">7. 顧客からの定番質問と回答の型</a></li><li><a href="#出典-主要">出典(主要)</a></li></ul></div>
+<p><a href="index.html">← 提案実務ガイド TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31<br><strong>免責: 本メモは SI の技術側が論点を整理するためのもの。法解釈・規制適合の最終判断は必ず顧客の法務・コンプライアンス部門と行うこと。</strong>「検証済み」と記した項目は 2026-07 時点の learn.microsoft.com 現行ページで確認済みの事実(<a href="../../features/html/index.html">features</a> / <a href="../../architecture/html/index.html">architecture</a> の調査に基づく)。</p></blockquote>
+<h2 id="0-前提-データフローの4層整理">0. 前提: データフローの4層整理</h2>
+<p>規制の議論はまず「どのデータがどこへ行くか」を4層に分けると噛み合う:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>層</th>
+<th>内容</th>
+<th>制御手段</th>
+</tr></thead><tbody>
+<tr>
+<td>① 推論データ(プロンプト/応答)</td>
+<td>モデルが処理する。<strong>保存されない(stateless)・学習に使われない</strong>と公式明記(検証済み)</td>
+<td>デプロイタイプで処理地域を制御</td>
+</tr>
+<tr>
+<td>② 保存データ(会話履歴・ファイル・ベクトル)</td>
+<td>Agent Service 等が保存</td>
+<td>basic(MS 管理)/ standard(BYO リソース)、CMK、リージョン</td>
+</tr>
+<tr>
+<td>③ 悪用監視データ</td>
+<td>検出時にサンプルがレビュー対象(同一ジオ保存)。<strong>自動レビューが既定、必要時に人間レビュー</strong></td>
+<td>Modified 申請でデータ保存・人間レビューをオプトアウト可(検証済み。<code>ContentLogging=false</code> で確認可能)</td>
+</tr>
+<tr>
+<td>④ ツールの外部送信</td>
+<td>Web search / Bing 系はコンプライアンス境界外へ送信・<strong>DPA 対象外</strong>(検証済み)</td>
+<td>機能を使わない(サブスクリプション単位無効化可)or 顧客合意</td>
+</tr>
+</tbody></table></div>
+<h2 id="1-ismap-政府情報システム">1. ISMAP(政府情報システム)</h2>
+<ul>
+<li><strong>learn.microsoft.com 上に Foundry と ISMAP を結びつける記述は見当たらない</strong>(2026-07 調査時点。検証済み)。</li>
+<li>政府案件では <strong>ISMAP クラウドサービスリスト( <a href="https://www.ismap.go.jp/" title="https://www.ismap.go.jp/">www.ismap.go.jp</a> )で対象サービスの登録状況を案件ごとに確認する</strong>のが先決。Azure 全体が登録されていても、<strong>個別サービス(Foundry / Agent Service / 各ツール)が対象範囲に含まれるかは別問題</strong>。</li>
+<li>確認手順: ① ISMAP ポータルで Microsoft の登録サービス一覧を取得 → ② 構成で使う Azure サービスを列挙(<a href="01-hearing-sheet.html">01 ヒアリング</a>の構成候補から)→ ③ 差分(未登録サービス)を特定し、代替構成か所管との調整かを判断。</li>
+<li><strong>プレビュー機能は避ける</strong>: Azure Government 向けページには「Preview 機能は GA と同等のコンプライアンス保証(FedRAMP 等)を持たない場合がある」と明記されている(検証済み)。日本の認証でも同じ前提で扱うのが安全。</li>
+</ul>
+<h2 id="2-データ所在-全規制共通の土台">2. データ所在(全規制共通の土台)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>論点</th>
+<th>事実(検証済み)</th>
+<th>提案での扱い</th>
+</tr></thead><tbody>
+<tr>
+<td>推論の国内処理</td>
+<td><strong>Regional Standard (Japan East) のみが日本国内処理を保証</strong>。Data Zone (APAC) は豪・日・韓・星・印のいずれかで処理されうる</td>
+<td>「国内必須」なら Regional Standard。モデル提供状況・クォータは Japan East で個別確認</td>
+</tr>
+<tr>
+<td>保存データ</td>
+<td>保存は指定ジオグラフィ内。standard setup なら BYO リソース(Cosmos/Storage/AI Search)を Japan East に置ける</td>
+<td>保存層の所在は構成で完全制御可能と説明できる</td>
+</tr>
+<tr>
+<td>ファインチューニング</td>
+<td>Global Training は<strong>データ所在保証なし</strong>。リージョナル学習を選ぶ</td>
+<td>FT 案件はトレーニングタイプを明示</td>
+</tr>
+<tr>
+<td>安全性評価・Red Teaming</td>
+<td>対応リージョンは国外のみ(日本非対応)。<strong>評価のためにプロンプト・応答が国外に渡る</strong></td>
+<td>使うなら明示合意、使わないなら構成から除外</td>
+</tr>
+<tr>
+<td>Task adherence(ガードレール)</td>
+<td>データが指定 Geo 外(US/EU)で処理される可能性を公式明記</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>Claude 等パートナーモデル</td>
+<td>Hosted on Azure 版は US 系(Data Zone US)。<strong>日本国内処理の選択肢はない</strong>(2026-07 時点)</td>
+<td>国内要件がある案件では Azure OpenAI 系を選ぶ</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-個人情報保護法">3. 個人情報保護法</h2>
+<ul>
+<li><strong>プロンプトに個人データを含める構成</strong>は、Azure OpenAI の位置づけ(処理の委託)を前提に利用目的・委託先管理の整理を顧客法務と行う。技術側が用意する材料:</li>
+<ul>
+<li>data-privacy ページの「NOT リスト」(他の顧客に提供されない / OpenAI に提供されない / モデル改善に使われない / 許可なく基盤モデルの学習に使われない。検証済み)</li>
+<li><strong>悪用監視のオプトアウト状況</strong>: 既定では検出サンプルの保存+レビューがある。Modified 申請が通れば保存・人間レビューなし(<code>ContentLogging</code> 属性で客観的に示せる。検証済み)</li>
+</ul>
+<li><strong>要配慮個人情報</strong>(病歴等)を扱う場合は、悪用監視オプトアウト+閉域+保存層 BYO を揃えるのが説明しやすい構成。</li>
+<li>ガードレールの <strong>PII 検出/リダクションはプレビュー</strong>(検証済み)。「PII を自動でマスクします」を確約に使わない。個人情報保護委員会の生成 AI に関する注意喚起(利用目的・本人通知まわり)も法務確認の際に参照。</li>
+</ul>
+<h2 id="4-金融-fisc-安全対策基準">4. 金融(FISC 安全対策基準)</h2>
+<ul>
+<li>Microsoft は FISC 対応のリファレンス(対応状況の整理資料)を <strong>Service Trust Portal( <a href="https://servicetrust.microsoft.com/" title="https://servicetrust.microsoft.com/">servicetrust.microsoft.com</a> )</strong>で提供している。案件では最新版を取得し、構成要素(Foundry / AI Search / APIM 等)ごとの対応状況を顧客の FISC チェックリストへマップする。</li>
+<li>技術構成の定石は <a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07(規制業種)</a> の閉域構成: BYO VNet 注入(<strong>作成後変更不可</strong>)+ Private Endpoint + standard setup(BYO 3点)+ CMK(一部リージョンのみ)。</li>
+<li>金融で刺さりやすい注意点(検証済み):</li>
+<ul>
+<li><strong>Risks &amp; safety モニタリング(悪用状況ダッシュボード)は classic ポータル専用</strong>で新ポータル未移植</li>
+<li>閉域では File Search / Logic Apps / Browser Automation / Computer Use / Image Generation 等が使えない</li>
+<li>トレースの VNet 対応は公式間で表記揺れ(非対応 vs プレビュー)— 安全側は「監査ログは閉域外に出る前提で設計」</li>
+<li>Customer Lockbox は<strong>非サポート</strong>(セキュリティベースラインに明記)</li>
+</ul>
+</ul>
+<h2 id="5-医療-3省2ガイドライン">5. 医療(3省2ガイドライン)</h2>
+<ul>
+<li>論点は「医療情報システムの安全管理」への対応: データ所在(§2)+ アクセス制御 + 監査証跡。</li>
+<li>技術側の対応部品: Entra ID 必須認証(Agents は API キー不可)/ RBAC(Foundry 5ロール)/ トレース・App Insights の監査ログ設計(保持年限は Log Analytics 側で)/ Purview 監査(従量課金有効化が前提。検証済み)。</li>
+<li>診療情報を含む RAG は、悪用監視オプトアウト+閉域+国内処理(Regional Standard)の3点セットを基本形として提示。</li>
+</ul>
+<h2 id="6-契約・知財まわり-業種横断">6. 契約・知財まわり(業種横断)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>論点</th>
+<th>事実(検証済み)</th>
+<th>顧客説明のポイント</th>
+</tr></thead><tbody>
+<tr>
+<td>DPA 対象外機能</td>
+<td>Web search / Grounding with Bing は DPA 対象外・地理境界外送信・別課金</td>
+<td>使う場合は契約上の扱いを明示合意。不要なら無効化(サブスクリプション単位可)</td>
+</tr>
+<tr>
+<td>著作権(CCC)</td>
+<td>Customer Copyright Commitment には条件がある: Protected material 検出等の構成が前提になり得る。<strong>非同期フィルターのストリーミング遅延分は CCC 対象外の可能性</strong>を公式明記</td>
+<td>「規約通りのガードレール構成を維持すること」を運用要件に含める</td>
+</tr>
+<tr>
+<td>Claude の安全機構</td>
+<td><strong>Foundry の組み込みコンテンツフィルターは Claude に適用されない</strong>(Anthropic 側の安全機構+自前で Content Safety を構成)</td>
+<td>マルチモデル構成ではモデルごとに責任分界が異なることを図で説明</td>
+</tr>
+<tr>
+<td>プレビュー機能</td>
+<td>SLA なし・仕様/課金変更あり・コンプライアンス保証が GA と異なる場合あり</td>
+<td><strong>「プレビュー利用同意書」を取る</strong>か、GA のみ構成+プレビュー UI 無効化(<code>AZML_DISABLE_PREVIEW_FEATURE</code>)</td>
+</tr>
+<tr>
+<td>モデルリタイア</td>
+<td><span class="badge ga">GA</span> 後約18か月でリタイア(強制移行)</td>
+<td>保守契約に「モデル移行対応」と再見積もり条項を入れる</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-顧客からの定番質問と回答の型">7. 顧客からの定番質問と回答の型</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>質問</th>
+<th>回答の型</th>
+</tr></thead><tbody>
+<tr>
+<td>「入力したデータが AI の学習に使われませんか」</td>
+<td>①推論データは保存されず学習に使われない(公式 NOT リスト)。②ただし悪用監視で検出時サンプル保存があり得る → オプトアウト申請の説明。③ Web 検索系ツールは別枠(DPA 対象外)なので使う/使わないを合意</td>
+</tr>
+<tr>
+<td>「データは国内に留まりますか」</td>
+<td>4層に分けて回答: 保存=構成で国内固定可 / 推論=Regional Standard なら国内 / 悪用監視=同一ジオ / ツール=機能による(Web 系は境界外)</td>
+</tr>
+<tr>
+<td>「誰が会話ログを見られますか」</td>
+<td>RBAC(5ロール)+ プロジェクト分離 + トレースの閲覧権限(Log Analytics Reader)で説明。Microsoft 側は悪用監視の限定レビューのみ(オプトアウト可)</td>
+</tr>
+<tr>
+<td>「AI が変なことを言ったら止められますか」</td>
+<td>ガードレール(モデル向け GA / エージェント向けプレビュー)+ ブロックリスト + HITL 設計。<strong>「完全には防げない」前提で評価・監視・人間承認の多層防御</strong>を提案するのが誠実</td>
+</tr>
+</tbody></table></div>
+<h2 id="出典-主要">出典(主要)</h2>
+<ul>
+<li>データプライバシー: <a href="https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy" title="https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy">data-privacy</a></li>
+<li>悪用監視: <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/abuse-monitoring" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/abuse-monitoring">abuse-monitoring</a></li>
+<li>デプロイタイプ(処理地域): <a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types">deployment-types</a></li>
+<li>セキュリティベースライン: <a href="https://learn.microsoft.com/en-us/security/benchmark/azure/baselines/azure-ai-foundry-security-baseline" title="https://learn.microsoft.com/en-us/security/benchmark/azure/baselines/azure-ai-foundry-security-baseline">azure-ai-foundry-security-baseline</a></li>
+<li>Service Trust Portal(FISC 等): <a href="https://servicetrust.microsoft.com/" title="https://servicetrust.microsoft.com/">servicetrust.microsoft.com</a></li>
+<li>ISMAP ポータル: <a href="https://www.ismap.go.jp/" title="https://www.ismap.go.jp/">www.ismap.go.jp</a></li>
+</ul>
+</main>
+<footer>このHTMLは docs/survey/proposal/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

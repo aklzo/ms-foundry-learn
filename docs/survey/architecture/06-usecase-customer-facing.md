@@ -82,11 +82,11 @@
 
 現実的な多層防御:
 1. **アプリ層** — ユーザー単位のリクエスト数 / 日次トークン上限
-2. **APIM 層** — `llm-token-limit` で TPM 上限とトークンクォータ。**`estimate-prompt-tokens=true` にすると上限超過プロンプトをバックエンド到達前に遮断できる**(無駄なトークン課金を防げる)
+2. **APIM 層** — `llm-token-limit` で TPM 上限とトークンクォータ。**`estimate-prompt-tokens=true` にすると上限超過プロンプトをバックエンド到達前に遮断できる**(公式は「不要なバックエンドリクエストを削減できる」と記載。課金抑止の明記はない。なおストリーミング時は設定にかかわらず常にプロンプトが推定される)
 3. **Foundry 層** — デプロイ単位のクォータ、Control Plane のプロジェクト単位トークン制限(**TPM 超過は 429、総トークンクォータ超過は 403**)
 4. **モデル層** — Model router の Cost モード、小型モデルへの振り分け、Batch への切り出し
 
-**セマンティックキャッシュ**(APIM `llm-semantic-cache-store` / `-lookup`、Azure Managed Redis 必須)は、FAQ 的な問い合わせが多い外部向けチャットで効果が大きい。**バックエンド呼び出し自体を削減する**ため、レイテンシとコストの両方に効く。
+**セマンティックキャッシュ**(APIM `llm-semantic-cache-store` / `-lookup`、RediSearch モジュール有効の Azure Managed Redis 必須。**モジュールは新規キャッシュ作成時のみ有効化可**)は、FAQ 的な問い合わせが多い外部向けチャットで効果が大きい。**バックエンド呼び出し自体を削減する**ため、レイテンシとコストの両方に効く。
 
 **⚠ キャッシュキーの設計に注意。**WAF が明記している通り、キャッシュキーには **tenant/user identity、policy context、model version、prompt version** を含める。「**多くの状況で単一ユーザー向けのキャッシュはするな。**」
 
@@ -184,7 +184,7 @@ File Search を使うなら、**`structured_inputs` で `vector_store_ids` を�
 
 ### ⚠ 同時エージェントセッションの上限が設計制約になる
 
-**サブスクリプション × リージョンあたり 50 セッション。**これは引き上げ交渉の対象になりうるが、**大規模 SaaS ではサブスクリプション分割が必要になる可能性**を最初から見込む。
+**同時セッションは既定で約 50 が上限**(リージョンにより変動。既定では同時セッションとサブネットの使用可能 IP が 1:1 で対応し、`/26` サブネットで約 50 が「maximum supported」。サポート申請で 1 IP あたり 10 セッションまで拡大可 — 出典: agents-networking-deep-dive)。引き上げ余地はあるが、**大規模 SaaS ではサブスクリプション分割が必要になる可能性**を最初から見込む。
 
 関連する実効上限(閉域構成の場合):
 
@@ -209,7 +209,7 @@ File Search を使うなら、**`structured_inputs` で `vector_store_ids` を�
 - Estimated cost は**割引や契約価格を反映せず、Provisioned(PTU)も含まない。**しかも **prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。**
 - 課金イベントが Cost Analysis に現れるまで、**取り込みタイミングにより遅延がある**(公式は具体的な時間を示していない。分単位で比較せずトレンドで照合せよと記載)。
 
-**→ テナント別のメータリングは APIM で取る。**`llm-emit-token-metric` に**カスタムディメンション(User ID / Tenant ID / API ID / Client IP)**を付けて App Insights に送れば、Foundry が提供しない粒度でチャージバックできる。**SaaS 案件では APIM が事実上必須。**
+**→ テナント別のメータリングは APIM で取る。**`llm-emit-token-metric` の**既定ディメンションは API ID / Operation ID / Product ID / User ID / Subscription ID / Location / Gateway ID / Backend ID の8種**(Tenant ID や Client IP は既定に含まれない。テナント ID はポリシー式による**カスタムディメンション〈最大5個〉**として追加する)。これを App Insights に送れば、Foundry が提供しない粒度でチャージバックできる。**SaaS 案件では APIM が事実上必須。**
 
 ### ノイジーネイバー対策
 

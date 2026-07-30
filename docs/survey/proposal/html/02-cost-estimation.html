@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02. コスト見積もり手順(トークン推計 → 月額試算 → PTU 判断)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html" class="current">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="02-コスト見積もり手順-トークン推計-月額試算-ptu-判断">02. コスト見積もり手順(トークン推計 → 月額試算 → PTU 判断)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#step-1-ワークロードのプロファイリング-トークン量の推計">Step 1: ワークロードのプロファイリング(トークン量の推計)</a></li><li><a href="#step-2-コスト構成要素チェックリスト-見落とし防止">Step 2: コスト構成要素チェックリスト(見落とし防止)</a></li><li><a href="#step-3-単価の取得先-見積もりの都度参照">Step 3: 単価の取得先(見積もりの都度参照)</a></li><li><a href="#step-4-ptu-プロビジョン-判断">Step 4: PTU(プロビジョン)判断</a></li><li><a href="#step-5-コスト削減レバー-提案の調整代">Step 5: コスト削減レバー(提案の調整代)</a></li><li><a href="#試算例-単価は記号-数字を入れて使う">試算例(単価は記号。数字を入れて使う)</a></li><li><a href="#見積もり時の注意-検証済みの事実">見積もり時の注意(検証済みの事実)</a></li></ul></div>
+<p><a href="index.html">← 提案実務ガイド TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31<br><strong>方針: このドキュメントに単価を書かない。</strong>モデル単価は改定・リタイア・新モデル投入で頻繁に変わるため、ここには「変わらないもの」= 見積もりの手順・式・コスト構成要素のチェックリスト・単価の取得先だけを置く。試算例も単価は記号のまま示す。</p></blockquote>
+<h2 id="step-1-ワークロードのプロファイリング-トークン量の推計">Step 1: ワークロードのプロファイリング(トークン量の推計)</h2>
+<h3 id="1-1-日本語のトークン換算">1-1. 日本語のトークン換算</h3>
+<ul>
+<li>現行主要モデル(o200k 系トークナイザー)では<strong>日本語はおおむね 1 文字 ≒ 1 トークン前後</strong>(英語は 1 単語 ≒ 1.3 トークン程度)。かな漢字混在率で変わるため、<strong>精度が要る見積もりでは実データでトークナイザーにかけて実測する</strong>(OpenAI の tiktoken / Claude は Token counting API)。</li>
+<li>ざっくり係数: 日本語ドキュメント 1 ページ(A4・1,200字)≒ 1,200〜1,500 トークン。</li>
+</ul>
+<h3 id="1-2-1-リクエストの構造を分解する">1-2. 1 リクエストの構造を分解する</h3>
+<p>チャット/RAG の入力トークンは「ユーザーの質問」だけではない。<strong>毎回送られるもの全部</strong>を数える:</p>
+<pre><code>入力トークン/ターン = システムプロンプト
+                    + RAG コンテキスト(チャンクサイズ × 取得件数。File Search 既定: 800トークン × 最大20チャンク)
+                    + 会話履歴(ターン数とともに線形増加。要約・打ち切り設計で抑制)
+                    + ツール定義(ツール数が多いと massive。Toolbox の tool search で削減可)
+                    + ユーザー入力
+出力トークン/ターン = 回答本文(+ reasoning モデルは思考トークンが出力課金になる点に注意)</code></pre>
+<h3 id="1-3-月間量の式">1-3. 月間量の式</h3>
+<pre><code>月間入力トークン = ユーザー数 × 稼働日/月 × クエリ/人日 × 平均ターン/クエリ × 入力トークン/ターン
+月間出力トークン = 同 × 出力トークン/ターン
+月額(モデル推論・従量) = 月間入力 × P_in + 月間出力 × P_out + キャッシュヒット入力 × P_cached</code></pre>
+<ul>
+<li>P_in / P_out / P_cached は Step 3 で取得する単価(100万トークンあたり)。<strong>出力単価は入力の 3〜5 倍が通例</strong>なので、出力を絞る設計(構造化出力・max tokens)がコストに効く。</li>
+<li>エージェントは 1 クエリで<strong>内部的に複数 LLM 呼び出し</strong>(ツール選択 → 実行 → 統合)が走る。平均ターン/クエリはエージェント構成では 2〜5 倍に見積もる(PoC で実測して補正)。</li>
+</ul>
+<h2 id="step-2-コスト構成要素チェックリスト-見落とし防止">Step 2: コスト構成要素チェックリスト(見落とし防止)</h2>
+<p><strong>モデル推論以外</strong>が月額の過半を占める構成は珍しくない。全項目を「使う/使わない/金額」で潰す:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>分類</th>
+<th>項目</th>
+<th>課金の型</th>
+<th>見落としポイント</th>
+</tr></thead><tbody>
+<tr>
+<td>モデル</td>
+<td>推論(入力/出力/キャッシュ)</td>
+<td>トークン従量 or PTU 時間</td>
+<td>reasoning モデルの思考トークンは出力課金</td>
+</tr>
+<tr>
+<td>モデル</td>
+<td>埋め込み(初期 + 増分 + クエリ時)</td>
+<td>トークン従量</td>
+<td>初期インデックス構築は一時コストとして別掲</td>
+</tr>
+<tr>
+<td>ナレッジ</td>
+<td>Azure AI Search</td>
+<td><strong>SKU 時間課金</strong>(+セマンティックランカー)</td>
+<td>使わなくても月額固定で発生。SKU とレプリカ数が支配項</td>
+</tr>
+<tr>
+<td>ナレッジ</td>
+<td>File Search / ベクトルストア</td>
+<td>ストレージ課金(モデル料と別)</td>
+<td>standard setup では自前 Blob + AI Search 側に載る</td>
+</tr>
+<tr>
+<td>ツール</td>
+<td>Web search / Grounding with Bing</td>
+<td>呼び出し従量(<strong>別課金</strong>)</td>
+<td>DPA 対象外の説明とセット(<a href="03-japan-compliance.html">03</a>)</td>
+</tr>
+<tr>
+<td>ツール</td>
+<td>Code Interpreter</td>
+<td><strong>セッション課金</strong>(アクティブ1h/アイドル30分)</td>
+<td>会話ごとにセッションが立つ設計だと嵩む</td>
+</tr>
+<tr>
+<td>エージェント</td>
+<td>hosted agent セッション</td>
+<td><strong>CPU/メモリ従量</strong>(アイドル15分でゼロ)</td>
+<td>サンドボックスのオーバーサイズ × 同時実行数で倍増</td>
+</tr>
+<tr>
+<td>エージェント</td>
+<td>Bot Service(Teams/M365 公開時)</td>
+<td>SKU</td>
+<td>公開チャネル追加時のみ</td>
+</tr>
+<tr>
+<td>観測性</td>
+<td>Application Insights / Log Analytics</td>
+<td><strong>取り込み GB 課金 + 保持</strong></td>
+<td>トレース全量記録は高額になりがち。サンプリング設計必須。監査要件の長期保持は別途</td>
+</tr>
+<tr>
+<td>観測性</td>
+<td>評価(クラウド評価・継続的評価・Red Teaming)</td>
+<td>評価器の LLM 従量</td>
+<td>playground 評価は<strong>既定で有効</strong>(全プロジェクト・従量)</td>
+</tr>
+<tr>
+<td>ゲートウェイ</td>
+<td>APIM</td>
+<td>SKU 時間課金</td>
+<td>マルチテナント/チャージバック要件なら必須枠</td>
+</tr>
+<tr>
+<td>ネットワーク</td>
+<td>Private Endpoint</td>
+<td>時間 + データ処理</td>
+<td>閉域構成では PE が 5〜10 本になる</td>
+</tr>
+<tr>
+<td>ネットワーク</td>
+<td>Azure Firewall</td>
+<td><strong>SKU 時間課金(高額)</strong></td>
+<td>Managed VNet の FQDN ルールで<strong>自動作成</strong>される。SKU は後から変更不可</td>
+</tr>
+<tr>
+<td>ネットワーク</td>
+<td>App Gateway + WAF</td>
+<td>SKU 時間 + 処理</td>
+<td>顧客向け公開時</td>
+</tr>
+<tr>
+<td>ガバナンス</td>
+<td>Purview(従量)/ Defender for AI</td>
+<td>従量</td>
+<td>コンプライアンス要件時のみ</td>
+</tr>
+<tr>
+<td>BYO</td>
+<td>Cosmos DB(standard setup)</td>
+<td>RU/s プロビジョン</td>
+<td><strong>最低 3,000 RU/s/プロジェクト</strong>(Responses 利用で実質 5,000)。プロジェクト数分乗算</td>
+</tr>
+<tr>
+<td>BYO</td>
+<td>Storage / AI Search(standard setup)</td>
+<td>各 SKU</td>
+<td>basic setup なら不要(Microsoft 管理)</td>
+</tr>
+<tr>
+<td>フロント</td>
+<td>App Service / Static Web Apps 等</td>
+<td>SKU</td>
+<td>Foundry 外だが提案総額には必ず入る</td>
+</tr>
+</tbody></table></div>
+<p><strong>閉域構成の経験則</strong>: Firewall + PE + APIM + App Gateway の<strong>固定費だけで月額の下限が決まる</strong>。小規模利用の閉域案件は「トークン代よりインフラ固定費」になるので、先にインフラ固定費を積んでから変動費を載せる。</p>
+<h2 id="step-3-単価の取得先-見積もりの都度参照">Step 3: 単価の取得先(見積もりの都度参照)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>対象</th>
+<th>参照先</th>
+</tr></thead><tbody>
+<tr>
+<td>総合(構成全体の試算)</td>
+<td><a href="https://azure.microsoft.com/pricing/calculator/" title="https://azure.microsoft.com/pricing/calculator/">calculator</a></td>
+</tr>
+<tr>
+<td>モデル単価(Azure OpenAI / Foundry Models)</td>
+<td><a href="https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/" title="https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/">openai-service</a></td>
+</tr>
+<tr>
+<td>Agent Service(セッション課金等)</td>
+<td><a href="https://azure.microsoft.com/pricing/details/foundry-agent-service/" title="https://azure.microsoft.com/pricing/details/foundry-agent-service/">foundry-agent-service</a></td>
+</tr>
+<tr>
+<td>AI Search</td>
+<td><a href="https://azure.microsoft.com/pricing/details/search/" title="https://azure.microsoft.com/pricing/details/search/">search</a></td>
+</tr>
+<tr>
+<td>Application Insights / Log Analytics</td>
+<td><a href="https://azure.microsoft.com/pricing/details/monitor/" title="https://azure.microsoft.com/pricing/details/monitor/">monitor</a></td>
+</tr>
+<tr>
+<td>APIM</td>
+<td><a href="https://azure.microsoft.com/pricing/details/api-management/" title="https://azure.microsoft.com/pricing/details/api-management/">api-management</a></td>
+</tr>
+<tr>
+<td>Azure Firewall / Private Link / App Gateway</td>
+<td>pricing/details 配下の各ページ</td>
+</tr>
+<tr>
+<td>Claude(パートナーモデル)</td>
+<td>Azure Marketplace の該当オファー(<strong>CCU 課金・クレジット/CSP 制約あり</strong> → <a href="../../features/html/02-models.html">features 02</a>)</td>
+</tr>
+</tbody></table></div>
+<p>注意: <strong>日本円建てはレート改定タイミングで USD 建てとズレる</strong>。EA/CSP の割引率は営業経由でしか分からないため、提案書は「リスト価格ベース」と明記する。</p>
+<h2 id="step-4-ptu-プロビジョン-判断">Step 4: PTU(プロビジョン)判断</h2>
+<ol>
+<li><strong>従量の月額を先に出す</strong>(Step 1〜3)。</li>
+<li>PTU 損益分岐の目安: <code>従量月額 ≧ 最小 PTU 数 × P_ptu_hour × 730h × (1 − Reservation 割引率)</code> なら PTU 検討ライン。</li>
+<ul>
+<li>最小 PTU 数・増分はモデル別(例: 15/5 や 25/50 など。必ず現行ドキュメントで確認)。</li>
+<li><strong>PTU はモデル非依存(fungible)</strong>なのでモデル乗り換えでも無駄になりにくい。Reservation は 1 か月 / 1 年。</li>
+</ul>
+<li>キャパシティ試算はポータルの <strong>capacity calculator</strong> で「想定 RPM・トークン/リクエスト → 必要 PTU」を出す(モデル世代で PTU あたり性能が大きく違うため手計算しない)。</li>
+<li><strong>ピーク型トラフィックは「PTU をベースに、溢れを Standard に流す spillover 構成」</strong>が定石(Azure OpenAI モデルのみ対応。DeepSeek/Llama 非対応)。</li>
+<li>PTU デプロイは<strong>モデルリタイア時に自動アップグレードされない(手動移行)</strong>— 運用契約の論点(<a href="01-hearing-sheet.html">01 ヒアリング 6-4</a>)。</li>
+</ol>
+<h2 id="step-5-コスト削減レバー-提案の調整代">Step 5: コスト削減レバー(提案の調整代)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>レバー</th>
+<th>効果</th>
+<th>制約</th>
+</tr></thead><tbody>
+<tr>
+<td>Batch デプロイ</td>
+<td><strong>50% 引き</strong></td>
+<td>24h ターゲット・SLA なし。夜間バッチ処理向け</td>
+</tr>
+<tr>
+<td>プロンプトキャッシュ</td>
+<td>キャッシュ入力単価が大幅減</td>
+<td>システムプロンプト・ツール定義を先頭に固定する設計が前提</td>
+</tr>
+<tr>
+<td>Model router</td>
+<td>簡単な質問を安いモデルへ自動ルーティング</td>
+<td>非 OpenAI モデルのルーティングはプレビュー</td>
+</tr>
+<tr>
+<td>セマンティックキャッシュ(APIM)</td>
+<td>FAQ 的トラフィックの LLM 呼び出し自体を削減</td>
+<td>RediSearch 有効の Azure Managed Redis が別途必要(作成時のみ有効化可)</td>
+</tr>
+<tr>
+<td>モデルの右サイズ化(mini/nano 系)</td>
+<td>単価 1/10 以下も</td>
+<td>評価で品質確認してから。リーダーボードはプレビュー</td>
+</tr>
+<tr>
+<td>出力トークン制御</td>
+<td>出力単価は入力の数倍</td>
+<td>構造化出力・max tokens・簡潔指示</td>
+</tr>
+<tr>
+<td>履歴の要約・打ち切り</td>
+<td>長い会話の入力爆発を抑制</td>
+<td>UX とのトレードオフ</td>
+</tr>
+</tbody></table></div>
+<h2 id="試算例-単価は記号-数字を入れて使う">試算例(単価は記号。数字を入れて使う)</h2>
+<h3 id="例-a-社内-rag-チャット-500人・ポータル運用">例 A: 社内 RAG チャット(500人・ポータル運用)</h3>
+<p>前提: 500人 × 20営業日 × 8クエリ/日 × 1.5ターン。入力 4,000 tok/ターン(システム 500 + RAG 2,400〈800×3チャンク〉+ 履歴 600 + 質問 500)、出力 500 tok。</p>
+<pre><code>月間入力 = 500 × 20 × 8 × 1.5 × 4,000 = 4.8 億 tok → 480 × P_in
+月間出力 = 同 × 500                  = 0.6 億 tok →  60 × P_out
+固定費   = AI Search SKU + App Insights 取り込み(+ フロント)
+一時費   = 初期インデックス構築(文書量 × 埋め込み単価)+ 構築工数</code></pre>
+<p><strong>構造</strong>: このパターンは変動費(トークン)が支配的。モデルの右サイズ化とチャンク取得数の調整が効く。</p>
+<h3 id="例-b-顧客向けチャット-10-000-mau・閉域寄りの公開構成">例 B: 顧客向けチャット(10,000 MAU・閉域寄りの公開構成)</h3>
+<p>前提: 10,000 MAU × 3クエリ/月 × 2ターン。入力 3,000 / 出力 400 tok。</p>
+<pre><code>変動費 = 10,000 × 3 × 2 × (3,000 × P_in + 400 × P_out) = 1.8億 in + 0.24億 out
+固定費 = App Gateway/WAF + APIM + PE 群 + Bot Service + App Insights + AI Search</code></pre>
+<p><strong>構造</strong>: この規模だと<strong>固定費(ゲートウェイ層)が変動費を上回りがち</strong>。「まず固定費の下限を提示 → 利用増でも変動費は緩やか」という説明が顧客に通りやすい。ピークが読めないため PTU は初期から入れず、従量 + クォータ監視で開始。</p>
+<h3 id="例-c-文書処理バッチ-月-10-万ページ">例 C: 文書処理バッチ(月 10 万ページ)</h3>
+<pre><code>前処理 = 10万ページ × Content Understanding 単価(ページ課金・モデル倍率あり)
+推論   = 抽出後の要約・分類を Batch デプロイ(50%引き)で
+固定費 = ほぼなし(Storage + 監視のみ)</code></pre>
+<p><strong>構造</strong>: ページ課金(CU/DI)が支配項。<strong>CU は BYO モデル接続必須</strong>なのでそのモデル従量も忘れず加算。リアルタイム性不要なら全部 Batch に寄せる。</p>
+<h2 id="見積もり時の注意-検証済みの事実">見積もり時の注意(検証済みの事実)</h2>
+<ul>
+<li><strong>Azure OpenAI にコストのハードリミット機能はない</strong>(公式明記)。Budget + アクショングループの自動化は自前開発。提案書に「上限保証」と書かない。</li>
+<li>Cost Analysis への反映は<strong>取り込みタイミングにより遅延あり</strong>(公式は時間非特定)。分単位の照合はしない。</li>
+<li>プロジェクト単位のチャージバック(<code>project</code> タグ)は<strong>プレビューかつ Marketplace モデル(Claude 等)非対応</strong>。テナント/部門別の正確な按分が要件なら <strong>APIM の <code>llm-emit-token-metric</code></strong>(既定8ディメンション + カスタム最大5)で自前実装。</li>
+<li>プレビュー期間中の機能(Memory 等)は<strong>課金体系が変更されうる</strong>と公式に明記。</li>
+<li>モデルリタイア(GA 後約18か月)のたびに単価が変わる。<strong>年間契約の提案では「モデル移行時の再見積もり条項」を入れる</strong>。</li>
+</ul>
+</main>
+<footer>このHTMLは docs/survey/proposal/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

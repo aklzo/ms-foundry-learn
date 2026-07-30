@@ -360,7 +360,7 @@ PyRIT ベース。**Attack Success Rate = 成功攻撃数 ÷ 総攻撃数**を�
 - **メーターの見え方の罠:** Cost Analysis のサービスフィルタに「Azure OpenAI」は無い(Cognitive Services 分類の下の Service tier で絞る)。**パートナー / コミュニティモデルのメーターは Foundry リソースではなくリソースグループ配下に出る**ため、**Cost Analysis はリソースグループスコープにする。**
 - **概算値と実請求はズレる:** ポータルの Estimated cost は**割引や契約価格を反映せず、Provisioned(PTU)も含まない。**課金イベントが Cost Analysis に現れるまで**取り込みタイミングにより遅延がある**(公式は具体的な時間を明示していない。分単位の比較ではなくトレンドで照合する)。財務照合には Cost Management と請求書を使う。**さらに prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。**
 - **⚠ ハードリミットが無い:** 「OpenAI にはハードリミットがあるが、**Azure OpenAI には現状その機能がない**」。予算超過での自動停止が要件なら、予算アラートのアクショングループから起動する**自動化を自作する必要がある。**
-- **消費者別の粒度が要るなら APIM。**`llm-emit-token-metric` にカスタムディメンション(User ID / API ID / Client IP)を付ければ、Foundry が提供しない粒度でチャージバックできる。
+- **消費者別の粒度が要るなら APIM。**`llm-emit-token-metric` のディメンション(既定8種: API ID / Operation ID / Product ID / User ID / Subscription ID / Location / Gateway ID / Backend ID。テナント ID 等はカスタムディメンション〈最大5個〉で追加)を付ければ、Foundry が提供しない粒度でチャージバックできる。
 
 ### 5.4 PTU Reservations の注意点
 

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04. 前提 Azure 知識マップ(Foundry 提案・設計に必要なサブセット)</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html" class="current">04. 前提 Azure 知識マップ</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="04-前提-azure-知識マップ-foundry-提案・設計に必要なサブセット">04. 前提 Azure 知識マップ(Foundry 提案・設計に必要なサブセット)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#結論サマリー">結論サマリー</a></li><li><a href="#領域別マップ">領域別マップ</a></li><li><a href="#資格との対応">資格との対応</a></li><li><a href="#読む順序の推奨-オンボーディング">読む順序の推奨(オンボーディング)</a></li></ul></div>
+<p><a href="index.html">← 提案実務ガイド TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31<br>本リポジトリの調査ドキュメントは、いくつかの Azure 基礎知識を「知っている前提」で書かれている。<strong>AZ-104(管理者)の全範囲は不要</strong>で、必要なのは特定のサブセット+設計寄り(AZ-305)の観点。このマップは「どの知識が・どの設計判断で・なぜ要るか」を整理し、チームのオンボーディングとスキルギャップ確認に使う。</p></blockquote>
+<h2 id="結論サマリー">結論サマリー</h2>
+<ul>
+<li><strong>最優先はネットワークと Entra ID。</strong>閉域案件・ツール認証(OBO)はこの2つが分からないと設計も顧客説明もできない。</li>
+<li><strong>VM・ストレージ運用(AZ-104 の中核)はほぼ不要。</strong>Foundry のマネージド路線ではコンピュートを直接運用しない。効くのはフロント(App Service)と self-host 比較(ACA/AKS)の場面のみ。</li>
+<li>意外に効くのが<strong>監視のコスト構造</strong>(App Insights 取り込み課金)と <strong>AI Search の SKU 設計</strong>。月額を左右するのはトークン単価よりこの2つという案件も多い。</li>
+</ul>
+<h2 id="領域別マップ">領域別マップ</h2>
+<p>必要度: 高 = これがないと提案・設計が成立しない / 中 = 特定の要件で必須になる / 低 = 特定構成のみ</p>
+<h3 id="ネットワーク-必要度-高">ネットワーク(必要度: 高)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>トピック</th>
+<th>どの設計判断で使うか</th>
+<th>本リポジトリの該当箇所</th>
+</tr></thead><tbody>
+<tr>
+<td>VNet / サブネット / サブネット委任</td>
+<td>BYO VNet 注入(<code>Microsoft.App/environments</code> 委任、/27 以上、<strong>作成後変更不可</strong>)のサイジングと IP 設計</td>
+<td><a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07</a></td>
+</tr>
+<tr>
+<td>Private Endpoint / Private DNS ゾーン</td>
+<td>閉域のインバウンド設計(Foundry は DNS ゾーン3種)。PE は自動作成されない</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>Azure Firewall / UDR / 強制トンネリング</td>
+<td>アウトバウンド制御。Managed VNet の FQDN ルールで Firewall が自動作成・SKU 変更不可</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>Application Gateway / WAF</td>
+<td>顧客向け公開の入口。WAF のチャット誤検知チューニングは頻出論点</td>
+<td><a href="../../architecture/html/06-usecase-customer-facing.html">architecture 06</a></td>
+</tr>
+<tr>
+<td>NAT / SNAT / サービスタグ / FQDN 許可リスト</td>
+<td>egress 許可リストの設計(AzureActiveDirectory タグ等)、SNAT 枯渇</td>
+<td><a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07</a></td>
+</tr>
+</tbody></table></div>
+<p>学習リンク: AZ-104 のネットワークモジュール群 + <a href="https://learn.microsoft.com/ja-jp/azure/private-link/" title="https://learn.microsoft.com/ja-jp/azure/private-link/">private-link</a> ・ <a href="https://learn.microsoft.com/ja-jp/azure/firewall/" title="https://learn.microsoft.com/ja-jp/azure/firewall/">firewall</a></p>
+<h3 id="id-entra-id-必要度-高">ID(Entra ID)(必要度: 高)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>トピック</th>
+<th>どの設計判断で使うか</th>
+<th>本リポジトリの該当箇所</th>
+</tr></thead><tbody>
+<tr>
+<td>アプリ登録 / API 権限 / 管理者同意</td>
+<td>Work IQ(<code>WorkIQAgent.Ask</code> 委任権限 + Global Admin 同意)等の BYO アプリ構成</td>
+<td><a href="../../features/html/04-tools-knowledge.html">features 04</a></td>
+</tr>
+<tr>
+<td><strong>OAuth2 On-Behalf-Of(OBO)フロー</strong></td>
+<td>SharePoint / Fabric 系ツールは OBO 必須(サービスプリンシパル不可)。「ユーザーの権限でデータを引く」仕組みの説明責任</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>マネージド ID(システム/ユーザー割当)</td>
+<td>接続の認証・CMK の前提条件・キーレス構成(<code>disableLocalAuth</code>)</td>
+<td><a href="../../features/html/01-platform-projects.html">features 01</a></td>
+</tr>
+<tr>
+<td>RBAC のスコープ設計</td>
+<td>Foundry 5ロール(User / Project Manager / Account Owner / Owner / Agent Consumer)+ agent スコープ。改名中は GUID 指定</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>agent identity とマネージド ID の区別</td>
+<td>prompt agent はプロジェクト共通の agent identity(サービスプリンシパル)を共有 — 監査説明で混同しない</td>
+<td><a href="../../architecture/html/05-usecase-agent-automation.html">architecture 05</a></td>
+</tr>
+</tbody></table></div>
+<p>学習リンク: <a href="https://learn.microsoft.com/ja-jp/entra/identity-platform/" title="https://learn.microsoft.com/ja-jp/entra/identity-platform/">identity-platform</a> (特に v2.0 フロー解説)</p>
+<h3 id="監視・ログ-必要度-中-コスト直結">監視・ログ(必要度: 中 — コスト直結)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>トピック</th>
+<th>どの設計判断で使うか</th>
+<th>本リポジトリの該当箇所</th>
+</tr></thead><tbody>
+<tr>
+<td>App Insights / Log Analytics の<strong>取り込み課金と保持</strong></td>
+<td>トレース全量記録は高額。サンプリング・保持年限・エクスポート設計</td>
+<td><a href="../../architecture/html/09-operations.html">architecture 09</a>・<a href="02-cost-estimation.html">02 コスト手順</a></td>
+</tr>
+<tr>
+<td>KQL の基礎</td>
+<td>監査要件(誰が何を聞いたか)の抽出、ダッシュボード自作</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>Azure Monitor アラート / アクショングループ</td>
+<td>予算アラート(<strong>ハードリミットは存在しない</strong>)、クォータ逼迫検知</td>
+<td><a href="02-cost-estimation.html">02 コスト手順</a></td>
+</tr>
+<tr>
+<td>OpenTelemetry の概念</td>
+<td>Foundry トレーシングは OTel ベース。MAF / LangGraph 計装の共通言語</td>
+<td><a href="../../features/html/05-observability-evaluation.html">features 05</a></td>
+</tr>
+</tbody></table></div>
+<h3 id="ガバナンス-必要度-中">ガバナンス(必要度: 中)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>トピック</th>
+<th>どの設計判断で使うか</th>
+<th>本リポジトリの該当箇所</th>
+</tr></thead><tbody>
+<tr>
+<td>サブスクリプション設計 / 管理グループ</td>
+<td>同時セッション上限・クォータは<strong>サブスクリプション×リージョン単位</strong> → 大規模はサブスクリプション分割</td>
+<td><a href="../../architecture/html/06-usecase-customer-facing.html">architecture 06</a></td>
+</tr>
+<tr>
+<td>Azure Policy</td>
+<td>承認済みモデル限定(GA)・プレビューモデル禁止(プレビュー)・プレビュー UI 無効化タグ</td>
+<td><a href="../../features/html/01-platform-projects.html">features 01</a></td>
+</tr>
+<tr>
+<td>Landing Zone(CAF)</td>
+<td>AI は通常ワークロードとして application landing zone へ。共有 vs 専用の5条件</td>
+<td><a href="../../architecture/html/01-official-baselines.html">architecture 01</a></td>
+</tr>
+<tr>
+<td>タグ / Cost Management</td>
+<td>チャージバック(project タグはプレビュー)・部門按分</td>
+<td><a href="02-cost-estimation.html">02 コスト手順</a></td>
+</tr>
+<tr>
+<td>IaC(Bicep / Terraform)</td>
+<td>Foundry は <code>Microsoft.CognitiveServices/accounts</code>。<strong>capability host / ネットワーク注入は冪等更新が効かない</strong>という Foundry 固有の癖</td>
+<td><a href="../../architecture/html/09-operations.html">architecture 09</a></td>
+</tr>
+</tbody></table></div>
+<p>学習リンク: <a href="https://learn.microsoft.com/ja-jp/azure/cloud-adoption-framework/" title="https://learn.microsoft.com/ja-jp/azure/cloud-adoption-framework/">cloud-adoption-framework</a> ・ <a href="https://learn.microsoft.com/ja-jp/azure/well-architected/" title="https://learn.microsoft.com/ja-jp/azure/well-architected/">well-architected</a></p>
+<h3 id="データサービス-必要度-中-rag-standard-setup-で必須">データサービス(必要度: 中 — RAG / standard setup で必須)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>トピック</th>
+<th>どの設計判断で使うか</th>
+<th>本リポジトリの該当箇所</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>AI Search の SKU / レプリカ / パーティション</strong></td>
+<td>RAG の月額固定費の支配項。ベクトルクォータは<strong>サービス作成日で異なる</strong>。S3 HD はナレッジベース不可</td>
+<td><a href="../../architecture/html/04-usecase-chat-rag.html">architecture 04</a></td>
+</tr>
+<tr>
+<td>Cosmos DB の RU/s</td>
+<td>standard setup の BYO 要件(最低 3,000 RU/s/プロジェクト、Responses 利用で実質 5,000)</td>
+<td><a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07</a>・09</td>
+</tr>
+<tr>
+<td>Blob Storage(SAS / ライフサイクル)</td>
+<td>ファイル取り込み・BYO ストレージ・監査ログエクスポート</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h3 id="コンピュート-必要度-低-特定構成のみ">コンピュート(必要度: 低 — 特定構成のみ)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>トピック</th>
+<th>いつ必要になるか</th>
+</tr></thead><tbody>
+<tr>
+<td>App Service</td>
+<td>チャット UI / API のフロントをホストする場合(ベースライン構成の一部)。コードファーストエージェントを Foundry 外でホストする選択肢</td>
+</tr>
+<tr>
+<td>Container Apps(+ dynamic sessions)</td>
+<td>Code Interpreter の基盤理解、Custom Code Interpreter、自前サンドボックス実行</td>
+</tr>
+<tr>
+<td>AKS</td>
+<td>大規模 self-host(LangGraph 等を Foundry に載せない判断をした場合)のみ。<strong>Foundry マネージド路線では不要</strong></td>
+</tr>
+<tr>
+<td>VM</td>
+<td>ほぼ不要(セルフホストランナー〈閉域 CI/CD 用〉くらい)</td>
+</tr>
+</tbody></table></div>
+<h2 id="資格との対応">資格との対応</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>資格</th>
+<th>本マップとの関係</th>
+</tr></thead><tbody>
+<tr>
+<td>AZ-104(Azure Administrator)</td>
+<td>ネットワーク・ID・ガバナンスのモジュールは有効。<strong>VM / ストレージ運用の章はスキップ可</strong>。 <a href="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-administrator/" title="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-administrator/">azure-administrator</a></td>
+</tr>
+<tr>
+<td>AZ-305(Solutions Architect)</td>
+<td>本リポジトリの用途(構成の設計判断)に最も近い。非機能要件 → 構成のマッピング訓練として有効。 <a href="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-solutions-architect/" title="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-solutions-architect/">azure-solutions-architect</a></td>
+</tr>
+<tr>
+<td>AI-102(AI Engineer)</td>
+<td>Foundry 固有部分は本リポジトリの方が新しい・深い。Speech / Vision / Language 系の基礎補完として。 <a href="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-ai-engineer/" title="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-ai-engineer/">azure-ai-engineer</a></td>
+</tr>
+</tbody></table></div>
+<h2 id="読む順序の推奨-オンボーディング">読む順序の推奨(オンボーディング)</h2>
+<ol>
+<li><strong><a href="../../features/html/index.html">features README</a></strong> — 用語と 2025-11 改編の全体像(30分)</li>
+<li>Entra ID の OBO フロー解説(外部)→ <strong><a href="../../features/html/04-tools-knowledge.html">features 04(ツール)</a></strong>(1時間)</li>
+<li><strong><a href="../../architecture/html/03-decision-guide.html">architecture 03(判断ガイド)</a></strong> → 担当案件のユースケース章(2時間)</li>
+<li>閉域案件の担当者のみ: Private Link / Firewall の基礎(外部)→ <strong><a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07</a></strong>(2時間)</li>
+<li>提案担当: <strong><a href="01-hearing-sheet.html">01 ヒアリングシート</a></strong> + <strong><a href="02-cost-estimation.html">02 コスト手順</a></strong>(1時間)</li>
+</ol>
+</main>
+<footer>このHTMLは docs/survey/proposal/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

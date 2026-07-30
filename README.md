@@ -12,6 +12,7 @@ Microsoft Foundry(旧 Azure AI Foundry)のキャッチアップと、SI 案件�
 | [docs/survey/](docs/survey/README.md) | 調査ドキュメント群(下記) |
 | [docs/survey/features/](docs/survey/features/README.md) | **機能一覧・ステータス調査** — GA / プレビューをサーフェス別(ポータル / CLI / SDK)に整理。出典 URL 付き。月次更新 |
 | [docs/survey/architecture/](docs/survey/architecture/README.md) | **アーキテクチャ設計ガイド** — 公式リファレンス、レイヤー別の「Foundry 機能 vs 自前実装」、ユースケース別構成、運用・移行。四半期更新 |
+| [docs/survey/proposal/](docs/survey/proposal/README.md) | **提案実務ガイド** — 要件ヒアリングシート、コスト見積もり手順、日本規制対応メモ、前提 Azure 知識マップ |
 | [labs/agentic-search-maf/](labs/agentic-search-maf/README.md) | 検証ラボ: 自己評価型リサーチエージェントを MAF で実装した学習用プロジェクト |
 
 ## 調査ドキュメントの読み方・更新

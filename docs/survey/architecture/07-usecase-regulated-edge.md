@@ -412,7 +412,7 @@ MCSB v1.0 ベースで「古いガイダンスを含む可能性がある」と�
 
 | サービス | コンテナ | ライフサイクル | 切断 |
 |---|---|---|---|
-| Document Intelligence | Read / Layout / General Document / ID / Invoice / Receipt / Business Card / Custom Template | **v3.0 / v3.1 / v4.0 すべて GA** | **対応** |
+| Document Intelligence | **バージョンごとに対応モデルが異なる**: v4.0 = Read / Layout **のみ**、v3.1 = Read / Layout / ID / Receipt / Invoice、v3.0 = Read / Layout / General Document / Business Card / Custom | v3.0 / v3.1 / v4.0 とも GA | **対応** |
 | Vision | **Read OCR** | **GA** | **対応** |
 | Speech | Speech to text / Custom Speech to text / Neural TTS | GA | 対応 |
 | Speech | Speech language identification | プレビュー | **非対応** |
@@ -443,7 +443,7 @@ MCSB v1.0 ベースで「古いガイダンスを含む可能性がある」と�
 | Receipt | 11 GB | 24 GB |
 | ID Document | 8 GB | 24 GB |
 
-**接続コンテナ(切断でない場合)の注意:** ポート 443 と `*.cognitiveservices.azure.com` 等の許可が必要で、**DPI(Deep Packet Inspection)は無効化が必須。**また「**既定ではコンテナ API にセキュリティがない**」ため、Istio / Nginx 等を前段に置くことが推奨されている。
+**接続コンテナ(切断でない場合)の注意:** ポート 443 と `*.cognitiveservices.azure.com` / `*.cognitive.microsoft.com`(Translator オンプレは `translatoronprem.blob.core.windows.net` も)の許可が必要で、**DPI(Deep Packet Inspection)は無効化が必須。**また「**既定ではコンテナ API にセキュリティがない**」ため、Istio / Nginx 等を前段に置くことが推奨されている。
 
 ### 9.4 ハイブリッド(クラウド + エッジフォールバック)の公式ガイダンスは存在しない
 

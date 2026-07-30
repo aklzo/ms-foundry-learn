@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foundry 提案実務ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html" class="current">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="foundry-提案実務ガイド">Foundry 提案実務ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント構成">ドキュメント構成</a></li><li><a href="#使い方-提案フローとの対応">使い方(提案フローとの対応)</a></li><li><a href="#更新方針">更新方針</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31 / <strong>版:</strong> 初版<br><a href="../../features/html/index.html">features(機能ステータス)</a> が「その機能は使えるのか」、<a href="../../architecture/html/index.html">architecture(設計ガイド)</a> が「どう組むか」に答えるのに対し、本セットは <strong>SI の提案活動そのもの</strong>(ヒアリング → 構成決定 → 見積もり → リスク説明)を支援する実務ドキュメント群。</p></blockquote>
+<h2 id="ドキュメント構成">ドキュメント構成</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>ドキュメント</th>
+<th>用途</th>
+<th>使うタイミング</th>
+</tr></thead><tbody>
+<tr>
+<td>01</td>
+<td><a href="01-hearing-sheet.html">要件ヒアリングシート</a></td>
+<td>業務側の言葉から構成候補に落とすための質問リストと分岐</td>
+<td>初回〜2回目の顧客ヒアリング</td>
+</tr>
+<tr>
+<td>02</td>
+<td><a href="02-cost-estimation.html">コスト見積もり手順</a></td>
+<td>トークン量の推計 → 単価取得 → 月額試算 → PTU 判断の手順書(単価は書かない主義)</td>
+<td>概算提示・提案書作成</td>
+</tr>
+<tr>
+<td>03</td>
+<td><a href="03-japan-compliance.html">日本規制対応メモ</a></td>
+<td>ISMAP / FISC / 個情法 / 医療等と Foundry 構成の対応整理</td>
+<td>規制業種の案件開始時</td>
+</tr>
+<tr>
+<td>04</td>
+<td><a href="04-azure-knowledge-map.html">前提 Azure 知識マップ</a></td>
+<td>提案・設計に必要な Azure 基礎知識のサブセットと学習リンク</td>
+<td>チームメンバーのオンボーディング</td>
+</tr>
+</tbody></table></div>
+<h2 id="使い方-提案フローとの対応">使い方(提案フローとの対応)</h2>
+<ol>
+<li><strong>ヒアリング</strong>: <a href="01-hearing-sheet.html">01</a> の質問リストで要件を採取 → 構成候補(architecture のユースケース型)を 1〜2 案に絞る</li>
+<li><strong>実現可否チェック</strong>: 候補構成で使う機能を <a href="../../features/html/index.html">features</a> で GA / プレビュー確認 → プレビュー依存と廃止日程をリスク一覧化</li>
+<li><strong>概算</strong>: <a href="02-cost-estimation.html">02</a> の手順で月額レンジを試算</li>
+<li><strong>リスク・規制説明</strong>: <a href="03-japan-compliance.html">03</a> で顧客説明の論点を準備</li>
+<li><strong>体制</strong>: <a href="04-azure-knowledge-map.html">04</a> でチームの知識ギャップを確認</li>
+</ol>
+<h2 id="更新方針">更新方針</h2>
+<ul>
+<li>本セットは features(月次)ほど頻繁な更新は不要。<strong>単価・規制・ISMAP 登録状況は「案件ごとに最新を確認する」設計</strong>にしてあり、ドキュメント側には手順と参照先のみを持たせている。</li>
+<li>features / architecture の大型更新(Ignite・Build 後)の際に、分岐条件・チェックリストへの波及を確認する。</li>
+</ul>
+<h2 id="更新履歴">更新履歴</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-07-31</td>
+<td>初版作成(4ドキュメント)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>このHTMLは docs/survey/proposal/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

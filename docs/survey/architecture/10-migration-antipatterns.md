@@ -51,7 +51,7 @@ Foundry は「GA だが足元が動いている」プラットフォームで、
 | ライフサイクル操作 | `az cognitiveservices agent start/stop`、min/max replicas | **全廃**(自動プロビジョン / アイドル 15 分で停止) |
 | Capability host | 作成が必要 | **不要**(削除) |
 | プロトコルバージョン | `"v1"` | `"1.0.0"`(semver) |
-| CLI | `az cognitiveservices agent` 拡張 | **削除** → `az rest` または `azd ai agent` |
+| CLI | `az cognitiveservices agent` 拡張 | Agent Service ドキュメントは削除済みとして `az rest` / `azd ai agent` を案内(※ Azure CLI リファレンスには Core・Preview として現存しており公式間で表記揺れ) |
 | 必要ロール | Foundry Owner 等 | **Foundry Project Manager**(プロジェクトスコープ) |
 
 **さらにコンテナプロトコル 1.0.0 自体も非推奨**で、**2026-07-31 から 1.0.0 のエージェントへのリクエストがブロックされると公表済み。**2.0.0 では `x-agent-foundry-call-id` の転送が必要になる代わりに、`x-agent-user-id` で **1 セッション内の複数ユーザー多重化**が安全に行える(1.0.0 では不可)。マルチテナントで hosted agent を使うなら 2.0.0 が前提。
@@ -111,7 +111,7 @@ kind を `OpenAI` → `AIServices` + `allowProjectManagement: true` に変える
 
 - ポータル手順は classic ポータル + Azure ポータル側。新ポータルからの手順は記載なし。
 - **CMK 利用リソースは申請フォーム経由のみ。既存 Private Endpoint 付きはポータル経由不可**(削除→再作成 or IaC)。
-- Microsoft 側の自動アップグレードプログラムも走っており、`foundryAutoUpgrade` プロパティで状態確認・延期(Deferred)・ロールバックが可能。**顧客に予告なく変わるものではないが、IaC 側で意図しない差分が出る可能性があるため、Terraform/Bicep の drift 検知に入れておく。**
+- Microsoft 側の自動アップグレードプログラムも走っており、`foundryAutoUpgrade` プロパティで状態確認・オプトアウトが可能(SDK の enum は Enabled / Disabled のみで「Deferred」は存在しない。ロールバックは手動アップグレードと同じ別手順)。**顧客に予告なく変わるものではないが、IaC 側で意図しない差分が出る可能性があるため、Terraform/Bicep の drift 検知に入れておく。**
 
 ### 2.5 既存システムへの後付け(移行というより組込み)
 
