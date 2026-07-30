@@ -93,7 +93,7 @@
 
 | 機能名 | 説明 | ステータス | 出典 | 備考 |
 |---|---|---|---|---|
-| Foundry Local | オンデバイス AI 実行(ONNX Runtime、約 20MB ランタイム)。GPT-OSS / Qwen / DeepSeek / Mistral / Phi / Whisper 等の最適化カタログ。OpenAI 互換 API(Responses API 形式含む) | 要確認(現行ページに preview 表記なし・GA 宣言の明記もなし。確認 URL: https://learn.microsoft.com/en-us/azure/foundry-local/what-is-foundry-local ) | 同左 | Windows / macOS (Apple silicon) / Linux。SDK: C#, JavaScript, Rust, Python。Azure サブスクリプション不要。サーバー用途は非推奨(vLLM 等を案内)。企業向けに別製品「Foundry Local on Azure Local」(Arc 対応 K8s)あり |
+| Foundry Local | オンデバイス AI 実行(ONNX Runtime、約 20MB ランタイム)。GPT-OSS / Qwen / DeepSeek / Mistral / Phi / Whisper 等の最適化カタログ。OpenAI 互換 API(Responses API 形式含む) | GA(**2026-04-09 に公式ブログで GA 宣言**: https://devblogs.microsoft.com/foundry/foundry-local-ga/ 。docs ページ https://learn.microsoft.com/en-us/azure/foundry-local/what-is-foundry-local にはラベルなし) | 同左 | Windows / macOS (Apple silicon) / Linux。SDK: C#, JavaScript, Rust, Python。Azure サブスクリプション不要。サーバー用途は非推奨(vLLM 等を案内)。企業向けに別製品「Foundry Local on Azure Local」(Arc 対応 K8s)あり |
 
 ## 補足ノート(SI 判断に効く要点)
 

@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-29
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
 
 [02. 構成要素カタログ](./02-building-blocks.md) がレイヤーごとの選択肢の一覧なら、本ページは**どの順番で何を決めるか**の手順書である。順番を間違えると手戻りが大きい項目があるため、決定順序そのものが設計判断になる。
 
@@ -33,12 +33,12 @@
 
 | 要件 | 帰結 |
 |---|---|
-| 国内処理が必須 | Data Zone(APAC)または Regional Standard。Global Standard は不可。使えるモデルが絞られる |
+| 国内処理が必須 | 日本国内限定処理が必須なら Regional Standard(Japan East)。域内(APAC: 豪・日・韓・星・印)処理で足りるなら Data Zone も可。Global Standard は不可。使えるモデルが絞られる |
 | 外部インターネットへのデータ送出が不可 | **Web search / Grounding with Bing は使用不可**(DPA 対象外・境界外送信と明記)。Browser Automation も同様に要注意 |
 | 顧客の個人情報を扱う | Guardrails の PII 検出(プレビュー)+ アプリ側のマスキング。会話ログの保持場所(basic か standard か)を確定 |
 | 監査で「誰の権限で何を見たか」の証跡が要る | OBO(ユーザー委任)前提。app-only で動くバッチ的エージェントとは両立しない |
 | Claude を使いたい | **Foundry 組込みコンテンツフィルターが効かない。**Content Safety を自前で呼ぶ設計が必須。課金も Marketplace 経由 |
-| M365 のデータを使いたい | SharePoint / Work IQ ツール → **M365 Copilot ライセンスが前提**。ライセンス費が案件コストに乗る |
+| M365 のデータを使いたい | SharePoint / Work IQ ツール → **M365 Copilot ライセンスまたは Retrieval API の pay-as-you-go 課金が前提**。ライセンス費(または従量課金)が案件コストに乗る |
 
 ### G2. ネットワークゲート
 
@@ -48,7 +48,7 @@
 
 | 機能 | 閉域での状態 |
 |---|---|
-| Tracing | **VNet 対応はプレビュー** |
+| Tracing | **VNet 対応は公式間で表記が揺れる(configure-private-link は非対応、GA 一覧はプレビュー)。安全側は非対応前提** |
 | Memory | **VNet 非対応** |
 | Work IQ | **VNet 統合非対応** |
 | File Search / Logic Apps / Browser Automation / Computer Use / Image Generation | Private Link 環境で「Not supported / Under development」と明記 |
@@ -153,7 +153,7 @@ RFP や要件定義の言葉から、どのレイヤーの判断が必要にな�
 | エコシステム成熟度 | — | 新しい(1.0 が 2026-04) | 成熟 | — |
 | 費用構造 | 推論 + ツール | 上記 + コンピュート | 上記 + コンピュート | 上記 + 自前基盤 |
 
-**「MAF か LangGraph か」は「Foundry を使うか」とは独立した判断**である点に注意。Hosted agent は MAF 専用ではなく、LangGraph / OpenAI Agents SDK / Anthropic SDK / 完全自前コードも公式にサポートされる。
+**「MAF か LangGraph か」は「Foundry を使うか」とは独立した判断**である点に注意。Hosted agent は MAF 専用ではなく、LangGraph / Semantic Kernel / CrewAI / カスタムコードも公式にサポートされる(プロトコルライブラリはフレームワーク非依存のため任意のフレームワークが利用可)。
 
 ## 提案時チェックリスト
 

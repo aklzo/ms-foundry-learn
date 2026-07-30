@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="02-構成要素カタログ-レイヤー別-foundry-機能-vs-自前実装-の組合せ">02. 構成要素カタログ — レイヤー別「Foundry 機能 vs 自前実装」の組合せ</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#このドキュメントの使い方">このドキュメントの使い方</a></li><li><a href="#レイヤー一覧-先に全体像">レイヤー一覧(先に全体像)</a></li><li><a href="#l1-モデル提供-推論エンドポイント">L1. モデル提供(推論エンドポイント)</a></li><li><a href="#l2-オーケストレーション-エージェントの制御ロジック">L2. オーケストレーション(エージェントの制御ロジック)</a></li><li><a href="#l3-会話状態-スレッド-セッション">L3. 会話状態(スレッド / セッション)</a></li><li><a href="#l4-長期記憶-ユーザープロファイル-手続き記憶">L4. 長期記憶(ユーザープロファイル / 手続き記憶)</a></li><li><a href="#l5-ナレッジ-rag">L5. ナレッジ / RAG</a></li><li><a href="#l6-ツール実行-外部システム連携">L6. ツール実行(外部システム連携)</a></li><li><a href="#l7-コード実行サンドボックス">L7. コード実行サンドボックス</a></li><li><a href="#l8-ガードレール・安全性">L8. ガードレール・安全性</a></li><li><a href="#l9-id・認証・認可">L9. ID・認証・認可</a></li><li><a href="#l10-ネットワーク">L10. ネットワーク</a></li><li><a href="#l11-ゲートウェイ・流量制御">L11. ゲートウェイ・流量制御</a></li><li><a href="#l12-l13-可観測性・評価">L12〜L13. 可観測性・評価</a></li><li><a href="#l14-ui・チャネル">L14. UI・チャネル</a></li><li><a href="#l15-実行基盤-コンピュート">L15. 実行基盤(コンピュート)</a></li><li><a href="#l16-iac・ci-cd">L16. IaC・CI/CD</a></li><li><a href="#組合せの典型パターン-このカタログの使い方の例">組合せの典型パターン(このカタログの使い方の例)</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
 <h2 id="このドキュメントの使い方">このドキュメントの使い方</h2>
 <p>Foundry を使ったアーキテクチャは「Foundry を使うか使わないか」の二択ではない。<strong>レイヤーごとに独立して「Foundry のマネージド機能に寄せる / アプリ側で自前実装する」を選べる</strong>のが実態であり、SI の設計はこの組合せ選択そのものである。</p>
 <p>本ページは 16 レイヤーそれぞれについて、取りうる選択肢を<strong>マネージド度 3 段階</strong>で並べ、選定の決め手と地雷を整理する。ユースケース別の「実際にどう組んだか」は <a href="index.html#ドキュメント一覧">04〜08 のユースケース編</a>を参照。</p>
@@ -273,14 +273,14 @@ footer {
 <td>M: Data Zone Standard</td>
 <td>EU / US / APAC のデータゾーン内で処理</td>
 <td><span class="badge ga">GA</span></td>
-<td>国内・域内処理を求められるが単一リージョンだと容量が足りない案件</td>
-<td>対応モデル・ゾーンが限られる</td>
+<td>域内(APAC = 豪・日・韓・星・印のいずれか)処理で足りるが単一リージョンだと容量が足りない案件</td>
+<td>対応モデル・ゾーンが限られる。<strong>APAC Data Zone は日本国内処理を保証しない</strong></td>
 </tr>
 <tr>
 <td>M: Regional Standard</td>
 <td>単一リージョン処理</td>
 <td><span class="badge ga">GA</span></td>
-<td>厳格なリージョン指定</td>
+<td>厳格なリージョン指定。<strong>日本国内限定処理が必須なら Regional Standard(Japan East)のみ</strong></td>
 <td>新モデルの提供が最後になりがち。クォータが小さい</td>
 </tr>
 <tr>
@@ -328,7 +328,7 @@ footer {
 <tr>
 <td>S: Foundry Local / Azure Local</td>
 <td>オンデバイス / オンプレ推論</td>
-<td><span class="badge unknown">要確認</span>(GA 明記なし)</td>
+<td><span class="badge ga">GA</span>(2026-04-09 に公式ブログで GA 宣言: <a href="https://devblogs.microsoft.com/foundry/foundry-local-ga/" title="https://devblogs.microsoft.com/foundry/foundry-local-ga/">foundry-local-ga</a> 。docs ページにはラベルなし)</td>
 <td>閉域・エッジ・オフライン</td>
 <td>サーバー用途は非推奨と明記。モデル選択肢が限られる</td>
 </tr>
@@ -371,7 +371,7 @@ footer {
 <td>エージェント間をプロトコルで接続</td>
 <td><span class="badge preview">プレビュー</span></td>
 <td>疎結合な委譲、組織をまたぐエージェント連携</td>
-<td>v1.0 は JSONRPC・テキストのみ・ストリーミング非対応。ポータル未対応</td>
+<td>v1.0 は JSONRPC・テキストのみ・ストリーミング非対応。<strong>incoming A2A の有効化のみ</strong>ポータル未対応(REST/SDK。A2A ツール接続の作成・発信側の構成はポータルで可能)</td>
 </tr>
 <tr>
 <td>H: Hosted agent + MAF</td>
@@ -382,7 +382,7 @@ footer {
 </tr>
 <tr>
 <td>H: Hosted agent + LangGraph 等</td>
-<td>LangGraph / OpenAI Agents SDK / Anthropic SDK / CrewAI を持ち込み</td>
+<td>LangGraph / Semantic Kernel / CrewAI / カスタムコードを持ち込み(公式明記。プロトコルライブラリはフレームワーク非依存のため任意のフレームワークが利用可)</td>
 <td><span class="badge ga">GA</span>(持ち込み枠)</td>
 <td>フレームワーク資産がある、型付きステート・タイムトラベルが要る</td>
 <td>Foundry 固有機能(Memory 等)との結合は自分で書く</td>
@@ -501,7 +501,7 @@ footer {
 <td>ファイルを上げるだけでベクトルストア化・ハイブリッド検索</td>
 <td><span class="badge ga">GA</span></td>
 <td>PoC、部門内文書、数千ファイル規模</td>
-<td><strong>埋め込みは text-embedding-3-large(256次元)固定、チャンク 800 / オーバーラップ 400 固定。</strong>10,000 ファイル/ストア、エージェント・会話に各 1 ストア。追加課金あり</td>
+<td><strong>埋め込みは text-embedding-3-large(256次元)固定、チャンク 800 / オーバーラップ 400 は既定値</strong>(公式表記は Default。変更用パラメータの記載はない)。10,000 ファイル/ストア、エージェント・会話に各 1 ストア。追加課金あり</td>
 </tr>
 <tr>
 <td>M: Foundry IQ(knowledge bases)</td>
@@ -543,10 +543,10 @@ footer {
 <td>M365・Fabric のデータに OBO で接続</td>
 <td><span class="badge preview">プレビュー</span></td>
 <td>社内文書・業務データの横断</td>
-<td><strong>M365 Copilot ライセンス必須</strong>(SharePoint / Work IQ)。Work IQ は VNet 非対応。app-only 不可(ユーザー ID 必須)</td>
+<td><strong>M365 Copilot ライセンスまたは Retrieval API の pay-as-you-go 課金が必要</strong>(SharePoint / Work IQ)。Work IQ は VNet 非対応。app-only 不可(ユーザー ID 必須)</td>
 </tr>
 </tbody></table></div>
-<p><strong>File Search の固定パラメータが一次判断ポイント。</strong> 「日本語の長文契約書」「表が多い技術文書」のように、チャンク 800 トークン固定では品質が出ないと分かっている文書群では、最初から H 以上を選ぶ。逆に FAQ・議事録・マニュアル程度なら M で十分なことが多い。</p>
+<p><strong>File Search の既定値を受け入れられるかが一次判断ポイント(埋め込みモデルは text-embedding-3-large 256 次元で実質固定)。</strong> 「日本語の長文契約書」「表が多い技術文書」のように、チャンク 800 トークン(既定)では品質が出ないと分かっている文書群では、最初から H 以上を選ぶ。逆に FAQ・議事録・マニュアル程度なら M で十分なことが多い。</p>
 <p><strong>取り込み(ingestion)は Foundry の外側の話</strong>である点に注意。Document Intelligence(決定論的な OCR・レイアウト抽出)と Content Understanding(LLM によるスキーマ抽出)の使い分け、そのバッチ実行基盤(Functions / Container Apps jobs / Data Factory)は自分で設計する。詳細は <a href="08-usecase-specialized.html">08 の IDP ユースケース</a>。</p>
 <hr>
 <h2 id="l6-ツール実行-外部システム連携">L6. ツール実行(外部システム連携)</h2>
@@ -588,7 +588,7 @@ footer {
 <tr>
 <td>H: Toolbox</td>
 <td>複数ツールを 1 つの MCP 互換エンドポイントに束ね、バージョニング・集中認証</td>
-<td>ステータス曖昧(GA 相当の記述だが REST は <code>V1Preview</code> ヘッダー要求)</td>
+<td><strong>GA</strong>(GA 一覧表 <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">general-availability</a> に Toolboxes = GA と明記。現行 REST は api-version=v1 で特殊ヘッダー不要)</td>
 <td>ツールの再利用と統制、MAF / LangGraph からも同じツールを使いたい</td>
 <td>Code Interpreter / File Search を toolbox 経由で使うと<strong>ユーザー分離なし</strong></td>
 </tr>
@@ -600,7 +600,7 @@ footer {
 <td>ツールカタログ・集中管理の恩恵はない</td>
 </tr>
 </tbody></table></div>
-<p><strong>Hosted agent はツールを直付けできない。</strong> 「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」と明記されており、<code>create_version</code> の <code>tools</code> パラメータは削除済み。<strong>コードファーストを選んだ時点で、ツール層は Toolbox(MCP エンドポイント)経由が前提</strong>になる。Toolbox はバージョニングと集中認証(資格情報の注入・トークン更新・ポリシー適用)を担うため、これは制約であると同時に統制上は利点でもある。</p>
+<p><strong>Hosted agent はツールを直付けできない。</strong> 「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」と明記されており、hosted agent の定義ではツールの直接指定が非サポート(prompt agent の <code>create_version</code> には <code>tools</code> が現存)。<strong>コードファーストを選んだ時点で、ツール層は Toolbox(MCP エンドポイント)経由が前提</strong>になる。Toolbox はバージョニングと集中認証(資格情報の注入・トークン更新・ポリシー適用)を担うため、これは制約であると同時に統制上は利点でもある。</p>
 <p><strong>ツール設定は実行時に上書きできる。</strong> <code>file_search.vector_store_ids</code>、<code>code_interpreter.container</code>、<code>mcp.server_label/server_url/headers</code> はリクエスト単位で差し替えられる。<strong>テナントごとにナレッジベースを切り替える、dev/stg/prod で同じエージェント定義を使い回す</strong>といった構成が、エージェントのバージョンを増やさずに組める。</p>
 <p><strong>認可の設計が本命の論点。</strong> エージェントが基幹システムを叩くとき、「エージェントのマネージド ID で叩く(app-only)」のか「ログインユーザーの権限で叩く(OBO)」のかで監査要件の満たし方が変わる。SharePoint / Fabric IQ / Work IQ は <strong>OBO 必須で app-only 不可</strong>であり、バッチ的な無人実行ができない。</p>
 <hr>
@@ -649,7 +649,7 @@ footer {
 <td>4 カテゴリのコンテンツフィルター。編集不可</td>
 <td>既定適用</td>
 <td>全案件のベースライン</td>
-<td>テキスト Medium / 画像 Low 閾値固定</td>
+<td>テキスト・画像とも既定閾値は <strong>Medium</strong>( <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/default-safety-policies" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/default-safety-policies">default-safety-policies</a> 2026-05-31 更新の表)</td>
 </tr>
 <tr>
 <td>M: カスタムガードレール</td>
@@ -741,7 +741,7 @@ footer {
 <td>プライベートエンドポイント + 3 種の DNS ゾーン</td>
 <td><span class="badge ga">GA</span> 相当</td>
 <td>社内からのみアクセス</td>
-<td><strong>全パブリックアクセス遮断構成はポータル UI では組めず SDK/CLI が必要</strong></td>
+<td>—</td>
 </tr>
 <tr>
 <td>H: Standard setup / BYO VNet 注入</td>
@@ -765,7 +765,7 @@ footer {
 <td>Foundry の機能を捨てる</td>
 </tr>
 </tbody></table></div>
-<p><strong>ネットワーク分離で使えなくなるツールがある</strong>のが最大の落とし穴。Traces は VNet 非対応、Memory は VNet 非対応、Work IQ は VNet 統合非対応、File Search / Logic Apps / Browser Automation / Computer Use / Image Generation は「Not supported / Under development」と明記されている。<strong>閉域案件では「使える機能の一覧」から設計を始める</strong>必要がある。</p>
+<p><strong>ネットワーク分離で使えなくなるツールがある</strong>のが最大の落とし穴。Traces の VNet 対応は公式ドキュメント間で不整合(configure-private-link は Not supported、GA 一覧は Tracing VNet: Preview。安全側は非対応前提で設計)、Memory は VNet 非対応、Work IQ は VNet 統合非対応、File Search / Logic Apps / Browser Automation / Computer Use / Image Generation は「Not supported / Under development」と明記されている。<strong>閉域案件では「使える機能の一覧」から設計を始める</strong>必要がある。</p>
 <p>閉域固有の実務上の落とし穴を 4 つ挙げる。</p>
 <ul>
 <li><strong>hosted agent のエンドポイント自体は現在のプレビューでは公開のまま。</strong> セッションはユーザー ID で分離されるが、「エンドポイントをプライベートにする」のはプラットフォーム側の未提供機能と明記されている。「閉域なのでエンドポイントも内部だけ」という前提で設計すると崩れる。</li>
@@ -819,7 +819,7 @@ footer {
 <td>M: Foundry Tracing</td>
 <td>OTel 準拠で App Insights に送信。ポータルで 90 日閲覧</td>
 <td><span class="badge ga">GA</span>(prompt / hosted agent)、workflow / 外部エージェントはプレビュー</td>
-<td><strong>VNet 対応はプレビュー</strong></td>
+<td><strong>VNet 対応は公式間で不整合(configure-private-link は Not supported、GA 一覧は Tracing VNet: Preview。安全側は非対応前提で設計)</strong></td>
 </tr>
 <tr>
 <td>M: Trace Replay</td>
@@ -937,7 +937,7 @@ footer {
 </tr>
 </tbody></table></div>
 <p><strong>Hosted agent のスケール単位は「レプリカ」ではなく「セッション」。</strong> 課金はアクティブな全セッションの CPU + メモリ合計で、サイズは 0.5vCPU/1GiB・1vCPU/2GiB・2vCPU/4GiB の 3 種のみ。<strong>オーバーサイジングは同時実行数の倍率でコストに効く。</strong>セッションごとに VM 分離サンドボックス + 永続 <code>$HOME</code> / <code>/files</code> を持ち、アイドル 15 分で計算はデプロビジョンされるが状態は保持、30 日無活動で恒久削除(セッション最大寿命も 30 日)。ディスクはセッションあたり最大 20GiB(1vCPU 以上)で、うち約 20% はシステム予約。</p>
-<p><strong>Hosted agent は「デプロイ先」であって「フレームワーク」ではない。</strong> MAF でも LangGraph でも OpenAI Agents SDK でも CrewAI でも持ち込める。逆に MAF を Container Apps に置くこともできる。この 2 軸(何で書くか × どこで動かすか)は独立している。</p>
+<p><strong>Hosted agent は「デプロイ先」であって「フレームワーク」ではない。</strong> 公式明記は MAF / LangGraph / Semantic Kernel / CrewAI / カスタムコードで、プロトコルライブラリはフレームワーク非依存のため任意のフレームワークが利用可。逆に MAF を Container Apps に置くこともできる。この 2 軸(何で書くか × どこで動かすか)は独立している。</p>
 <p><strong>バージョンは不変で、トラフィック分割はできない。</strong> hosted agent の各バージョンはコンテナイメージ・リソース割当・環境変数・プロトコル構成のスナップショットで、<strong>1 エンドポイント = 1 バージョン</strong>。カナリアリリースをやるなら、エージェントを別名で立てて呼び出し側で振り分ける設計が要る(prompt agent は <code>FixedRatio</code> でトラフィック % 指定が可能なので、ここは prompt / hosted で挙動が違う)。</p>
 <hr>
 <h2 id="l16-iac・ci-cd">L16. IaC・CI/CD</h2>
@@ -961,7 +961,7 @@ footer {
 </tr>
 <tr>
 <td>H: azd Foundry 拡張</td>
-<td><code>azd ai agent init/run/invoke/monitor</code> 等</td>
+<td><code>azd ai agent init/run/invoke/doctor</code> 等(別ページでは init/show/monitor/invoke/files の列挙もあり、公式ドキュメント間で表記揺れ)</td>
 <td><span class="badge preview">プレビュー</span></td>
 <td>エージェント開発ライフサイクル向け。<strong>az CLI に <code>az foundry</code> は存在しない</strong></td>
 </tr>

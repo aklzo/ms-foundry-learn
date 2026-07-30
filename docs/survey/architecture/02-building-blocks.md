@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-29
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
 
 ## このドキュメントの使い方
 
@@ -50,15 +50,15 @@ Foundry を使ったアーキテクチャは「Foundry を使うか使わない�
 | 選択肢 | 実体 | ステータス | 向く要件 | 制約・地雷 |
 |---|---|---|---|---|
 | M: Global Standard デプロイ | Foundry リソースへのモデルデプロイ。グローバルルーティング従量課金 | GA | 大半の新規案件。最大クォータが取れる | データ処理リージョンを限定できない |
-| M: Data Zone Standard | EU / US / APAC のデータゾーン内で処理 | GA | 国内・域内処理を求められるが単一リージョンだと容量が足りない案件 | 対応モデル・ゾーンが限られる |
-| M: Regional Standard | 単一リージョン処理 | GA | 厳格なリージョン指定 | 新モデルの提供が最後になりがち。クォータが小さい |
+| M: Data Zone Standard | EU / US / APAC のデータゾーン内で処理 | GA | 域内(APAC = 豪・日・韓・星・印のいずれか)処理で足りるが単一リージョンだと容量が足りない案件 | 対応モデル・ゾーンが限られる。**APAC Data Zone は日本国内処理を保証しない** |
+| M: Regional Standard | 単一リージョン処理 | GA | 厳格なリージョン指定。**日本国内限定処理が必須なら Regional Standard(Japan East)のみ** | 新モデルの提供が最後になりがち。クォータが小さい |
 | M: Provisioned (PTU) | 予約スループット。時間課金 + Reservations | GA | レイテンシ SLA・安定スループットが要る本番 | **モデル自動アップグレード対象外(手動移行)**。最低 PTU 単位あり |
 | M: Batch | 非同期一括、24h ターゲット、50% 割引 | GA | 夜間バッチ、大量分類・要約 | リアルタイム SLA なし |
 | M: Instant models | デプロイ不要でモデル名指定のみ | プレビュー | 検証・試作 | プレビュー中は **West US 3 のみ**。FT モデル・カスタムガードレール不可 |
 | M: Model router | 単一デプロイで品質/コスト基準の自動振り分け | GA(非 OpenAI モデルのルーティングはプレビュー) | コスト最適化。モデル選定を運用で回したい | 対応リージョン 5 つ。Claude は事前デプロイ必須 |
 | H: Foundry + APIM ゲートウェイ | 複数デプロイ / 複数リージョンを APIM で束ねる | GA(APIM 側機能) | 複数チームへの払い出し、トークン課金の可視化、フェイルオーバー | APIM の運用コストと単一障害点化に注意 |
 | S: 他クラウド / セルフホスト | OpenAI 直、Bedrock、vLLM on AKS 等 | — | マルチクラウド要件、ロックイン回避、特殊モデル | Foundry のガードレール・観測・エージェント機能を一切使えない |
-| S: Foundry Local / Azure Local | オンデバイス / オンプレ推論 | 要確認(GA 明記なし) | 閉域・エッジ・オフライン | サーバー用途は非推奨と明記。モデル選択肢が限られる |
+| S: Foundry Local / Azure Local | オンデバイス / オンプレ推論 | GA(2026-04-09 に公式ブログで GA 宣言: https://devblogs.microsoft.com/foundry/foundry-local-ga/ 。docs ページにはラベルなし) | 閉域・エッジ・オフライン | サーバー用途は非推奨と明記。モデル選択肢が限られる |
 
 **Spillover(PTU→Standard 溢れ処理)** は PTU 枯渇時に同一リソースの standard デプロイへ自動転送する GA 機能で、「PTU でベースライン + スパイクは従量」という現実的な構成を Foundry 側だけで組める。DeepSeek / Llama は非対応。
 
@@ -75,9 +75,9 @@ Foundry を使ったアーキテクチャは「Foundry を使うか使わない�
 | M: Prompt agent | 指示文 + モデル + ツールの宣言的定義。ランタイムコード不要 | GA | 単一エージェント、ツール呼び出しループが素直、立ち上げ最優先 | 分岐・ループ・リトライの明示制御ができない |
 | M: ビジュアル Workflows | ポータルのマルチエージェントデザイナー | プレビュー + **2026-12-01 廃止** | (新規採用は非推奨) | **長期案件で提案してはいけない。** 移行先は MAF / Logic Apps / A2A |
 | M: Routines | タイマー / cron / イベントでエージェントを起動 | プレビュー | 定期実行の単純な自動化 | 1トリガー + 1アクションのみ。多段オーケストレーション不可 |
-| M: A2A ツール | エージェント間をプロトコルで接続 | プレビュー | 疎結合な委譲、組織をまたぐエージェント連携 | v1.0 は JSONRPC・テキストのみ・ストリーミング非対応。ポータル未対応 |
+| M: A2A ツール | エージェント間をプロトコルで接続 | プレビュー | 疎結合な委譲、組織をまたぐエージェント連携 | v1.0 は JSONRPC・テキストのみ・ストリーミング非対応。**incoming A2A の有効化のみ**ポータル未対応(REST/SDK。A2A ツール接続の作成・発信側の構成はポータルで可能) |
 | H: Hosted agent + MAF | 自前オーケストレーションコードを Foundry が実行 | GA(MAF 1.0 も GA) | 分岐・HITL・チェックポイント・ミドルウェアが要る本番 | Python / C# のみ。**初期プレビュー基盤は 2026-08-20 サポート終了(要再デプロイ)** |
-| H: Hosted agent + LangGraph 等 | LangGraph / OpenAI Agents SDK / Anthropic SDK / CrewAI を持ち込み | GA(持ち込み枠) | フレームワーク資産がある、型付きステート・タイムトラベルが要る | Foundry 固有機能(Memory 等)との結合は自分で書く |
+| H: Hosted agent + LangGraph 等 | LangGraph / Semantic Kernel / CrewAI / カスタムコードを持ち込み(公式明記。プロトコルライブラリはフレームワーク非依存のため任意のフレームワークが利用可) | GA(持ち込み枠) | フレームワーク資産がある、型付きステート・タイムトラベルが要る | Foundry 固有機能(Memory 等)との結合は自分で書く |
 | H: MAF + Durable Extension | エージェント実行に**耐久実行**を付与。ステップ単位チェックポイント・障害回復・分散ホスト間スケール | MAF 1.0 は GA(拡張単体の GA 表記は未確認) | 数時間〜数日の長時間プロセス、確実な再開が必須 | バックエンドは Durable Task Scheduler 推奨。ホストは Azure Functions か自前コンピュート |
 | S: 自アプリ内オーケストレーション | 既存アプリのコードでループを回し Responses API だけ叩く | GA(API) | 既存システム組込み、ロックイン回避、独自 SLA | **自前オーケストレーションのメトリクスは Foundry のエージェントビューに出ない**(Foundry はマネージドエージェントしか見えない) |
 | S: Logic Apps / Durable Functions | ワークフローエンジン側が主で、AI は 1ステップ | GA | 承認・長時間待機・既存業務フロー統合が主役 | AI 部分の反復開発は遅くなる |
@@ -132,15 +132,15 @@ Foundry で最も選択肢が多く、コストと品質の差が出るレイヤ
 
 | 選択肢 | 実体 | ステータス | 向く要件 | 制約・地雷 |
 |---|---|---|---|---|
-| M: File Search | ファイルを上げるだけでベクトルストア化・ハイブリッド検索 | GA | PoC、部門内文書、数千ファイル規模 | **埋め込みは text-embedding-3-large(256次元)固定、チャンク 800 / オーバーラップ 400 固定。**10,000 ファイル/ストア、エージェント・会話に各 1 ストア。追加課金あり |
+| M: File Search | ファイルを上げるだけでベクトルストア化・ハイブリッド検索 | GA | PoC、部門内文書、数千ファイル規模 | **埋め込みは text-embedding-3-large(256次元)固定、チャンク 800 / オーバーラップ 400 は既定値**(公式表記は Default。変更用パラメータの記載はない)。10,000 ファイル/ストア、エージェント・会話に各 1 ストア。追加課金あり |
 | M: Foundry IQ(knowledge bases) | 複数ソースを束ね agentic retrieval(クエリ分解→並列検索→再ランク)で照会 | 一部 GA / 一部プレビュー(ポータル体験は全プレビュー) | 複数エージェントで同じ知識を共有、ACL / Purview 連携 | エージェントからは **MCP ツール経由**。SDK 対応は Python + REST のみ |
 | H: Azure AI Search ツール | 既存インデックスに直結、引用付き | GA | 既に AI Search 資産がある、索引設計を自分で持ちたい | **1 ツール 1 インデックス。**同一テナント必須 |
 | H: 自前索引 + Foundry から検索 | AI Search を自前パイプラインで作り、エージェントからは検索 API を叩く | GA | チャンク戦略・メタデータ・セキュリティトリミングを作り込む | 取り込みパイプラインの運用は自分持ち |
 | S: 完全自前 RAG | 任意のベクトルストア(Cosmos DB / PostgreSQL+pgvector 等)+ 自前検索 | GA(各サービス) | マルチクラウド、既存 DB に相乗り、コスト最適化 | 再ランク・ハイブリッド・評価まで全部自作 |
 | M: Web search / Grounding with Bing | 公開 Web をリアルタイム検索 | GA | 最新情報が要る一般用途 | **DPA 対象外・コンプライアンス境界外へデータ送信・別課金。**規制業種では原則不可 |
-| M: SharePoint / Work IQ / Fabric IQ | M365・Fabric のデータに OBO で接続 | プレビュー | 社内文書・業務データの横断 | **M365 Copilot ライセンス必須**(SharePoint / Work IQ)。Work IQ は VNet 非対応。app-only 不可(ユーザー ID 必須) |
+| M: SharePoint / Work IQ / Fabric IQ | M365・Fabric のデータに OBO で接続 | プレビュー | 社内文書・業務データの横断 | **M365 Copilot ライセンスまたは Retrieval API の pay-as-you-go 課金が必要**(SharePoint / Work IQ)。Work IQ は VNet 非対応。app-only 不可(ユーザー ID 必須) |
 
-**File Search の固定パラメータが一次判断ポイント。** 「日本語の長文契約書」「表が多い技術文書」のように、チャンク 800 トークン固定では品質が出ないと分かっている文書群では、最初から H 以上を選ぶ。逆に FAQ・議事録・マニュアル程度なら M で十分なことが多い。
+**File Search の既定値を受け入れられるかが一次判断ポイント(埋め込みモデルは text-embedding-3-large 256 次元で実質固定)。** 「日本語の長文契約書」「表が多い技術文書」のように、チャンク 800 トークン(既定)では品質が出ないと分かっている文書群では、最初から H 以上を選ぶ。逆に FAQ・議事録・マニュアル程度なら M で十分なことが多い。
 
 **取り込み(ingestion)は Foundry の外側の話**である点に注意。Document Intelligence(決定論的な OCR・レイアウト抽出)と Content Understanding(LLM によるスキーマ抽出)の使い分け、そのバッチ実行基盤(Functions / Container Apps jobs / Data Factory)は自分で設計する。詳細は [08 の IDP ユースケース](./08-usecase-specialized.md)。
 
@@ -154,10 +154,10 @@ Foundry で最も選択肢が多く、コストと品質の差が出るレイヤ
 | M: MCP ツール | リモート MCP サーバーのツール群に接続 | GA | SaaS 連携、再利用可能なツール群 | 長時間実行はプレビュー。個別サーバーにプレビューあり |
 | M: Azure Functions ツール | キュー経由で Functions を非同期呼び出し | GA | 独自ロジック、既存 Functions 資産 | **standard セットアップのみ(basic 不可)** |
 | M: Logic Apps コネクタ → MCP 変換 | 1,400+ コネクタのアクションをツール化 | プレビュー | SaaS・基幹の広範な接続を短期で | 1 コネクタ/ツール、**OAuth 2.0 コネクタ非対応**、マネージドコネクタのみ |
-| H: Toolbox | 複数ツールを 1 つの MCP 互換エンドポイントに束ね、バージョニング・集中認証 | ステータス曖昧(GA 相当の記述だが REST は `V1Preview` ヘッダー要求) | ツールの再利用と統制、MAF / LangGraph からも同じツールを使いたい | Code Interpreter / File Search を toolbox 経由で使うと**ユーザー分離なし** |
+| H: Toolbox | 複数ツールを 1 つの MCP 互換エンドポイントに束ね、バージョニング・集中認証 | **GA**(GA 一覧表 https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability に Toolboxes = GA と明記。現行 REST は api-version=v1 で特殊ヘッダー不要) | ツールの再利用と統制、MAF / LangGraph からも同じツールを使いたい | Code Interpreter / File Search を toolbox 経由で使うと**ユーザー分離なし** |
 | S: アプリ内 function calling | ツール定義とディスパッチを自アプリで実装 | GA | 既存の権限モデルに合わせた細かい認可、監査 | ツールカタログ・集中管理の恩恵はない |
 
-**Hosted agent はツールを直付けできない。** 「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」と明記されており、`create_version` の `tools` パラメータは削除済み。**コードファーストを選んだ時点で、ツール層は Toolbox(MCP エンドポイント)経由が前提**になる。Toolbox はバージョニングと集中認証(資格情報の注入・トークン更新・ポリシー適用)を担うため、これは制約であると同時に統制上は利点でもある。
+**Hosted agent はツールを直付けできない。** 「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」と明記されており、hosted agent の定義ではツールの直接指定が非サポート(prompt agent の `create_version` には `tools` が現存)。**コードファーストを選んだ時点で、ツール層は Toolbox(MCP エンドポイント)経由が前提**になる。Toolbox はバージョニングと集中認証(資格情報の注入・トークン更新・ポリシー適用)を担うため、これは制約であると同時に統制上は利点でもある。
 
 **ツール設定は実行時に上書きできる。** `file_search.vector_store_ids`、`code_interpreter.container`、`mcp.server_label/server_url/headers` はリクエスト単位で差し替えられる。**テナントごとにナレッジベースを切り替える、dev/stg/prod で同じエージェント定義を使い回す**といった構成が、エージェントのバージョンを増やさずに組める。
 
@@ -181,7 +181,7 @@ Code Interpreter の基盤は Container Apps dynamic sessions なので、**「F
 
 | 選択肢 | 実体 | ステータス | 向く要件 | 制約・地雷 |
 |---|---|---|---|---|
-| M: 既定ガードレール(Microsoft.DefaultV2) | 4 カテゴリのコンテンツフィルター。編集不可 | 既定適用 | 全案件のベースライン | テキスト Medium / 画像 Low 閾値固定 |
+| M: 既定ガードレール(Microsoft.DefaultV2) | 4 カテゴリのコンテンツフィルター。編集不可 | 既定適用 | 全案件のベースライン | テキスト・画像とも既定閾値は **Medium**( https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/default-safety-policies 2026-05-31 更新の表) |
 | M: カスタムガードレール | リスク × 介入ポイント × アクションで構成 | モデル向けは GA 相当 / **エージェント向けはプレビュー** | 閾値調整、PII、Prompt Shields、ブロックリスト | 介入点は User input / Tool call / Tool response / Output。Tool 系はプレビュー |
 | M: ブロックリスト | 完全一致 / 正規表現の禁止語 | GA 相当 | 固有名詞・禁則語の統制 | **Azure OpenAI モデル限定。**1 リスト 1 万語、反映まで約 5 分 |
 | S: Content Safety API を自前で呼ぶ | ガードレールの分類器をアプリから直接使う | GA | Claude 等の非対象モデル、独自の前後処理 | レイテンシとコストを自分で管理 |
@@ -209,12 +209,12 @@ Code Interpreter の基盤は Container Apps dynamic sessions なので、**「F
 | 選択肢 | 実体 | ステータス | 向く要件 | 制約・地雷 |
 |---|---|---|---|---|
 | M: パブリックエンドポイント | 既定 | GA | PoC、社外公開サービス | — |
-| M: Private Link(インバウンド) | プライベートエンドポイント + 3 種の DNS ゾーン | GA 相当 | 社内からのみアクセス | **全パブリックアクセス遮断構成はポータル UI では組めず SDK/CLI が必要** |
+| M: Private Link(インバウンド) | プライベートエンドポイント + 3 種の DNS ゾーン | GA 相当 | 社内からのみアクセス | — |
 | H: Standard setup / BYO VNet 注入 | `Microsoft.App/environments` 委任サブネット(/27 以上、推奨 /24)にコンテナ注入 | GA 相当 | エージェントのアウトバウンドを自社 VNet 内に維持 | **後付け・変更不可(再デプロイ必要)。**リソースと VNet は同一リージョン。サブネットは Foundry リソース専用 |
 | H: Managed Virtual Network | Microsoft 管理 VNet + マネージド Azure Firewall | 要確認(ラベルなし)・**ポータル UI 未対応** | VNet 運用を持ちたくないが外向き統制は要る | 有効化後の無効化不可、BYO VNet からの移行パスなし。対応 18 リージョン |
 | S: すべて自社 VNet 内 | Foundry を使わずセルフホスト | — | 完全閉域・オフライン | Foundry の機能を捨てる |
 
-**ネットワーク分離で使えなくなるツールがある**のが最大の落とし穴。Traces は VNet 非対応、Memory は VNet 非対応、Work IQ は VNet 統合非対応、File Search / Logic Apps / Browser Automation / Computer Use / Image Generation は「Not supported / Under development」と明記されている。**閉域案件では「使える機能の一覧」から設計を始める**必要がある。
+**ネットワーク分離で使えなくなるツールがある**のが最大の落とし穴。Traces の VNet 対応は公式ドキュメント間で不整合(configure-private-link は Not supported、GA 一覧は Tracing VNet: Preview。安全側は非対応前提で設計)、Memory は VNet 非対応、Work IQ は VNet 統合非対応、File Search / Logic Apps / Browser Automation / Computer Use / Image Generation は「Not supported / Under development」と明記されている。**閉域案件では「使える機能の一覧」から設計を始める**必要がある。
 
 閉域固有の実務上の落とし穴を 4 つ挙げる。
 
@@ -242,7 +242,7 @@ Code Interpreter の基盤は Container Apps dynamic sessions なので、**「F
 
 | 選択肢 | 実体 | ステータス | 制約・地雷 |
 |---|---|---|---|
-| M: Foundry Tracing | OTel 準拠で App Insights に送信。ポータルで 90 日閲覧 | GA(prompt / hosted agent)、workflow / 外部エージェントはプレビュー | **VNet 対応はプレビュー** |
+| M: Foundry Tracing | OTel 準拠で App Insights に送信。ポータルで 90 日閲覧 | GA(prompt / hosted agent)、workflow / 外部エージェントはプレビュー | **VNet 対応は公式間で不整合(configure-private-link は Not supported、GA 一覧は Tracing VNet: Preview。安全側は非対応前提で設計)** |
 | M: Trace Replay | 会話トレースの再生 | prompt / hosted は実質 GA | Log Analytics Reader ロール必須。2 スパン以上必要 |
 | M: Monitoring ダッシュボード | トークン・レイテンシ・成功率・評価スコア | **プレビュー** | 本番の運用監視をこれ 1 本に依存しない |
 | M: Evaluations | 組込み評価器 + クラウド評価 | GA(一部評価器はプレビュー) | **Entra ID 必須(キー不可)** |
@@ -277,7 +277,7 @@ Code Interpreter の基盤は Container Apps dynamic sessions なので、**「F
 
 **Hosted agent のスケール単位は「レプリカ」ではなく「セッション」。** 課金はアクティブな全セッションの CPU + メモリ合計で、サイズは 0.5vCPU/1GiB・1vCPU/2GiB・2vCPU/4GiB の 3 種のみ。**オーバーサイジングは同時実行数の倍率でコストに効く。**セッションごとに VM 分離サンドボックス + 永続 `$HOME` / `/files` を持ち、アイドル 15 分で計算はデプロビジョンされるが状態は保持、30 日無活動で恒久削除(セッション最大寿命も 30 日)。ディスクはセッションあたり最大 20GiB(1vCPU 以上)で、うち約 20% はシステム予約。
 
-**Hosted agent は「デプロイ先」であって「フレームワーク」ではない。** MAF でも LangGraph でも OpenAI Agents SDK でも CrewAI でも持ち込める。逆に MAF を Container Apps に置くこともできる。この 2 軸(何で書くか × どこで動かすか)は独立している。
+**Hosted agent は「デプロイ先」であって「フレームワーク」ではない。** 公式明記は MAF / LangGraph / Semantic Kernel / CrewAI / カスタムコードで、プロトコルライブラリはフレームワーク非依存のため任意のフレームワークが利用可。逆に MAF を Container Apps に置くこともできる。この 2 軸(何で書くか × どこで動かすか)は独立している。
 
 **バージョンは不変で、トラフィック分割はできない。** hosted agent の各バージョンはコンテナイメージ・リソース割当・環境変数・プロトコル構成のスナップショットで、**1 エンドポイント = 1 バージョン**。カナリアリリースをやるなら、エージェントを別名で立てて呼び出し側で振り分ける設計が要る(prompt agent は `FixedRatio` でトラフィック % 指定が可能なので、ここは prompt / hosted で挙動が違う)。
 
@@ -289,7 +289,7 @@ Code Interpreter の基盤は Container Apps dynamic sessions なので、**「F
 |---|---|---|---|
 | S: Bicep / ARM | `Microsoft.CognitiveServices/accounts` + `accounts/projects` + `accounts/deployments` | GA | ネットワーク注入は**作成時のみ**設定可 |
 | S: Terraform | `azurerm_cognitive_account`(kind AIServices + `project_management_enabled`)+ `azurerm_cognitive_account_project` | GA 相当 | プレビュー機能は AzAPI 併用。AVM モジュール `Azure/avm-ptn-aiml-ai-foundry` あり |
-| H: azd Foundry 拡張 | `azd ai agent init/run/invoke/monitor` 等 | プレビュー | エージェント開発ライフサイクル向け。**az CLI に `az foundry` は存在しない** |
+| H: azd Foundry 拡張 | `azd ai agent init/run/invoke/doctor` 等(別ページでは init/show/monitor/invoke/files の列挙もあり、公式ドキュメント間で表記揺れ) | プレビュー | エージェント開発ライフサイクル向け。**az CLI に `az foundry` は存在しない** |
 | M: ポータル手動 | — | — | 再現性なし。PoC 限定 |
 
 **環境分離の単位を最初に決める。** プロジェクト単位 / リソース単位 / サブスクリプション単位のどれで dev-stg-prod を切るかで、クォータ・ネットワーク・RBAC の設計が全部変わる。**最初の「default」プロジェクトだけが OpenAI Batch / Fine-tuning / Stored completions に対応する**という非対称もあるため、「プロジェクトを増やせば済む」と考えると詰まる。

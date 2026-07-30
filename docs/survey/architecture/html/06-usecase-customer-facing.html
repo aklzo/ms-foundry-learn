@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="06-ユースケース編-c-顧客向け公開・マルチテナント-saas・大規模トラフィック">06. ユースケース編 C — 顧客向け公開・マルチテナント SaaS・大規模トラフィック</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#c1-一般顧客向けチャット-単一テナント">C1. 一般顧客向けチャット(単一テナント)</a></li><li><a href="#c2-マルチテナント-saas">C2. マルチテナント SaaS</a></li><li><a href="#c3-大規模トラフィック・複数部門への払い出し">C3. 大規模トラフィック・複数部門への払い出し</a></li><li><a href="#このパターン特有のチェックリスト">このパターン特有のチェックリスト</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
 <p>社内利用と外部公開の間には、<strong>アーキテクチャ上の断絶</strong>がある。社内なら「Entra ID で認証すれば概ね安全」が成り立つが、外部公開では (1) 不特定多数からの攻撃、(2) テナント間のデータ分離、(3) 一部利用者による資源の占有、(4) 利用量に応じた課金按分 — の 4 つが同時に効いてくる。</p>
 <h2 id="パターン一覧">パターン一覧</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -135,7 +135,7 @@ footer {
       ▼
  [Foundry(Agent Service / モデルデプロイ)]
       └ Private Endpoint 経由で Cosmos DB / AI Search / Storage</code></pre>
-<p><strong>Front Door を前段に置く場合の公式パターン:</strong> ゲートウェイインスタンスを <strong>Private Endpoint 経由でのみ到達可能にし、ゲートウェイ実装側で <code>X_AZURE_FDID</code> HTTP ヘッダーの検証を追加する。</strong>これをやらないと Application Gateway に直接アクセスされて Front Door の WAF を迂回される。</p>
+<p><strong>Front Door を前段に置く場合のベストプラクティス(Front Door 一般ドキュメント):</strong> ゲートウェイインスタンスを <strong>Private Endpoint 経由でのみ到達可能にし、ゲートウェイ実装側で <code>X_AZURE_FDID</code> HTTP ヘッダーの検証を追加する。</strong>これをやらないと Application Gateway に直接アクセスされて Front Door の WAF を迂回される。なおこの手法の出典はベースライン(チャット参照アーキテクチャ)記事ではなく <strong>Front Door の一般ドキュメント</strong>である(ベースライン記事は Front Door に言及せず、「Application Gateway がインターネットに露出する唯一のリソース」とする構成)。</p>
 <h3 id="waf-チューニングは必須作業として工数に入れる">⚠ WAF チューニングは必須作業として工数に入れる</h3>
 <p>公式ベースラインに専用の節が立っているほど確実に踏む問題。</p>
 <blockquote><p>チャットアプリはコード片・SQL 文・HTML 断片を含むため、<strong>WAF マネージドルールの誤検知を頻発させる。</strong>リモートコード実行、ローカルファイルインクルード、脅威インテリジェンスなど複数のルールグループにまたがる。<strong>マルチターン会話では OWASP anomaly score がメッセージ間で累積し、会話が長くなるとある時点で突然 HTTP 403 でブロックされる。</strong></p></blockquote>
@@ -329,7 +329,7 @@ footer {
 <ul>
 <li>Foundry の <code>project</code> タグによるコスト配賦は<strong>プレビューで、かつ Models sold by Azure のみ対応</strong>(Marketplace 経由のモデルは未対応)。</li>
 <li>Estimated cost は<strong>割引や契約価格を反映せず、Provisioned(PTU)も含まない。</strong>しかも <strong>prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。</strong></li>
-<li>課金イベントが Cost Analysis に現れるまで<strong>約 5 時間の遅延。</strong></li>
+<li>課金イベントが Cost Analysis に現れるまで、<strong>取り込みタイミングにより遅延がある</strong>(公式は具体的な時間を示していない。分単位で比較せずトレンドで照合せよと記載)。</li>
 </ul>
 <p><strong>→ テナント別のメータリングは APIM で取る。</strong><code>llm-emit-token-metric</code> に<strong>カスタムディメンション(User ID / Tenant ID / API ID / Client IP)</strong>を付けて App Insights に送れば、Foundry が提供しない粒度でチャージバックできる。<strong>SaaS 案件では APIM が事実上必須。</strong></p>
 <h3 id="ノイジーネイバー対策">ノイジーネイバー対策</h3>

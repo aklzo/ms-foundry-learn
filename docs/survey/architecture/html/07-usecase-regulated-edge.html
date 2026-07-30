@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="07-ユースケース編-d-規制業種・閉域・データ主権・エッジ">07. ユースケース編 D — 規制業種・閉域・データ主権・エッジ</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この章で最初に伝えるべき-3-つの事実">この章で最初に伝えるべき 3 つの事実</a></li><li><a href="#1-最上位の分岐-3-つの-egress-モデル">1. 最上位の分岐 — 3 つの egress モデル</a></li><li><a href="#2-byo-vnet-standard-agent-setup-の設計">2. BYO VNet(Standard agent setup)の設計</a></li><li><a href="#3-閉域で使えない機能の一覧-設計の出発点">3. 閉域で使えない機能の一覧(設計の出発点)</a></li><li><a href="#4-network-security-perimeter-という代替-private-link-とは排他">4. Network Security Perimeter という代替(Private Link とは排他)</a></li><li><a href="#5-データ主権とデータ所在">5. データ主権とデータ所在</a></li><li><a href="#6-コンプライアンス統制">6. コンプライアンス統制</a></li><li><a href="#7-評価とレッドチーミングのリージョン制約-日本案件で必ず効く">7. 評価とレッドチーミングのリージョン制約(日本案件で必ず効く)</a></li><li><a href="#8-ソブリンクラウド-azure-government">8. ソブリンクラウド(Azure Government)</a></li><li><a href="#9-エッジ・オンプレ・ハイブリッド">9. エッジ・オンプレ・ハイブリッド</a></li><li><a href="#規制案件で早期に潰すべき論点-チェックリスト">規制案件で早期に潰すべき論点(チェックリスト)</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
 <p>金融・公共・医療など、<strong>ネットワーク分離とデータ所在を先に決めなければ設計が始まらない</strong>類型。このページの内容は <a href="03-decision-guide.html">03. 選定ガイド</a> の G1(データ・規制ゲート)と G2(ネットワークゲート)の詳細版にあたる。</p>
 <h2 id="この章で最初に伝えるべき-3-つの事実">この章で最初に伝えるべき 3 つの事実</h2>
 <ol>
@@ -190,7 +190,7 @@ footer {
 <p><strong>ピアリング先 VNet も含めて、予約レンジ(<code>169.254.0.0/16</code>、<code>172.30.0.0/16</code>、<code>172.31.0.0/16</code>、<code>100.64.0.0/11</code> 等)と重複してはならない。</strong>ピアリング VNet は一意で重複しない IP レンジが必須で、重複が避けられない場合は Managed VNet を使えと明記されている。</p>
 <h3 id="byo-必須リソースと-cosmos-db-の-ru-s">BYO 必須リソースと Cosmos DB の RU/s</h3>
 <p>Standard setup は <strong>Storage / AI Search / Cosmos DB の 3 つすべて</strong>を渡さないと capability host 作成が失敗する。</p>
-<p><strong>Cosmos DB はアカウント合計 3,000 RU/s 以上が必須</strong>(5 コンテナー × 各 1,000 RU/s)。<strong>複数プロジェクトならプロジェクト数分を乗算する。</strong>RU/s 不足は capability host プロビジョニング失敗の直接原因。</p>
+<p><strong>Cosmos DB はアカウント合計 3,000 RU/s 以上が必須</strong>(コンテナーは 3〜5 個 × 各 1,000 RU/s。基本 3 個+Responses API 利用エージェントの初回起動で 2 個が追加作成される。排他ではなく追加関係で、Responses 利用時はプロジェクトあたり実質 5,000 RU/s)。<strong>複数プロジェクトならプロジェクト数分を乗算する。</strong>RU/s 不足は capability host プロビジョニング失敗の直接原因。</p>
 <div class="tablewrap"><table><thead><tr>
 <th>コンテナー</th>
 <th>用途</th>
@@ -222,7 +222,7 @@ footer {
 <td><strong>New</strong></td>
 </tr>
 </tbody></table></div>
-<blockquote><p><strong>⚠ capability host は作成後に更新できない。</strong>構成変更にはプロジェクト削除・再作成が必要。<strong>IaC の冪等更新が効かない最大のポイント。</strong></p></blockquote>
+<blockquote><p><strong>⚠ capability host は作成後に更新できない。</strong>構成変更には capability host の削除・再作成が必要(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。<strong>IaC の冪等更新が効かない最大のポイント。</strong></p></blockquote>
 <p><strong>なお BYO VNet でもデータリソースは「platform-managed」を選べる</strong>(テンプレート <code>11-private-network-basic-vnet</code>)。<strong>「閉域にしたいがデータストアの運用は持ちたくない」場合の選択肢</strong>として覚えておく。BYO データリソースが要るなら <code>15-private-network-standard-agent-setup</code>。</p>
 <h3 id="private-link-のサブリソースと-dns-ゾーン">Private Link のサブリソースと DNS ゾーン</h3>
 <div class="tablewrap"><table><thead><tr>
@@ -608,7 +608,7 @@ footer {
 </tr>
 <tr>
 <td><strong>AI Red Teaming</strong></td>
-<td><strong>East US 2 / North Central US のみ</strong></td>
+<td><strong>公式2ページ間で記載が揺れる(evaluation-regions ページは East US 2 / North Central US の2つ、ai-red-teaming-agent ページは +France Central / Sweden Central / Switzerland West の5つ)。いずれにせよ日本・APAC 非対応</strong></td>
 </tr>
 </tbody></table></div>
 <blockquote><p><strong>本番推論は Japan East、安全性評価と Red Teaming は別リージョンの評価専用プロジェクト</strong>という分離構成になる。<strong>プロンプト・応答が評価のために国外に渡る</strong>ため、法務確認が必須。評価だけなら Agent 用のフル構成(Cosmos DB / AI Search / capability host)は不要で、<strong>評価専用の Bicep テンプレート</strong>が用意されている。<br><br>加えて <strong>Guardrails の Task adherence は「データが指定 Geo 外(US/EU)で処理される可能性」が明記されている。</strong></p></blockquote>
@@ -663,7 +663,7 @@ footer {
 <tr>
 <td><strong>Foundry Local</strong></td>
 <td><strong>エンドユーザー端末上</strong>でアプリに AI を埋め込むための SDK + ランタイム</td>
-<td><strong>ラベルなし</strong>(GA とも preview とも書かれていない)</td>
+<td><strong>GA</strong>(公式ブログで 2026-04-09 に GA 宣言: <a href="https://devblogs.microsoft.com/foundry/foundry-local-ga/" title="https://devblogs.microsoft.com/foundry/foundry-local-ga/">foundry-local-ga</a> 。docs ページにはラベルなし)</td>
 </tr>
 <tr>
 <td><strong>Foundry Local on Azure Local</strong></td>
@@ -679,7 +679,7 @@ footer {
 <h3 id="9-1-foundry-local-端末上">9.1 Foundry Local(端末上)</h3>
 <p>「ユーザーのデバイス上で完全に動作するアプリケーションを出荷するための、エンドツーエンドのローカル AI ソリューション」と定義されている。</p>
 <ul>
-<li><strong>ライフサイクル表記が存在しない。</strong>概要ページにも入門ページにも GA / preview のラベル・バナーが一切ない。<strong>「Microsoft は GA と明言していない」と正確に伝えるのが安全。</strong>(なお「Foundry Local is available in preview」という記述は <strong>Azure Local 版の記事内にのみ</strong>存在する。同名製品の混同に注意。)</li>
+<li><strong>公式ブログで 2026-04-09 に GA 宣言済み</strong>( <a href="https://devblogs.microsoft.com/foundry/foundry-local-ga/" title="https://devblogs.microsoft.com/foundry/foundry-local-ga/">foundry-local-ga</a> )。ただし docs の概要ページにも入門ページにも GA / preview のラベル・バナーが無い点は変わらない(初版の「Microsoft は GA と明言していない」という記述は撤回)。(なお「Foundry Local is available in preview」という記述は <strong>Azure Local 版の記事内にのみ</strong>存在する。同名製品の混同に注意。)</li>
 <li><strong>Windows / macOS(Apple silicon)/ Linux。Azure サブスクリプション不要。</strong>ランタイムは ONNX Runtime で、アプリへの追加サイズは約 20MB。</li>
 <li><strong>ハードウェアアクセラレーションは自動。</strong>「利用可能なハードウェアを検出し最良の実行プロバイダーを選ぶ。<strong>GPU と NPU</strong> で高速化し、無ければ CPU にシームレスにフォールバックする。ハードウェア検出コードは不要」。Windows 向けには専用パッケージがあり、Windows ML ランタイムと統合して「同じ API サーフェスでより広いハードウェアアクセラレーション」を提供する。</li>
 <li><strong>モデルカタログは意図的に絞られている。</strong>対象は<strong>チャット補完(GPT OSS / Qwen / DeepSeek / Mistral / Phi)と音声書き起こし(Whisper)の 2 系統のみ。</strong>「Foundry Local は<strong>汎用のモデル実験用ではなく本番アプリの出荷用</strong>に設計されている」と明記。<strong>埋め込みモデル・ビジョンモデルの記載はない。</strong></li>

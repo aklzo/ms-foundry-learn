@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-29(learn.microsoft.com / GitHub 現行ページ確認)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
 
 本ページは **Microsoft が公式に出している**ものだけを扱う。想定ユースケース別の設計([04〜08](./README.md#ドキュメント一覧))は、ここを土台にした上での応用と位置づける。
 
@@ -14,7 +14,7 @@
 | **WAF**(Well-Architected Framework) | 非機能設計の原則(信頼性・セキュリティ・コスト・運用・性能) | `/azure/well-architected/ai/` |
 | **AAC**(Azure Architecture Center) | 実装トポロジー(どのサービスをどう並べるか) | `/azure/architecture/ai-ml/` |
 
-2026 年 4〜5 月に CAF の application landing zone accelerator 記事群が廃止され、「**ワークロード設計のガイダンスは AAC と WAF が primary source**」と明記された。提案書では **CAF = 組織・配置の根拠、AAC/WAF = 実装の根拠**として使い分けるのが現行構造に整合する。
+現行のドキュメント構造では **AAC と WAF が実装ガイダンスの一次情報**となっている(「明記」の一次ソースは未確認)。提案書では **CAF = 組織・配置の根拠、AAC/WAF = 実装の根拠**として使い分けるのが現行構造に整合する。
 
 ---
 
@@ -212,7 +212,7 @@ URL: https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-ag
 
 ### 3.1 まず知っておくべき「無いもの」
 
-- **Foundry の WAF service guide は存在しない。**`service-guides/azure-ai-foundry` も `service-guides/microsoft-foundry` も 404。Azure OpenAI の service guide は 2025 年 9 月に「内容が古く WAF に整合しなくなった」として廃止された。
+- **Foundry の WAF service guide は存在しない。**`service-guides/azure-ai-foundry` も `service-guides/microsoft-foundry` も 404。Azure OpenAI の service guide は現在は廃止されリダイレクトされる(廃止時期・理由の公式明記は未確認)。
 - **ピラー別の AI ページも存在しない**(`ai/reliability` `ai/security` 等はすべて 404)。5 本柱は `ai/design-principles` の 1 ページに集約されている。
 - したがって「Foundry を WAF 準拠で設計する根拠」を service guide に求めることは**現状できない。**代替の一次資料は、WAF の `ai/architecture-pattern` が「**これらの baseline の例が AI ワークロードの推奨アーキテクチャである**」として指す **Baseline Microsoft Foundry chat**(前節 B)。
 
@@ -395,7 +395,7 @@ URL: https://learn.microsoft.com/en-us/azure/foundry/concepts/planning
 
 **使うべきでないもの:** `Azure/azure-openai-landing-zone`(2024-10 以降更新なし、Foundry 改称未反映)、`Azure-Samples/ai-landing-zone-in-a-box`(アーカイブ済み)。なお「AI Foundry Jumpstart」という独立プロダクトは**存在しない**(Arc Jumpstart は Arc / エッジ / K8s が主題の別物)。
 
-**主なソリューションアクセラレータ:** Conversation Knowledge Mining / Document Knowledge Mining / Content Processing / **Multi-Agent Custom Automation Engine (MACAE、AutoGen → Microsoft Agent Framework + Foundry に移行済み)** / Modernize Your Code / Chat with your data(`Azure-Samples` org)。RAG デモの事実上の最有力リファレンスは `Azure-Samples/azure-search-openai-demo`。
+**主なソリューションアクセラレータ:** Conversation Knowledge Mining / Document Knowledge Mining / Content Processing / **Multi-Agent Custom Automation Engine (MACAE、AutoGen → Microsoft Agent Framework + Foundry に移行済み)** / Modernize Your Code / Chat with your data。**org はアクセラレータごとに異なる**点に注意(MACAE は `microsoft` org: https://github.com/microsoft/Multi-Agent-Custom-Automation-Engine-Solution-Accelerator 。`Azure-Samples` 側の同名 URL は 404)。RAG デモの事実上の最有力リファレンスは `Azure-Samples/azure-search-openai-demo`(こちらは `Azure-Samples` org で正しい)。
 
 ---
 
@@ -422,4 +422,4 @@ URL: https://learn.microsoft.com/en-us/azure/foundry/concepts/planning
 | 本番、ALZ あり(hub-spoke) | **Baseline in ALZ を設計ガイドとして読み、コードは `Azure/AI-Landing-Zones`(Preview)または AVM `avm-ptn-aiml-landing-zone`(Terraform)** | 記事から実装リンクが削除済み |
 | 自社 IaC に組み込む | **AVM `avm/ptn/ai-ml/ai-foundry`(Bicep)/ `avm-ptn-aiml-ai-foundry`(Terraform)** | ともに Available |
 | マルチエージェントで決定的制御が必要 | **Agent Framework + Container Apps**、または hosted agent | AAC のソリューションアイデアと baseline の Alternatives |
-| エージェントが数十〜数百 | Dynamic AI Agents at Scale(AKS + セマンティックキャッシュ) | 「エージェントが 5 未満なら使うな」と明記 |
+| エージェントが数十〜数百 | Dynamic AI Agents at Scale(AKS + セマンティックキャッシュ) | 「エージェントが 5 未満なら使うな」と明記(要確認: 記事 URL 未特定。learn 検索でもヒットせず) |

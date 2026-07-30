@@ -1,6 +1,6 @@
 # Microsoft Foundry アーキテクチャ設計ガイド
 
-> **最終更新:** 2026-07-29(learn.microsoft.com / Azure Architecture Center / GitHub の現行ページを確認)/ **版:** 初版
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)/ **版:** 初版
 > SI の技術選定・アーキテクチャ選定基準の構築を目的に、**Microsoft Foundry を使ったシステムアーキテクチャ**を、インフラを含めた広い視点で整理したもの。機能単位の GA / プレビュー調査は [features/](../features/README.md) を参照。
 
 ## ドキュメント一覧
@@ -53,7 +53,7 @@
 | **C2** | マルチテナント SaaS | Hosted agent(プロトコル 2.0.0) | テナント別索引 | 公開 + APIM | 複数顧客に販売する | [06](./06-usecase-customer-facing.md#c2-マルチテナント-saas) |
 | **C3** | 大規模 / 複数部門への払い出し | 任意 | 任意 | APIM 必須 | 部門別按分・キャパシティ | [06](./06-usecase-customer-facing.md#c3-大規模トラフィック・複数部門への払い出し) |
 | **D1** | 規制業種・閉域 | Hosted agent or 自前 | **AI Search 自前索引一択** | **BYO VNet** | 閉域・監査・データ主権 | [07](./07-usecase-regulated-edge.md) |
-| **D2** | ソブリン(Azure Government) | **Prompt agent のみ** | File Search / AI Search | Gov クラウド | **hosted agent・MCP・A2A が非対応** | [07](./07-usecase-regulated-edge.md#8-ソブリンクラウド-azure-government) |
+| **D2** | ソブリン(Azure Government) | **Prompt agent 対応**(Workflows はプレビュー、Hosted agents 非対応) | File Search / AI Search | Gov クラウド | **hosted agent・MCP・A2A が非対応**( https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government 2026-07-13 更新) | [07](./07-usecase-regulated-edge.md#8-ソブリンクラウド-azure-government) |
 | **D3** | エッジ・オンプレ | Foundry 非依存 | 自前 | オフライン | **端末上 = Foundry Local / オンプレ K8s = Azure Local 版(プレビュー・申請制)/ エアギャップ = 切断コンテナ** | [07](./07-usecase-regulated-edge.md#9-エッジ・オンプレ・ハイブリッド) |
 | **E1** | 音声エージェント | Voice Live API | 任意 | 要件次第 | リアルタイム音声対話 | [08](./08-usecase-specialized.md#e1-音声エージェント-コンタクトセンター) |
 | **E2** | 文書処理・IDP | 非同期パイプライン | DI / Content Understanding | 要件次第 | 帳票・契約書の構造化抽出 | [08](./08-usecase-specialized.md#e2-文書処理・idp-intelligent-document-processing) |
@@ -140,10 +140,10 @@
 | 6 | **コストのハードリミット。**「Azure OpenAI には現状その機能がない」 | 予算アラート + 自作の自動化 |
 | 7 | **プロジェクト内のエージェント単位のアクセス制御。**`Foundry User` を持てばプロジェクト内の全エージェントと対話できる | アプリの認証認可層、または hosted agent の Entra Agent ID |
 | 8 | **`max_output_tokens` / `truncation` によるトークン制御。**「self-hosted orchestration でしか実現できない」 | 自前オーケストレーション |
-| 9 | **閉域での Traces / Memory / File Search / Work IQ / Logic Apps / Browser Automation / Computer Use / Image Generation** | 自前実装または機能除外([07](./07-usecase-regulated-edge.md#3-閉域で使えない機能の一覧-設計の出発点)) |
+| 9 | **閉域での Traces / Memory / File Search / Work IQ / Logic Apps / Browser Automation / Computer Use / Image Generation**(Memory は what-is-memory ページ、Work IQ は work-iq ページに VNet 非対応と明記) | 自前実装または機能除外([07](./07-usecase-regulated-edge.md#3-閉域で使えない機能の一覧-設計の出発点)) |
 | 10 | **Claude モデルへのコンテンツフィルター**(組込みフィルターが適用されない) | APIM の `llm-content-safety` かアプリ層で Content Safety を呼ぶ |
 | 11 | **音声モデルへのガードレール**(Whisper 等には適用されない) | テキスト化後の経路で Content Safety |
-| 12 | **capabilityHost の更新。**作成後は変更不可でプロジェクト再作成が必要 | IaC を「作り直し前提」で設計 |
+| 12 | **capabilityHost の更新。**作成後は変更不可で、変更は **capabilityHost 自体の削除・再作成**で行う(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。委任サブネット等アウトバウンド網の変更は Foundry リソースの再デプロイが必要( https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts ) | IaC を「作り直し前提」で設計 |
 
 **加えて、コンテンツフィルターは「フェイルオープン」する。**フィルタリングシステムが利用不能な場合、リクエストはフィルタリングなしで HTTP 200 で完了する。`content_filter_results` 内のエラーオブジェクトでしか判別できないため、**規制業種では `finish_reason` と `content_filter_results` の検証を必須実装にする。**
 
@@ -153,15 +153,16 @@
 
 | 期限 | 対象 | 設計への効き方 |
 |---|---|---|
+| **2026-07-31** | コンテナプロトコル 1.0.0 | **猶予期間後、この日からブロック開始と公表済み**( https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user ) |
 | **2026-08-20** | Hosted agents 初期プレビュー基盤 | **自動移行されない。**パッケージ・API・エンドポイント・ID・ライフサイクル管理がまとめて変わる([10 章 2.0](./10-migration-antipatterns.md#2-0-最優先-hosted-agent-初期プレビュー基盤-新基盤-期限-2026-08-20)) |
 | **2026-08-26** | Assistants API / `azure-ai-inference` SDK | Threads / Runs 前提のアプリは全面改修。**状態データは移行されない** |
+| **2026-10-14** | **Azure OpenAI On Your Data** | 「モデルが直接データを読む」構成が終わる。**RAG の既存提案書は要更新**。移行先は Foundry Agent Service + Foundry IQ( https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/use-your-data ) |
 | **2026-12-01** | ビジュアル Workflows | **ポータルでマルチエージェントを組む構成が消える。**長期案件で提案不可 |
 | **2027-03-31** | Agents (classic)(v1) | classic プロジェクト上のエージェント資産 |
 | **2027-04-20** | prompt flow | **新規開発に非推奨。**Microsoft Agent Framework への移行を明示要求 |
 | **2028-09-25** | Azure AI Vision Image Analysis | 「2026-09-25 までに移行計画を」と記載 |
-| **日付未公表(間近と明記)** | **Azure OpenAI On Your Data** | 「モデルが直接データを読む」構成が終わる。**RAG の既存提案書は要更新**。移行先は Foundry Agent Service + Foundry IQ |
 | 2027-10 前後 | ファインチューン済みモデルの deployment | 学習停止の約 6 か月後に推論も停止。**FT は作り直しが前提** |
-| 日付未公表 | コンテナプロトコル 1.0.0 / Agent Applications | 猶予期間後にブロックされる / 廃止告知が予告済み |
+| 日付未公表 | Agent Applications | 廃止告知が予告済み |
 
 全体表は [10 章](./10-migration-antipatterns.md#1-確定済み廃止スケジュールと設計への影響)と [features/README](../features/README.md) を参照。
 
@@ -199,3 +200,4 @@
 | 2026-07-29 | 初版作成(全 10 章) |
 | 2026-07-29 | 追補調査を反映。**08 章**に Voice Live のクォータ・テレフォニー統合(ACS)・日本リージョン制約、マルチモーダル生成の非同期ジョブと Sora 2 の RAI 制限、**E6 ファインチューニング運用**を追加。**07 章 9 節**をエッジ 3 形態(Foundry Local / Azure Local 版 / 切断コンテナ)に再構成し、**初版の誤り「オンプレ文書処理は DI コンテナが唯一の選択肢」を訂正**(Vision Read OCR も GA・切断対応)。**06 章**に公式のマルチテナンシー 4 方式比較と Responses API の分離課題を追加。**Azure OpenAI On Your Data の非推奨**を 04 / 10 章と期限表に反映 |
 | 2026-07-30 | features 側の検証で判明した事実を反映: **08 章の Voice Live を「GA の明文なし」→「GA 一覧表で Preview と明記(ただし Voice Live 自身のページと表記不一致)」に更新** |
+| 2026-07-30 | **全 11 ファイルのファクトチェック(公式ドキュメント突合)と訂正を適用。**確定日の反映: On Your Data 廃止 **2026-10-14**、コンテナプロトコル 1.0.0 ブロック開始 **2026-07-31**。古い記述の更新: **Foundry Local GA(2026-04-09 公式ブログ)**、Toolbox GA、FLUX.2 GA、tsuzumi-7b Legacy(2026-08-31 リタイア)、Groundedness detection 6→4 リージョン、SharePoint「ライセンス必須」→ pay-as-you-go 併記、全遮断 PE のポータル対応。誤りの訂正: capabilityHost 変更は「プロジェクト再作成」でなく「capability host の削除・再作成」、MACAE の org(microsoft)、FT デプロイ上限 10/リソース、Cosmos DB コンテナー 3〜5 個(追加関係)、agent identity とマネージド ID の混同、ガードレール既定閾値「画像 Low」→ テキスト・画像とも Medium、File Search「固定」→ 既定値。ミスリードの限定: 「国内処理必須 → Data Zone(APAC)」を Regional Standard(Japan East)に分離、A2A「ポータル未対応」を incoming 有効化に限定、Front Door パターンのベースライン記事への帰属を Front Door 一般ドキュメントに修正、Cost Analysis「約5時間遅延」を時間非特定に。公式間不整合の両論併記: AI Red Teaming リージョン(2 vs 5)、Traces VNet(非対応 vs プレビュー)、azd コマンド列挙 |

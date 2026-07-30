@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-29
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
 
 金融・公共・医療など、**ネットワーク分離とデータ所在を先に決めなければ設計が始まらない**類型。このページの内容は [03. 選定ガイド](./03-decision-guide.md) の G1(データ・規制ゲート)と G2(ネットワークゲート)の詳細版にあたる。
 
@@ -67,7 +67,7 @@ Foundry のネットワーク設計は「**egress(送信)モデルを先に決�
 
 Standard setup は **Storage / AI Search / Cosmos DB の 3 つすべて**を渡さないと capability host 作成が失敗する。
 
-**Cosmos DB はアカウント合計 3,000 RU/s 以上が必須**(5 コンテナー × 各 1,000 RU/s)。**複数プロジェクトならプロジェクト数分を乗算する。**RU/s 不足は capability host プロビジョニング失敗の直接原因。
+**Cosmos DB はアカウント合計 3,000 RU/s 以上が必須**(コンテナーは 3〜5 個 × 各 1,000 RU/s。基本 3 個+Responses API 利用エージェントの初回起動で 2 個が追加作成される。排他ではなく追加関係で、Responses 利用時はプロジェクトあたり実質 5,000 RU/s)。**複数プロジェクトならプロジェクト数分を乗算する。**RU/s 不足は capability host プロビジョニング失敗の直接原因。
 
 | コンテナー | 用途 | ランタイム |
 |---|---|---|
@@ -77,7 +77,7 @@ Standard setup は **Storage / AI Search / Cosmos DB の 3 つすべて**を渡�
 | `agent-definitions-v1` | エージェントメタデータ + バージョン | **New** |
 | `run-state-v1` | 内部メッセージ + 会話 | **New** |
 
-> **⚠ capability host は作成後に更新できない。**構成変更にはプロジェクト削除・再作成が必要。**IaC の冪等更新が効かない最大のポイント。**
+> **⚠ capability host は作成後に更新できない。**構成変更には capability host の削除・再作成が必要(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。**IaC の冪等更新が効かない最大のポイント。**
 
 **なお BYO VNet でもデータリソースは「platform-managed」を選べる**(テンプレート `11-private-network-basic-vnet`)。**「閉域にしたいがデータストアの運用は持ちたくない」場合の選択肢**として覚えておく。BYO データリソースが要るなら `15-private-network-standard-agent-setup`。
 
@@ -328,7 +328,7 @@ MCSB v1.0 ベースで「古いガイダンスを含む可能性がある」と�
 | **リスク・安全性評価器** | **East US 2 / North Central US / France Central / Sweden Central / Switzerland West / Australia East のみ** |
 | Groundedness Pro | East US 2 / Sweden Central のみ |
 | Protected material | **East US 2 のみ** |
-| **AI Red Teaming** | **East US 2 / North Central US のみ** |
+| **AI Red Teaming** | **公式2ページ間で記載が揺れる(evaluation-regions ページは East US 2 / North Central US の2つ、ai-red-teaming-agent ページは +France Central / Sweden Central / Switzerland West の5つ)。いずれにせよ日本・APAC 非対応** |
 
 > **本番推論は Japan East、安全性評価と Red Teaming は別リージョンの評価専用プロジェクト**という分離構成になる。**プロンプト・応答が評価のために国外に渡る**ため、法務確認が必須。評価だけなら Agent 用のフル構成(Cosmos DB / AI Search / capability host)は不要で、**評価専用の Bicep テンプレート**が用意されている。
 >
@@ -361,7 +361,7 @@ MCSB v1.0 ベースで「古いガイダンスを含む可能性がある」と�
 
 | 選択肢 | 何か | ライフサイクル |
 |---|---|---|
-| **Foundry Local** | **エンドユーザー端末上**でアプリに AI を埋め込むための SDK + ランタイム | **ラベルなし**(GA とも preview とも書かれていない) |
+| **Foundry Local** | **エンドユーザー端末上**でアプリに AI を埋め込むための SDK + ランタイム | **GA**(公式ブログで 2026-04-09 に GA 宣言: https://devblogs.microsoft.com/foundry/foundry-local-ga/ 。docs ページにはラベルなし) |
 | **Foundry Local on Azure Local** | **オンプレ K8s 上のエンタープライズ推論基盤**(Arc 拡張) | **プレビュー、かつ申請制** |
 | **Foundry Tools の切断コンテナ** | Speech / Language / Vision / Document Intelligence 等を**エアギャップで動かす** | サービスごとに GA / preview が異なる |
 
@@ -369,7 +369,7 @@ MCSB v1.0 ベースで「古いガイダンスを含む可能性がある」と�
 
 「ユーザーのデバイス上で完全に動作するアプリケーションを出荷するための、エンドツーエンドのローカル AI ソリューション」と定義されている。
 
-- **ライフサイクル表記が存在しない。**概要ページにも入門ページにも GA / preview のラベル・バナーが一切ない。**「Microsoft は GA と明言していない」と正確に伝えるのが安全。**(なお「Foundry Local is available in preview」という記述は **Azure Local 版の記事内にのみ**存在する。同名製品の混同に注意。)
+- **公式ブログで 2026-04-09 に GA 宣言済み**( https://devblogs.microsoft.com/foundry/foundry-local-ga/ )。ただし docs の概要ページにも入門ページにも GA / preview のラベル・バナーが無い点は変わらない(初版の「Microsoft は GA と明言していない」という記述は撤回)。(なお「Foundry Local is available in preview」という記述は **Azure Local 版の記事内にのみ**存在する。同名製品の混同に注意。)
 - **Windows / macOS(Apple silicon)/ Linux。Azure サブスクリプション不要。**ランタイムは ONNX Runtime で、アプリへの追加サイズは約 20MB。
 - **ハードウェアアクセラレーションは自動。**「利用可能なハードウェアを検出し最良の実行プロバイダーを選ぶ。**GPU と NPU** で高速化し、無ければ CPU にシームレスにフォールバックする。ハードウェア検出コードは不要」。Windows 向けには専用パッケージがあり、Windows ML ランタイムと統合して「同じ API サーフェスでより広いハードウェアアクセラレーション」を提供する。
 - **モデルカタログは意図的に絞られている。**対象は**チャット補完(GPT OSS / Qwen / DeepSeek / Mistral / Phi)と音声書き起こし(Whisper)の 2 系統のみ。**「Foundry Local は**汎用のモデル実験用ではなく本番アプリの出荷用**に設計されている」と明記。**埋め込みモデル・ビジョンモデルの記載はない。**

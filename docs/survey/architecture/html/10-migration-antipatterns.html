@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="10-移行アーキテクチャとアンチパターン集">10. 移行アーキテクチャとアンチパターン集</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-確定済み廃止スケジュールと設計への影響">1. 確定済み廃止スケジュールと設計への影響</a></li><li><a href="#2-移行パターン別アーキテクチャ">2. 移行パターン別アーキテクチャ</a></li><li><a href="#3-アンチパターン集">3. アンチパターン集</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
 <p>Foundry は「GA だが足元が動いている」プラットフォームで、<strong>2026 年後半から 2027 年にかけて確定済みの廃止が集中している</strong>。新規設計であっても、廃止スケジュールを知らずに選ぶと 1 年以内に作り直しになる。本ページは (1) 既存資産からの移行アーキテクチャ、(2) 廃止期限の設計への効き方、(3) 提案時に踏みやすいアンチパターン、をまとめる。</p>
 <h2 id="1-確定済み廃止スケジュールと設計への影響">1. 確定済み廃止スケジュールと設計への影響</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -139,9 +139,9 @@ footer {
 <td>Document Intelligence / Content Understanding / Foundry Models</td>
 </tr>
 <tr>
-<td><strong>日付未公表</strong></td>
+<td><strong>2026-07-31</strong></td>
 <td>コンテナプロトコル 1.0.0</td>
-<td>猶予期間後、1.0.0 のエージェントへのリクエストが<strong>ブロックされる</strong>。2.0.0 でないと 1 セッション内の複数ユーザー多重化ができない</td>
+<td><strong>2026-07-31 からブロック開始と公表済み。</strong>1.0.0 のエージェントへのリクエストが<strong>ブロックされる</strong>。2.0.0 でないと 1 セッション内の複数ユーザー多重化ができない</td>
 <td>プロトコル 2.0.0</td>
 </tr>
 <tr>
@@ -151,9 +151,9 @@ footer {
 <td>新オブジェクトモデル(Agent に統合)</td>
 </tr>
 <tr>
-<td><strong>日付未公表(リタイア間近と明記)</strong></td>
+<td><strong>2026-10-14</strong></td>
 <td><strong>Azure OpenAI On Your Data</strong></td>
-<td>「モデルが直接データを読む(オーケストレーター不要)」構成が終わる。RAG の既存提案書は要更新</td>
+<td>廃止日が公表済み。「モデルが直接データを読む(オーケストレーター不要)」構成が終わる。RAG の既存提案書は要更新</td>
 <td><strong>Foundry Agent Service + Foundry IQ</strong></td>
 </tr>
 <tr>
@@ -247,7 +247,7 @@ footer {
 <td><strong>Foundry Project Manager</strong>(プロジェクトスコープ)</td>
 </tr>
 </tbody></table></div>
-<p><strong>さらにコンテナプロトコル 1.0.0 自体も非推奨</strong>で、猶予期間後は 1.0.0 のエージェントへのリクエストがブロックされる(廃止日は未公表)。2.0.0 では <code>x-agent-foundry-call-id</code> の転送が必要になる代わりに、<code>x-agent-user-id</code> で <strong>1 セッション内の複数ユーザー多重化</strong>が安全に行える(1.0.0 では不可)。マルチテナントで hosted agent を使うなら 2.0.0 が前提。</p>
+<p><strong>さらにコンテナプロトコル 1.0.0 自体も非推奨</strong>で、<strong>2026-07-31 から 1.0.0 のエージェントへのリクエストがブロックされると公表済み。</strong>2.0.0 では <code>x-agent-foundry-call-id</code> の転送が必要になる代わりに、<code>x-agent-user-id</code> で <strong>1 セッション内の複数ユーザー多重化</strong>が安全に行える(1.0.0 では不可)。マルチテナントで hosted agent を使うなら 2.0.0 が前提。</p>
 <p><strong>LangGraph を載せている場合の追加作業:</strong> LangGraph 専用アダプタは削除されたため、<code>ResponsesAgentServerHost</code> + <code>@app.response_handler</code> で <code>context.get_history()</code> から履歴を LangChain のメッセージ型に自分で変換する実装が要る。モデル接続も <code>AzureChatOpenAI</code> ではなく <code>ChatOpenAI(base_url=f&quot;{FOUNDRY_PROJECT_ENDPOINT}/openai/v1&quot;, use_responses_api=True)</code> に変える(プロジェクトスコープ権限だけで済むようになる)。Toolbox 接続には <code>langchain-mcp-adapters</code> + <code>mcp</code> が必要。</p>
 <h3 id="2-0b-agent-applications-旧-publishing-モデル-新オブジェクトモデル">2.0b Agent Applications(旧 publishing モデル)→ 新オブジェクトモデル</h3>
 <p>エージェントの公開まわりも世代交代している。旧モデルは Agent(データプレーン)+ <strong>Agent Application</strong>(コントロールプレーンの ARM リソース)+ Deployment の 3 階層だったが、新モデルでは <strong>Agent オブジェクトに統合</strong>され、作成時点で安定エンドポイント・プロトコル構成・エージェント ID・agent card を持つ。「creating an agent is the only step needed」。</p>

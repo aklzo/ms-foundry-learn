@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-29
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
 
 社内利用と外部公開の間には、**アーキテクチャ上の断絶**がある。社内なら「Entra ID で認証すれば概ね安全」が成り立つが、外部公開では (1) 不特定多数からの攻撃、(2) テナント間のデータ分離、(3) 一部利用者による資源の占有、(4) 利用量に応じた課金按分 — の 4 つが同時に効いてくる。
 
@@ -39,7 +39,7 @@
       └ Private Endpoint 経由で Cosmos DB / AI Search / Storage
 ```
 
-**Front Door を前段に置く場合の公式パターン:** ゲートウェイインスタンスを **Private Endpoint 経由でのみ到達可能にし、ゲートウェイ実装側で `X_AZURE_FDID` HTTP ヘッダーの検証を追加する。**これをやらないと Application Gateway に直接アクセスされて Front Door の WAF を迂回される。
+**Front Door を前段に置く場合のベストプラクティス(Front Door 一般ドキュメント):** ゲートウェイインスタンスを **Private Endpoint 経由でのみ到達可能にし、ゲートウェイ実装側で `X_AZURE_FDID` HTTP ヘッダーの検証を追加する。**これをやらないと Application Gateway に直接アクセスされて Front Door の WAF を迂回される。なおこの手法の出典はベースライン(チャット参照アーキテクチャ)記事ではなく **Front Door の一般ドキュメント**である(ベースライン記事は Front Door に言及せず、「Application Gateway がインターネットに露出する唯一のリソース」とする構成)。
 
 ### ⚠ WAF チューニングは必須作業として工数に入れる
 
@@ -207,7 +207,7 @@ File Search を使うなら、**`structured_inputs` で `vector_store_ids` を�
 
 - Foundry の `project` タグによるコスト配賦は**プレビューで、かつ Models sold by Azure のみ対応**(Marketplace 経由のモデルは未対応)。
 - Estimated cost は**割引や契約価格を反映せず、Provisioned(PTU)も含まない。**しかも **prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。**
-- 課金イベントが Cost Analysis に現れるまで**約 5 時間の遅延。**
+- 課金イベントが Cost Analysis に現れるまで、**取り込みタイミングにより遅延がある**(公式は具体的な時間を示していない。分単位で比較せずトレンドで照合せよと記載)。
 
 **→ テナント別のメータリングは APIM で取る。**`llm-emit-token-metric` に**カスタムディメンション(User ID / Tenant ID / API ID / Client IP)**を付けて App Insights に送れば、Foundry が提供しない粒度でチャージバックできる。**SaaS 案件では APIM が事実上必須。**
 

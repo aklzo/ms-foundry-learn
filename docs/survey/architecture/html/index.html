@@ -86,7 +86,7 @@ footer {
 <body><nav class="site"><a href="index.html" class="current">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
 <main>
 <h1 id="microsoft-foundry-アーキテクチャ設計ガイド">Microsoft Foundry アーキテクチャ設計ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント一覧">ドキュメント一覧</a></li><li><a href="#アーキテクチャ一覧">アーキテクチャ一覧</a></li><li><a href="#選定早見表-3-分で当たりをつける">選定早見表 — 3 分で当たりをつける</a></li><li><a href="#全案件に共通する前提-foundry-が-やってくれないこと">全案件に共通する前提 — Foundry が「やってくれないこと」</a></li><li><a href="#重要な期限-アーキテクチャ判断に直結するもの">重要な期限(アーキテクチャ判断に直結するもの)</a></li><li><a href="#本ドキュメント群について">本ドキュメント群について</a></li></ul></div>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com / Azure Architecture Center / GitHub の現行ページを確認)/ <strong>版:</strong> 初版<br>SI の技術選定・アーキテクチャ選定基準の構築を目的に、<strong>Microsoft Foundry を使ったシステムアーキテクチャ</strong>を、インフラを含めた広い視点で整理したもの。機能単位の GA / プレビュー調査は <a href="../../features/html/index.html">features/</a> を参照。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)/ <strong>版:</strong> 初版<br>SI の技術選定・アーキテクチャ選定基準の構築を目的に、<strong>Microsoft Foundry を使ったシステムアーキテクチャ</strong>を、インフラを含めた広い視点で整理したもの。機能単位の GA / プレビュー調査は <a href="../../features/html/index.html">features/</a> を参照。</p></blockquote>
 <h2 id="ドキュメント一覧">ドキュメント一覧</h2>
 <div class="tablewrap"><table><thead><tr>
 <th>#</th>
@@ -334,10 +334,10 @@ footer {
 <tr>
 <td><strong>D2</strong></td>
 <td>ソブリン(Azure Government)</td>
-<td><strong>Prompt agent のみ</strong></td>
+<td><strong>Prompt agent 対応</strong>(Workflows はプレビュー、Hosted agents 非対応)</td>
 <td>File Search / AI Search</td>
 <td>Gov クラウド</td>
-<td><strong>hosted agent・MCP・A2A が非対応</strong></td>
+<td><strong>hosted agent・MCP・A2A が非対応</strong>( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government">azure-government</a> 2026-07-13 更新)</td>
 <td><a href="07-usecase-regulated-edge.html#8-ソブリンクラウド-azure-government">07</a></td>
 </tr>
 <tr>
@@ -667,7 +667,7 @@ footer {
 </tr>
 <tr>
 <td>9</td>
-<td><strong>閉域での Traces / Memory / File Search / Work IQ / Logic Apps / Browser Automation / Computer Use / Image Generation</strong></td>
+<td><strong>閉域での Traces / Memory / File Search / Work IQ / Logic Apps / Browser Automation / Computer Use / Image Generation</strong>(Memory は what-is-memory ページ、Work IQ は work-iq ページに VNet 非対応と明記)</td>
 <td>自前実装または機能除外(<a href="07-usecase-regulated-edge.html#3-閉域で使えない機能の一覧-設計の出発点">07</a>)</td>
 </tr>
 <tr>
@@ -682,7 +682,7 @@ footer {
 </tr>
 <tr>
 <td>12</td>
-<td><strong>capabilityHost の更新。</strong>作成後は変更不可でプロジェクト再作成が必要</td>
+<td><strong>capabilityHost の更新。</strong>作成後は変更不可で、変更は <strong>capabilityHost 自体の削除・再作成</strong>で行う(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。委任サブネット等アウトバウンド網の変更は Foundry リソースの再デプロイが必要( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts">capability-hosts</a> )</td>
 <td>IaC を「作り直し前提」で設計</td>
 </tr>
 </tbody></table></div>
@@ -695,6 +695,11 @@ footer {
 <th>設計への効き方</th>
 </tr></thead><tbody>
 <tr>
+<td><strong>2026-07-31</strong></td>
+<td>コンテナプロトコル 1.0.0</td>
+<td><strong>猶予期間後、この日からブロック開始と公表済み</strong>( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user">isolate-sessions-per-user</a> )</td>
+</tr>
+<tr>
 <td><strong>2026-08-20</strong></td>
 <td>Hosted agents 初期プレビュー基盤</td>
 <td><strong>自動移行されない。</strong>パッケージ・API・エンドポイント・ID・ライフサイクル管理がまとめて変わる(<a href="10-migration-antipatterns.html#2-0-最優先-hosted-agent-初期プレビュー基盤-新基盤-期限-2026-08-20">10 章 2.0</a>)</td>
@@ -703,6 +708,11 @@ footer {
 <td><strong>2026-08-26</strong></td>
 <td>Assistants API / <code>azure-ai-inference</code> SDK</td>
 <td>Threads / Runs 前提のアプリは全面改修。<strong>状態データは移行されない</strong></td>
+</tr>
+<tr>
+<td><strong>2026-10-14</strong></td>
+<td><strong>Azure OpenAI On Your Data</strong></td>
+<td>「モデルが直接データを読む」構成が終わる。<strong>RAG の既存提案書は要更新</strong>。移行先は Foundry Agent Service + Foundry IQ( <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/use-your-data" title="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/use-your-data">use-your-data</a> )</td>
 </tr>
 <tr>
 <td><strong>2026-12-01</strong></td>
@@ -725,19 +735,14 @@ footer {
 <td>「2026-09-25 までに移行計画を」と記載</td>
 </tr>
 <tr>
-<td><strong>日付未公表(間近と明記)</strong></td>
-<td><strong>Azure OpenAI On Your Data</strong></td>
-<td>「モデルが直接データを読む」構成が終わる。<strong>RAG の既存提案書は要更新</strong>。移行先は Foundry Agent Service + Foundry IQ</td>
-</tr>
-<tr>
 <td>2027-10 前後</td>
 <td>ファインチューン済みモデルの deployment</td>
 <td>学習停止の約 6 か月後に推論も停止。<strong>FT は作り直しが前提</strong></td>
 </tr>
 <tr>
 <td>日付未公表</td>
-<td>コンテナプロトコル 1.0.0 / Agent Applications</td>
-<td>猶予期間後にブロックされる / 廃止告知が予告済み</td>
+<td>Agent Applications</td>
+<td>廃止告知が予告済み</td>
 </tr>
 </tbody></table></div>
 <p>全体表は <a href="10-migration-antipatterns.html#1-確定済み廃止スケジュールと設計への影響">10 章</a>と <a href="../../features/html/index.html">features/README</a> を参照。</p>
@@ -780,6 +785,10 @@ footer {
 <tr>
 <td>2026-07-30</td>
 <td>features 側の検証で判明した事実を反映: <strong>08 章の Voice Live を「GA の明文なし」→「GA 一覧表で Preview と明記(ただし Voice Live 自身のページと表記不一致)」に更新</strong></td>
+</tr>
+<tr>
+<td>2026-07-30</td>
+<td><strong>全 11 ファイルのファクトチェック(公式ドキュメント突合)と訂正を適用。</strong>確定日の反映: On Your Data 廃止 <strong>2026-10-14</strong>、コンテナプロトコル 1.0.0 ブロック開始 <strong>2026-07-31</strong>。古い記述の更新: <strong>Foundry Local GA(2026-04-09 公式ブログ)</strong>、Toolbox GA、FLUX.2 GA、tsuzumi-7b Legacy(2026-08-31 リタイア)、Groundedness detection 6→4 リージョン、SharePoint「ライセンス必須」→ pay-as-you-go 併記、全遮断 PE のポータル対応。誤りの訂正: capabilityHost 変更は「プロジェクト再作成」でなく「capability host の削除・再作成」、MACAE の org(microsoft)、FT デプロイ上限 10/リソース、Cosmos DB コンテナー 3〜5 個(追加関係)、agent identity とマネージド ID の混同、ガードレール既定閾値「画像 Low」→ テキスト・画像とも Medium、File Search「固定」→ 既定値。ミスリードの限定: 「国内処理必須 → Data Zone(APAC)」を Regional Standard(Japan East)に分離、A2A「ポータル未対応」を incoming 有効化に限定、Front Door パターンのベースライン記事への帰属を Front Door 一般ドキュメントに修正、Cost Analysis「約5時間遅延」を時間非特定に。公式間不整合の両論併記: AI Red Teaming リージョン(2 vs 5)、Traces VNet(非対応 vs プレビュー)、azd コマンド列挙</td>
 </tr>
 </tbody></table></div>
 </main>

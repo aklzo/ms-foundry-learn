@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="01-公式ベストプラクティス-リファレンスアーキテクチャ-waf-caf">01. 公式ベストプラクティス(リファレンスアーキテクチャ / WAF / CAF)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#公式ドキュメントの三層構造-まずここを理解する">公式ドキュメントの三層構造(まずここを理解する)</a></li><li><a href="#1-aac-リファレンスアーキテクチャ-実装トポロジーの正">1. AAC リファレンスアーキテクチャ(実装トポロジーの正)</a></li><li><a href="#2-aac-のガイド類-リファレンスアーキテクチャではないが判断材料として重要">2. AAC のガイド類(リファレンスアーキテクチャではないが判断材料として重要)</a></li><li><a href="#3-waf-well-architected-framework-ai-ワークロード">3. WAF(Well-Architected Framework)— AI ワークロード</a></li><li><a href="#4-caf-cloud-adoption-framework-組織・配置・リソース粒度">4. CAF(Cloud Adoption Framework)— 組織・配置・リソース粒度</a></li><li><a href="#5-foundry-製品側の公式アーキテクチャ概念ページ">5. Foundry 製品側の公式アーキテクチャ概念ページ</a></li><li><a href="#6-アクセラレータ-リファレンス実装-avm-の現況">6. アクセラレータ / リファレンス実装 / AVM の現況</a></li><li><a href="#7-日本の案件で特に効く公式事実">7. 日本の案件で特に効く公式事実</a></li><li><a href="#8-どの公式資料を出発点にするか-決定表">8. どの公式資料を出発点にするか(決定表)</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29(learn.microsoft.com / GitHub 現行ページ確認)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
 <p>本ページは <strong>Microsoft が公式に出している</strong>ものだけを扱う。想定ユースケース別の設計(<a href="index.html#ドキュメント一覧">04〜08</a>)は、ここを土台にした上での応用と位置づける。</p>
 <h2 id="公式ドキュメントの三層構造-まずここを理解する">公式ドキュメントの三層構造(まずここを理解する)</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -111,7 +111,7 @@ footer {
 <td><code>/azure/architecture/ai-ml/</code></td>
 </tr>
 </tbody></table></div>
-<p>2026 年 4〜5 月に CAF の application landing zone accelerator 記事群が廃止され、「<strong>ワークロード設計のガイダンスは AAC と WAF が primary source</strong>」と明記された。提案書では <strong>CAF = 組織・配置の根拠、AAC/WAF = 実装の根拠</strong>として使い分けるのが現行構造に整合する。</p>
+<p>現行のドキュメント構造では <strong>AAC と WAF が実装ガイダンスの一次情報</strong>となっている(「明記」の一次ソースは未確認)。提案書では <strong>CAF = 組織・配置の根拠、AAC/WAF = 実装の根拠</strong>として使い分けるのが現行構造に整合する。</p>
 <hr>
 <h2 id="1-aac-リファレンスアーキテクチャ-実装トポロジーの正">1. AAC リファレンスアーキテクチャ(実装トポロジーの正)</h2>
 <p><strong>Foundry チャット系の「リファレンスアーキテクチャ」は 3 本しかない。</strong>それ以外は「ガイド」または「ソリューションアイデア」で、検証レベルが下がる(ソリューションアイデアは「設計の出発点として使え」と明記されている)。顧客提案で引用するときはこの区別を守る。</p>
@@ -392,7 +392,7 @@ footer {
 <p>入口: <a href="https://learn.microsoft.com/en-us/azure/well-architected/ai/get-started" title="https://learn.microsoft.com/en-us/azure/well-architected/ai/get-started">get-started</a></p>
 <h3 id="3-1-まず知っておくべき-無いもの">3.1 まず知っておくべき「無いもの」</h3>
 <ul>
-<li><strong>Foundry の WAF service guide は存在しない。</strong><code>service-guides/azure-ai-foundry</code> も <code>service-guides/microsoft-foundry</code> も 404。Azure OpenAI の service guide は 2025 年 9 月に「内容が古く WAF に整合しなくなった」として廃止された。</li>
+<li><strong>Foundry の WAF service guide は存在しない。</strong><code>service-guides/azure-ai-foundry</code> も <code>service-guides/microsoft-foundry</code> も 404。Azure OpenAI の service guide は現在は廃止されリダイレクトされる(廃止時期・理由の公式明記は未確認)。</li>
 <li><strong>ピラー別の AI ページも存在しない</strong>(<code>ai/reliability</code> <code>ai/security</code> 等はすべて 404)。5 本柱は <code>ai/design-principles</code> の 1 ページに集約されている。</li>
 <li>したがって「Foundry を WAF 準拠で設計する根拠」を service guide に求めることは<strong>現状できない。</strong>代替の一次資料は、WAF の <code>ai/architecture-pattern</code> が「<strong>これらの baseline の例が AI ワークロードの推奨アーキテクチャである</strong>」として指す <strong>Baseline Microsoft Foundry chat</strong>(前節 B)。</li>
 </ul>
@@ -654,7 +654,7 @@ footer {
 </tr>
 </tbody></table></div>
 <p><strong>使うべきでないもの:</strong> <code>Azure/azure-openai-landing-zone</code>(2024-10 以降更新なし、Foundry 改称未反映)、<code>Azure-Samples/ai-landing-zone-in-a-box</code>(アーカイブ済み)。なお「AI Foundry Jumpstart」という独立プロダクトは<strong>存在しない</strong>(Arc Jumpstart は Arc / エッジ / K8s が主題の別物)。</p>
-<p><strong>主なソリューションアクセラレータ:</strong> Conversation Knowledge Mining / Document Knowledge Mining / Content Processing / <strong>Multi-Agent Custom Automation Engine (MACAE、AutoGen → Microsoft Agent Framework + Foundry に移行済み)</strong> / Modernize Your Code / Chat with your data(<code>Azure-Samples</code> org)。RAG デモの事実上の最有力リファレンスは <code>Azure-Samples/azure-search-openai-demo</code>。</p>
+<p><strong>主なソリューションアクセラレータ:</strong> Conversation Knowledge Mining / Document Knowledge Mining / Content Processing / <strong>Multi-Agent Custom Automation Engine (MACAE、AutoGen → Microsoft Agent Framework + Foundry に移行済み)</strong> / Modernize Your Code / Chat with your data。<strong>org はアクセラレータごとに異なる</strong>点に注意(MACAE は <code>microsoft</code> org: <a href="https://github.com/microsoft/Multi-Agent-Custom-Automation-Engine-Solution-Accelerator" title="https://github.com/microsoft/Multi-Agent-Custom-Automation-Engine-Solution-Accelerator">Multi-Agent-Custom-Automation-Engine-Solution-Accelerator</a> 。<code>Azure-Samples</code> 側の同名 URL は 404)。RAG デモの事実上の最有力リファレンスは <code>Azure-Samples/azure-search-openai-demo</code>(こちらは <code>Azure-Samples</code> org で正しい)。</p>
 <hr>
 <h2 id="7-日本の案件で特に効く公式事実">7. 日本の案件で特に効く公式事実</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -725,7 +725,7 @@ footer {
 <tr>
 <td>エージェントが数十〜数百</td>
 <td>Dynamic AI Agents at Scale(AKS + セマンティックキャッシュ)</td>
-<td>「エージェントが 5 未満なら使うな」と明記</td>
+<td>「エージェントが 5 未満なら使うな」と明記(要確認: 記事 URL 未特定。learn 検索でもヒットせず)</td>
 </tr>
 </tbody></table></div>
 </main>

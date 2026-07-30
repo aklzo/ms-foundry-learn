@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(Voice Live のライフサイクルを GA 一覧表の表記〈Preview〉に整合)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
 
 チャット / RAG / 業務自動化に収まらない類型をまとめる。共通するのは、**Foundry Agent Service の外側にある Foundry Tools(旧 Azure AI Services)やモデル固有の API が主役になる**点で、エージェント中心の設計論がそのままは当てはまらない。
 
@@ -207,7 +207,7 @@ FAQ に明記されている:
 API `2025-11-01` で GA(2025 年 11 月)。プレビュー版 API は 2026-07-15 までに廃止済み。
 
 - **Pro モード(クロスファイル推論)と Face API はプレビュー限りで GA に持ち越されなかった。**
-- **プレビュー期のマネージド生成モデルキャパシティが廃止された** → **自分の Foundry の LLM デプロイと埋め込みデプロイを持ち込む必要がある**(`prebuilt-read` / `prebuilt-layout` / `prebuilt-layoutWithFigures` のみモデル不要)。
+- **プレビュー期のマネージド生成モデルキャパシティが廃止された** → **自分の Foundry の LLM デプロイと埋め込みデプロイを持ち込む必要がある**(モデル不要の例外は **`prebuilt-read` / `prebuilt-layout` の 2 つのみ**〈公式 whats-new に明記〉)。
 - 専用分類 API が廃止され、アナライザ API の `contentCategories` に統合(カテゴリ上限 50 → 200)。
 
 **課金モデル:** (1) content extraction(文書は 1,000 ページ単位、音声 / 動画は分単位、**画像は無料**)、(2) contextualization(固定: 1,000 トークン/ページ、10 万トークン/時間の音声、100 万トークン/時間の動画)、(3) **LLM / 埋め込みトークンは自分の Foundry デプロイに課金。**コスト倍率は source grounding + confidence で約 2 倍、extractive モードで約 1.5 倍、segmentation で約 2 倍。**ミニモデルで LLM コストを最大 80% 削減できる**と明記されている。
@@ -297,9 +297,9 @@ API `2025-11-01` で GA(2025 年 11 月)。プレビュー版 API は 2026-07-15
 | モデル | ステータス |
 |---|---|
 | **`gpt-image-2`** | **GA。申請不要** |
-| `gpt-image-1.5` / `gpt-image-1` / `gpt-image-1-mini` | **限定アクセスプレビュー(要申請)** |
+| `gpt-image-1.5` / `gpt-image-1` / `gpt-image-1-mini` | **限定アクセス(要申請)。**ライフサイクルは **`gpt-image-1` のみ Preview**(2026-10-23 リタイア)。`gpt-image-1.5`(2026-12-16 リタイア)と `gpt-image-1-mini` は **GA** |
 | `dall-e-3` | **2026-03-04 に廃止済み** |
-| `FLUX.2-pro` / `FLUX.2-flex`(Black Forest Labs) | プレビュー。multi-reference は API のみ(Playground 不可) |
+| `FLUX.2-pro` / `FLUX.2-flex`(Black Forest Labs) | **GA**(model-retirement-schedule の Black Forest Labs 表で Lifecycle = GA)。multi-reference は API のみ(Playground 不可) |
 | `MAI-Image-2.5` 系(Microsoft) | プレビュー |
 | **`sora` / `sora-2`(動画)** | **プレビュー** |
 
@@ -314,7 +314,7 @@ API `2025-11-01` で GA(2025 年 11 月)。プレビュー版 API は 2026-07-15
 | 出力 | `png`(既定)/ `jpeg`。**GPT-image 系は常に base64 を返す**(`response_format` 非対応) | 同左 |
 | 枚数 | `n` は 1〜10。`partial_images` でストリーミング可 | 同左 |
 | 編集 | inpainting(マスクは同寸法 PNG、alpha=0 が編集対象)/ variations。入力は PNG/JPG **50MB 未満** | 同左 |
-| プロンプト長 | 4,000 文字 | 同左 |
+| プロンプト長 | (4,000 文字は dall-e-3 世代の制限。gpt-image 系の上限は現行リファレンスで要確認) | 同左 |
 
 **⚠ 設計上の最大の制約はレート制限。**既定は **9 RPM 前後**しかない。
 
@@ -496,7 +496,7 @@ M365 Copilot / Teams / パートナープラットフォーム / 独自アプリ
 
 **公式のスタッキング推奨:** 「まず **SFT** でユースケースに最適化したモデルを作り、**次に DPO** で応答を自分の選好にアラインさせる。SFT の段階ではデータ品質とタスクの代表性に集中し、DPO の段階で具体的な比較によって応答を調整する。」
 
-**対応モデル(抜粋):** GPT-4.1 系 / GPT-4o は SFT + DPO(4.1 と 4o は**ビジョンも対応**)、GPT-4o-mini は SFT のみ、**o4-mini は RFT のみ。**Phi 4 / Ministral 3B / Mistral 系は SFT。**日本案件で注目すべき点として、NTT の tsuzumi-7b が SFT 対応**として列挙されている。なお `gpt-5` の RFT はゲート制・招待制。
+**対応モデル(抜粋):** GPT-4.1 系 / GPT-4o は SFT + DPO(4.1 と 4o は**ビジョンも対応**)、GPT-4o-mini は SFT のみ、**o4-mini は RFT のみ。**Phi 4 / Ministral 3B / Mistral 系は SFT。NTT の tsuzumi-7b も SFT 対応として列挙されているが、**Legacy 扱いで 2026-08-31 にリタイア予定**(後継は tsuzumi2)のため、**新規案件で選ぶべきではない。**なお `gpt-5` の RFT はゲート制・招待制。
 
 **Serverless か Managed compute か:** Serverless は Microsoft 側キャパシティで従量課金、GPU クォータ不要、**OpenAI モデルへの独占的アクセス**。Managed compute はモデル種別が広く高度なカスタマイズが可能だが、**学習・ホスティング両方に自前 VM が必要で、多くの顧客が持っていない高いクォータを要求し、OpenAI モデルを含まない。**公式の結論は「**大半の顧客には serverless が最良のバランス**」。
 
@@ -516,7 +516,7 @@ M365 Copilot / Teams / パートナープラットフォーム / 独自アプリ
 |---|---|---|
 | **Standard** | トークン従量 + 時間ホスティング。**データレジデンシはデプロイリージョン内に限定** | GA |
 | **Global Standard** | コスト削減。ただし「**カスタムモデルの重みがリソースの地理的範囲外に一時的に保存される可能性がある**」 | プレビュー |
-| **Developer Tier** | **時間ホスティング料が無い。**ただし可用性 SLA なしで「**モデル候補の評価用であり本番用ではない**」 | — |
+| **Developer Tier** | **時間ホスティング料が無い。**ただし可用性 SLA なしで「**モデル候補の評価用であり本番用ではない**」。評価用デプロイは **24 時間で自動削除**される(deployment-types に明記。前述の「非アクティブ 15 日で削除」〈未使用 FT デプロイの一般ルール〉とは別) | — |
 | **Provisioned Throughput** | レイテンシ重視のエージェント向け。**ベースモデルと同じリージョナル PTU キャパシティを使う**ため既存 PTU クォータを流用できる | プレビュー |
 
 **→ 評価・PoC は Developer Tier(時間課金なし)、本番は Standard / Global Standard / PTU** という切り分けが公式の意図。**Global Standard を選ぶとカスタムモデルの重みが地理的範囲外に出る可能性がある**点は、規制案件では致命的になりうる。
@@ -580,5 +580,5 @@ M365 Copilot / Teams / パートナープラットフォーム / 独自アプリ
 | **新 Foundry での Content Credentials** | 記事が classic 専用で、新ポータル向けページが存在しない(404) |
 | **メディア生成パイプラインの公式アーキテクチャ** | 存在しない。処理・抽出側の記事が最も近いだけ |
 | **ファインチューニング専用の E2E 参照アーキテクチャ** | 存在しない。公式の答えは「**既存の MLOps 投資をそのまま使え**」 |
-| **リソースあたりの FT デプロイ数上限** | デプロイ手順ページに記載なし |
+| ~~リソースあたりの FT デプロイ数上限~~ **解決(2026-07-30)** | **10 デプロイ/リソース**([quotas-limits](https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits) に明記)。training jobs は 100/リソース、同時実行 3(Developer tier は 5) |
 | 新ポータルの fine-tuning 総覧ページ | `/azure/foundry/concepts/fine-tuning-overview` は **404**。総覧は classic 配下にのみ存在し、新ポータル側は複数ページに分散している |

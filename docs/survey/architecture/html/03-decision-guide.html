@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="03-選定ガイド-要件からアーキテクチャを決める">03. 選定ガイド — 要件からアーキテクチャを決める</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#決定順序-5-つのゲート">決定順序 — 5 つのゲート</a></li><li><a href="#要件キーワード-効いてくるレイヤー-逆引き">要件キーワード → 効いてくるレイヤー(逆引き)</a></li><li><a href="#判断軸マトリクス-方式の比較">判断軸マトリクス(方式の比較)</a></li><li><a href="#提案時チェックリスト">提案時チェックリスト</a></li><li><a href="#よくある-決めきれない-論点への回答">よくある「決めきれない」論点への回答</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
 <p><a href="02-building-blocks.html">02. 構成要素カタログ</a> がレイヤーごとの選択肢の一覧なら、本ページは<strong>どの順番で何を決めるか</strong>の手順書である。順番を間違えると手戻りが大きい項目があるため、決定順序そのものが設計判断になる。</p>
 <h2 id="決定順序-5-つのゲート">決定順序 — 5 つのゲート</h2>
 <p>後戻りコストの大きい順に並べている。<strong>上から順に閉じていく。</strong></p>
@@ -113,7 +113,7 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>国内処理が必須</td>
-<td>Data Zone(APAC)または Regional Standard。Global Standard は不可。使えるモデルが絞られる</td>
+<td>日本国内限定処理が必須なら Regional Standard(Japan East)。域内(APAC: 豪・日・韓・星・印)処理で足りるなら Data Zone も可。Global Standard は不可。使えるモデルが絞られる</td>
 </tr>
 <tr>
 <td>外部インターネットへのデータ送出が不可</td>
@@ -133,7 +133,7 @@ footer {
 </tr>
 <tr>
 <td>M365 のデータを使いたい</td>
-<td>SharePoint / Work IQ ツール → <strong>M365 Copilot ライセンスが前提</strong>。ライセンス費が案件コストに乗る</td>
+<td>SharePoint / Work IQ ツール → <strong>M365 Copilot ライセンスまたは Retrieval API の pay-as-you-go 課金が前提</strong>。ライセンス費(または従量課金)が案件コストに乗る</td>
 </tr>
 </tbody></table></div>
 <h3 id="g2-ネットワークゲート">G2. ネットワークゲート</h3>
@@ -145,7 +145,7 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>Tracing</td>
-<td><strong>VNet 対応はプレビュー</strong></td>
+<td><strong>VNet 対応は公式間で表記が揺れる(configure-private-link は非対応、GA 一覧はプレビュー)。安全側は非対応前提</strong></td>
 </tr>
 <tr>
 <td>Memory</td>
@@ -434,7 +434,7 @@ footer {
 <td>上記 + 自前基盤</td>
 </tr>
 </tbody></table></div>
-<p><strong>「MAF か LangGraph か」は「Foundry を使うか」とは独立した判断</strong>である点に注意。Hosted agent は MAF 専用ではなく、LangGraph / OpenAI Agents SDK / Anthropic SDK / 完全自前コードも公式にサポートされる。</p>
+<p><strong>「MAF か LangGraph か」は「Foundry を使うか」とは独立した判断</strong>である点に注意。Hosted agent は MAF 専用ではなく、LangGraph / Semantic Kernel / CrewAI / カスタムコードも公式にサポートされる(プロトコルライブラリはフレームワーク非依存のため任意のフレームワークが利用可)。</p>
 <h2 id="提案時チェックリスト">提案時チェックリスト</h2>
 <p>設計レビューで潰しておく項目。</p>
 <ul>

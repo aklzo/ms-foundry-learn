@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-29
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
 
 ユースケースを問わず横断で効く運用設計をまとめる。**この領域は「Foundry がやってくれない範囲」が広く、見積もりの抜けが出やすい。**
 
@@ -13,7 +13,7 @@
 3. **エージェントの blue-green / canary は組み込み機能がない。**必要ならエージェント API の前段にルーティング層(APIM 等)を自分で置く。
 4. **Azure Monitor のレガシー `Latency` メトリクスを使ってはいけない。**Azure OpenAI 用に設計されておらず誤った診断になると明記されている。
 5. **リスク・安全性評価と AI Red Teaming は日本リージョンで実行できない。**評価用に別リージョンのプロジェクトを構える設計になる。
-6. **capabilityHost は作成後に更新できない。**構成変更はプロジェクト再作成が前提で、IaC の冪等更新が効かない。
+6. **capabilityHost は作成後に更新できない。**構成変更は **capability host の削除・再作成**が前提(プロジェクト削除は不要。同名+異構成での再作成は 400 になる)で、IaC の冪等更新が効かない。
 
 ---
 
@@ -164,11 +164,11 @@ Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × O
 
 | リソース | 格納内容 | 要件 |
 |---|---|---|
-| Cosmos DB for NoSQL | メッセージ・会話履歴・エージェントメタデータ(`enterprise_memory` DB) | **アカウント合計 3,000 RU/s 以上**(1,000 RU/s × 5 コンテナー)。**プロジェクト数だけ倍増が必要** |
+| Cosmos DB for NoSQL | メッセージ・会話履歴・エージェントメタデータ(`enterprise_memory` DB) | **アカウント合計で最低 3,000 RU/s**。コンテナーは **3〜5 個 × 各 1,000 RU/s**(基本 3 個+Responses API 利用エージェントの初回起動で 2 個追加)。**Responses 利用時はプロジェクトあたり実質 5,000 RU/s。プロジェクト数だけ倍増が必要** |
 | Azure Storage | アップロードファイル | Blob コンテナー 2 種(`azureml-blobstore` / `agents-blobstore`) |
 | Azure AI Search | エージェントが作ったベクトルストア | Search Index Data Contributor + Search Service Contributor |
 
-Cosmos DB の RU/s 不足は **capability host のプロビジョニング失敗の直接原因**になる。コンテナーは Classic ランタイムと New ランタイムで異なる(`thread-message-store` 系 vs `agent-definitions-v1` / `run-state-v1`)点にも注意。
+Cosmos DB の RU/s 不足は **capability host のプロビジョニング失敗の直接原因**になる。コンテナーは基本 3 個(`thread-message-store` 系)に加え、**Responses API を使うエージェントの初回起動で 2 個(`agent-definitions-v1` / `run-state-v1`)が追加される**(排他ではなく追加関係。 https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-your-own-resources )点にも注意。
 
 **DR 補償策(公式リスト):**
 
@@ -256,7 +256,7 @@ Foundry ポータル → Build → エージェント → Monitor タブ。デ�
 - **Run success rate: 95% 未満**なら失敗した run を調査すべき
 - Token usage が多すぎる = 冗長なプロンプト / 応答の兆候
 
-設定パネルの内訳: Continuous evaluation(GA 相当)/ Scheduled evaluations(プレビュー)/ Red team scans(プレビュー)/ Alerts(プレビュー)。**継続的評価の `max_hourly_runs` 既定は 100/時**で、到達すると評価 run がスキップされる。**プロジェクトのマネージド ID に Foundry User ロールが必要**(未付与だとルール作成が失敗する)。
+設定パネルの内訳: Continuous evaluation(公式にステータス明示なし。他項目と異なり preview 表記が無いのみで、ダッシュボード自体は View agent metrics (preview))/ Scheduled evaluations(プレビュー)/ Red team scans(プレビュー)/ Alerts(プレビュー)。**継続的評価の `max_hourly_runs` 既定は 100/時**で、到達すると評価 run がスキップされる。**プロジェクトのマネージド ID に Foundry User ロールが必要**(未付与だとルール作成が失敗する)。
 
 **Foundry 外のエージェントも監視できる:** Foundry Control Plane に AI Gateway 経由で登録し、同一 App Insights に OTel GenAI 規約準拠のテレメトリを送れば、継続的評価とエラーレート追跡が使える。
 
@@ -288,7 +288,7 @@ Foundry ポータル → Build → エージェント → Monitor タブ。デ�
 
 - **`azure-ai-projects>=2.2.0` + OpenAI 互換 evals API**(`client.evals.create`、評価器は `builtin.*` 名で指定)。**Entra ID 認証必須(キー不可)。**
 - 上限: **1 行あたり最大 2MB / バッチ評価あたり最大 100,000 行。**評価 run 作成はテナント / サブスクリプション / プロジェクトの各レベルでレート制限され、超過時は `retry-after` 付きで返る(**指数バックオフ必須**)。
-- 6 シナリオ: データセット評価(GA)/ モデルターゲット評価(GA)/ エージェントターゲット評価(GA)/ エージェント応答評価(GA)/ **トレース評価(プレビュー)** / **会話レベル評価(プレビュー)**。
+- 6 シナリオ: データセット評価(GA)/ モデルターゲット評価(GA)/ エージェントターゲット評価(GA)/ エージェント応答評価(GA)/ **トレース評価(プレビュー)** / **会話レベル評価(プレビュー)**。現行ドキュメントではさらに **Synthetic data evaluation / Conversation simulation(いずれもプレビュー)** が追加されている。
 - **`azure-ai-evaluation` はローカル評価専用。**クラウド / バッチ評価は `azure-ai-projects` を使う。
 
 ### 4.4 リージョン制約(日本の案件で必ず効く)
@@ -299,7 +299,7 @@ Foundry ポータル → Build → エージェント → Monitor タブ。デ�
 | **リスク・安全性評価器** | **East US 2 / North Central US / France Central / Sweden Central / Switzerland West / Australia East のみ** |
 | Groundedness Pro | East US 2 / Sweden Central のみ |
 | Protected material | **East US 2 のみ** |
-| **AI Red Teaming** | **East US 2 / North Central US のみ** |
+| **AI Red Teaming** | **公式2ページ間で記載が揺れる**(evaluation-regions-limits-virtual-network は East US 2 / North Central US の 2 リージョン、ai-red-teaming-agent は +France Central / Sweden Central / Switzerland West の 5 リージョン)。**いずれにせよ日本・APAC 非対応** |
 | Agent playground 評価 | 米国 8 + 欧州 7 リージョン(**APAC なし**) |
 
 > **設計への含意:** 本番推論は Japan East、**安全性評価と Red Teaming は別リージョンの評価専用プロジェクト**という分離構成になる。**プロンプト・応答が評価のために国外に渡る**ため、法務確認が必須。評価だけなら Agent 用のフル構成(Cosmos DB / AI Search / capability host)は不要で、評価専用の Bicep テンプレートが用意されている。
@@ -358,7 +358,7 @@ PyRIT ベース。**Attack Success Rate = 成功攻撃数 ÷ 総攻撃数**を�
 
 - **プロジェクト単位の配賦(プレビュー):** 全 Foundry プロジェクトの使用量に**自動的に `project` タグが付く**(手動タグ付け不要)。Cost analysis で Tag フィルタを使う。**⚠ Models sold by Azure のみ対応で、Azure Marketplace 経由のモデルは未対応。**
 - **メーターの見え方の罠:** Cost Analysis のサービスフィルタに「Azure OpenAI」は無い(Cognitive Services 分類の下の Service tier で絞る)。**パートナー / コミュニティモデルのメーターは Foundry リソースではなくリソースグループ配下に出る**ため、**Cost Analysis はリソースグループスコープにする。**
-- **概算値と実請求はズレる:** ポータルの Estimated cost は**割引や契約価格を反映せず、Provisioned(PTU)も含まない。**課金イベントが Cost Analysis に現れるまで**約 5 時間の遅延。**財務照合には Cost Management と請求書を使う。**さらに prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。**
+- **概算値と実請求はズレる:** ポータルの Estimated cost は**割引や契約価格を反映せず、Provisioned(PTU)も含まない。**課金イベントが Cost Analysis に現れるまで**取り込みタイミングにより遅延がある**(公式は具体的な時間を明示していない。分単位の比較ではなくトレンドで照合する)。財務照合には Cost Management と請求書を使う。**さらに prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。**
 - **⚠ ハードリミットが無い:** 「OpenAI にはハードリミットがあるが、**Azure OpenAI には現状その機能がない**」。予算超過での自動停止が要件なら、予算アラートのアクショングループから起動する**自動化を自作する必要がある。**
 - **消費者別の粒度が要るなら APIM。**`llm-emit-token-metric` にカスタムディメンション(User ID / API ID / Client IP)を付ければ、Foundry が提供しない粒度でチャージバックできる。
 
@@ -393,7 +393,7 @@ PyRIT ベース。**Attack Success Rate = 成功攻撃数 ÷ 総攻撃数**を�
 | geo-replication 済み ACR イメージ | AI Search インデックス(再構築のみ) |
 | リージョンを跨いで参照可能な Storage 接続 | Application Insights(リージョンごとに作成) |
 
-> **⚠ capabilityHost は作成後に更新できない**(`400 BadRequest`)。「構成変更が必要ならプロジェクトを削除して再作成せよ」。**IaC の冪等更新が効かない最大のポイント**で、パイプラインは「作り直し」を前提に設計する。
+> **⚠ capabilityHost は作成後に更新できない**(`400 BadRequest`)。構成変更は **capability host の削除・再作成**で行う(プロジェクト削除は不要。同名+異構成での再作成は 400 になる。 https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts )。**IaC の冪等更新が効かない最大のポイント**で、パイプラインは「capability host の作り直し」を前提に設計する。
 
 ### 6.3 エージェントのバージョニングとリリース
 
@@ -456,7 +456,7 @@ PyRIT ベース。**Attack Success Rate = 成功攻撃数 ÷ 総攻撃数**を�
 
 **CI/CD**
 - [ ] dev/stg/prod は **Foundry リソースごと分離**
-- [ ] **capabilityHost 更新不可**を前提にパイプライン設計(作り直し前提)
+- [ ] **capabilityHost 更新不可**を前提にパイプライン設計(capability host の削除・再作成前提。プロジェクト削除は不要)
 - [ ] エージェント定義を as-code 化(ポータルでの未追跡変更を禁止)
 - [ ] モデルデプロイの自動アップグレードを OFF
 - [ ] カナリア / ブルーグリーンが要るなら**ルーティング層を自前で用意**

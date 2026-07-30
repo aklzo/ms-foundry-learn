@@ -94,7 +94,7 @@ footer {
 <li><strong>介入ポイントは4つ</strong>: User input / Tool call(プレビュー・エージェントのみ)/ Tool response(プレビュー・エージェントのみ)/ Output</li>
 <li><strong>アクションは2つ</strong>: Annotate(モデルのみ)/ Annotate and block</li>
 <li>分類器は引き続き <strong>Azure AI Content Safety</strong> のモデルを利用</li>
-<li>既定ガードレールは <strong>Microsoft.DefaultV2</strong>(編集不可。テキストは Medium 閾値、画像は Low 閾値)</li>
+<li>既定ガードレールは <strong>Microsoft.DefaultV2</strong>(編集不可。テキスト・画像生成モデルとも既定は Medium 閾値。 <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/default-safety-policies" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/default-safety-policies">default-safety-policies</a> の表)</li>
 <li><strong>モデル向けガードレールは Azure が販売する全 Foundry Models に適用(音声モデル除く)。エージェント向けガードレールはプレビュー</strong>で、Foundry Agent Service のエージェントのみ対象</li>
 <li>エージェントに割り当てたガードレールは、基盤モデルのガードレールを<strong>完全に上書き</strong>する</li>
 <li>REST API 上の実体は従来どおり <strong>RAI policy</strong>(ARM リソース)で、デプロイの <code>raiPolicyName</code> で割当て。リクエスト単位の上書きは <code>x-policy-id</code> ヘッダー</li>

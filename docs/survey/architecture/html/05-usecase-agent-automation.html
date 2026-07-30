@@ -87,7 +87,7 @@ footer {
 <main>
 <h1 id="05-ユースケース編-b-業務自動化・マルチエージェント・基幹システム連携">05. ユースケース編 B — 業務自動化・マルチエージェント・基幹システム連携</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#b1-単一エージェント-基幹-api-参照系中心">B1. 単一エージェント + 基幹 API(参照系中心)</a></li><li><a href="#b2-承認付き業務自動化-hitl">B2. 承認付き業務自動化(HITL)</a></li><li><a href="#b3-長時間・確実な再開が要る業務プロセス">B3. 長時間・確実な再開が要る業務プロセス</a></li><li><a href="#b4-マルチエージェント-専門分化">B4. マルチエージェント(専門分化)</a></li><li><a href="#b5-業務フローエンジン主導-logic-apps-copilot-studio">B5. 業務フローエンジン主導(Logic Apps / Copilot Studio)</a></li><li><a href="#オーケストレーション方式の比較">オーケストレーション方式の比較</a></li><li><a href="#決定表">決定表</a></li><li><a href="#定期実行・イベント駆動をどうするか">定期実行・イベント駆動をどうするか</a></li><li><a href="#このパターン特有のチェックリスト">このパターン特有のチェックリスト</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-29</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
 <p>「検索して答える」で終わらず、<strong>エージェントが業務システムに対して実際にアクションを起こす</strong>類型。RAG チャットとの決定的な違いは、<strong>誤動作が実世界に不可逆な影響を与えうる</strong>ことで、そのため承認・監査・冪等性・権限の設計が主題になる。</p>
 <p>WAF が明示している通り:</p>
 <blockquote><p>Tools layer のアクションは実世界に、場合によっては<strong>不可逆な</strong>結果をもたらす。<strong>高リスク操作には人間の承認ステップを追加せよ。</strong>統合前にすべてのツールを評価し、ガバナンスをワークロード境界の外まで拡張せよ。</p></blockquote>
@@ -211,7 +211,7 @@ footer {
 <td>エージェント自身の RBAC のみ。人間は不在</td>
 </tr>
 </tbody></table></div>
-<p><strong>Entra Agent ID は GA。</strong>プロジェクトで最初のエージェントを作った時点で既定の blueprint と agent identity がプロビジョニングされる。</p>
+<p><strong>Entra Agent ID</strong>(公式ページに GA / プレビューのステータス表記なし)により、プロジェクトで最初のエージェントを作った時点で既定の blueprint と agent identity がプロビジョニングされる。</p>
 <p><strong>⚠ 実装で詰まりやすい 3 点:</strong></p>
 <ol>
 <li><strong>未公開エージェントはプロジェクト内で共通の ID を共有し、publish すると専用の agent identity が作られる。</strong>このとき <code>agentIdentityId</code> が変わるため、<strong>RBAC を再割り当てする必要がある</strong>(共有 ID のロールは引き継がれない)。</li>
@@ -357,12 +357,12 @@ footer {
 <p><strong>アンチパターン(公式列挙):</strong> 単純な sequential / concurrent で足りるのに複雑なパターンを使う / 意味ある特化のないエージェント追加 / 多段ホップのレイテンシ軽視 / <strong>並列エージェント間で可変状態を共有(トランザクション不整合)</strong> / <strong>本質的に非決定的なワークフローに決定的パターンを使う(およびその逆)</strong> / コンテキストウィンドウ肥大によるモデルリソースの過剰消費。</p>
 <h3 id="セキュリティ上の必須事項">セキュリティ上の必須事項</h3>
 <blockquote><p>エージェントは全ユーザーの要求を扱うためナレッジストアへの広いアクセスを持たざるを得ないが、<strong>ユーザーがアクセスできないデータを返してはならない。セキュリティトリミングはパターン内のすべてのエージェントで実装しなければならない。</strong></p></blockquote>
-<p><strong>1 プロジェクト内の全 prompt agent は同一マネージド ID を共有する。</strong>アクセスパターンが異なるならプロジェクトを分ける。<strong>hosted agent は個別の Entra Agent ID を持つ</strong>ので、プロジェクトを分けずに per-agent の権限と監査ができる — <strong>マルチエージェントで権限を分けたいなら hosted agent が有利。</strong></p>
+<p><strong>1 プロジェクト内の全 prompt agent はプロジェクト共通の agent identity(サービスプリンシパル)を共有する</strong>(プロジェクトのマネージド ID とは別物)。アクセスパターンが異なるならプロジェクトを分ける。<strong>hosted agent は個別の Entra Agent ID を持つ</strong>ので、プロジェクトを分けずに per-agent の権限と監査ができる — <strong>マルチエージェントで権限を分けたいなら hosted agent が有利。</strong></p>
 <h3 id="a2a-を使う場合の制約-プレビュー">A2A を使う場合の制約(プレビュー)</h3>
 <ul>
 <li><strong>Prompt agent は既定で A2A エンドポイントを公開できる。Hosted agent は Responses プロトコルを実装している場合のみ。</strong></li>
 <li>プロトコル v1.0 と v0.3 の両方をサポートし、<strong>バージョン未指定時は既定で v0.3。</strong></li>
-<li><strong>ポータル未対応</strong>(REST または Python SDK のみ)。agent card 設定は REST のみ。</li>
+<li><strong>incoming A2A エンドポイントの有効化はポータル未対応</strong>(REST または Python SDK のみ)。A2A ツール接続の作成はポータルで可能。agent card 設定は REST のみ。</li>
 <li><strong>Entra ID 認証必須</strong>(キー認証・匿名アクセス不可)。呼び出し側に <code>Foundry Agent Consumer</code> ロール以上が必要。</li>
 <li><strong>制限が厳しい:</strong> テキストモダリティのみ(ファイル等不可)、<strong>ストリーミング(SSE)非対応</strong>、v1.0 は JSONRPC のみ、gRPC 非対応、本番非推奨。</li>
 </ul>
@@ -425,7 +425,7 @@ footer {
 <tr>
 <td>テスト容易性</td>
 <td>Playground 中心</td>
-<td><strong><code>azd ai agent run</code> でローカル実行可</strong></td>
+<td><strong>azd の Foundry 拡張でローカル実行・呼び出し可</strong>(コマンド列挙は公式ページ間で揺れあり: init/run/invoke/doctor と init/show/monitor/invoke/files)</td>
 <td><strong>DTS エミュレータでローカル完結</strong></td>
 <td>デザイナー / テストキャンバス</td>
 <td>容易</td>
