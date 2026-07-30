@@ -1,0 +1,48 @@
+[project]
+name = "corrective-rag-maf"
+version = "0.1.0"
+description = "awesome-llm-apps corrective_rag の MAF + Foundry 移植(補正ループ RAG + Azure AI Search)"
+requires-python = ">=3.11"
+dependencies = [
+    "agent-framework-core>=1.10",
+    "agent-framework-openai>=1.10",
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "typing-extensions>=4.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.14",
+]
+live = [
+    "azure-monitor-opentelemetry>=1.6",
+    "aiohttp>=3.9",
+    "azure-search-documents>=11.5",
+    "openai>=1.40",
+]
+
+[project.scripts]
+corrective-rag-maf = "corrective_rag_maf.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/corrective_rag_maf"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-m 'not live'"
+markers = [
+    "live: 実 Foundry / Azure AI Search を呼ぶスモークテスト(要 .env + setup_index.py 済)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

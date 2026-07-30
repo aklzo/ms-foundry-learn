@@ -20,7 +20,7 @@
 | 1 | trend-analysis | starter/ai_startup_trend_analysis_agent | 逐次WF | 済 | 済(9件) | 済 | 済(3段完走+トレース) | [済](./ports/trend-analysis/README.md) |
 | 2 | mixture-of-agents | starter/mixture_of_agents | 並列+集約 | 済 | 済(13件) | 済 | 済(4並列+集約+トレース) | [済](./ports/mixture-of-agents/README.md) |
 | 3 | research-handoff | starter/openai_research_agent | handoff | 済 | 済(31件) | 済 | 済(handoff+レポート+トレース) | [済](./ports/research-handoff/README.md) |
-| 4 | corrective-rag | rag/corrective_rag | 補正ループ+AI Search | — | — | — | — | — |
+| 4 | corrective-rag | rag/corrective_rag | 補正ループ+AI Search | 済 | 済(37件) | 済(AI Search Free+埋め込み) | 済(両経路+トレース) | [済](./ports/corrective-rag/README.md) |
 | 5 | travel-memory | memory/ai_travel_agent_memory | Foundry Memory | — | — | — | — | — |
 | 6 | github-mcp | mcp/github_mcp_agent | リモート MCP | — | — | — | — | — |
 | 7 | game-design-team | agent_teams/ai_game_design_agent_team | Swarm ハンドオフ | — | — | — | — | — |
