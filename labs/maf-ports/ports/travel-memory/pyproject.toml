@@ -1,0 +1,45 @@
+[project]
+name = "travel-memory-maf"
+version = "0.1.0"
+description = "awesome-llm-apps ai_travel_agent_memory の MAF + Foundry 移植(mem0 → Foundry Memory)"
+requires-python = ">=3.11"
+dependencies = [
+    "agent-framework-core>=1.10",
+    "agent-framework-openai>=1.10",
+    "aiohttp>=3.9", # azure-* の async クライアントのトランスポート(corrective-rag の学びと同件)
+    "azure-ai-projects>=2.3",
+    "azure-identity>=1.17",
+    "python-dotenv>=1.0",
+    "typing-extensions>=4.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.14",
+]
+live = [
+    "azure-monitor-opentelemetry>=1.6",
+]
+
+[project.scripts]
+travel-memory-maf = "travel_memory_maf.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/travel_memory_maf"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-m 'not live'"
+markers = [
+    "live: 実 Foundry Memory / 実モデルを呼ぶスモークテスト(要 .env + az login + setup_memory.py 済)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

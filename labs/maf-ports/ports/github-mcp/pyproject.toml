@@ -1,0 +1,44 @@
+[project]
+name = "github-mcp-maf"
+version = "0.1.0"
+description = "awesome-llm-apps github_mcp_agent の MAF + Foundry 移植(stdio Docker → GitHub 公式リモート MCP)"
+requires-python = ">=3.11"
+dependencies = [
+    "agent-framework-core>=1.10",
+    "agent-framework-openai>=1.10",
+    "httpx>=0.27",  # PAT ヘッダー付き AsyncClient(MCP transport が使う。mcp 経由でも入るが直接 import するため明示)
+    "mcp>=1.24",    # MAF の MCPStreamableHTTPTool が要求(agent-framework-core では optional 依存)
+    "python-dotenv>=1.0",
+    "typing-extensions>=4.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.14",
+]
+live = [
+    "azure-monitor-opentelemetry>=1.6",
+]
+
+[project.scripts]
+github-mcp-maf = "github_mcp_maf.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/github_mcp_maf"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-m 'not live'"
+markers = [
+    "live: 実 GitHub リモート MCP + 実モデルを呼ぶスモークテスト(要 .env + GITHUB_TOKEN)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

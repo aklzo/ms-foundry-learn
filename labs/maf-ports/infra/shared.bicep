@@ -108,6 +108,40 @@ resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-
   }
 }
 
+// --- RBAC: プロジェクト/アカウント MI にモデルのデータプレーン権限 ---
+// Memory(プレビュー)等のサービス側機能は、ストア構成のモデル(埋め込み・
+// チャット)をプロジェクトの MI で呼び出す。ポータル作成では自動付与される
+// 相当の権限が Bicep 作成では付かないため、明示的に割り当てる
+// (Port 5 で 401 ResourceError として実測。Cognitive Services OpenAI User)。
+
+var openaiUserRoleId = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd' // Cognitive Services OpenAI User
+
+resource projectModelAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundry.id, project.id, openaiUserRoleId)
+  scope: foundry
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      openaiUserRoleId
+    )
+    principalId: project.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource accountModelAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundry.id, 'account', openaiUserRoleId)
+  scope: foundry
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      openaiUserRoleId
+    )
+    principalId: foundry.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // --- 出力(ポートの .env に転記する値) ---
 
 output foundryName string = foundry.name
