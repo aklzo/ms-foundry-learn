@@ -1,6 +1,6 @@
 # 技術選定ガイド(実装検証ベース)
 
-> **最終更新:** 2026-07-31 / **版:** 初版(Wave 1 反映)
+> **最終更新:** 2026-07-31 / **版:** 第2版(Wave 1+2 反映)
 > **出典の分離:** 本ドキュメントは **labs/ での実装検証から得たナレッジのみ**を集約する。公式ドキュメント調査由来の知見は [docs/survey/](./survey/README.md)(features / architecture / proposal)にあり、混在させない。各主張には検証元(どのラボ/ポートで実証したか)を付す。
 > **検証環境:** agent-framework 1.10〜1.13 / azure-ai-projects 2.4 / Microsoft Foundry(Japan East、gpt-5.4-mini)/ 2026-07 時点。フレームワークの進化が速いため、**版が変われば結論も変わりうる**。
 
@@ -35,6 +35,10 @@
 | LangGraph(StateGraph) | ノード→Executor、条件エッジ→switch-case、**無型共有 dict→型付きメッセージ**。規律が強制される | Port 4 |
 | mem0(記憶) | ストア API の置換は素直。**同期 add→LRO+debounce の意味論差**が本丸 | Port 5 |
 | AG2 旧 Swarm | UPDATE_SYSTEM_MESSAGE 等の「長寿命エージェントの必要悪」がステートレス Agent.run では純関数に縮退 | Port 7 |
+| DuckDB ローカル分析 | Code Interpreter 置換は「データの行き先と課金対象」の置換。ツールは素の dict がパススルー | Port 8 |
+| LangChain ルーター(3DB 振り分け) | 三段カスケード約150行が Foundry IQ の宣言+プロンプトに消滅。ただし可観測性・単体テスト可能性を失う | Port 10 |
+| ADK + FastAPI(常時稼働) | hosted agent 化で変わるのは周辺3点(資格情報/観測/HTTP 面)。Routines で cron 配管が不要に | Port 11 |
+| Google ADK + Gemini Live | Voice Live は Realtime API 互換+additive 拡張。音声非依存コアの分離が移植とテストの両方に効く | Port 12 |
 
 共通パターン: **書き換えで元コードの欠陥が見つかる**(質問本文がアグリゲータに未達 / dead code の context_variables / 「補正ループ」が実は単発 DAG)。型付きグラフへの移植自体がコードレビューとして機能する。
 
@@ -49,7 +53,11 @@
 5. **Foundry Memory の意味論**: mem0 の同期 `add` と違い **LRO+debounce(update_delay 既定300秒)**。「書いた直後に読む」は成立しない前提で UX・テストを設計する(`update_delay=0`+`previous_update_id` チェーン+完了待ちで吸収可能)。認証は Entra のみ・API キー不可 — Port 5
 6. **reasoning 系モデルは temperature を受け付けない**。「温度で多様性」は死んだ技法 — ペルソナ差し替えで翻訳する(MoA 系の移植で必須)— Port 2
 7. **検索をどの層で持つかは契約論点**。Foundry の Web search ツールは DPA 対象外・別課金(survey 側の調査結果)。ラボでは自前 DDG 検索を既定にした — クロージャ+`MockTransport` でテスト可能になる副次メリットもある — Port 1・3・4
-8. **オフラインテスト戦略は Protocol 注入で統一できる**: LLM は `SupportsRun`(`.run()→.text`)、外部サービスはコンストラクタ注入 — ScriptedAgent / MockTransport / fake ストアで **164テストをネットワークなしで回せた**。「エージェントはテストできない」は設計の問題 — 全ポート
+8. **Foundry プロジェクトの MI は再デプロイでローテーションしうる**。ARM 制約でロール割り当て名に実行時値を使えないため、id 固定名だと**旧 principal への孤児割り当てが名前一致で温存**され PermissionDenied の温床になる。対策: RBAC を principalId パラメータの第2段テンプレート(roles.bicep)に分離 — Port 9
+9. **クラウド評価の権限は3層**: builtin 評価器の `initialization_parameters.deployment_name`(ジャッジ用デプロイ=評価コストは自分持ち)/ プロジェクト MI(Foundry User + OpenAI User)/ **提出ユーザー自身の Foundry User**。エラーは一律 PermissionDenied で actor が分からず、切り分けに時間を溶かす — Port 9
+10. **Routines の REST は `?api-version=v1` 必須**(Learn の例に記載なし・欠くと BadRequest)。プレビュー機能はサブ機能ごとにリージョン集合が違う(Routines 8 / Memory 19 / hosted agents 31) — Port 11
+11. **Voice Live のリージョンは「機能×モデル×事前デプロイ」の3段で読む**: Japan East は Voice Live 対応だが gpt-realtime 系ネイティブ音声モデル非提供。マネージド提供モデルはデプロイ不要(Bicep 差分ゼロ) — Port 12
+12. **オフラインテスト戦略は Protocol 注入で統一できる**: LLM は `SupportsRun`(`.run()→.text`)、外部サービスはコンストラクタ注入 — ScriptedAgent / MockTransport / fake ストアで **164テストをネットワークなしで回せた**。「エージェントはテストできない」は設計の問題 — 全ポート
 
 ## 3. パターン別リファレンス(どこを見るか)
 
@@ -62,6 +70,11 @@
 | 長期記憶 | `beta.memory_stores`(SDK)+Protocol 注入 | [travel-memory](../labs/maf-ports/ports/travel-memory/) |
 | 外部システム連携 | リモート MCP+`http_client` 認証 | [github-mcp](../labs/maf-ports/ports/github-mcp/) |
 | 役割リング(旧 Swarm) | 型付き context を運ぶ明示グラフ+ループエッジ | [game-design-team](../labs/maf-ports/ports/game-design-team/) |
+| サーバー側コード実行 | `get_code_interpreter_tool` + Files API | [data-analysis-ci](../labs/maf-ports/ports/data-analysis-ci/) |
+| 評価駆動の品質ループ | サイクリックグラフ+クラウド評価(evals API) | [critique-loop](../labs/maf-ports/ports/critique-loop/) |
+| マルチソース RAG 委譲 | Foundry IQ(KS×N→KB→MCP) | [db-routing-iq](../labs/maf-ports/ports/db-routing-iq/) |
+| 常時稼働+スケジュール | hosted agent(ResponsesHostServer)+ Routines | [hn-briefing-hosted](../labs/maf-ports/ports/hn-briefing-hosted/) |
+| 音声エージェント | Voice Live(3層分離: コア/テキスト/音声) | [claim-voice-live](../labs/maf-ports/ports/claim-voice-live/) |
 
 先行実装: [agentic-search-maf](../labs/agentic-search-maf/)(評価ループ付きリサーチ。Rust からの移植)。
 
@@ -69,15 +82,15 @@
 
 実装で確かめていないため、本ガイドではまだ語れないもの(Wave 2 候補 → [INVENTORY.md](../labs/maf-ports/INVENTORY.md)):
 
-- **Code Interpreter**(E2B 置換の実際の DX・セッション課金の実測)
-- **Voice Live**(リアルタイム音声+状態管理の複合)
-- **Foundry IQ**(複数ナレッジソースの agentic retrieval — AI Search 直結との品質差)
-- **Routines / ホステッドエージェント**(常時稼働の運用感・スケールゼロの実際)
-- **Foundry Agent Service へのデプロイ**(今回は MAF をクライアント実行。hosted agent 化した際の差分 — 特にツール直付け不可・Toolbox 前提の制約)
+- ~~Code Interpreter / Voice Live / Foundry IQ / Routines / hosted agent 化~~ → **Wave 2 で検証済み**(上記参照)
 - ポータル(prompt agents)だけでどこまで組めるかの限界線(コード無しの上限)
+- 音声入出力の実機検証(Wave 2 は WebSocket 接続+ツールループまで。マイク環境が必要)
+- Toolbox 経由のツール共有、エージェント向けガードレール(プレビュー)の実運用
+- マルチリージョン・高可用構成の実証(現状は単一リージョンのラボ構成)
 
 ## 更新履歴
 
 | 日付 | 内容 |
 | --- | --- |
 | 2026-07-31 | 初版。Wave 1(7ポート+agentic-search-maf)の実装ナレッジを集約 |
+| 2026-07-31 | 第2版。Wave 2(5ポート: Code Interpreter / クラウド評価 / Foundry IQ / hosted agent+Routines / Voice Live)の実装ナレッジを追加。ハマりどころを8点→12点に拡充 |
