@@ -16,7 +16,7 @@
 
 | # | ポート | 元 | パターン | 実装 | オフラインテスト | Bicep | ライブスモーク | 学び記録 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 共有基盤 | — | — | — | — | 済 | **デプロイ済**(rg-maf-ports / gpt-5.4-mini / 疎通確認済) | — |
+| 0 | 共有基盤 | — | — | — | — | 済 | 検証完了後 **2026-07-31 に削除済み**(コスト停止。Bicep+スクリプトで再現可) | — |
 | 1 | trend-analysis | starter/ai_startup_trend_analysis_agent | 逐次WF | 済 | 済(9件) | 済 | 済(3段完走+トレース) | [済](./ports/trend-analysis/README.md) |
 | 2 | mixture-of-agents | starter/mixture_of_agents | 並列+集約 | 済 | 済(13件) | 済 | 済(4並列+集約+トレース) | [済](./ports/mixture-of-agents/README.md) |
 | 3 | research-handoff | starter/openai_research_agent | handoff | 済 | 済(31件) | 済 | 済(handoff+レポート+トレース) | [済](./ports/research-handoff/README.md) |
@@ -27,7 +27,7 @@
 
 ## 実行の前提
 
-1. **共有基盤デプロイ(Phase 0・課金発生)**: `az group create -n rg-maf-ports -l japaneast` → `az deployment group create -g rg-maf-ports -f infra/shared.bicep -p baseName=... modelName=... modelVersion=...`(モデルは [features/02-models.md](../../docs/survey/features/02-models.md) で現行の安価 GA モデルを確認して指定)
+1. **共有基盤デプロイ(課金発生。Wave 1 検証後に削除済み — 再実行時は新しい RG 名で)**: `az group create -n rg-maf-ports -l japaneast` → `az deployment group create -g rg-maf-ports -f infra/shared.bicep -p baseName=... modelName=... modelVersion=...`(モデルは [features/02-models.md](../../docs/survey/features/02-models.md) で現行の安価 GA モデルを確認して指定)
 2. 各ポートは `uv sync` → `uv run pytest`(オフライン)→ `.env` 設定後 `uv run pytest -m live`(ライブスモーク)
 3. 使わない期間は `az group delete -n rg-maf-ports` で全撤去可(ステートレス設計)
 
