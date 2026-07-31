@@ -1,0 +1,31 @@
+date,category,product,quantity,unit_price,revenue
+2025-01-06,Electronics,Wireless Earbuds,14,8900,124600
+2025-01-10,Furniture,Office Chair,3,24800,74400
+2025-01-17,Stationery,Notebook A5,60,380,22800
+2025-01-23,Electronics,USB-C Hub,22,4200,92400
+2025-01-29,Furniture,Bookshelf,2,15800,31600
+2025-02-04,Electronics,Mechanical Keyboard,9,12800,115200
+2025-02-08,Stationery,Gel Pen 10-pack,45,950,42750
+2025-02-13,Furniture,Standing Desk,4,49800,199200
+2025-02-19,Electronics,Webcam 4K,11,9800,107800
+2025-02-26,Stationery,Sticky Notes,80,320,25600
+2025-03-03,Electronics,Wireless Earbuds,18,8900,160200
+2025-03-07,Furniture,Monitor Arm,8,6900,55200
+2025-03-12,Stationery,Notebook A5,75,380,28500
+2025-03-18,Electronics,Portable SSD 1TB,13,13800,179400
+2025-03-27,Furniture,Office Chair,5,24800,124000
+2025-04-02,Electronics,USB-C Hub,27,4200,113400
+2025-04-09,Stationery,Gel Pen 10-pack,50,950,47500
+2025-04-15,Furniture,Bookshelf,3,15800,47400
+2025-04-21,Electronics,Mechanical Keyboard,12,12800,153600
+2025-04-28,Stationery,Desk Organizer,25,1480,37000
+2025-05-01,Electronics,Webcam 4K,15,9800,147000
+2025-05-09,Furniture,Standing Desk,6,49800,298800
+2025-05-14,Stationery,Sticky Notes,95,320,30400
+2025-05-20,Electronics,Portable SSD 1TB,16,13800,220800
+2025-05-27,Furniture,Monitor Arm,10,6900,69000
+2025-06-03,Electronics,Wireless Earbuds,21,8900,186900
+2025-06-10,Stationery,Notebook A5,90,380,34200
+2025-06-16,Furniture,Office Chair,6,24800,148800
+2025-06-23,Electronics,Portable SSD 1TB,19,13800,262200
+2025-06-27,Stationery,Desk Organizer,30,1480,44400

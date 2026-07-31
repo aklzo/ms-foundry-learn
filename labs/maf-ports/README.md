@@ -12,7 +12,7 @@
 | [PORTING.md](./PORTING.md) | 移植規約(FW 対応表、テスト・トレース・評価・Bicep の必須要件、1サイクル手順) |
 | [infra/shared.bicep](./infra/shared.bicep) | 共有基盤(Foundry リソース+プロジェクト+モデル+App Insights)。**課金あり・1回だけデプロイ** |
 
-## 進捗(Wave 1)
+## 進捗(Wave 1: #1-7 / Wave 2: #8-12)
 
 | # | ポート | 元 | パターン | 実装 | オフラインテスト | Bicep | ライブスモーク | 学び記録 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -24,6 +24,7 @@
 | 5 | travel-memory | memory/ai_travel_agent_memory | Foundry Memory | 済 | 済(23件) | 済 | 済(記憶往復139s+RBAC知見) | [済](./ports/travel-memory/README.md) |
 | 6 | github-mcp | mcp/github_mcp_agent | リモート MCP | 済 | 済(21件) | 済 | 済(リモートMCP接続+クエリ18.8s) | [済](./ports/github-mcp/README.md) |
 | 7 | game-design-team | agent_teams/ai_game_design_agent_team | Swarm ハンドオフ | 済 | 済(30件) | 済 | 済(リング+ループ完走+トレース) | [済](./ports/game-design-team/README.md) |
+| 8 | data-analysis-ci | starter/ai_data_analysis_agent | Code Interpreter | 済 | 済(24件) | 済 | 済(CSV分析14.7s+正答検証) | [済](./ports/data-analysis-ci/README.md) |
 
 ## 実行の前提
 
