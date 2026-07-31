@@ -1,0 +1,5 @@
+# CLI --script 用のデモ申請(1 行 = 1 ケース)
+Please reimburse my client dinner with Fabrikam on 2026-07-24: $180, itemized receipt RCPT-2201 attached. Employee E-1042 (Mika Tanaka), sales department, category meals.
+Please reimburse my conference trip to Osaka on 2026-07-15: $3,200 total with all receipts (RCPT-3310). Employee E-1042 (Mika Tanaka), sales department, category travel.
+Please reimburse my new workstation purchased on 2026-07-20: $12,000, vendor invoice INV-5518 attached. Employee E-2077 (Ken Sato), engineering department, category equipment.
+I spent some money on stuff last week, please pay me back.
