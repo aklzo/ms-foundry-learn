@@ -1,6 +1,6 @@
 # 技術選定ガイド(実装検証ベース)
 
-> **最終更新:** 2026-07-31 / **版:** 第2版(Wave 1+2 反映)
+> **最終更新:** 2026-07-31 / **版:** 第3版(Wave 1+2+3 反映)
 > **出典の分離:** 本ドキュメントは **labs/ での実装検証から得たナレッジのみ**を集約する。公式ドキュメント調査由来の知見は [docs/survey/](./survey/README.md)(features / architecture / proposal)にあり、混在させない。各主張には検証元(どのラボ/ポートで実証したか)を付す。
 > **検証環境:** agent-framework 1.10〜1.13 / azure-ai-projects 2.4 / Microsoft Foundry(Japan East、gpt-5.4-mini)/ 2026-07 時点。フレームワークの進化が速いため、**版が変われば結論も変わりうる**。
 
@@ -8,9 +8,15 @@
 
 [learning-plan](./learning-plan.md) の問い「ポータルで足りるか / MAF が必要か / 他 FW を選ぶべきか」に対する、実装で裏が取れた範囲の回答。
 
-### 1-1. handoff / マルチエージェント協調の分水嶺(Port 3・7 で実証)
+### 1-1. マルチエージェント協調の分水嶺(Port 3・7・13 で実証 — 2軸3値)
 
-**「委譲先が仕様で決まるならグラフ、会話の流れで決まるなら handoff 基盤」** — これが最重要の分岐。
+協調の選び方は「**制御を誰が決めるか(コード/LLM)**」×「**制御が戻るか(戻る/移る)**」の2軸で整理できる:
+
+| 型 | 制御 | 応答 | MAF での器 | 例 |
+| --- | --- | --- | --- | --- |
+| **グラフ** | コード(仕様で決まる) | — | Workflow(core のみ) | 直列・並列・分岐・ループ(Port 1-4, 7) |
+| **相談型(agent-as-tool)** | LLM が選ぶ | **呼び出し元に戻る** | Agent+動的ツール生成(core のみ) | 通信グラフ制約下の協調(Port 13) |
+| **担当交代(handoff)** | LLM が選ぶ | **制御ごと移る** | HandoffBuilder(別パッケージ・会話型) | サポートのエスカレーション等 |
 
 - MAF core に first-class handoff は**ない**。`HandoffBuilder` は別パッケージ(agent-framework-orchestrations)で、全結線メッシュ+human-in-loop 既定の**会話型**設計。one-shot パイプラインに使うと「グラフなら決定的に保証される性質(順序・終了)が全部確率的になる」(Port 7 で比較実装して実証)
 - 移植して分かった副次的事実: **元アプリの「handoff」の多くは LLM が委譲先を選んでいない固定シーケンス**(AG2 Swarm の AfterWork リング等)。この場合グラフ化で失うものはなく、得るもの(型付き state、テスト可能性、スパン可視化)だけがある
@@ -39,6 +45,8 @@
 | LangChain ルーター(3DB 振り分け) | 三段カスケード約150行が Foundry IQ の宣言+プロンプトに消滅。ただし可観測性・単体テスト可能性を失う | Port 10 |
 | ADK + FastAPI(常時稼働) | hosted agent 化で変わるのは周辺3点(資格情報/観測/HTTP 面)。Routines で cron 配管が不要に | Port 11 |
 | Google ADK + Gemini Live | Voice Live は Realtime API 互換+additive 拡張。音声非依存コアの分離が移植とテストの両方に効く | Port 12 |
+| Agency Swarm(通信グラフ) | 1行の魔法が20行×3に分解される代わりにテスト可能性を獲得。「戻るか戻らないか」が Workflow に載るかの試金石 | Port 13 |
+| ガバナンス層(素SDK 2本) | MAF middleware 3種で再現。short-circuit 2方式(見せて続行/全停止)の選択がガバナンス設計そのもの | Port 14 |
 
 共通パターン: **書き換えで元コードの欠陥が見つかる**(質問本文がアグリゲータに未達 / dead code の context_variables / 「補正ループ」が実は単発 DAG)。型付きグラフへの移植自体がコードレビューとして機能する。
 
@@ -57,7 +65,8 @@
 9. **クラウド評価の権限は3層**: builtin 評価器の `initialization_parameters.deployment_name`(ジャッジ用デプロイ=評価コストは自分持ち)/ プロジェクト MI(Foundry User + OpenAI User)/ **提出ユーザー自身の Foundry User**。エラーは一律 PermissionDenied で actor が分からず、切り分けに時間を溶かす — Port 9
 10. **Routines の REST は `?api-version=v1` 必須**(Learn の例に記載なし・欠くと BadRequest)。プレビュー機能はサブ機能ごとにリージョン集合が違う(Routines 8 / Memory 19 / hosted agents 31) — Port 11
 11. **Voice Live のリージョンは「機能×モデル×事前デプロイ」の3段で読む**: Japan East は Voice Live 対応だが gpt-realtime 系ネイティブ音声モデル非提供。マネージド提供モデルはデプロイ不要(Bicep 差分ゼロ) — Port 12
-12. **オフラインテスト戦略は Protocol 注入で統一できる**: LLM は `SupportsRun`(`.run()→.text`)、外部サービスはコンストラクタ注入 — ScriptedAgent / MockTransport / fake ストアで **164テストをネットワークなしで回せた**。「エージェントはテストできない」は設計の問題 — 全ポート
+12. **middleware の関数形態は `from __future__ import annotations` で型判定が壊れる**(MiddlewareException)。デコレータ明示(`@function_middleware` 等)が必須 — 罠3(c)の middleware 版。short-circuit は2方式で意味が別: `context.result` セット=拒否をモデルに見せてループ続行 / `MiddlewareTermination`=全停止 — Port 14
+13. **オフラインテスト戦略は Protocol 注入で統一できる**: LLM は `SupportsRun`(`.run()→.text`)、外部サービスはコンストラクタ注入 — ScriptedAgent / MockTransport / fake ストアで **約470テストをネットワークなしで回せた**(14ポート合計)。「エージェントはテストできない」は設計の問題 — 全ポート
 
 ## 3. パターン別リファレンス(どこを見るか)
 
@@ -75,8 +84,12 @@
 | マルチソース RAG 委譲 | Foundry IQ(KS×N→KB→MCP) | [db-routing-iq](../labs/maf-ports/ports/db-routing-iq/) |
 | 常時稼働+スケジュール | hosted agent(ResponsesHostServer)+ Routines | [hn-briefing-hosted](../labs/maf-ports/ports/hn-briefing-hosted/) |
 | 音声エージェント | Voice Live(3層分離: コア/テキスト/音声) | [claim-voice-live](../labs/maf-ports/ports/claim-voice-live/) |
+| 相談型協調(通信制約) | agent-as-tool(許可ペア分の talk_to_* 動的生成) | [services-agency](../labs/maf-ports/ports/services-agency/) |
+| ガバナンス/監査 | middleware(ポリシー割込+信頼ゲート+ハッシュ連鎖監査) | [governed-agent](../labs/maf-ports/ports/governed-agent/) |
 
 先行実装: [agentic-search-maf](../labs/agentic-search-maf/)(評価ループ付きリサーチ。Rust からの移植)。
+
+各ポートの **Azure アイコン付きアーキテクチャ図**(リソース配置・認証・課金注記)は `ports/<port>/docs/architecture.png`(README 冒頭に埋め込み済み。再生成手順は [tools/README.md](../labs/maf-ports/tools/README.md))。
 
 ## 4. 未検証領域(次の実験候補)
 
@@ -94,3 +107,4 @@
 | --- | --- |
 | 2026-07-31 | 初版。Wave 1(7ポート+agentic-search-maf)の実装ナレッジを集約 |
 | 2026-07-31 | 第2版。Wave 2(5ポート: Code Interpreter / クラウド評価 / Foundry IQ / hosted agent+Routines / Voice Live)の実装ナレッジを追加。ハマりどころを8点→12点に拡充 |
+| 2026-07-31 | 第3版。Wave 3(services-agency / governed-agent)を反映。**協調の分水嶺を2軸3値に改訂**(グラフ/相談型 agent-as-tool/担当交代)、middleware の知見を追加、全ポートにアーキテクチャ図を整備 |
