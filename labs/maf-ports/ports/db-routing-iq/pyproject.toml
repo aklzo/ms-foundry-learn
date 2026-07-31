@@ -1,0 +1,45 @@
+[project]
+name = "db-routing-iq-maf"
+version = "0.1.0"
+description = "awesome-llm-apps rag_database_routing の MAF + Foundry 移植(三段カスケードルーティング → Foundry IQ agentic retrieval + MCP)"
+requires-python = ">=3.11"
+dependencies = [
+    "agent-framework-core>=1.10",
+    "agent-framework-openai>=1.10",
+    "httpx>=0.27",     # MCP transport の api-key ヘッダー付きクライアント+setup_kb.py の REST
+    "mcp>=1.24,<2",    # MAF の MCPStreamableHTTPTool が要求(上限ピン必須 — Port 6 で実測した罠)
+    "beautifulsoup4>=4.12",  # 自前 DDG 検索(Web fallback)の HTML パース
+    "python-dotenv>=1.0",
+    "typing-extensions>=4.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.14",
+]
+live = [
+    "azure-monitor-opentelemetry>=1.6",
+]
+
+[project.scripts]
+db-routing-iq-maf = "db_routing_iq_maf.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/db_routing_iq_maf"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-m 'not live'"
+markers = [
+    "live: 実 Foundry + 実 AI Search knowledge base を呼ぶスモークテスト(要 .env + setup_kb.py 済)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

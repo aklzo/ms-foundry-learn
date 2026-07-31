@@ -1,0 +1,47 @@
+[project]
+name = "critique-loop-maf"
+version = "0.1.0"
+description = "awesome-llm-apps gpt_oss_critique_improvement_loop の MAF + Foundry 移植(並列候補→統合→批評→改訂のサイクリックグラフ+クラウド評価)"
+requires-python = ">=3.11"
+dependencies = [
+    "agent-framework-core>=1.10",
+    "agent-framework-openai>=1.10",
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "typing-extensions>=4.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.14",
+]
+live = [
+    "azure-monitor-opentelemetry>=1.6",
+]
+eval = [
+    "azure-ai-projects>=2.4",
+    "azure-identity>=1.17",
+]
+
+[project.scripts]
+critique-loop-maf = "critique_loop_maf.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/critique_loop_maf"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-m 'not live'"
+markers = [
+    "live: 実 Foundry エンドポイントを呼ぶスモークテスト(要 .env)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

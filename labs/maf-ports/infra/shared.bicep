@@ -142,6 +142,38 @@ resource accountModelAccess 'Microsoft.Authorization/roleAssignments@2022-04-01'
   }
 }
 
+// クラウド評価(evals)はプロジェクト MI が評価データ操作を行うため、
+// モデル権限に加えて Foundry User(旧 Azure AI User)も必要
+// (W2 Port 9 で PermissionDenied として実測)。
+
+var foundryUserRoleId = '53ca6127-db72-4b80-b1b0-d745d6d5456d' // Foundry User (旧 Azure AI User)
+
+resource projectFoundryUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundry.id, project.id, foundryUserRoleId)
+  scope: foundry
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      foundryUserRoleId
+    )
+    principalId: project.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource accountFoundryUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundry.id, 'account', foundryUserRoleId)
+  scope: foundry
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      foundryUserRoleId
+    )
+    principalId: foundry.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // --- 出力(ポートの .env に転記する値) ---
 
 output foundryName string = foundry.name
