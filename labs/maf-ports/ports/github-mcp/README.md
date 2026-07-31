@@ -103,7 +103,9 @@ az monitor app-insights query --app appi-mafports -g rg-maf-ports \
 ## 検証結果(2026-07-31)
 
 - オフラインテスト **21 passed** / ruff clean / bicep build OK
-- **ライブスモーク: 未実施(GITHUB_TOKEN 待ち)**。この環境に PAT がないため。実行方法:
+- ライブスモーク: **1 passed(18.8s、2026-07-31)**。gh の OAuth トークンでリモート MCP に接続し、microsoft/agent-framework への読み取りクエリが完走
+- **追加の学び(実行時に発覚)**: `mcp>=1.24` 指定だと **mcp 2.0.0 が解決されて接続時に `InitializeResult.protocolVersion` AttributeError**。agent-framework-core の要求は `mcp<2,>=1.24` — **上限ピンは自分の pyproject にも必要**(推移的依存の extra 経由では強制されない)。`mcp>=1.24,<2` に修正済み
+- 再実行方法:
   `gh auth login`(または PAT を発行)→ `GITHUB_TOKEN=$(gh auth token) uv run pytest -m live`
   期待動作: microsoft/agent-framework への読み取り質問 1 件が完走し、`invoke_agent` + MCP ツール呼び出しがトレースに乗る
 

@@ -22,7 +22,7 @@
 | 3 | research-handoff | starter/openai_research_agent | handoff | 済 | 済(31件) | 済 | 済(handoff+レポート+トレース) | [済](./ports/research-handoff/README.md) |
 | 4 | corrective-rag | rag/corrective_rag | 補正ループ+AI Search | 済 | 済(37件) | 済(AI Search Free+埋め込み) | 済(両経路+トレース) | [済](./ports/corrective-rag/README.md) |
 | 5 | travel-memory | memory/ai_travel_agent_memory | Foundry Memory | 済 | 済(23件) | 済 | 済(記憶往復139s+RBAC知見) | [済](./ports/travel-memory/README.md) |
-| 6 | github-mcp | mcp/github_mcp_agent | リモート MCP | 済 | 済(21件) | 済 | **要 GITHUB_TOKEN**(手順は port README) | [済](./ports/github-mcp/README.md) |
+| 6 | github-mcp | mcp/github_mcp_agent | リモート MCP | 済 | 済(21件) | 済 | 済(リモートMCP接続+クエリ18.8s) | [済](./ports/github-mcp/README.md) |
 | 7 | game-design-team | agent_teams/ai_game_design_agent_team | Swarm ハンドオフ | 済 | 済(30件) | 済 | 済(リング+ループ完走+トレース) | [済](./ports/game-design-team/README.md) |
 
 ## 実行の前提
