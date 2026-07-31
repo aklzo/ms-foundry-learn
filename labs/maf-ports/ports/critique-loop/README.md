@@ -114,6 +114,19 @@ uv run python scripts/run_cloud_eval.py runs/*.json             # 実行(builtin
   3. `uv sync --extra eval` → `az login` → `uv run python scripts/run_cloud_eval.py runs/*.json` → stage×評価器のスコア表と delta、ポータルの評価レポート(report_url)を確認
 - 未検証の残リスク(ライブで確認すべき点): (1) Foundry の evals エンドポイントが `azure_ai_evaluator` testing_criteria と custom データソースの組み合わせを本プロジェクトで受理すること、(2) `builtin.coherence` / `builtin.fluency` の data_mapping キー名(query / response)が現行サービス版と一致すること、(3) score_model グレーダーの判定モデルに gpt-5.4-mini(reasoning 系)を指定した場合の挙動
 
+## 検証結果(2026-07-31 ライブ)
+
+- オフライン **44 passed** / ライブスモーク完走(2周: 3候補並列→統合→批評10件→改訂×2)
+- **クラウド評価 完走**: builtin.coherence / builtin.fluency で3段階(初稿/改訂1/改訂2)を評価
+  - initial: coherence 4.00 / fluency 5.00 → revision-2: coherence **5.00(+1.00)** / fluency **4.00(−1.00)**
+  - **実行時批評は「revise」を出し続けたが、クラウド評価では fluency が悪化** — 「制御信号と測定は別物」という設計仮説が実データで裏付けられた(改訂は一貫性を上げ、流暢さを犠牲にしていた)
+  - 上限打ち切りの revision-2 が実行時未評価になる死角も、クラウド評価側で捕捉できることを確認
+- **到達までの躓き(重要・3連発)**:
+  1. builtin 評価器は `initialization_parameters.deployment_name`(ジャッジ用モデルデプロイ)必須 — 評価コストは自分のデプロイに乗る
+  2. プロジェクト/アカウント MI への割り当てが**孤児化**していた(MI ローテーション+guid 固定名。infra/roles.bicep へ分離で恒久対応)
+  3. **評価 run は提出ユーザーの権限でも動く**: 提出者に Foundry User(データプレーン)が必要。しかもセッション中にテナントのロール改名が完了し「Azure AI User」名が解決不能に(改名ロールアウトを実地で観測)
+- rubric(score_model)は切り分け中に単体でも PermissionDenied を確認済みのため、権限解決後の再実行は未実施(手順は scripts/run_cloud_eval.py デフォルトで rubric 込み)
+
 ## 学び(MAF/Foundry vs 元構成)
 
 1. **「実行時の自己批評」と「クラウド評価器」は同じ AI judge でも別の部品で、分担は"死角"で決まる — 実行時批評は制御信号、クラウド評価は測定。**移植して初めて見えたのは、元実装もこの移植も、**上限打ち切りで終わったループの最終改訂は実行時には誰も評価していない**という構造的な死角を持つことだった(ループが批評→改訂の順である以上、必然)。critic の出力は次ノード(reviser)が消費する「継続判断+改訂指示」であり、リクエストパス内で同期実行され、早期終了でコストを削る — 制御信号の性質そのもの。一方 evals API は版を並べた比較可能なスカラーを非同期ジョブで返し、実行時の死角(最終版)も含めて全版を採点できる。評価アイテムに `runtime_verdict`(revise / accept / **unevaluated**)を付けて突き合わせる設計にしたことで、この分担が出力の形として残る: クラウド評価の一番の仕事は「実行時に revise と判断され続けた版列でスコアが実際に上がったか」と「誰も見ていない最終版の品質」の 2 点の裏取りである。SI の選定文脈では「実行時に LLM judge を挟むか、オフライン評価に回すか」は二者択一ではなく、**改訂指示が要るならパス内・比較と監査が要るならパス外**、と役割で切り分けるのが実装から得た整理。
