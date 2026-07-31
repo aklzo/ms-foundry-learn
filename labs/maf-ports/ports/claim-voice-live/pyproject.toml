@@ -1,0 +1,49 @@
+[project]
+name = "claim-voice-live-maf"
+version = "0.1.0"
+description = "awesome-llm-apps insurance_claim_live_agent_team の MAF + Foundry 移植(Gemini Live → Voice Live API、音声非依存 FNOL コアの 3 層設計)"
+requires-python = ">=3.11"
+dependencies = [
+    "agent-framework-core>=1.10",
+    "agent-framework-openai>=1.10",
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "typing-extensions>=4.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.14",
+]
+# Voice Live 層(scripts/voice_session.py とライブスモークの WebSocket テストのみが使う)。
+# コア(FNOL ワークフロー)とテキスト対話層はこの extra なしで完動する。
+voice = [
+    "azure-ai-voicelive[aiohttp]>=1.0",
+    "azure-identity>=1.17",
+]
+live = [
+    "azure-monitor-opentelemetry>=1.6",
+]
+
+[project.scripts]
+claim-voice-live-maf = "claim_voice_live_maf.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/claim_voice_live_maf"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-m 'not live'"
+markers = [
+    "live: 実 Foundry モデル(テキスト対話層)+ Voice Live WebSocket を呼ぶスモークテスト(要 .env。Voice Live は --extra voice)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

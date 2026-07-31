@@ -28,6 +28,7 @@
 | 9 | critique-loop | advanced_llm/gpt_oss_critique_improvement_loop | 評価駆動ループ | 済 | 済(44件) | 済 | 済(ループ+クラウド評価完走) | [済](./ports/critique-loop/README.md) |
 | 10 | db-routing-iq | rag/rag_database_routing | Foundry IQ | 済 | 済(54件) | 済(AI Search Basic) | 済(4問ルーティング37.3s) | [済](./ports/db-routing-iq/README.md) |
 | 11 | hn-briefing-hosted | always_on/hn_briefing | hosted agent+Routines | 済 | 済(48件) | 済 | 済(デプロイ+invoke+ルーチンFinished) | [済](./ports/hn-briefing-hosted/README.md) |
+| 12 | claim-voice-live | voice/insurance_claim_live_agent_team | Voice Live | 済 | 済(77件) | 済 | 済(3本: コア/WS接続/ツールループ) | [済](./ports/claim-voice-live/README.md) |
 
 ## 実行の前提
 

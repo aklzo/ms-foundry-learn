@@ -1,0 +1,5 @@
+# 元 examples.py CAR_ACCIDENT_WITH_INJURIES をターン分割した FNOL シナリオ
+# (負傷あり → emergency_escalation に到達することを期待)
+I need to file an auto claim. My name is Jordan Lee, policy AUTO-90210. You can text me at 503-555-0199.
+On April 2, 2026 at 6:40 PM near SE 12th and Hawthorne in Portland, another car ran a red light and hit my driver's side.
+My passenger has neck pain and went to urgent care. Police came and gave report number PDX-24-8811. I have photos, the other driver's plate, and the tow receipt.
