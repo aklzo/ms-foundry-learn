@@ -108,71 +108,20 @@ resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-
   }
 }
 
-// --- RBAC: プロジェクト/アカウント MI にモデルのデータプレーン権限 ---
-// Memory(プレビュー)等のサービス側機能は、ストア構成のモデル(埋め込み・
-// チャット)をプロジェクトの MI で呼び出す。ポータル作成では自動付与される
-// 相当の権限が Bicep 作成では付かないため、明示的に割り当てる
-// (Port 5 で 401 ResourceError として実測。Cognitive Services OpenAI User)。
-
-var openaiUserRoleId = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd' // Cognitive Services OpenAI User
-
-resource projectModelAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundry.id, project.id, openaiUserRoleId)
-  scope: foundry
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      openaiUserRoleId
-    )
-    principalId: project.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource accountModelAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundry.id, 'account', openaiUserRoleId)
-  scope: foundry
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      openaiUserRoleId
-    )
-    principalId: foundry.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-// クラウド評価(evals)はプロジェクト MI が評価データ操作を行うため、
-// モデル権限に加えて Foundry User(旧 Azure AI User)も必要
-// (W2 Port 9 で PermissionDenied として実測)。
-
-var foundryUserRoleId = '53ca6127-db72-4b80-b1b0-d745d6d5456d' // Foundry User (旧 Azure AI User)
-
-resource projectFoundryUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundry.id, project.id, foundryUserRoleId)
-  scope: foundry
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      foundryUserRoleId
-    )
-    principalId: project.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource accountFoundryUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundry.id, 'account', foundryUserRoleId)
-  scope: foundry
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      foundryUserRoleId
-    )
-    principalId: foundry.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
+// --- RBAC はここに置かない(roles.bicep で第2段デプロイ) ---
+// 理由(W2 で実測した罠):
+// 1. サービス側機能(Memory / クラウド評価)はプロジェクト・アカウント MI に
+//    モデルデータプレーン権限(Cognitive Services OpenAI User)と
+//    Foundry User が必要(ポータル作成では自動、Bicep 作成では手動)
+// 2. プロジェクトの再デプロイで MI がローテーションすることがあり、
+//    このテンプレート内で id 固定名の割り当てを作ると「名前一致で既存扱い
+//    →旧 principal への孤児割り当てが残る」(PermissionDenied の温床)
+// 3. ARM の制約でロール割り当て名に実行時値(principalId)は使えない
+// → principalId をパラメータで渡す roles.bicep を分離し、
+//   本テンプレートのデプロイ後に必ず実行する:
+//     PID=$(az rest --method get --url "https://management.azure.com$(az cognitiveservices account show -n aif-<baseName> -g <rg> --query id -o tsv)/projects/<project>?api-version=2025-06-01" --query identity.principalId -o tsv)
+//     AID=$(az cognitiveservices account show -n aif-<baseName> -g <rg> --query identity.principalId -o tsv)
+//     az deployment group create -g <rg> -f roles.bicep -p baseName=<baseName> accountPrincipalId=$AID projectPrincipalId=$PID
 
 // --- 出力(ポートの .env に転記する値) ---
 

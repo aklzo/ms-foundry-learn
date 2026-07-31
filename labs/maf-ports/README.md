@@ -27,6 +27,7 @@
 | 8 | data-analysis-ci | starter/ai_data_analysis_agent | Code Interpreter | 済 | 済(24件) | 済 | 済(CSV分析14.7s+正答検証) | [済](./ports/data-analysis-ci/README.md) |
 | 9 | critique-loop | advanced/gpt_oss_critique_improvement_loop | 自己批評ループ+クラウド評価 | 済 | 済(44件) | 済 | 未(手順は README。クラウド評価 run_cloud_eval.py 含む) | [済](./ports/critique-loop/README.md) |
 | 10 | db-routing-iq | rag/rag_database_routing | Foundry IQ | 済 | 済(54件) | 済(AI Search Basic) | 済(4問ルーティング37.3s) | [済](./ports/db-routing-iq/README.md) |
+| 11 | hn-briefing-hosted | always_on/hn_briefing | hosted agent+Routines | 済 | 済(48件) | 済 | 済(デプロイ+invoke+ルーチンFinished) | [済](./ports/hn-briefing-hosted/README.md) |
 
 ## 実行の前提
 

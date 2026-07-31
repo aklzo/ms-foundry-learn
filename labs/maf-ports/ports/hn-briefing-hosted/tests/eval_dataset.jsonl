@@ -1,0 +1,8 @@
+{"id": "kw-framework-agent-workflow", "kind": "keyword", "title": "Show HN: An open-source framework for reliable AI agent workflows", "expected_hits": ["agent", "framework", "workflow"]}
+{"id": "kw-substring-tool", "kind": "keyword", "title": "Model Context Protocol adoption in developer tools", "expected_hits": ["tool"]}
+{"id": "kw-coding-agents", "kind": "keyword", "title": "Lessons from running coding agents on production repositories", "expected_hits": ["agent", "agents", "coding"]}
+{"id": "kw-none", "kind": "keyword", "title": "A quiet story about databases", "expected_hits": []}
+{"id": "noise-who-is-hiring", "kind": "noise", "title": "Ask HN: Who is hiring? (July 2026)", "expected_noise": true}
+{"id": "noise-not-noise", "kind": "noise", "title": "Why long-running automation needs better human handoff states", "expected_noise": false}
+{"id": "rank-keywords-beat-points", "kind": "rank_order", "note": "キーワード 3 件×16 は points/comments の厚みに勝つ(元式の重み)", "higher": {"title": "Lessons from running coding agents on production repositories", "points": 256, "comments": 73, "rank": 8}, "lower": {"title": "Model Context Protocol adoption in developer tools", "points": 312, "comments": 84, "rank": 4}}
+{"id": "rank-freshness-tiebreak", "kind": "rank_order", "note": "同一キーワード数・同一 points/comments なら front-page rank が新しい方が上", "higher": {"title": "An agent framework retrospective", "points": 100, "comments": 30, "rank": 2}, "lower": {"title": "An agent framework retrospective", "points": 100, "comments": 30, "rank": 20}}

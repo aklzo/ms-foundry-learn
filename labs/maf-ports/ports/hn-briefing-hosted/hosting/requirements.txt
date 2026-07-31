@@ -1,0 +1,8 @@
+# hosted agent コンテナの依存(REMOTE_BUILD がこのファイルを zip ルートから読む)。
+# pyproject の hosting extra と揃えること(test_hosted_wiring がインポート網羅を固定)。
+agent-framework-core>=1.10
+agent-framework-foundry>=1.10
+agent-framework-foundry-hosting>=1.0.0b260730
+azure-identity>=1.17
+httpx>=0.27
+python-dotenv>=1.0
