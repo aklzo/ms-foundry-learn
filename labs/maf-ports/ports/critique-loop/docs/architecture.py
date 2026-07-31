@@ -30,9 +30,9 @@ c1 = d.box(445, 190, 170, 36, "candidate: structured")
 c2 = d.box(445, 250, 170, 36, "candidate: practical")
 c3 = d.box(445, 310, 170, 36, "candidate: skeptical")
 synth = d.box(625, 250, 120, 44, "synthesize\n(fan-in)")
-critic = d.box(445, 400, 150, 48, "critic\n(verdict + critiques)")
-revise = d.box(250, 400, 110, 44, "revise")
-final = d.box(630, 400, 110, 44, "finalize")
+critic = d.box(445, 412, 150, 48, "critic\n(verdict + critiques)")
+revise = d.box(250, 412, 110, 44, "revise")
+final = d.box(630, 412, 110, 44, "finalize")
 evalbox = d.box(380, 510, 380, 40, "scripts/run_cloud_eval.py (per saved run, offline judge)")
 
 azure = d.cluster(760, 100, 1360, 700, "Azure subscription — rg-maf-ports (Japan East)", kind="azure")
@@ -51,10 +51,10 @@ for c in (c1, c2, c3):
     d.edge(disp, c)
     d.edge(c, synth)
 d.edge(synth, critic, label="draft", label_t=0.55, label_dx=30)
-d.edge(critic, revise, label="Case: revise\n(critique list)", label_t=0.5, label_dy=-26)
+d.edge(critic, revise, label="Case: revise\n(critique list)", label_t=0.5, label_dy=-24)
 d.edge(revise.port("top", 0.5), synth.port("bottom", 0.3), via=[(250, 345), (601, 345)],
-       label="loop: revised draft (rounds <= max, default 2)", label_t=0.5, label_dy=14)
-d.edge(critic, final, label="accept or\nmax rounds", label_t=0.5, label_dy=-26)
+       label="loop: revised draft (<= max rounds, default 2)", label_t=0.42, label_dy=12)
+d.edge(critic, final, label="accept or\nmax rounds", label_t=0.5, label_dy=-26, label_dx=22)
 
 d.edge(wf.port("right", 0.3), model, label="chat: 3 candidates + synth\n+ critic + revise / api-key",
        label_color=BLUE, label_t=0.4, label_dy=-28)

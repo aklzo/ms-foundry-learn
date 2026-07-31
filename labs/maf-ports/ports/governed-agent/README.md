@@ -44,6 +44,8 @@ Wave 3 のポート。核心は **MAF の middleware サーフェス(agent / cha
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
 経費申請テキスト
   │

@@ -11,6 +11,7 @@
 | [INVENTORY.md](./INVENTORY.md) | 元リポジトリ 156 プロジェクトの棚卸しと移植ロードマップ(Wave 1/2) |
 | [PORTING.md](./PORTING.md) | 移植規約(FW 対応表、テスト・トレース・評価・Bicep の必須要件、1サイクル手順) |
 | [infra/shared.bicep](./infra/shared.bicep) | 共有基盤(Foundry リソース+プロジェクト+モデル+App Insights)。**課金あり・1回だけデプロイ** |
+| [infra/docs/architecture.png](./infra/docs/architecture.png) | 共有基盤のアーキテクチャ図(各ポートの図は `ports/<port>/docs/architecture.png`。再生成手順は [tools/README.md](./tools/README.md)) |
 
 ## 進捗(Wave 1: #1-7 / Wave 2: #8-12 / Wave 3: #13-)
 

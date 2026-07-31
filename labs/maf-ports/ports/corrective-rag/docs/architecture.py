@@ -52,7 +52,7 @@ d.edge(retrieve, grade)
 d.edge(grade, generate, label="Default:\nall relevant", label_t=0.5, label_dy=-24)
 d.edge(grade, transform, label="Case: low\nrelevance", label_t=0.5, label_dx=-52)
 d.edge(transform, websearch)
-d.edge(websearch, generate, label="1 pass, no re-grade", label_t=0.75, label_dy=34)
+d.edge(websearch, generate, label="1 pass, no re-grade", label_t=0.75, label_dy=30, label_dx=60)
 d.edge(websearch.port("bottom", 0.2), ddg, label="search_with_retry\n(4s/8s backoff)", label_t=0.5, label_dx=-8)
 
 d.edge(wf.port("right", 0.2), model, label="chat: grade x docs +\nrewrite + generate / api-key",

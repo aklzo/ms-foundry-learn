@@ -58,6 +58,8 @@ survey features/03 の「hosted agent はエージェント定義にツールを
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
 【ロジック層(CLI・クライアント実行)】
 BriefingRequest ─▶ collect(HN Algolia・httpx) ─▶ rank(決定論・元式) ─▶ brief(MAF Agent) ─▶ Brief

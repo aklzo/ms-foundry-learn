@@ -14,6 +14,8 @@ Wave 3 の初回ポート。核心は **「動的な会話開始 × 通信グラ
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
 CLI: services-agency-maf "プロジェクト依頼文" [--name/--type/--budget/...]
   └ run_agency: トップレベル 5 ターン(元の 5 タブと同順)

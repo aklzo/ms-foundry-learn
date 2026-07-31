@@ -31,6 +31,8 @@ Wave 2 最終ポート。核心は **Gemini Live → Azure Voice Live API の置
 
 ## 移植後の構成(3 層)
 
+![architecture](./docs/architecture.png)
+
 ```
 【層 1: FNOL コア(音声非依存・MAF Workflow)】
 ClaimTurn(請求者発話全文)

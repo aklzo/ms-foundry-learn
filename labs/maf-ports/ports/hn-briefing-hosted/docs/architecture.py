@@ -24,7 +24,7 @@ d = Diagram(
 local = d.cluster(40, 100, 380, 430, "Local machine (deploy only)", kind="local")
 op = d.node(110, 185, icon("user"), "Operator\n(az login)")
 deploy = d.box(215, 300, 290, 48, "hosting/deploy_hosted_agent.py\n(zip: main.py + requirements.txt)")
-routset = d.box(200, 385, 260, 40, "scripts/setup_routine.py (REST)")
+routset = d.box(185, 370, 230, 40, "scripts/setup_routine.py\n(REST)")
 
 ext = d.cluster(40, 470, 380, 650, "External web (outside Azure)", kind="external")
 hn = d.node(170, 545, icon("browser"), "HN Algolia API\n(front-page JSON)", note="keyless HTTPS")
@@ -44,18 +44,19 @@ logw = d.node(1000, 640, icon("loganalytics"), "Log Analytics\nlog-mafportsw2")
 d.edge(appi, logw)
 
 d.edge(op, deploy)
-d.edge(op, routset, via=[(62, 250), (62, 385)])
+d.edge(op, routset, via=[(62, 250), (62, 370)])
 d.edge(deploy, hosted.port("left", 0.15), via=[(620, 238)],
        label="SDK create_version_from_code\n(REMOTE_BUILD) — Entra ID", label_color=BLUE,
        label_t=0.4, label_dy=-28)
 d.edge(routset, routine.port("left", 0.5),
        label="PUT /routines?api-version=v1\n+ Foundry-Features header — Entra ID", label_color=BLUE,
-       label_t=0.55, label_dy=34, label_dx=-60)
-d.edge(routine, hosted, label="invoke_agent_responses_api\n(1 trigger + 1 action)", label_t=0.5, label_dy=-40)
+       label_t=0.5, label_dy=56, label_dx=-40)
+d.edge(routine, hosted, label="invoke_agent_responses_api\n(1 trigger + 1 action)", label_t=0.5, label_dy=-48,
+       label_dx=-20)
 d.edge(hosted, model, label="FoundryChatClient —\nagent identity (Entra ID)", label_color=BLUE,
        label_t=0.5, label_dy=-26)
 d.edge(hosted, tool, label="tool call", label_t=0.5, label_dx=32)
-d.edge(tool.port("left", 0.5), hn.port("right", 0.3), label="HTTPS GET (keyless)", label_t=0.45, label_dy=-14)
+d.edge(tool.port("left", 0.5), hn.port("right", 0.3), label="HTTPS GET (keyless)", label_t=0.6, label_dy=-16)
 d.edge(hosted, appi, style="dashed", color=TELEM, via=[(680, 340), (680, 560)],
        label="OTel auto — conn string\ninjected by platform", label_t=0.75, label_dy=0, label_dx=-100)
 
