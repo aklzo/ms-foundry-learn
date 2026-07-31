@@ -34,8 +34,8 @@ for s in stage_labels:
     x += 88
 for a, b in zip(stages, stages[1:]):
     d.edge(a, b, width=1)
-d.d.text((385, 280), "* = LLM stage (structured output: ClaimNarrative / ClaimClassification); "
-         "the other 5 are deterministic (policies.py)", font=F_EDGE, fill=MUTED, anchor="ma")
+d.d.text((385, 280), "* = LLM stage (structured output); the other 5 are deterministic (policies.py)",
+         font=F_EDGE, fill=MUTED, anchor="ma")
 
 turn = d.box(385, 415, 560, 44, "turn loop: accumulate claimant transcript -> run core -> "
              "deterministic next question")
@@ -45,24 +45,24 @@ voice = d.box(385, 560, 590, 48, "WebSocket client: session.update (VAD, voice, 
 azure = d.cluster(760, 100, 1360, 720, "Azure subscription — rg-maf-ports (Japan East)", kind="azure")
 foundry = d.cluster(790, 150, 1340, 560, "Foundry: aif-mafportsw2", kind="sub",
                     sublabel="shared infra (AIServices S0)")
-vl = d.node(940, 260, icon("speech"), "Voice Live API\nmanaged gpt-4.1-mini",
-            note="no deployment needed (managed)", note_color=ORANGE)
+vl = d.node(930, 400, icon("speech"), "Voice Live API\nmanaged gpt-4.1-mini")
 model = d.node(1210, 260, icon("model"), "Model deployment\ngpt-5.4-mini", note="core LLM stages")
-project = d.node(1210, 440, icon("project"), "Project: maf-ports")
+project = d.node(1210, 470, icon("project"), "Project: maf-ports")
 appi = d.node(950, 645, icon("appinsights"), "App Insights\nappi-mafportsw2")
 logw = d.node(1200, 645, icon("loganalytics"), "Log Analytics\nlog-mafportsw2")
 d.edge(appi, logw)
 
 d.edge(l2.port("top", 0.5), l1.port("bottom", 0.5), label="per turn", label_t=0.5, label_dx=44)
-d.edge(l3.port("top", 0.15), l2.port("bottom", 0.15), label="tool call runs\nthe same core", label_t=0.5,
-       label_dx=-58)
+d.edge(l3.port("top", 0.25), l2.port("bottom", 0.25), label="tool call runs\nthe same core", label_t=0.5,
+       label_dx=-62)
 d.edge(l1.port("right", 0.5), model, label="extract + classify\n(response_format) / api-key",
        label_color=BLUE, label_t=0.45, label_dy=-28)
-d.edge(voice.port("right", 0.5), vl.port("bottom", 0.4), via=[(740, 560), (905, 400)],
+d.edge(vl.port("bottom", 0.75), voice.port("right", 0.85), via=[(760, 610)],
+       label="audio + transcripts + function_call\n(process_claim_turn)", label_t=0.45, label_dx=70,
+       label_dy=-10)
+d.edge(voice.port("right", 0.35), vl.port("bottom", 0.35), via=[(740, 520), (905, 520)],
        label="wss /voice-live/realtime?api-version=2026-04-10\napi-key (Foundry resource key)",
-       label_color=BLUE, label_t=0.55, label_dy=28)
-d.edge(vl.port("bottom", 0.7), voice.port("right", 0.9), via=[(955, 430), (760, 600)],
-       label="audio + transcripts + function_call\n(process_claim_turn)", label_t=0.35, label_dx=60)
+       label_color=BLUE, label_t=0.6, label_dy=-26)
 d.edge(local.port("right", 0.97), appi, style="dashed", color=TELEM,
        label="OTel traces", label_t=0.35, label_dy=-14)
 

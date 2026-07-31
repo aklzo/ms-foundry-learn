@@ -58,12 +58,12 @@ d.edge(mcpend, kb)
 d.edge(kb, ks, label="parallel subqueries\n+ L2 semantic rerank", label_t=0.6, label_dx=52, label_dy=-16)
 d.edge(ks, idx)
 d.edge(kb, model, label="LLM query planning, effort=low\n(api-version 2026-05-01-preview) / api-key",
-       label_color=BLUE, label_t=0.68, label_dx=112, label_dy=-6)
+       label_color=BLUE, label_t=0.8, label_dx=130, label_dy=0)
 d.edge(agent.port("bottom", 0.9), model, via=[(660, 480)],
-       label="answer synthesis stays agent-side\nchat / api-key", label_color=BLUE, label_t=0.35, label_dy=30)
+       label="answer synthesis stays agent-side\nchat / api-key", label_color=BLUE, label_t=0.75, label_dy=-8)
 d.edge(setup, srch.port("left", 0.8), label="REST: create idx x3\n+ KS x3 + KB", label_t=0.4, label_dy=-26)
-d.edge(local.port("right", 0.95), appi, style="dashed", color=TELEM,
-       label="OTel traces", label_t=0.35, label_dy=-14)
+d.edge(local.port("right", 0.95), appi, style="dashed", color=TELEM, via=[(730, 620)],
+       label="OTel traces", label_t=0.4, label_dx=-8)
 
 d.footer(
     notes=[

@@ -28,6 +28,8 @@ installed package(agent-framework-core 1.10 / 1.12)を調査した結論:
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
                   ┌─[handoff_to == "research"]─▶ Research ──▶ Editor ─▶ ResearchHandoffResult
 topic ─▶ Triage ──┤   (search_web +                (要約+facts を

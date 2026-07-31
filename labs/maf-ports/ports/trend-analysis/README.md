@@ -12,6 +12,8 @@
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
 topic ──▶ CollectorExecutor ──▶ SummarizerExecutor ──▶ AnalyzerExecutor ──▶ TrendReport
           (search_news tool)     (read_article tool)     (ツールなし)

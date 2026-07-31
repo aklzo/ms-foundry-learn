@@ -40,6 +40,8 @@
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
                 ┌─▶ candidate(structured)─┐
     prompt ──▶ dispatcher ─▶ candidate(practical) ─┼─▶ synthesize ─▶ critic ─┐

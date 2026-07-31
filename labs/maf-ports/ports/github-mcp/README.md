@@ -36,6 +36,8 @@
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
 質問(+ --repo)─▶ build_full_query("{query} in {repo}")
              ─▶ github_agent(MAF Agent, gpt-5.4-mini)

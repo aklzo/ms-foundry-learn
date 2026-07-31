@@ -31,6 +31,8 @@
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
 GameDesignContext(task, summaries={}, sections={})
       │

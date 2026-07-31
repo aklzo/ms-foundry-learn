@@ -40,6 +40,8 @@
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
 data.csv + 質問 ─▶ validate_data_file(csv/xlsx チェック — 元アプリの形式分岐)
               ─▶ upload_data_file(chat_client.client.files, purpose="assistants")─▶ file-xxx

@@ -12,6 +12,8 @@
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
                 ┌─▶ Proposer(analyst)    ─┐
 question ──▶ Dispatcher ─▶ Proposer(creative)   ─┼─▶ Aggregator ──▶ MoAResult

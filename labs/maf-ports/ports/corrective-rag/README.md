@@ -27,6 +27,8 @@
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
                                       ┌─[Default: 全て関連]──────────────────────────▶ generate ─▶ answer
 question ─▶ retrieve ─▶ grade_documents┤  (needs_web_search == False)

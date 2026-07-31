@@ -50,6 +50,8 @@
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
 質問 ─▶ db_routing_agent(MAF Agent, gpt-5.4-mini)
           ├─ knowledge_base_retrieve(MCPStreamableHTTPTool)─▶ AI Search knowledge base

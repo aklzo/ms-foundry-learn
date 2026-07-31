@@ -42,6 +42,8 @@ REST パス(参考。ライブデバッグ時に curl で叩ける):`POST {proje
 
 ## 移植後の構成
 
+![architecture](./docs/architecture.png)
+
 ```
 ユーザー発言 ─▶ MemoryStore.search(query, user_id)      ─▶ "Relevant past information:\n- ..."
                 (Foundry: search_memories, scope=user_id)    をプロンプト先頭に注入

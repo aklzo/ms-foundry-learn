@@ -50,14 +50,14 @@ d.edge(deploy, hosted.port("left", 0.15), via=[(620, 238)],
        label_t=0.4, label_dy=-28)
 d.edge(routset, routine.port("left", 0.5),
        label="PUT /routines?api-version=v1\n+ Foundry-Features header — Entra ID", label_color=BLUE,
-       label_t=0.55, label_dy=34, label_dx=-30)
-d.edge(routine, hosted, label="invoke_agent_responses_api\n(1 trigger + 1 action)", label_t=0.5, label_dy=-28)
+       label_t=0.55, label_dy=34, label_dx=-60)
+d.edge(routine, hosted, label="invoke_agent_responses_api\n(1 trigger + 1 action)", label_t=0.5, label_dy=-40)
 d.edge(hosted, model, label="FoundryChatClient —\nagent identity (Entra ID)", label_color=BLUE,
        label_t=0.5, label_dy=-26)
 d.edge(hosted, tool, label="tool call", label_t=0.5, label_dx=32)
 d.edge(tool.port("left", 0.5), hn.port("right", 0.3), label="HTTPS GET (keyless)", label_t=0.45, label_dy=-14)
 d.edge(hosted, appi, style="dashed", color=TELEM, via=[(680, 340), (680, 560)],
-       label="OTel auto — conn string\ninjected by platform", label_t=0.6, label_dy=0, label_dx=-100)
+       label="OTel auto — conn string\ninjected by platform", label_t=0.75, label_dy=0, label_dx=-100)
 
 d.footer(
     notes=[
