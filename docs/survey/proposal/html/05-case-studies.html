@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05. 公開事例集 — 提案書で引用できる Microsoft 公式事例</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a href="05-case-studies.html" class="current">05. 公開事例集</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<main>
+<h1 id="05-公開事例集-提案書で引用できる-microsoft-公式事例">05. 公開事例集 — 提案書で引用できる Microsoft 公式事例</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#使い方と注意-先に読む">使い方と注意(先に読む)</a></li><li><a href="#日本企業-エージェント型の事例">日本企業 — エージェント型の事例</a></li><li><a href="#日本企業-生成-ai-活用-rag・チャット・m365-copilot">日本企業 — 生成 AI 活用(RAG・チャット・M365 Copilot)</a></li><li><a href="#グローバル-エージェント型で数値が引用しやすいもの">グローバル — エージェント型で数値が引用しやすいもの</a></li><li><a href="#探し方-四半期更新の巡回先">探し方(四半期更新の巡回先)</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
+<p><a href="index.html">← 提案実務ガイド TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-08-02(初版)/ <strong>更新頻度:</strong> 四半期(下記「探し方」の巡回先を確認)<br><strong>収録基準:</strong> <strong>Microsoft 公式(customers.microsoft.com / news.microsoft.com / 公式ブログ)が公開している事例のみ。</strong>ベンダーや媒体の二次記事は含めない。効果数値は出典の表現のまま引用する(「約」「目標」を落とさない)。</p></blockquote>
+<h2 id="使い方と注意-先に読む">使い方と注意(先に読む)</h2>
+<ul>
+<li>引用は「<strong>社名+用途+効果数値+出典 URL</strong>」の 1 行形式で提案書の類似事例欄に載せる。</li>
+<li><strong>事例記事の技術スタック表記は広報の粒度で粗い</strong>(多くは「Azure OpenAI Service」としか書かれない)。事例は「同業種・同類型で公開実績がある」ことの証明に使い、<strong>アーキテクチャ選定の根拠には使わない</strong>(その役割は <a href="../../architecture/html/01-official-baselines.html">architecture 01 章の公式リファレンス</a>)。</li>
+<li>ブランド変遷(Azure OpenAI Service → Azure AI Foundry → Microsoft Foundry)のため、<strong>2024 年以前の事例はほぼ「Azure OpenAI Service」名義。</strong>Foundry / Agent Service 名指しの事例は 2025 年以降に増えている。「Foundry の事例が少なく見える」のは主に名義の問題で、エージェント型の公式事例は日本企業を含めて存在する。</li>
+<li>他社ロゴ・社名の提案書掲載は、公開事例の引用であっても自社の広報・法務ルールに従うこと。</li>
+</ul>
+<h2 id="日本企業-エージェント型の事例">日本企業 — エージェント型の事例</h2>
+<p><strong>Foundry / Agent Service 名指し:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>企業</th>
+<th>業界</th>
+<th>内容</th>
+<th>技術(記事表記)</th>
+<th>効果(記事表記)</th>
+<th>出典</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>富士通</strong></td>
+<td>IT サービス</td>
+<td>営業提案の作成・ナレッジ検索を自動化する営業支援エージェント</td>
+<td><strong>Azure AI Foundry / Azure AI Agent Service</strong></td>
+<td><strong>営業チームの生産性 67% 向上</strong></td>
+<td><a href="https://www.microsoft.com/en/customers/story/21885-fujitsu-azure-ai-foundry">Customer Story</a> / <a href="https://news.microsoft.com/ja-jp/2025/05/07/250507-how-agentic-ai-is-driving-ai-first-business-transformation-for-customers-to-achieve-more/">ja-jp 記事</a></td>
+</tr>
+<tr>
+<td><strong>NTT データ</strong></td>
+<td>IT サービス</td>
+<td>従業員がリアルタイムデータを取得・操作する会話型 AI 基盤</td>
+<td><strong>Microsoft Fabric + Foundry Agent Service + Foundry</strong></td>
+<td>新ソリューションの <strong>market 投入期間 50% 短縮</strong>、マルチエージェント展開の基盤化</td>
+<td><a href="https://blogs.microsoft.com/blog/2026/07/28/looking-back-on-microsofts-fy26-from-ai-experimentation-to-frontier-transformation/">FY26 公式ブログ</a></td>
+</tr>
+<tr>
+<td><strong>Sky 株式会社</strong></td>
+<td>ソフトウェア</td>
+<td>Fabric + Foundry でアンケート分析・要約を自動化、AI エージェントによる「デジタルワーカー」を推進</td>
+<td><strong>Microsoft Fabric + Microsoft Foundry</strong></td>
+<td>データ基盤確立(定量値は記事参照)</td>
+<td><a href="https://www.microsoft.com/ja-jp/customers/story/26026-sky-microsoft-fabric">Customer Story(日本語)</a></td>
+</tr>
+</tbody></table></div>
+<p><strong>エージェント型だが名義は Azure OpenAI Service(2024 年の公式まとめより):</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>企業</th>
+<th>業界</th>
+<th>内容</th>
+<th>効果(記事表記)</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>大和証券</strong></td>
+<td>金融</td>
+<td>複数 AI エージェントが照会対応・市況情報を処理する「AI オペレーター」</td>
+<td>24 時間対応、オペレーター負荷軽減</td>
+</tr>
+<tr>
+<td><strong>トヨタ自動車(パワートレーン)</strong></td>
+<td>製造</td>
+<td>9 つの専門エンジニアリング領域を持つ生成 AI エージェント群「O-Beya」</td>
+<td>エンジニアを 24/7 支援、技術伝承</td>
+</tr>
+<tr>
+<td><strong>ソフトバンク</strong></td>
+<td>通信</td>
+<td>コールセンターの LLM 自律思考型システム(問い合わせ判断→最適回答)</td>
+<td>待ち時間短縮・対応の均質化</td>
+</tr>
+<tr>
+<td><strong>ベルシステム24</strong></td>
+<td>BPO</td>
+<td>AI と人のオペレーターを組み合わせた Hybrid Operation Loop(RAG)</td>
+<td>応答正答率 95%+ を目標、ナレッジ自動生成</td>
+</tr>
+<tr>
+<td><strong>JR 西日本</strong></td>
+<td>運輸</td>
+<td>駅係員向け鉄道業務特化アシスタント</td>
+<td>顧客待ち時間短縮、係員教育</td>
+</tr>
+</tbody></table></div>
+<p>出典(上表 5 件): <a href="https://news.microsoft.com/ja-jp/2024/12/18/241218-operational-efficiency-and-innovation-enabled-by-ai-agents-latest-case-studies-from-japan/">AI エージェントで実現する業務効率化とイノベーション: 日本の最新事例(News Center Japan, 2024-12-18)</a></p>
+<h2 id="日本企業-生成-ai-活用-rag・チャット・m365-copilot">日本企業 — 生成 AI 活用(RAG・チャット・M365 Copilot)</h2>
+<p>規制業種・製造など「同業種の実績」として引く際に有効なもの。出典は行内リンクまたは上記 News Center 記事。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>企業</th>
+<th>業界</th>
+<th>内容</th>
+<th>効果(記事表記)</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>三菱UFJ FG</strong></td>
+<td>金融</td>
+<td>行内 ChatGPT(Azure OpenAI)</td>
+<td><strong>110 業務ユースケース</strong></td>
+</tr>
+<tr>
+<td><strong>セブン銀行</strong></td>
+<td>金融</td>
+<td>ATM 案内・コンタクトセンター AI</td>
+<td>回答精度「<strong>約 9 割</strong>」</td>
+</tr>
+<tr>
+<td><strong>弁護士ドットコム</strong></td>
+<td>リーガル</td>
+<td>24 時間無料 AI 法律相談(過去 125 万件超の相談データ基盤)</td>
+<td>マルチ領域対応</td>
+</tr>
+<tr>
+<td><strong>JAL</strong></td>
+<td>航空</td>
+<td>客室乗務員の機内報告アプリ「JAL-AI」(<strong>Phi-4 SLM</strong> + Azure OpenAI)</td>
+<td><strong>報告時間を最大 2/3 削減</strong>、36,500 人に生成 AI 展開(<a href="https://www.microsoft.com/en-us/microsoft-cloud/blog/2025/05/08/transforming-japan-with-ai-5-companies-from-the-front-lines-of-innovation/">出典</a>)</td>
+</tr>
+<tr>
+<td><strong>日清食品 HD</strong></td>
+<td>消費財</td>
+<td>社内会話 AI「NISSIN AI-Chat」(Azure OpenAI + Power Platform)</td>
+<td>IT 部門負荷 <strong>24% 削減</strong></td>
+</tr>
+<tr>
+<td><strong>三菱商事</strong></td>
+<td>商社</td>
+<td>投資判断支援の社内チャット「SHINE」</td>
+<td>意思決定の高速化</td>
+</tr>
+<tr>
+<td><strong>スクウェア・エニックス</strong></td>
+<td>ゲーム</td>
+<td>ゲームエンジンドキュメント QA ボット(Slack 統合)</td>
+<td>非プログラマー活用、Python コード自動生成</td>
+</tr>
+<tr>
+<td><strong>ナガセ(東進)</strong></td>
+<td>教育</td>
+<td>200 億件超の解答データを使う個別学習レコメンド</td>
+<td>大学合格率「70% 以上」</td>
+</tr>
+<tr>
+<td><strong>住友商事</strong></td>
+<td>商社</td>
+<td>M365 Copilot 全社展開(8,800 ライセンス)</td>
+<td><strong>年間 12 億円のコスト削減</strong>(<a href="https://www.microsoft.com/en-us/microsoft-cloud/blog/2025/05/08/transforming-japan-with-ai-5-companies-from-the-front-lines-of-innovation/">出典</a>)</td>
+</tr>
+<tr>
+<td><strong>デンソー</strong></td>
+<td>製造</td>
+<td>M365 Copilot 全社活用</td>
+<td><strong>月 12 時間</strong>の作業削減</td>
+</tr>
+</tbody></table></div>
+<h2 id="グローバル-エージェント型で数値が引用しやすいもの">グローバル — エージェント型で数値が引用しやすいもの</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>企業</th>
+<th>内容</th>
+<th>技術(記事表記)</th>
+<th>効果(記事表記)</th>
+<th>出典</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Accenture</strong></td>
+<td>責任ある AI 統制つきでユースケース量産</td>
+<td>Azure AI Foundry</td>
+<td><strong>4 か月で 17 ユースケース</strong>、構築時間最大 50% 短縮見込み</td>
+<td><a href="https://www.microsoft.com/en/customers/story/23953-accenture-azure-ai-foundry">Customer Story</a></td>
+</tr>
+<tr>
+<td><strong>Air India</strong></td>
+<td>顧客サービスのエージェント(仮想アシスタント)</td>
+<td>Azure OpenAI / Foundry Models / Agent Service</td>
+<td><strong>1 日 4 万件</strong>の問い合わせ処理、数百万ドル削減</td>
+<td><a href="https://azure.microsoft.com/en-us/blog/ai-agents-at-work-the-new-frontier-in-business-automation/">Azure Blog</a></td>
+</tr>
+<tr>
+<td><strong>Atomicwork</strong></td>
+<td>社内 IT/サービスデリバリのエージェント「Atom」</td>
+<td>Azure AI Foundry</td>
+<td><strong>6 か月で問い合わせの 65% を自動化</strong>、応答遅延 75% 減</td>
+<td><a href="https://news.microsoft.com/ja-jp/2025/05/07/250507-how-agentic-ai-is-driving-ai-first-business-transformation-for-customers-to-achieve-more/">ja-jp 記事</a></td>
+</tr>
+</tbody></table></div>
+<p><strong>Copilot Studio 側の事例</strong>(課の分業モデルで「入口は Copilot Studio」を説明する材料): Dow(輸送費の隠れ損失を数分で特定・年数億ドル削減見込み)/ Eneco(月 24,000 チャット、70% をオペレーター無しで解決)/ Virgin Money(100 万+ 対話)/ T-Mobile(83,000 ユーザー)/ BDO Colombia(業務負荷 50% 減)— 出典は同上 ja-jp 記事。</p>
+<h2 id="探し方-四半期更新の巡回先">探し方(四半期更新の巡回先)</h2>
+<ol>
+<li><a href="https://www.microsoft.com/ja-jp/ai/ai-customer-stories">AI ケーススタディ検索ポータル(日本語)</a> — 業種・製品で絞り込み</li>
+<li><a href="https://www.microsoft.com/ja-jp/customers">Microsoft Customer Stories</a> — 「Azure AI Foundry」「Copilot Studio」でフィルタ</li>
+<li><a href="https://news.microsoft.com/ja-jp/">News Center Japan</a> — 日本企業のまとめ記事が定期的に出る(本ページの主要出典)</li>
+<li><a href="https://www.microsoft.com/en-us/microsoft-cloud/blog/2025/07/24/ai-powered-success-with-1000-stories-of-customer-transformation-and-innovation/">Microsoft Cloud Blog の集約記事(1,000+ stories)</a> と <a href="https://blogs.microsoft.com/blog/2026/07/28/looking-back-on-microsofts-fy26-from-ai-experimentation-to-frontier-transformation/">FY 総括ブログ(毎年 7 月末)</a></li>
+<li><a href="https://adoption.microsoft.com/en-us/ai-agents/transformation-stories/">adoption.microsoft.com — Agent transformation stories</a> — エージェント特化の事例集</li>
+</ol>
+<h2 id="更新履歴">更新履歴</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-08-02</td>
+<td>初版。日本のエージェント型 8 件+生成 AI 10 件+グローバル主要事例を公式出典つきで収録</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>このHTMLは docs/survey/proposal/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>
