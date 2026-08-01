@@ -144,6 +144,7 @@ footer {
 <hr>
 <h2 id="a1-部門内-faq-チャット-file-search・最小構成">A1. 部門内 FAQ チャット(File Search・最小構成)</h2>
 <p><strong>想定:</strong> 情シスや人事が持つ規程・マニュアル・FAQ を数百〜数千ファイル。全社員が同じ文書を見てよい。2〜4 週間で立ち上げたい。</p>
+<p><img src="../images/a1-prompt-rag-variants.png" alt="A1/A3/A4 Prompt agent + マネージドナレッジ 3 変種のアーキテクチャ図" loading="lazy"></p>
 <pre><code> [ユーザー] ─ Entra ID 認証 ─&gt; [App Service / Web アプリ]
                                      │ マネージド ID
                                      ▼
@@ -326,7 +327,7 @@ footer {
 <p>インデクサの最大実行時間はパブリック実行環境で <strong>2 時間</strong>、プライベート実行環境で <strong>24 時間</strong>。</p>
 <hr>
 <h2 id="a3-既存-ai-search-資産の活用-ai-search-ツール直結">A3. 既存 AI Search 資産の活用(AI Search ツール直結)</h2>
-<p>既に AI Search のインデックスがある場合、エージェントから直接つなぐのが最短。</p>
+<p>既に AI Search のインデックスがある場合、エージェントから直接つなぐのが最短。構成は A1 と同型(ナレッジが AI Search ツール直結に変わるだけ)— <a href="../images/a1-prompt-rag-variants.png">A1 の統合図</a>を参照。</p>
 <div class="tablewrap"><table><thead><tr>
 <th>パラメータ</th>
 <th>既定</th>
@@ -357,7 +358,7 @@ footer {
 <p>完全サポートは <strong>File Search / Function Tool / MCP / Knowledge-based MCP。</strong>つまり <strong>「Foundry Agent + AI Search ツール」はエージェント評価の自動化が弱い。</strong>評価を CI ゲートにする要件があるなら、A5(Foundry IQ = MCP 経由)を選ぶか、評価を自前ハーネスで組む。</p>
 <hr>
 <h2 id="a4-m365-sharepoint-が主データソース">A4. M365 / SharePoint が主データソース</h2>
-<p><strong>成立条件が厳しいので、まずここを確認する:</strong></p>
+<p>構成は A1 と同型(ナレッジが SharePoint ツールに変わるだけ)— <a href="../images/a1-prompt-rag-variants.png">A1 の統合図</a>を参照。<strong>成立条件が厳しいので、まずここを確認する:</strong></p>
 <ul>
 <li><strong>Microsoft 365 Copilot ライセンスが開発者・エンドユーザー双方に必須</strong>(または Copilot Retrieval API の従量課金を有効化)。<strong>ライセンス費が案件コストに乗る。</strong></li>
 <li><strong>ユーザー ID 認証(OBO)のみ。アプリ専用(サービスプリンシパル)認証は不可。</strong>→ <strong>バッチ処理・非対話型エージェントでは使えない。</strong></li>
@@ -373,6 +374,7 @@ footer {
 <h2 id="a5-複数ソース横断・高精度-foundry-iq-agentic-retrieval">A5. 複数ソース横断・高精度(Foundry IQ / agentic retrieval)</h2>
 <p><strong>想定:</strong> Blob + OneLake + Web + SharePoint を横断。複数のエージェント / アプリで同じナレッジを共有したい。クエリが複雑・会話的。</p>
 <p><strong>構造:</strong> Knowledge base(最上位。どのソースを引くか、reasoning effort をどうするか)→ Knowledge source(indexed 型 / remote 型)→ agentic retrieval(クエリ分解 → 並列実行 → セマンティック再ランク → 統合)。</p>
+<p><img src="../images/a5-foundry-iq.png" alt="A5 Foundry IQ(agentic retrieval)のアーキテクチャ図" loading="lazy"></p>
 <p><strong>実体は Azure AI Search の agentic retrieval であり、Azure AI Search は必須。</strong>公称値は「従来の single-shot RAG より約 36% 高い応答品質」。</p>
 <h3 id="foundry-iq-ga-は誤り-ga-プレビューは-rest-api-バージョンで切れている">⚠ 「Foundry IQ = GA」は誤り。GA / プレビューは REST API バージョンで切れている</h3>
 <blockquote><p>一部の agentic retrieval 機能は <strong>2026-04-01 REST API のプログラム的アクセスで一般提供されている。Azure portal と Microsoft Foundry portal は、すべての agentic retrieval 機能に対してプレビュー限定のアクセスを提供し続ける。</strong></p></blockquote>

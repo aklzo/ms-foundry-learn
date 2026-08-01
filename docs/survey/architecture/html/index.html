@@ -763,7 +763,7 @@ footer {
 <li>公式ドキュメントに書かれている事実と、本ドキュメントの判断・推測を区別して書いている。<strong>公式に書かれていない判断には「本ドキュメントの判断」と明記</strong>している。</li>
 <li><strong>公式ドキュメント間で記述が食い違っている箇所</strong>(Data Zone の APAC 記載漏れ、hosted agents の GA / preview 表記、Reservation の交換可否など)は、その旨を併記している。</li>
 <li><strong>リンク切れ・削除済みリソース</strong>(ALZ 版 baseline の実装リポジトリなど)も、探して見つからないことに時間を使わないよう明記している。</li>
-<li><strong>アーキテクチャ図(Azure 公式アイコン)は <code>images/*.png</code>。</strong>生成スクリプトと再生成手順は <a href="./diagrams/README.md">diagrams/</a>(maf-ports の描画ヘルパーを共有。図中テキストは英語)。代表 4 パターン(公式-B / A2 / B2 / D1)を整備済みで、ASCII 図は生成 AI 用にそのまま残している。</li>
+<li><strong>アーキテクチャ図(Azure 公式アイコン)は <code>images/*.png</code>(全 18 枚)。</strong>生成スクリプトと再生成手順は <a href="./diagrams/README.md">diagrams/</a>(maf-ports の描画ヘルパーを共有。図中テキストは英語)。公式-B と A〜E の主要パターンを整備済み。構成が既存図と実質同じもの(公式-A/C、A3/A4、C1/C3、D2)は作図せず理由を diagrams/README に記載。ASCII 図は生成 AI 用にそのまま残している。</li>
 </ul>
 <h3 id="更新運用">更新運用</h3>
 <p><strong>推奨頻度:</strong> 四半期に 1 回。Ignite(11 月)・Build(5 月)直後は必ず更新。<a href="../../features/html/index.html">features/</a> の月次更新とは別サイクルでよい(アーキテクチャの骨格は機能ステータスより変化が遅いため)。</p>
@@ -800,6 +800,10 @@ footer {
 <tr>
 <td>2026-08-01</td>
 <td><strong>Azure アイコンのアーキテクチャ図を導入。</strong>代表 4 パターン(公式-B Baseline / A2 / B2 / D1)を <code>diagrams/*.py</code> → <code>images/*.png</code> で生成し 01・04・05・07 章に埋め込み。md2html.py に画像対応(<code>![...]</code> → <code>&lt;img&gt;</code>、html/ からの相対パス書き換え)を追加</td>
+</tr>
+<tr>
+<td>2026-08-01</td>
+<td><strong>アーキテクチャ図を全 18 枚に拡充。</strong>A1(A3/A4 統合)/ A5 / B1 / B3 / B4 / B5 / C2 / D3 / E1〜E6 の 14 枚を追加し全ユースケース章に埋め込み。構成が同型のパターン(公式-A/C、C1/C3、D2)は作図せず理由を diagrams/README に記載</td>
 </tr>
 <tr>
 <td>2026-08-01</td>

@@ -367,6 +367,8 @@ MCSB v1.0 ベースで「古いガイダンスを含む可能性がある」と�
 | **Foundry Local on Azure Local** | **オンプレ K8s 上のエンタープライズ推論基盤**(Arc 拡張) | **プレビュー、かつ申請制** |
 | **Foundry Tools の切断コンテナ** | Speech / Language / Vision / Document Intelligence 等を**エアギャップで動かす** | サービスごとに GA / preview が異なる |
 
+![D3 エッジ・オンプレ 3 形態の比較図](./images/d3-edge-onprem.png)
+
 ### 9.1 Foundry Local(端末上)
 
 「ユーザーのデバイス上で完全に動作するアプリケーションを出荷するための、エンドツーエンドのローカル AI ソリューション」と定義されている。

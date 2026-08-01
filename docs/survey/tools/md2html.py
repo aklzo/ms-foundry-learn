@@ -216,6 +216,9 @@ def fix_link(url: str) -> str:
     if m:
         name = "index" if m.group(1) == "README" else m.group(1)
         return f"{name}.html{m.group(2) or ''}"
+    m = re.match(r"^(?:\./)?(images/[\w.-]+)$", url)
+    if m:
+        return f"../{m.group(1)}"
     return url
 
 

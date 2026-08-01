@@ -139,6 +139,7 @@ footer {
 </tbody></table></div>
 <hr>
 <h2 id="e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</h2>
+<p><img src="../images/e1-voice.png" alt="E1 音声エージェント(Voice Live + ACS)のアーキテクチャ図" loading="lazy"></p>
 <h3 id="voice-live-api-とは">Voice Live API とは</h3>
 <p><strong>フルマネージドの speech-to-speech 統合 API。</strong>STT + 生成 AI + TTS + アバターを<strong>単一のインターフェース</strong>で提供する。「STT → LLM → TTS」を自分でつなぐ必要がなく、公式も「<strong>デプロイも管理も不要</strong>」と明記している。</p>
 <div class="tablewrap"><table><thead><tr>
@@ -434,6 +435,7 @@ footer {
 </ul>
 <p><strong>課金モデル:</strong> (1) content extraction(文書は 1,000 ページ単位、音声 / 動画は分単位、<strong>画像は無料</strong>)、(2) contextualization(固定: 1,000 トークン/ページ、10 万トークン/時間の音声、100 万トークン/時間の動画)、(3) <strong>LLM / 埋め込みトークンは自分の Foundry デプロイに課金。</strong>コスト倍率は source grounding + confidence で約 2 倍、extractive モードで約 1.5 倍、segmentation で約 2 倍。<strong>ミニモデルで LLM コストを最大 80% 削減できる</strong>と明記されている。</p>
 <h3 id="取り込みパイプラインのアーキテクチャ">取り込みパイプラインのアーキテクチャ</h3>
+<p><img src="../images/e2-idp.png" alt="E2 文書処理・IDP パイプラインのアーキテクチャ図" loading="lazy"></p>
 <pre><code> [文書投入: Blob / SharePoint / メール / スキャナ]
         │
         ▼
@@ -522,6 +524,7 @@ footer {
 <p><strong>Batch の制限:</strong> 入力ファイル最大 200MB(BYO Blob なら 1GB)、<strong>1 ファイル最大 100,000 リクエスト</strong>、有効期限未設定なら入力ファイル 500 個 / リソース(<code>expires_after</code> を設定すると 10,000 個)。24 時間を超えてもジョブは失効せず実行を継続する。</p>
 <p><strong>運用推奨:</strong> <strong>Dynamic quota を ON</strong> にして余剰容量を機会的に利用する。一部リージョンでは <code>token_limit_exceeded</code> を即時返す <strong>fail-fast + 指数バックオフ</strong>でジョブをキューイングできる。</p>
 <p><strong>アーキテクチャの骨格:</strong></p>
+<p><img src="../images/e3-batch.png" alt="E3 大量バッチ処理のフロー図" loading="lazy"></p>
 <pre><code> [投入: Blob / DB / イベント]
         │
         ▼
@@ -691,6 +694,7 @@ footer {
 <h3 id="アーキテクチャガイダンスは存在しない">アーキテクチャガイダンスは存在しない</h3>
 <p>**「キュー + ワーカー + Blob + セーフティレビュー」型のメディア<em>生成</em>パイプラインを扱う Azure Architecture Center の公式記事・サンプルは見つからなかった。<strong>最も構造が近いのは「Extract and Map Information from Unstructured Content」(Container Apps + Queue Storage + Blob + Cosmos DB + confidence score による人手レビュー分岐)だが、これは</strong>処理・抽出であって生成ではない。**</p>
 <p><strong>画像 6〜36 RPM / Sora 2 が 2 RPM + 同時 2 ジョブ</strong>という制約下では、汎用パターンである <strong>Queue-Based Load Leveling / Competing Consumers / Background jobs</strong> の適用が実質必須になる。本ドキュメントの構成案:</p>
+<p><img src="../images/e4-media-gen.png" alt="E4 マルチモーダル生成のフロー図" loading="lazy"></p>
 <pre><code> [API]  ← ユーザー要求を受けて即座にジョブ ID を返す(同期で待たない)
    │
    ▼
@@ -711,6 +715,7 @@ footer {
 <h2 id="e5-m365-teams-連携">E5. M365 / Teams 連携</h2>
 <h3 id="エージェントを-teams-m365-copilot-に公開する">エージェントを Teams / M365 Copilot に公開する</h3>
 <p><strong>公開フロー自体は GA。</strong>安定エンドポイントを Teams アプリマニフェスト化して M365 / Teams のエージェントストアへ公開する。</p>
+<p><img src="../images/e5-m365-channels.png" alt="E5 Teams / M365 公開のアーキテクチャ図" loading="lazy"></p>
 <div class="tablewrap"><table><thead><tr>
 <th>項目</th>
 <th>内容</th>
@@ -761,6 +766,7 @@ footer {
 <p>M365 Copilot / Teams / パートナープラットフォーム / 独自アプリ / Web にまたがるフルスタック・マルチチャネル向け。<strong>Semantic Kernel や MAF をオーケストレータとして内部で使える。</strong>公式の使い分けは「<strong>AI モデルやオーケストレーションを完全に制御したいなら、M365 Agents SDK か Agents Toolkit 経由の Foundry によるプロコード方式を選べ。</strong>」</p>
 <hr>
 <h2 id="e6-ファインチューニング-モデルカスタマイズの運用">E6. ファインチューニング / モデルカスタマイズの運用</h2>
+<p><img src="../images/e6-finetune-ops.png" alt="E6 ファインチューニング運用ループのフロー図" loading="lazy"></p>
 <h3 id="まず-本当に必要か-を潰す">まず「本当に必要か」を潰す</h3>
 <p><strong>公式の立場は「多くのユースケースでファインチューニングは不要」である。</strong>マルチテナンシー記事に最も明快な形で書かれている。</p>
 <blockquote><p><strong>ただしファインチューニングはほとんどのユースケースで必要ない。</strong>通常は Azure OpenAI on your data 機能や別の RAG アプローチでモデルをグラウンディングできる。</p></blockquote>

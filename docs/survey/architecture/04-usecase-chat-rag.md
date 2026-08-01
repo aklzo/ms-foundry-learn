@@ -32,6 +32,8 @@ Foundry 案件で最も数が多い類型。**同じ「社内文書に答える�
 
 **想定:** 情シスや人事が持つ規程・マニュアル・FAQ を数百〜数千ファイル。全社員が同じ文書を見てよい。2〜4 週間で立ち上げたい。
 
+![A1/A3/A4 Prompt agent + マネージドナレッジ 3 変種のアーキテクチャ図](./images/a1-prompt-rag-variants.png)
+
 ```
  [ユーザー] ─ Entra ID 認証 ─> [App Service / Web アプリ]
                                      │ マネージド ID
@@ -180,7 +182,7 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 
 ## A3. 既存 AI Search 資産の活用(AI Search ツール直結)
 
-既に AI Search のインデックスがある場合、エージェントから直接つなぐのが最短。
+既に AI Search のインデックスがある場合、エージェントから直接つなぐのが最短。構成は A1 と同型(ナレッジが AI Search ツール直結に変わるだけ)— [A1 の統合図](./images/a1-prompt-rag-variants.png)を参照。
 
 | パラメータ | 既定 |
 |---|---|
@@ -205,7 +207,7 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 
 ## A4. M365 / SharePoint が主データソース
 
-**成立条件が厳しいので、まずここを確認する:**
+構成は A1 と同型(ナレッジが SharePoint ツールに変わるだけ)— [A1 の統合図](./images/a1-prompt-rag-variants.png)を参照。**成立条件が厳しいので、まずここを確認する:**
 
 - **Microsoft 365 Copilot ライセンスが開発者・エンドユーザー双方に必須**(または Copilot Retrieval API の従量課金を有効化)。**ライセンス費が案件コストに乗る。**
 - **ユーザー ID 認証(OBO)のみ。アプリ専用(サービスプリンシパル)認証は不可。**→ **バッチ処理・非対話型エージェントでは使えない。**
@@ -227,6 +229,8 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 **想定:** Blob + OneLake + Web + SharePoint を横断。複数のエージェント / アプリで同じナレッジを共有したい。クエリが複雑・会話的。
 
 **構造:** Knowledge base(最上位。どのソースを引くか、reasoning effort をどうするか)→ Knowledge source(indexed 型 / remote 型)→ agentic retrieval(クエリ分解 → 並列実行 → セマンティック再ランク → 統合)。
+
+![A5 Foundry IQ(agentic retrieval)のアーキテクチャ図](./images/a5-foundry-iq.png)
 
 **実体は Azure AI Search の agentic retrieval であり、Azure AI Search は必須。**公称値は「従来の single-shot RAG より約 36% 高い応答品質」。
 

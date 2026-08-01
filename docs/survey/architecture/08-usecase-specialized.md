@@ -21,6 +21,8 @@
 
 ## E1. 音声エージェント / コンタクトセンター
 
+![E1 音声エージェント(Voice Live + ACS)のアーキテクチャ図](./images/e1-voice.png)
+
 ### Voice Live API とは
 
 **フルマネージドの speech-to-speech 統合 API。**STT + 生成 AI + TTS + アバターを**単一のインターフェース**で提供する。「STT → LLM → TTS」を自分でつなぐ必要がなく、公式も「**デプロイも管理も不要**」と明記している。
@@ -214,6 +216,8 @@ API `2025-11-01` で GA(2025 年 11 月)。プレビュー版 API は 2026-07-15
 
 ### 取り込みパイプラインのアーキテクチャ
 
+![E2 文書処理・IDP パイプラインのアーキテクチャ図](./images/e2-idp.png)
+
 ```
  [文書投入: Blob / SharePoint / メール / スキャナ]
         │
@@ -272,6 +276,8 @@ API `2025-11-01` で GA(2025 年 11 月)。プレビュー版 API は 2026-07-15
 **運用推奨:** **Dynamic quota を ON** にして余剰容量を機会的に利用する。一部リージョンでは `token_limit_exceeded` を即時返す **fail-fast + 指数バックオフ**でジョブをキューイングできる。
 
 **アーキテクチャの骨格:**
+
+![E3 大量バッチ処理のフロー図](./images/e3-batch.png)
 
 ```
  [投入: Blob / DB / イベント]
@@ -387,6 +393,8 @@ OpenAI 互換側は Create / Get Status / Download / **List** / **Delete** の 5
 
 **画像 6〜36 RPM / Sora 2 が 2 RPM + 同時 2 ジョブ**という制約下では、汎用パターンである **Queue-Based Load Leveling / Competing Consumers / Background jobs** の適用が実質必須になる。本ドキュメントの構成案:
 
+![E4 マルチモーダル生成のフロー図](./images/e4-media-gen.png)
+
 ```
  [API]  ← ユーザー要求を受けて即座にジョブ ID を返す(同期で待たない)
    │
@@ -414,6 +422,8 @@ OpenAI 互換側は Create / Get Status / Download / **List** / **Delete** の 5
 ### エージェントを Teams / M365 Copilot に公開する
 
 **公開フロー自体は GA。**安定エンドポイントを Teams アプリマニフェスト化して M365 / Teams のエージェントストアへ公開する。
+
+![E5 Teams / M365 公開のアーキテクチャ図](./images/e5-m365-channels.png)
 
 | 項目 | 内容 |
 |---|---|
@@ -456,6 +466,8 @@ M365 Copilot / Teams / パートナープラットフォーム / 独自アプリ
 ---
 
 ## E6. ファインチューニング / モデルカスタマイズの運用
+
+![E6 ファインチューニング運用ループのフロー図](./images/e6-finetune-ops.png)
 
 ### まず「本当に必要か」を潰す
 

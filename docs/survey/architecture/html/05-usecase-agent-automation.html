@@ -155,6 +155,7 @@ footer {
 <hr>
 <h2 id="b1-単一エージェント-基幹-api-参照系中心">B1. 単一エージェント + 基幹 API(参照系中心)</h2>
 <p><strong>想定:</strong> 在庫照会、受発注状況の確認、顧客情報の参照。更新は限定的か、行っても低リスク。</p>
+<p><img src="../images/b1-agent-core-api.png" alt="B1 単一エージェント + 基幹 API のアーキテクチャ図" loading="lazy"></p>
 <pre><code> [ユーザー(Teams / 自社ポータル)]
         │ Entra ID
         ▼
@@ -276,6 +277,7 @@ footer {
 <h2 id="b3-長時間・確実な再開が要る業務プロセス">B3. 長時間・確実な再開が要る業務プロセス</h2>
 <p><strong>想定:</strong> 承認が数時間〜数日かかる、外部システムのバッチ完了を待つ、途中で失敗したステップだけ再開したい。</p>
 <p><strong>「MAF では長時間処理が無理だから LangGraph へ」と結論する前に、Durable Extension を確認する。</strong></p>
+<p><img src="../images/b3-durable.png" alt="B3 MAF + Durable Extension のアーキテクチャ図" loading="lazy"></p>
 <p><strong>Durable Extension for MAF</strong> はエージェント / マルチエージェントオーケストレーション / MAF workflows に<strong>耐久実行</strong>を付与する。エージェントセッションの永続化、進捗チェックポイント、障害回復、分散ホスト間スケールを、<strong>コアのエージェントロジックを変更せずに</strong>適用できる。MAF workflows については「グラフの各ステップを自動的にチェックポイントし、<strong>ワークフロー定義を変更せずに</strong>障害から回復する」と明記されている。</p>
 <p><strong>ホスティングモデルは 2 つ:</strong></p>
 <div class="tablewrap"><table><thead><tr>
@@ -298,6 +300,7 @@ footer {
 <hr>
 <h2 id="b4-マルチエージェント-専門分化">B4. マルチエージェント(専門分化)</h2>
 <p><strong>まず「本当に必要か」を問う。</strong>多くの案件は単一エージェント + 複数ツールで足りる。マルチエージェントが要るのは「担当領域ごとにプロンプト・ナレッジ・<strong>権限</strong>を分けたい」「並列に調査させたい」場合。</p>
+<p><img src="../images/b4-multi-agent.png" alt="B4 マルチエージェント(専門分化)のアーキテクチャ図" loading="lazy"></p>
 <h3 id="ポータルのビジュアル-workflows-は選択肢から外れた">⚠ ポータルのビジュアル Workflows は選択肢から外れた</h3>
 <p><strong>2026-12-01 に廃止。</strong>「デザイナーとポータル内でのワークフロー実行はサポートされなくなるが、<strong>YAML ベースのワークフロー定義は hosted agent としてデプロイすれば実行を継続する</strong>」。さらに GA 一覧の rollout pitfalls に「<strong>Workflows に新しい本番依存を作ること</strong>」が明記されている。</p>
 <p><strong>移行先は 3 つ:</strong></p>
@@ -377,6 +380,7 @@ footer {
 <hr>
 <h2 id="b5-業務フローエンジン主導-logic-apps-copilot-studio">B5. 業務フローエンジン主導(Logic Apps / Copilot Studio)</h2>
 <p><strong>想定:</strong> 業務部門がフローを保守したい。承認・通知・既存 SaaS 連携が処理の主役で、AI は判断の一部を担う。</p>
+<p><img src="../images/b5-flow-engine.png" alt="B5 業務フローエンジン主導のアーキテクチャ図" loading="lazy"></p>
 <p><strong>Logic Apps の agent loop</strong> は 2 形態ある:</p>
 <ul>
 <li><strong>Autonomous agentic workflows</strong> — agent loop と LLM で反復的に判断・実行、人間の介入なし</li>
