@@ -71,6 +71,10 @@ tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transp
 .badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
 .badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
 .badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
 .toc {
   background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
@@ -148,6 +152,7 @@ footer {
 <p><strong>Managed VNet の対応リージョンには Japan East が含まれる。</strong></p>
 <hr>
 <h2 id="2-byo-vnet-standard-agent-setup-の設計">2. BYO VNet(Standard agent setup)の設計</h2>
+<p><img src="../images/d1-closed-network.png" alt="D1 規制業種・閉域(BYO VNet)のアーキテクチャ図" loading="lazy"></p>
 <h3 id="委任サブネット要件">委任サブネット要件</h3>
 <div class="tablewrap"><table><thead><tr>
 <th>項目</th>

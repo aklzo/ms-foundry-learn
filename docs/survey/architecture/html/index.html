@@ -71,6 +71,10 @@ tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transp
 .badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
 .badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
 .badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
 .toc {
   background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
@@ -759,6 +763,7 @@ footer {
 <li>公式ドキュメントに書かれている事実と、本ドキュメントの判断・推測を区別して書いている。<strong>公式に書かれていない判断には「本ドキュメントの判断」と明記</strong>している。</li>
 <li><strong>公式ドキュメント間で記述が食い違っている箇所</strong>(Data Zone の APAC 記載漏れ、hosted agents の GA / preview 表記、Reservation の交換可否など)は、その旨を併記している。</li>
 <li><strong>リンク切れ・削除済みリソース</strong>(ALZ 版 baseline の実装リポジトリなど)も、探して見つからないことに時間を使わないよう明記している。</li>
+<li><strong>アーキテクチャ図(Azure 公式アイコン)は <code>images/*.png</code>。</strong>生成スクリプトと再生成手順は <a href="./diagrams/README.md">diagrams/</a>(maf-ports の描画ヘルパーを共有。図中テキストは英語)。代表 4 パターン(公式-B / A2 / B2 / D1)を整備済みで、ASCII 図は生成 AI 用にそのまま残している。</li>
 </ul>
 <h3 id="更新運用">更新運用</h3>
 <p><strong>推奨頻度:</strong> 四半期に 1 回。Ignite(11 月)・Build(5 月)直後は必ず更新。<a href="../../features/html/index.html">features/</a> の月次更新とは別サイクルでよい(アーキテクチャの骨格は機能ステータスより変化が遅いため)。</p>
@@ -791,6 +796,10 @@ footer {
 <tr>
 <td>2026-07-30</td>
 <td>features 側の検証で判明した事実を反映: <strong>08 章の Voice Live を「GA の明文なし」→「GA 一覧表で Preview と明記(ただし Voice Live 自身のページと表記不一致)」に更新</strong></td>
+</tr>
+<tr>
+<td>2026-08-01</td>
+<td><strong>Azure アイコンのアーキテクチャ図を導入。</strong>代表 4 パターン(公式-B Baseline / A2 / B2 / D1)を <code>diagrams/*.py</code> → <code>images/*.png</code> で生成し 01・04・05・07 章に埋め込み。md2html.py に画像対応(<code>![...]</code> → <code>&lt;img&gt;</code>、html/ からの相対パス書き換え)を追加</td>
 </tr>
 <tr>
 <td>2026-08-01</td>

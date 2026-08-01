@@ -46,6 +46,8 @@ Foundry のネットワーク設計は「**egress(送信)モデルを先に決�
 
 ## 2. BYO VNet(Standard agent setup)の設計
 
+![D1 規制業種・閉域(BYO VNet)のアーキテクチャ図](./images/d1-closed-network.png)
+
 ### 委任サブネット要件
 
 | 項目 | 値 |

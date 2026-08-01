@@ -71,6 +71,10 @@ tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transp
 .badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
 .badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
 .badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
 .toc {
   background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
@@ -190,6 +194,7 @@ footer {
 <h2 id="a2-全社ナレッジ検索-ai-search-自前索引・本番の標準形">A2. 全社ナレッジ検索(AI Search 自前索引・本番の標準形)</h2>
 <p><strong>想定:</strong> 数万〜数十万文書。<strong>ユーザーの所属や役職によって見える文書が違う。</strong>閉域または Private Link。長期運用。</p>
 <p>これが <strong>SI 案件で最も現実的な着地点</strong>になることが多い。チャンク戦略・埋め込みモデル・メタデータ・フィルタ・ACL を完全に握りつつ、統合ベクトル化・インデクサ・セマンティックランカー・ハイブリッド検索はマネージドのまま享受できる。</p>
+<p><img src="../images/a2-knowledge-search.png" alt="A2 全社ナレッジ検索(AI Search 自前索引)のアーキテクチャ図" loading="lazy"></p>
 <pre><code> [文書ソース: Blob / SharePoint / ファイルサーバ]
         │
         ▼  取り込みパイプライン

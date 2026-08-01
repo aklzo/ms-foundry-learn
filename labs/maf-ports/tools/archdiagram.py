@@ -389,10 +389,17 @@ class Diagram:
 
     # -- legend + note band --------------------------------------------------
 
-    def footer(self, notes: list[str], auth: list[str] | None = None):
-        """Standard bottom band: legend row + lab-config notes + auth summary.
+    def footer(
+        self,
+        notes: list[str],
+        auth: list[str] | None = None,
+        config_note: str | None = None,
+    ):
+        """Standard bottom band: legend row + config note + notes + auth summary.
 
-        notes lines starting with '$' are drawn orange (billing), '@' blue (auth)."""
+        notes lines starting with '$' are drawn orange (billing), '@' blue (auth).
+        config_note overrides the default lab-config caption (used by the
+        docs/survey diagrams, which are not lab configurations)."""
         band_lines = len(notes) + (len(auth) if auth else 0)
         band_h = 46 + band_lines * 19
         y0 = self.h - band_h
@@ -415,7 +422,8 @@ class Diagram:
         lx += 105
         self.d.text(
             (lx, ly),
-            "Lab config: public endpoints, no VNet (closed-network variant: docs/survey/architecture/07)",
+            config_note
+            or "Lab config: public endpoints, no VNet (closed-network variant: docs/survey/architecture/07)",
             font=F_EDGE,
             fill=MUTED,
         )

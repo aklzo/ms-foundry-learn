@@ -10,7 +10,8 @@ README.md は index.html になる。標準ライブラリのみ使用。
 
 対応しているMarkdownサブセット:
   見出し(h1-h4) / 段落 / 箇条書き(1段ネスト) / 番号付きリスト / テーブル /
-  フェンスコードブロック / 引用 / 水平線 / **強調** / `コード` / [リンク](url)
+  フェンスコードブロック / 引用 / 水平線 / **強調** / `コード` / [リンク](url) /
+  ![画像](path)(相対パスは html/ からの参照に自動書き換え)
 
 テーブルセル先頭のステータス語 (GA / パブリックプレビュー / 非推奨 など) は
 バッジ表示に変換される。.md へのリンクは .html に書き換えられる
@@ -124,6 +125,10 @@ tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transp
 .badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
 .badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
 .badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
 .toc {
   background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
@@ -167,6 +172,13 @@ def inline(text: str) -> str:
         return f"\x00{len(codes) - 1}\x00"
 
     text = re.sub(r"`([^`]+)`", stash, text)
+
+    def stash_img(m: re.Match) -> str:
+        alt = html_mod.escape(m.group(1), quote=True)
+        codes.append(f'<img src="{fix_img(m.group(2))}" alt="{alt}" loading="lazy">')
+        return f"\x00{len(codes) - 1}\x00"
+
+    text = re.sub(r"!\[([^\]]*)\]\(([^)\s]+)\)", stash_img, text)
     text = html_mod.escape(text, quote=False)
     text = re.sub(
         r"\[([^\]]+)\]\(([^)\s]+)\)",
@@ -205,6 +217,13 @@ def fix_link(url: str) -> str:
         name = "index" if m.group(1) == "README" else m.group(1)
         return f"{name}.html{m.group(2) or ''}"
     return url
+
+
+def fix_img(url: str) -> str:
+    """画像 src を html/ 配下からの相対パスへ書き換える(画像は .md と同階層の images/ に置く)。"""
+    if url.startswith(("http://", "https://", "data:")):
+        return url
+    return "../" + url.removeprefix("./")
 
 
 def badge_cell(cell: str) -> str:

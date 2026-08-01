@@ -43,6 +43,8 @@
 
 ### B. Baseline — 本番の出発点。WAF が「AI ワークロードの推奨アーキテクチャ」と名指し
 
+![公式-B Baseline Microsoft Foundry Chat のアーキテクチャ図](./images/baseline-chat.png)
+
 ```
  Internet
     │
