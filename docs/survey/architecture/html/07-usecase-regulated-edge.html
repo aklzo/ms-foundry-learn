@@ -83,7 +83,7 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html" class="current">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html" class="current">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
 <main>
 <h1 id="07-ユースケース編-d-規制業種・閉域・データ主権・エッジ">07. ユースケース編 D — 規制業種・閉域・データ主権・エッジ</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この章で最初に伝えるべき-3-つの事実">この章で最初に伝えるべき 3 つの事実</a></li><li><a href="#1-最上位の分岐-3-つの-egress-モデル">1. 最上位の分岐 — 3 つの egress モデル</a></li><li><a href="#2-byo-vnet-standard-agent-setup-の設計">2. BYO VNet(Standard agent setup)の設計</a></li><li><a href="#3-閉域で使えない機能の一覧-設計の出発点">3. 閉域で使えない機能の一覧(設計の出発点)</a></li><li><a href="#4-network-security-perimeter-という代替-private-link-とは排他">4. Network Security Perimeter という代替(Private Link とは排他)</a></li><li><a href="#5-データ主権とデータ所在">5. データ主権とデータ所在</a></li><li><a href="#6-コンプライアンス統制">6. コンプライアンス統制</a></li><li><a href="#7-評価とレッドチーミングのリージョン制約-日本案件で必ず効く">7. 評価とレッドチーミングのリージョン制約(日本案件で必ず効く)</a></li><li><a href="#8-ソブリンクラウド-azure-government">8. ソブリンクラウド(Azure Government)</a></li><li><a href="#9-エッジ・オンプレ・ハイブリッド">9. エッジ・オンプレ・ハイブリッド</a></li><li><a href="#規制案件で早期に潰すべき論点-チェックリスト">規制案件で早期に潰すべき論点(チェックリスト)</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
@@ -734,8 +734,8 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>Document Intelligence</td>
-<td>Read / Layout / General Document / ID / Invoice / Receipt / Business Card / Custom Template</td>
-<td><strong>v3.0 / v3.1 / v4.0 すべて GA</strong></td>
+<td><strong>バージョンごとに対応モデルが異なる</strong>: v4.0 = Read / Layout <strong>のみ</strong>、v3.1 = Read / Layout / ID / Receipt / Invoice、v3.0 = Read / Layout / General Document / Business Card / Custom</td>
+<td>v3.0 / v3.1 / v4.0 とも GA</td>
 <td><strong>対応</strong></td>
 </tr>
 <tr>
@@ -834,7 +834,7 @@ footer {
 <td>24 GB</td>
 </tr>
 </tbody></table></div>
-<p><strong>接続コンテナ(切断でない場合)の注意:</strong> ポート 443 と <code>*.cognitiveservices.azure.com</code> 等の許可が必要で、<strong>DPI(Deep Packet Inspection)は無効化が必須。</strong>また「<strong>既定ではコンテナ API にセキュリティがない</strong>」ため、Istio / Nginx 等を前段に置くことが推奨されている。</p>
+<p><strong>接続コンテナ(切断でない場合)の注意:</strong> ポート 443 と <code>*.cognitiveservices.azure.com</code> / <code>*.cognitive.microsoft.com</code>(Translator オンプレは <code>translatoronprem.blob.core.windows.net</code> も)の許可が必要で、<strong>DPI(Deep Packet Inspection)は無効化が必須。</strong>また「<strong>既定ではコンテナ API にセキュリティがない</strong>」ため、Istio / Nginx 等を前段に置くことが推奨されている。</p>
 <h3 id="9-4-ハイブリッド-クラウド-エッジフォールバック-の公式ガイダンスは存在しない">9.4 ハイブリッド(クラウド + エッジフォールバック)の公式ガイダンスは存在しない</h3>
 <p><strong>Azure Architecture Center に「クラウド + エッジ推論フォールバック」のリファレンスアーキテクチャは見つからなかった。</strong>AI アーキテクチャ索引にエッジ推論・ハイブリッド推論・オンプレ AI の記事は 1 本もなく、旧「AI at the edge」記事は索引へリダイレクトされて実体が消えている。<code>/azure/architecture/hybrid/</code> も 404。</p>
 <p><strong>代替として使える公式材料:</strong></p>

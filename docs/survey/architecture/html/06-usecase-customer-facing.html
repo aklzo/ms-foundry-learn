@@ -83,7 +83,7 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html" class="current">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html" class="current">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
 <main>
 <h1 id="06-ユースケース編-c-顧客向け公開・マルチテナント-saas・大規模トラフィック">06. ユースケース編 C — 顧客向け公開・マルチテナント SaaS・大規模トラフィック</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#c1-一般顧客向けチャット-単一テナント">C1. 一般顧客向けチャット(単一テナント)</a></li><li><a href="#c2-マルチテナント-saas">C2. マルチテナント SaaS</a></li><li><a href="#c3-大規模トラフィック・複数部門への払い出し">C3. 大規模トラフィック・複数部門への払い出し</a></li><li><a href="#このパターン特有のチェックリスト">このパターン特有のチェックリスト</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
@@ -166,11 +166,11 @@ footer {
 <p>現実的な多層防御:</p>
 <ol>
 <li><strong>アプリ層</strong> — ユーザー単位のリクエスト数 / 日次トークン上限</li>
-<li><strong>APIM 層</strong> — <code>llm-token-limit</code> で TPM 上限とトークンクォータ。<strong><code>estimate-prompt-tokens=true</code> にすると上限超過プロンプトをバックエンド到達前に遮断できる</strong>(無駄なトークン課金を防げる)</li>
+<li><strong>APIM 層</strong> — <code>llm-token-limit</code> で TPM 上限とトークンクォータ。<strong><code>estimate-prompt-tokens=true</code> にすると上限超過プロンプトをバックエンド到達前に遮断できる</strong>(公式は「不要なバックエンドリクエストを削減できる」と記載。課金抑止の明記はない。なおストリーミング時は設定にかかわらず常にプロンプトが推定される)</li>
 <li><strong>Foundry 層</strong> — デプロイ単位のクォータ、Control Plane のプロジェクト単位トークン制限(<strong>TPM 超過は 429、総トークンクォータ超過は 403</strong>)</li>
 <li><strong>モデル層</strong> — Model router の Cost モード、小型モデルへの振り分け、Batch への切り出し</li>
 </ol>
-<p><strong>セマンティックキャッシュ</strong>(APIM <code>llm-semantic-cache-store</code> / <code>-lookup</code>、Azure Managed Redis 必須)は、FAQ 的な問い合わせが多い外部向けチャットで効果が大きい。<strong>バックエンド呼び出し自体を削減する</strong>ため、レイテンシとコストの両方に効く。</p>
+<p><strong>セマンティックキャッシュ</strong>(APIM <code>llm-semantic-cache-store</code> / <code>-lookup</code>、RediSearch モジュール有効の Azure Managed Redis 必須。<strong>モジュールは新規キャッシュ作成時のみ有効化可</strong>)は、FAQ 的な問い合わせが多い外部向けチャットで効果が大きい。<strong>バックエンド呼び出し自体を削減する</strong>ため、レイテンシとコストの両方に効く。</p>
 <p><strong>⚠ キャッシュキーの設計に注意。</strong>WAF が明記している通り、キャッシュキーには <strong>tenant/user identity、policy context、model version、prompt version</strong> を含める。「<strong>多くの状況で単一ユーザー向けのキャッシュはするな。</strong>」</p>
 <hr>
 <h2 id="c2-マルチテナント-saas">C2. マルチテナント SaaS</h2>
@@ -284,7 +284,7 @@ footer {
 <p><strong>④ セッションプールでのデータ混在</strong> — 同時エージェントセッション上限(後述)を踏まえてセッションをプールする場合、<strong>プラットフォームは会話状態を分離するが、エージェントコンテナー自身が保存するデータ(ファイル・DB 行・キャッシュ)は自動分割されない。</strong>アプリ側で <strong>agent session とエンドユーザー ID の両方でキー付け</strong>しないと、同一プールセッション内のユーザーが互いのデータを読める。</p>
 <p><strong>⑤ プロジェクト RBAC の限界</strong> — 「Foundry プロジェクトに <code>Foundry User</code> ロールを持つプリンシパルは、<strong>そのプロジェクト内のすべてのエージェントと対話できる。</strong>」テナント別のアクセス制御を Foundry の RBAC で表現するのは無理で、<strong>アプリの認証認可層が担う。</strong></p>
 <h3 id="同時エージェントセッションの上限が設計制約になる">⚠ 同時エージェントセッションの上限が設計制約になる</h3>
-<p><strong>サブスクリプション × リージョンあたり 50 セッション。</strong>これは引き上げ交渉の対象になりうるが、<strong>大規模 SaaS ではサブスクリプション分割が必要になる可能性</strong>を最初から見込む。</p>
+<p><strong>同時セッションは既定で約 50 が上限</strong>(リージョンにより変動。既定では同時セッションとサブネットの使用可能 IP が 1:1 で対応し、<code>/26</code> サブネットで約 50 が「maximum supported」。サポート申請で 1 IP あたり 10 セッションまで拡大可 — 出典: agents-networking-deep-dive)。引き上げ余地はあるが、<strong>大規模 SaaS ではサブスクリプション分割が必要になる可能性</strong>を最初から見込む。</p>
 <p>関連する実効上限(閉域構成の場合):</p>
 <div class="tablewrap"><table><thead><tr>
 <th>項目</th>
@@ -331,7 +331,7 @@ footer {
 <li>Estimated cost は<strong>割引や契約価格を反映せず、Provisioned(PTU)も含まない。</strong>しかも <strong>prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。</strong></li>
 <li>課金イベントが Cost Analysis に現れるまで、<strong>取り込みタイミングにより遅延がある</strong>(公式は具体的な時間を示していない。分単位で比較せずトレンドで照合せよと記載)。</li>
 </ul>
-<p><strong>→ テナント別のメータリングは APIM で取る。</strong><code>llm-emit-token-metric</code> に<strong>カスタムディメンション(User ID / Tenant ID / API ID / Client IP)</strong>を付けて App Insights に送れば、Foundry が提供しない粒度でチャージバックできる。<strong>SaaS 案件では APIM が事実上必須。</strong></p>
+<p><strong>→ テナント別のメータリングは APIM で取る。</strong><code>llm-emit-token-metric</code> の<strong>既定ディメンションは API ID / Operation ID / Product ID / User ID / Subscription ID / Location / Gateway ID / Backend ID の8種</strong>(Tenant ID や Client IP は既定に含まれない。テナント ID はポリシー式による<strong>カスタムディメンション〈最大5個〉</strong>として追加する)。これを App Insights に送れば、Foundry が提供しない粒度でチャージバックできる。<strong>SaaS 案件では APIM が事実上必須。</strong></p>
 <h3 id="ノイジーネイバー対策">ノイジーネイバー対策</h3>
 <ul>
 <li><strong>APIM の <code>llm-token-limit</code> の <code>counter-key</code> をテナント ID にする。</strong>TPM 上限と、時間 / 日 / 週 / 月 / 年のトークンクォータをテナント別に設定できる。</li>

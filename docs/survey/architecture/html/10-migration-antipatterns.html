@@ -83,7 +83,7 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html" class="current">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html" class="current">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
 <main>
 <h1 id="10-移行アーキテクチャとアンチパターン集">10. 移行アーキテクチャとアンチパターン集</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-確定済み廃止スケジュールと設計への影響">1. 確定済み廃止スケジュールと設計への影響</a></li><li><a href="#2-移行パターン別アーキテクチャ">2. 移行パターン別アーキテクチャ</a></li><li><a href="#3-アンチパターン集">3. アンチパターン集</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
@@ -239,7 +239,7 @@ footer {
 <tr>
 <td>CLI</td>
 <td><code>az cognitiveservices agent</code> 拡張</td>
-<td><strong>削除</strong> → <code>az rest</code> または <code>azd ai agent</code></td>
+<td>Agent Service ドキュメントは削除済みとして <code>az rest</code> / <code>azd ai agent</code> を案内(※ Azure CLI リファレンスには Core・Preview として現存しており公式間で表記揺れ)</td>
 </tr>
 <tr>
 <td>必要ロール</td>
@@ -309,7 +309,7 @@ footer {
 <ul>
 <li>ポータル手順は classic ポータル + Azure ポータル側。新ポータルからの手順は記載なし。</li>
 <li><strong>CMK 利用リソースは申請フォーム経由のみ。既存 Private Endpoint 付きはポータル経由不可</strong>(削除→再作成 or IaC)。</li>
-<li>Microsoft 側の自動アップグレードプログラムも走っており、<code>foundryAutoUpgrade</code> プロパティで状態確認・延期(Deferred)・ロールバックが可能。<strong>顧客に予告なく変わるものではないが、IaC 側で意図しない差分が出る可能性があるため、Terraform/Bicep の drift 検知に入れておく。</strong></li>
+<li>Microsoft 側の自動アップグレードプログラムも走っており、<code>foundryAutoUpgrade</code> プロパティで状態確認・オプトアウトが可能(SDK の enum は Enabled / Disabled のみで「Deferred」は存在しない。ロールバックは手動アップグレードと同じ別手順)。<strong>顧客に予告なく変わるものではないが、IaC 側で意図しない差分が出る可能性があるため、Terraform/Bicep の drift 検知に入れておく。</strong></li>
 </ul>
 <h3 id="2-5-既存システムへの後付け-移行というより組込み">2.5 既存システムへの後付け(移行というより組込み)</h3>
 <p>既存の業務システムに AI を足す案件では、<strong>Foundry をプラットフォームとして採用せず、モデルとツールだけ借りる</strong>構成が現実的なことが多い。</p>

@@ -83,7 +83,7 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html" class="current">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html" class="current">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
 <main>
 <h1 id="09-運用アーキテクチャ-キャパシティ・bcdr・可観測性・評価・コスト・ci-cd">09. 運用アーキテクチャ(キャパシティ・BCDR・可観測性・評価・コスト・CI/CD)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この章の要点-先に結論">この章の要点(先に結論)</a></li><li><a href="#1-キャパシティ設計">1. キャパシティ設計</a></li><li><a href="#2-信頼性・bcdr">2. 信頼性・BCDR</a></li><li><a href="#3-可観測性">3. 可観測性</a></li><li><a href="#4-評価と-llmops">4. 評価と LLMOps</a></li><li><a href="#5-コストアーキテクチャ">5. コストアーキテクチャ</a></li><li><a href="#6-プラットフォーム自体の-ci-cd">6. プラットフォーム自体の CI/CD</a></li><li><a href="#7-運用設計チェックリスト">7. 運用設計チェックリスト</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
@@ -628,7 +628,7 @@ Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × O
 <li><strong>メーターの見え方の罠:</strong> Cost Analysis のサービスフィルタに「Azure OpenAI」は無い(Cognitive Services 分類の下の Service tier で絞る)。<strong>パートナー / コミュニティモデルのメーターは Foundry リソースではなくリソースグループ配下に出る</strong>ため、<strong>Cost Analysis はリソースグループスコープにする。</strong></li>
 <li><strong>概算値と実請求はズレる:</strong> ポータルの Estimated cost は<strong>割引や契約価格を反映せず、Provisioned(PTU)も含まない。</strong>課金イベントが Cost Analysis に現れるまで<strong>取り込みタイミングにより遅延がある</strong>(公式は具体的な時間を明示していない。分単位の比較ではなくトレンドで照合する)。財務照合には Cost Management と請求書を使う。<strong>さらに prompt agent と非 Foundry エージェントのコストは Overview の概算に含まれない。</strong></li>
 <li><strong>⚠ ハードリミットが無い:</strong> 「OpenAI にはハードリミットがあるが、<strong>Azure OpenAI には現状その機能がない</strong>」。予算超過での自動停止が要件なら、予算アラートのアクショングループから起動する<strong>自動化を自作する必要がある。</strong></li>
-<li><strong>消費者別の粒度が要るなら APIM。</strong><code>llm-emit-token-metric</code> にカスタムディメンション(User ID / API ID / Client IP)を付ければ、Foundry が提供しない粒度でチャージバックできる。</li>
+<li><strong>消費者別の粒度が要るなら APIM。</strong><code>llm-emit-token-metric</code> のディメンション(既定8種: API ID / Operation ID / Product ID / User ID / Subscription ID / Location / Gateway ID / Backend ID。テナント ID 等はカスタムディメンション〈最大5個〉で追加)を付ければ、Foundry が提供しない粒度でチャージバックできる。</li>
 </ul>
 <h3 id="5-4-ptu-reservations-の注意点">5.4 PTU Reservations の注意点</h3>
 <ul>

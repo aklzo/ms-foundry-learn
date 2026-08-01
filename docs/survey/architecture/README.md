@@ -18,6 +18,7 @@
 | 08 | [UC-E 音声・文書処理・バッチ・M365](./08-usecase-specialized.md) | Voice Live とテレフォニー、DI と Content Understanding の使い分け、Batch、マルチモーダル生成、Teams 公開、ファインチューニング運用 | チャット以外の類型 |
 | 09 | [運用アーキテクチャ](./09-operations.md) | PTU サイジング、BCDR、可観測性、評価、コスト、CI/CD | 本番運用を設計する |
 | 10 | [移行とアンチパターン](./10-migration-antipatterns.md) | 確定済み廃止スケジュール、移行パターン、**踏みやすい 11 のアンチパターン** | 既存資産があるとき / レビュー前 |
+| 11 | [エージェント構成の判断フレームワーク](./11-decision-frameworks.md) | CAF デシジョンツリー、単一 vs マルチ判断、AAC オーケストレーション 5 パターン、**Copilot Studio の上限ライン** | プラットフォームとエージェント構成を根拠付きで決める / 「試作で比較するしかないか」と聞かれた |
 
 **人間用 HTML:** `html/index.html`(Markdown が正。HTML は `python3 docs/survey/tools/md2html.py` で自動生成するので直接編集しない)
 
@@ -200,4 +201,5 @@
 | 2026-07-29 | 初版作成(全 10 章) |
 | 2026-07-29 | 追補調査を反映。**08 章**に Voice Live のクォータ・テレフォニー統合(ACS)・日本リージョン制約、マルチモーダル生成の非同期ジョブと Sora 2 の RAI 制限、**E6 ファインチューニング運用**を追加。**07 章 9 節**をエッジ 3 形態(Foundry Local / Azure Local 版 / 切断コンテナ)に再構成し、**初版の誤り「オンプレ文書処理は DI コンテナが唯一の選択肢」を訂正**(Vision Read OCR も GA・切断対応)。**06 章**に公式のマルチテナンシー 4 方式比較と Responses API の分離課題を追加。**Azure OpenAI On Your Data の非推奨**を 04 / 10 章と期限表に反映 |
 | 2026-07-30 | features 側の検証で判明した事実を反映: **08 章の Voice Live を「GA の明文なし」→「GA 一覧表で Preview と明記(ただし Voice Live 自身のページと表記不一致)」に更新** |
+| 2026-08-01 | **11 章(エージェント構成の判断フレームワーク)を新設。**「要件→エージェント構成の指標は事前に構築できるか、複数試作して比較するしかないか」への回答として、CAF ai-agents セクション(2025-12 新設: デシジョンツリー・単一 vs マルチの判断表)、AAC オーケストレーションパターン(複雑度の階段・5 パターン・アンチパターン)、Copilot Studio の公式上限ライン(30〜40 アクションで精度劣化・connected agents の多段連鎖不可・Foundry 接続はプレビュー)、業界指標(Anthropic 3 条件・LangChain 4 型)を整理。03 章・tech-selection-guide との対照表つき |
 | 2026-07-30 | **全 11 ファイルのファクトチェック(公式ドキュメント突合)と訂正を適用。**確定日の反映: On Your Data 廃止 **2026-10-14**、コンテナプロトコル 1.0.0 ブロック開始 **2026-07-31**。古い記述の更新: **Foundry Local GA(2026-04-09 公式ブログ)**、Toolbox GA、FLUX.2 GA、tsuzumi-7b Legacy(2026-08-31 リタイア)、Groundedness detection 6→4 リージョン、SharePoint「ライセンス必須」→ pay-as-you-go 併記、全遮断 PE のポータル対応。誤りの訂正: capabilityHost 変更は「プロジェクト再作成」でなく「capability host の削除・再作成」、MACAE の org(microsoft)、FT デプロイ上限 10/リソース、Cosmos DB コンテナー 3〜5 個(追加関係)、agent identity とマネージド ID の混同、ガードレール既定閾値「画像 Low」→ テキスト・画像とも Medium、File Search「固定」→ 既定値。ミスリードの限定: 「国内処理必須 → Data Zone(APAC)」を Regional Standard(Japan East)に分離、A2A「ポータル未対応」を incoming 有効化に限定、Front Door パターンのベースライン記事への帰属を Front Door 一般ドキュメントに修正、Cost Analysis「約5時間遅延」を時間非特定に。公式間不整合の両論併記: AI Red Teaming リージョン(2 vs 5)、Traces VNet(非対応 vs プレビュー)、azd コマンド列挙 |

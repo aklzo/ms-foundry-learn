@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11. エージェント構成の判断フレームワーク — 「複数試作して比較するしかないか」への回答</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html" class="current">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
+<main>
+<h1 id="11-エージェント構成の判断フレームワーク-複数試作して比較するしかないか-への回答">11. エージェント構成の判断フレームワーク — 「複数試作して比較するしかないか」への回答</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#結論-机上で当たりをつけられる-比較試作が必要な範囲は限定される">結論 — 机上で当たりをつけられる。比較試作が必要な範囲は限定される</a></li><li><a href="#1-公式ガイダンスの全体地図">1. 公式ガイダンスの全体地図</a></li><li><a href="#2-層①-プラットフォーム選定-copilot-studio-foundry-自前">2. 層① プラットフォーム選定 — Copilot Studio / Foundry / 自前</a></li><li><a href="#3-層②-単一エージェントか複数か-caf-の判断基準">3. 層② 単一エージェントか複数か — CAF の判断基準</a></li><li><a href="#4-層③-オーケストレーションパターン-aac-のカタログ">4. 層③ オーケストレーションパターン — AAC のカタログ</a></li><li><a href="#5-業界の収斂-microsoft-外の指標-参考">5. 業界の収斂 — Microsoft 外の指標(参考)</a></li><li><a href="#6-本リポジトリの既存指標との対照">6. 本リポジトリの既存指標との対照</a></li><li><a href="#7-si-実務への落とし込み-提案時の判断手順">7. SI 実務への落とし込み — 提案時の判断手順</a></li><li><a href="#出典">出典</a></li><li><a href="#更新運用-本章のウォッチリスト">更新運用(本章のウォッチリスト)</a></li></ul></div>
+<p><a href="index.html">← アーキテクチャ TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-08-01(初版)<br><strong>経緯:</strong> SI 文脈の問い「ユースケース・要件からアーキテクチャ / エージェント構成を選ぶ指標は事前に構築できるか。それともプロジェクトの中で複数試作して比較するしかないか」への回答として、公式・業界の判断フレームワークを調査した(Web 調査 2026-08-01)。<br><strong>位置づけ:</strong> <a href="03-decision-guide.html">03. 選定ガイド</a>が「Foundry を使うと決めた後」の構成判断(5 ゲート)を扱うのに対し、本章はその<strong>手前と外側</strong> — ①どのプラットフォームで作るか(Copilot Studio / Foundry / 自前)、②単一エージェントか複数か、③どのオーケストレーションパターンか — と、提案の根拠として引用できる公式フレームワークを扱う。実装検証由来の知見は <a href="../../tech-selection-guide.md">tech-selection-guide</a> にあり、本章は公式ドキュメント・公開ガイダンスのみを出典とする。</p></blockquote>
+<h2 id="結論-机上で当たりをつけられる-比較試作が必要な範囲は限定される">結論 — 机上で当たりをつけられる。比較試作が必要な範囲は限定される</h2>
+<p>2025-12 以降、Microsoft 自身が SI が欲しい形の判断フレームワークを公式ドキュメントとして整備した。しかも CAF は判断表の中で「<strong>基準が明確なケースは試作を省略してよい(Skip prototyping: Yes)。比較プロトタイプが必要なのはアーキテクチャ判断が不明確な場合だけ</strong>」と明言している。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>判断</th>
+<th>公式フレームワーク</th>
+<th>決まり方</th>
+</tr></thead><tbody>
+<tr>
+<td>①どのプラットフォームで作るか</td>
+<td>CAF デシジョンツリー(§2)</td>
+<td><strong>机上で決まる。</strong>決め手は機能でなく「誰が作り・誰が保守し・どこまで制御が要るか」</td>
+</tr>
+<tr>
+<td>②単一エージェントか複数か</td>
+<td>CAF 単一 vs マルチ判断(§3)</td>
+<td>3 条件に該当すればマルチ確定、非該当なら<strong>単一で開始</strong>。比較試作は判断が割れるときのみ</td>
+</tr>
+<tr>
+<td>③どのオーケストレーションパターンか</td>
+<td>AAC パターンカタログ(§4)</td>
+<td>要件シグナルから机上で選べる。フレームワーク非依存</td>
+</tr>
+<tr>
+<td>④品質・コスト・レイテンシの実額</td>
+<td>(フレームワークなし)</td>
+<td><strong>ここだけ実測。</strong>ただし「複数アーキ並行構築」でなく「単一試作+評価ハーネス」で潰す(§7)</td>
+</tr>
+</tbody></table></div>
+<p>残る不確実性は「アーキテクチャの選択」ではなく「顧客データ・プロンプト・モデル挙動に依存する品質と実コスト」に局所化されており、そこは評価基盤(L13)で回帰可能にするのが公式・業界共通の推奨である。</p>
+<h2 id="1-公式ガイダンスの全体地図">1. 公式ガイダンスの全体地図</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>ドキュメント</th>
+<th>内容</th>
+<th>ms.date</th>
+</tr></thead><tbody>
+<tr>
+<td><a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/build-secure-process">CAF: AI agent adoption(build-secure-process)</a></td>
+<td>採用プロセス全体(Plan → Govern/Secure → Build → Manage)。Build の 5 領域(Orchestration / Models / Knowledge &amp; Tools / Observability / Security)を <strong>Foundry / MAF / Copilot Studio 別の実装先つき</strong>で規定</td>
+<td>2025-12-01(更新 2026-06)</td>
+</tr>
+<tr>
+<td><a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/single-agent-multiple-agents">CAF: Single-Agent vs Multi-Agent</a></td>
+<td>単一 / マルチの判断基準・デシジョンツリー・判断表</td>
+<td>2025-12-01(更新 2026-02)</td>
+</tr>
+<tr>
+<td><a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns">AAC: AI Agent Orchestration Patterns</a></td>
+<td>複雑度の階段+ 5 パターン(when to use / avoid / 比較表 / アンチパターン / コスト)</td>
+<td>2026-02-12(更新 2026-05)</td>
+</tr>
+<tr>
+<td><a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/multi-agent-patterns">Copilot Studio: Multi-agent orchestration patterns</a></td>
+<td>ローコード側のマルチエージェント設計基準(child / connected の使い分け・分割判断)</td>
+<td>2026-05-21</td>
+</tr>
+<tr>
+<td><a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents">Copilot Studio: Add other agents</a></td>
+<td>connected agents の構成方法と既知の制限(多段連鎖不可など)</td>
+<td>2026-05-15</td>
+</tr>
+</tbody></table></div>
+<p><a href="01-official-baselines.html">01 章</a>の公式-A/B/C が「<strong>インフラの形</strong>」のリファレンスなのに対し、これらは「<strong>エージェントの形</strong>」の判断基準であり相補的。なお AAC には MAF によるマルチエージェント実装例 <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/idea/multiple-agent-workflow-automation">Multiple-agent workflow automation</a> もあるが、こちらは<strong>ソリューションアイデア級</strong>(検証レベルは公式-A/B/C より下)。</p>
+<h2 id="2-層①-プラットフォーム選定-copilot-studio-foundry-自前">2. 層① プラットフォーム選定 — Copilot Studio / Foundry / 自前</h2>
+<h3 id="caf-のデシジョンツリー">CAF のデシジョンツリー</h3>
+<pre><code> 潜在的なエージェントユースケース
+        │
+        ▼ そもそも生成 AI エージェントが要るか？
+        │   No → コード / 非生成 AI モデル(Fabric・ML 等)
+        │        (静的 Q&amp;A、推論を伴わないコンテンツ生成もエージェント不要側)
+        ▼ SaaS エージェントで機能要件を満たせるか？
+        │   Yes → M365 Copilot エージェント / GitHub Copilot / Fabric data agents /
+        │         Dynamics 365 / Security Copilot 等をそのまま使う
+        ▼ 作る(Build)
+        ├── Copilot Studio(SaaS・ノー/ローコード)
+        ├── Microsoft Foundry(PaaS・プロコード)
+        └── GPUs &amp; Containers(IaaS)</code></pre>
+<p><strong>選定の決め手は「エージェントの機能」ではなく「誰が作り、誰が保守し、どこまで制御が要るか」</strong>(builder persona / 運用モデル / 統制要件)。これは 03 章 G4「業務部門がノーコードで育てたいか」・G5「いつまで誰が保守するか」と同じ軸であり、機能比較表で決めようとするのが誤りだという点で公式・実務側の見解が一致している。実務側の経験則(二次情報: <a href="https://pnp.github.io/blog/post/copilot-studio-vs-agent-builder-vs-foundry/">PnP ブログ</a>)は「<strong>Copilot Studio をデフォルトにし、コネクタとローコード制御で足りないときだけ Foundry</strong>」で、判断基準は①作り手は誰か ②ユーザー接点はどこか ③ロジックの複雑さ ④Go-Live 後に誰が面倒を見るか、の 4 軸。</p>
+<h3 id="copilot-studio-の上限ライン-一次情報で確認できたもの">Copilot Studio の上限ライン(一次情報で確認できたもの)</h3>
+<p>「Copilot Studio で簡単に作れない業務」の境界を、公式ドキュメントの記載で引く:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>制約</th>
+<th>内容</th>
+<th>出典</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>アクション数の精度劣化</strong></td>
+<td><strong>30〜40 個のアクション</strong>(ツール・トピック・エージェント)を超えるとオーケストレーターのツール選択精度が落ちる目安、と公式が明記</td>
+<td><a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents">Add other agents</a></td>
+</tr>
+<tr>
+<td>instructions</td>
+<td>8,000 文字まで</td>
+<td><a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-quotas">Quotas and limits</a></td>
+</tr>
+<tr>
+<td>ナレッジ / トピック</td>
+<td>ナレッジソース 500 / トピック 1,000 / スキル 100(いずれもエージェントあたり)</td>
+<td>同上</td>
+</tr>
+<tr>
+<td><strong>マルチエージェントの多段連鎖不可</strong></td>
+<td>connected agents を持つエージェントは、<strong>他のエージェントの connected agent にはなれない</strong>(多段のエージェント階層は組めない)</td>
+<td><a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents">Add other agents – Known limitations</a></td>
+</tr>
+<tr>
+<td>外部エージェント接続はプレビュー</td>
+<td><strong>Foundry エージェント / A2A / Fabric data agents / M365 Agents SDK への接続はいずれも public preview</strong>(本番非推奨の注記つき)</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>決定的制御の上限</td>
+<td>エージェントフロー・トピックによる決定的制御はあるが、CAF は「<strong>クリティカルな業務ロジックには決定的ワークフローを強制せよ。Foundry / MAF の workflows を使え</strong>」と実装先を名指し</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/build-secure-process">CAF build-secure-process</a></td>
+</tr>
+<tr>
+<td>モデル制御</td>
+<td>モデル選択は可(<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-select-agent-model">primary model 選択</a>・Foundry からの BYO model)だが、推論パラメータの細かい調整やオーケストレーションループ自体の差し替えは不可</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<p><strong>本ドキュメントの判断:</strong> 03 章 G3 の「明示的な状態遷移が要るか」に加えて、<strong>「30〜40 アクション超」「多段のエージェント階層」「決定的ワークフローが業務クリティカル」の 3 つが Copilot Studio → Foundry(プロコード)への乗り換えシグナル</strong>として一次情報で裏づけられる。</p>
+<h3 id="両者は排他ではない-分業構成が公式の推奨形">両者は排他ではない — 分業構成が公式の推奨形</h3>
+<p>Copilot Studio の connected agents は <strong>Foundry で作ったエージェントを部品として呼べる</strong>(プレビュー)。「対話の入口・M365 チャネル・業務部門の保守は Copilot Studio、業務固有の複雑な処理は Foundry hosted agent」という分業は、公式ブログ(<a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/choosing-the-right-starting-point-for-enterprise-ai-agents-with-copilot-studio-a/4535024">Choosing the Right Starting Point</a>)でも推奨される構成であり、03 章 G4 の「業務フローエンジン主導(B5)」の現代版にあたる。<strong>SI の受託範囲が「Copilot Studio で簡単に作れないエージェントの開発」なら、納品物は connected agent として Copilot Studio 側から呼ばれる Foundry hosted agent、という契約の切り方が公式構成と一致する。</strong>ただし接続がプレビューである点は提案時に明示する(G5)。</p>
+<h2 id="3-層②-単一エージェントか複数か-caf-の判断基準">3. 層② 単一エージェントか複数か — CAF の判断基準</h2>
+<h3 id="最初からマルチエージェントにしてよいのは-3-条件のみ">最初からマルチエージェントにしてよいのは 3 条件のみ</h3>
+<ol>
+<li><strong>セキュリティ・コンプライアンス境界をまたぐ</strong> — 規制・ポリシーがデータ分離を強制する場合(例: 金融の取引作成と検証の職務分離)。least-privilege をアーキテクチャで強制する</li>
+<li><strong>複数チームが別ドメインを保有</strong> — チームごとに独立した開発サイクル・ナレッジ・デプロイが要る場合。組織構造への整合</li>
+<li><strong>成長がロードマップ上確定</strong> — 機能・データソース・事業部門の拡張が確定している場合。<strong>3〜5 機能を超える</strong>ソリューションが目安</li>
+</ol>
+<h3 id="それ以外は単一エージェントで試作してから">それ以外は単一エージェントで試作してから</h3>
+<p>CAF は「マルチエージェントは<strong>検証されていない複雑さ・性能の思い込み</strong>で選ばれがち」と明記し、以下を単一で始める根拠に挙げる:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>状況</th>
+<th>CAF の指示</th>
+</tr></thead><tbody>
+<tr>
+<td>planner / reviewer など<strong>役割分担がある</strong></td>
+<td><strong>役割分担だけではマルチの理由にならない。</strong>ペルソナ切替・条件付きプロンプト・ツール権限制御で足りるかをまず単一で検証</td>
+</tr>
+<tr>
+<td>市場投入速度・低コスト優先</td>
+<td>単一で開始(マルチは調整ロジックと通信プロトコルで初期開発が遅くなる)</td>
+</tr>
+<tr>
+<td>大量データ処理</td>
+<td>スケール問題の多くは<strong>アーキテクチャでなく検索設計</strong>(チャンク・索引・リランク)。それらを尽くしてなお劣化するときだけマルチ</td>
+</tr>
+<tr>
+<td>高スループット</td>
+<td>並列化が実測で効果を出すときのみマルチ。調整オーバーヘッドが並列の利得を食い潰すことが多い</td>
+</tr>
+<tr>
+<td>マルチモーダル</td>
+<td>まずマルチモーダルモデル 1 体で。特定モダリティに専用最適化が要るときだけ分割</td>
+</tr>
+</tbody></table></div>
+<h3 id="判断表-caf-decision-framework-試すしかないのか-への公式回答">判断表(CAF Decision framework) — 「試すしかないのか」への公式回答</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>アプローチ</th>
+<th>使う場面</th>
+<th>試作の要否</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>単一エージェント</strong></td>
+<td>ドメインが狭い・統一コンテキスト・速度/コスト優先</td>
+<td><strong>省略可</strong>(スコープが単純なら直行)</td>
+</tr>
+<tr>
+<td><strong>比較プロトタイプ</strong></td>
+<td>アーキテクチャ判断が不明確で、コンテキスト処理・役割分離・性能の証拠が要る</td>
+<td>定義した成功指標に対する対照テストを実施</td>
+</tr>
+<tr>
+<td><strong>マルチエージェント</strong></td>
+<td>セキュリティ・コンプラ・組織の<strong>ハードな境界</strong>がある、マルチドメイン拡張が確定</td>
+<td><strong>省略可</strong>(要件が分離を強制するなら直行)</td>
+</tr>
+</tbody></table></div>
+<p>つまり公式の回答は「<strong>全部試す」ではなく「基準に該当すれば直行、割れたときだけ比較試作</strong>」。</p>
+<h3 id="ローコード側にも同型の基準がある-copilot-studio">ローコード側にも同型の基準がある(Copilot Studio)</h3>
+<p><a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/multi-agent-patterns">Multi-agent patterns</a> の分割基準はスケールこそ違うが同じ構造をしている: 分割するのは「別ドメインのツール・ナレッジ一式を持つ」「別のガバナンス・アクセス制御が要る」「複数の親から再利用される」場合のみで、<strong>該当しなければ child agent(トピック相当の軽量サブルーチン)で済ませ、「まず 1 エージェントで作り、明確な必要が見えたときだけ分割せよ」</strong>と明記。これは CAF の 3 条件のローコード版であり、プラットフォームを問わず同じ判断構造が使えることを示す。</p>
+<h3 id="マルチエージェントのコスト-トレードオフの定量感">マルチエージェントのコスト(トレードオフの定量感)</h3>
+<p>CAF は「エージェント間のプロトコル設計・エラー処理・状態同期」「エージェントごとのプロンプト・監視・デバッグ」「冗長なコンテキスト処理による費用増」「ハンドオフごとのレイテンシ蓄積」を列挙する。定量の参考値は Anthropic(§5)の「<strong>マルチは単一の 3〜10 倍のトークンを消費</strong>」。</p>
+<h2 id="4-層③-オーケストレーションパターン-aac-のカタログ">4. 層③ オーケストレーションパターン — AAC のカタログ</h2>
+<h3 id="複雑度の階段-要件を満たす最低の複雑度を選べ">複雑度の階段 — 「要件を満たす最低の複雑度を選べ」</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>レベル</th>
+<th>使う場面</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>直接モデル呼び出し</td>
+<td>分類・要約・翻訳など 1 パスで済むタスク</td>
+<td>プロンプトで解けるならエージェント不要</td>
+</tr>
+<tr>
+<td><strong>単一エージェント+ツール</strong></td>
+<td>単一ドメイン内の多様な要求(注文照会・DB 検索等)</td>
+<td><strong>「エンタープライズユースケースの正しい既定値であることが多い」</strong>と公式が明記</td>
+</tr>
+<tr>
+<td>マルチエージェント</td>
+<td>ドメイン横断、エージェントごとのセキュリティ境界、並列専門化</td>
+<td>プロンプト複雑性・ツール過多・セキュリティ要件で単一が破綻するときだけ正当化される</td>
+</tr>
+</tbody></table></div>
+<h3 id="5-パターンの比較-aac-choose-a-pattern-表の要約">5 パターンの比較(AAC "Choose a pattern" 表の要約)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>パターン</th>
+<th>調整方法</th>
+<th>ルーティング</th>
+<th>向く場面</th>
+<th>注意点</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Sequential</strong></td>
+<td>直列パイプライン。前段の出力を処理</td>
+<td><strong>決定的</strong>(順序は事前定義)</td>
+<td>段階依存が明確な逐次精錬(draft→review→polish)</td>
+<td>前段の失敗が伝播。並列性なし</td>
+</tr>
+<tr>
+<td><strong>Concurrent</strong></td>
+<td>並列。同一入力に独立に取り組む</td>
+<td>決定的 or 動的選択</td>
+<td>独立視点の並列分析、レイテンシ重視</td>
+<td>結果矛盾の解決戦略が必須。リソース集中</td>
+</tr>
+<tr>
+<td><strong>Group chat</strong></td>
+<td>共有スレッドで議論。チャットマネージャーが発言順を制御</td>
+<td>マネージャー制御</td>
+<td>合意形成・ブレスト・maker-checker 検証</td>
+<td>ループしやすい。<strong>3 体以下推奨</strong>と明記</td>
+</tr>
+<tr>
+<td><strong>Handoff</strong></td>
+<td>動的委譲。アクティブなのは常に 1 体</td>
+<td><strong>エージェントが委譲先を決める</strong></td>
+<td>処理中に適任者が判明するタスク</td>
+<td>無限ハンドオフ・経路の予測不能性</td>
+</tr>
+<tr>
+<td><strong>Magentic</strong></td>
+<td>マネージャーがタスク台帳を構築・適応</td>
+<td>マネージャーが動的に割当</td>
+<td>解法が事前に決められないオープンエンド問題</td>
+<td>収束が遅い。コスト最不安定</td>
+</tr>
+</tbody></table></div>
+<p><strong>Handoff の「使うな」条件が重要:</strong> 「初期入力から適切なエージェント(列)が特定できるなら、<strong>決定的ルーティングか単純なディスパッチャを使え</strong>」「ルーティングが規則ベースで決まるなら handoff にするな」。逆に maker-checker(evaluator-optimizer / critic loop)は Group chat の特殊形として定義され、<strong>チェッカーの合否基準と反復上限・上限到達時のフォールバック(人へのエスカレーション等)をセットで設計せよ</strong>とされる。</p>
+<h3 id="アンチパターン-公式列挙から設計レビューで使うもの">アンチパターン(公式列挙から設計レビューで使うもの)</h3>
+<ul>
+<li>単純な sequential / concurrent で足りるのに複雑なパターンを使う</li>
+<li><strong>意味のある専門化を持たないエージェントを追加する</strong></li>
+<li><strong>決定的なワークフローに非決定的パターンを使う(およびその逆)</strong></li>
+<li>並列エージェント間で可変状態を共有する(トランザクション不整合)</li>
+<li>マルチホップ通信のレイテンシ・コンテキスト肥大によるモデル消費を見落とす</li>
+</ul>
+<h3 id="コスト・実装上の含意">コスト・実装上の含意</h3>
+<ul>
+<li>パターン選択が直接コストに効く: sequential / handoff は逐次で積み上がり、concurrent はスパイクし、<strong>magentic は最も変動が大きく総額を予測しにくい</strong></li>
+<li>エージェントごとにタスク複雑度に見合うモデルを割り当てる(分類・抽出・整形は小型モデルで品質が落ちないことが多い)</li>
+<li><strong>パターンはフレームワーク非依存</strong>と公式が明言: MAF workflows に 5 パターンすべての 1:1 実装があり、LangChain / CrewAI / OpenAI Agents SDK でも適用可</li>
+<li>ただし <strong>Foundry Agent Service の connected agents(ポータルのマネージドなエージェント連鎖)は「主として非決定的」でパターン実装範囲に制限がある</strong>、と AAC 自身が注記。決定的パターンが要るならコードファースト(03 章 G3 と同結論)</li>
+</ul>
+<h2 id="5-業界の収斂-microsoft-外の指標-参考">5. 業界の収斂 — Microsoft 外の指標(参考)</h2>
+<p>Microsoft 固有の話ではなく、主要ベンダーの基準が同方向に収斂している。ベンダー非依存の指標として提案書に使える。</p>
+<p><strong>Anthropic</strong>(<a href="https://claude.com/blog/building-multi-agent-systems-when-and-how-to-use-them">When to use multi-agent systems</a>): マルチが単一に勝つのは 3 条件のみ — ①<strong>コンテキスト汚染</strong>(サブタスクが 1,000+ トークンの出力を生むが後工程に不要)②<strong>並列化</strong>(独立サブタスク)③<strong>専門化</strong>(ツール 15〜20+ で選択精度が劣化、ドメイン混線)。コストは <strong>3〜10 倍</strong>。失敗モードは「伝言ゲーム」(問題種別で分割するとハンドオフごとに情報が落ちる)で、<strong>分割はコンテキスト境界で行い、共有コンテキストが要る作業は同一エージェントに残す</strong>。原則は「動く最小構成から始め、証拠があるときだけ複雑化」。</p>
+<p><strong>LangChain</strong>(<a href="https://www.langchain.com/blog/choosing-the-right-multi-agent-architecture">Choosing the Right Multi-Agent Architecture</a>): 4 アーキテクチャ(subagents = 監督者がサブエージェントをツールとして呼び結果が戻る / skills = 単一エージェントが専門プロンプトを動的ロード / handoffs = 会話状態に応じて制御ごと移す / router = 分類→並列ディスパッチ→合成)を「分散開発・並列性・多段推論・ユーザーとの直接対話」の 4 軸で選ぶ。原則は「<strong>エージェントを増やす前にツールを増やせ。明確な限界に当たったときだけマルチへ</strong>」。</p>
+<p><strong>対応関係(本ドキュメントの判断):</strong> Copilot Studio の「30〜40 アクションで分割検討」と Anthropic の「15〜20+ ツールで専門化検討」は同じ現象(オーケストレーターのツール選択精度劣化)に対する閾値であり、プラットフォームが変わっても<strong>「ツール選択精度の劣化」が単一→マルチの主要シグナル</strong>という点で一致する。</p>
+<h2 id="6-本リポジトリの既存指標との対照">6. 本リポジトリの既存指標との対照</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>本リポジトリ側</th>
+<th>公式・業界側</th>
+<th>関係</th>
+</tr></thead><tbody>
+<tr>
+<td>03 章の 5 ゲート(後戻りコスト順)</td>
+<td>CAF デシジョンツリー</td>
+<td>同じ思想。<strong>「後戻りコスト順に閉じる」という順序づけは本リポジトリ側の付加価値</strong>(CAF は順序に言及しない)</td>
+</tr>
+<tr>
+<td>G3「明示的な状態遷移が要るか」</td>
+<td>CAF「クリティカル業務ロジックに決定的ワークフローを強制」</td>
+<td>一致。公式引用で補強可能</td>
+</tr>
+<tr>
+<td>03 章 Q「マルチエージェントは本当に必要か」</td>
+<td>CAF の 3 条件+単一先行原則</td>
+<td>一致。「権限を分けたい/並列調査」は CAF 条件 1・Anthropic 条件②③に対応</td>
+</tr>
+<tr>
+<td>tech-selection-guide の 2 軸 3 値(制御=コード/LLM × 戻る/移る)</td>
+<td>AAC の Routing 列(deterministic / agents decide)+ LangChain の subagents(戻る)vs handoffs(移る)</td>
+<td><strong>同型。</strong>グラフ= Sequential・Concurrent(決定的ルーティング)、相談型 agent-as-tool = LangChain subagents、担当交代= AAC Handoff</td>
+</tr>
+<tr>
+<td>Port 7 実証「one-shot パイプラインに handoff を使うと決定性が確率的になる」</td>
+<td>AAC アンチパターン「決定的ワークフローに非決定的パターン」+ Handoff の「使うな」条件</td>
+<td>実装検証と公式が独立に同じ結論</td>
+</tr>
+<tr>
+<td>(未カバー)</td>
+<td>AAC の Group chat / Magentic</td>
+<td><strong>labs 未検証。</strong>maker-checker は critique-loop(Port 9)が近いが、会話スレッド型合意形成と magentic 型動的計画は未移植</td>
+</tr>
+</tbody></table></div>
+<p><strong>ギャップの解消状況(本章調査による):</strong></p>
+<ul>
+<li>tech-selection-guide §4 の未検証領域「ポータル(prompt agents)だけの限界線」に隣接する「<strong>Copilot Studio 側の限界線</strong>」は、§2 の一次情報(30〜40 アクション・多段連鎖不可・決定的制御の上限)で机上でもかなり埋まった</li>
+<li>「LangGraph との同一シナリオ実装比較」は優先度を下げてよい(<strong>本ドキュメントの判断</strong>)。理由: ①AAC がパターンのフレームワーク非依存を明言 ②選定は「パターン → フレームワーク」の順で決まり、フレームワーク差は移植コスト実測(tech-selection-guide §1-3)で既にカバーされている ③Hosted agent はどちらも受けられる(03 章)</li>
+</ul>
+<h2 id="7-si-実務への落とし込み-提案時の判断手順">7. SI 実務への落とし込み — 提案時の判断手順</h2>
+<pre><code> 1. プラットフォーム確定(CAF ツリー+§2)          … 机上
+    「誰が作り・誰が保守し・どこまで制御が要るか」
+    Copilot Studio 上限ライン(30〜40 アクション/多段連鎖/決定的制御)に
+    当たるものだけが Foundry プロコード側 = SI の受託範囲
+        ▼
+ 2. Foundry 内の構成確定(03 章 G1〜G5)             … 机上
+        ▼
+ 3. 単一かマルチか(CAF 3 条件)                     … 机上
+    該当なし → 単一エージェント+ツールで開始(公式推奨の既定値)
+        ▼
+ 4. パターン選択(AAC 5 パターン ≒ 2 軸 3 値)       … 机上
+    「制御をコードで決められるか」を最初に問う(決定的に倒せるなら倒す)
+        ▼
+ 5. 品質・コスト・レイテンシの検証                   … ここだけ実測
+    単一エージェントの薄い試作+評価ハーネス(L13、CI 統合)
+    限界が実測で出た軸だけ複雑化(マルチ化・パターン変更)</code></pre>
+<ul>
+<li>「複数アーキテクチャを作って比較」は CAF の<strong>比較プロトタイプ該当時のみ</strong>。かつ比較対象は手順 1〜4 で絞った 2 案であり、ゼロベースの N 案比較ではない</li>
+<li>評価ハーネスは選定指標とセットで標準化する(継続的評価・CI 統合は <a href="09-operations.html">09 章</a>・03 章チェックリスト参照)。<strong>「選定は指標で、検証は評価で」が提案の型</strong></li>
+<li>提案書では「公式ガイダンス(CAF / AAC)準拠+実装検証済み(tech-selection-guide)」の二本立てで根拠を示せる</li>
+</ul>
+<h2 id="出典">出典</h2>
+<p><strong>一次情報(Microsoft Learn):</strong></p>
+<ul>
+<li>CAF: <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/build-secure-process">Process to build agents(build-secure-process)</a> / <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/single-agent-multiple-agents">Single-Agent vs Multi-Agent</a></li>
+<li>AAC: <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns">AI Agent Orchestration Patterns</a> / <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/idea/multiple-agent-workflow-automation">Multiple-agent workflow automation(ソリューションアイデア級)</a></li>
+<li>Copilot Studio: <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/multi-agent-patterns">Multi-agent orchestration patterns</a> / <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents">Add other agents</a> / <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-quotas">Quotas and limits</a></li>
+</ul>
+<p><strong>公式ブログ(準一次):</strong></p>
+<ul>
+<li><a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/choosing-the-right-starting-point-for-enterprise-ai-agents-with-copilot-studio-a/4535024">Choosing the Right Starting Point for Enterprise AI Agents(Foundry blog)</a></li>
+</ul>
+<p><strong>他社・実務者(参考・二次):</strong></p>
+<ul>
+<li>Anthropic: <a href="https://claude.com/blog/building-multi-agent-systems-when-and-how-to-use-them">When to use multi-agent systems</a></li>
+<li>LangChain: <a href="https://www.langchain.com/blog/choosing-the-right-multi-agent-architecture">Choosing the Right Multi-Agent Architecture</a></li>
+<li>PnP: <a href="https://pnp.github.io/blog/post/copilot-studio-vs-agent-builder-vs-foundry/">Agent Builder vs Copilot Studio vs Foundry: How We Decide for Every Client</a></li>
+</ul>
+<h2 id="更新運用-本章のウォッチリスト">更新運用(本章のウォッチリスト)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>ソース</th>
+<th>見るもの</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/build-secure-process">CAF ai-agents セクション</a></td>
+<td>判断基準の改訂(<code>ms.date</code>)。新設セクションのため構成変更が起きやすい</td>
+</tr>
+<tr>
+<td>2</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns">AAC ai-agent-design-patterns</a></td>
+<td>パターンの追加・「Choose a pattern」表の変更</td>
+</tr>
+<tr>
+<td>3</td>
+<td><a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents">Copilot Studio: Add other agents</a></td>
+<td><strong>Foundry / A2A 接続の GA 昇格</strong>(現在プレビュー。GA すると §2 の分業構成が本番提案可能になる)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

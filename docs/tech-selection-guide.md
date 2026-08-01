@@ -21,6 +21,7 @@
 - MAF core に first-class handoff は**ない**。`HandoffBuilder` は別パッケージ(agent-framework-orchestrations)で、全結線メッシュ+human-in-loop 既定の**会話型**設計。one-shot パイプラインに使うと「グラフなら決定的に保証される性質(順序・終了)が全部確率的になる」(Port 7 で比較実装して実証)
 - 移植して分かった副次的事実: **元アプリの「handoff」の多くは LLM が委譲先を選んでいない固定シーケンス**(AG2 Swarm の AfterWork リング等)。この場合グラフ化で失うものはなく、得るもの(型付き state、テスト可能性、スパン可視化)だけがある
 - 逆に「ユーザーとの会話中に、次に誰が話すかを LLM が決める」型(サポートのエスカレーション等)は OpenAI Agents SDK / AG2 / MAF orchestrations が本質的に楽
+- 公式・業界のフレームワーク(AAC 5 パターン、CAF 単一 vs マルチ判断、LangChain 4 型)との対照は [survey/architecture/11 §6](./survey/architecture/11-decision-frameworks.md) 参照(2 軸 3 値と AAC の Routing 軸は同型)
 
 ### 1-2. グラフ化の対価は観測性(Port 1・4・7)
 

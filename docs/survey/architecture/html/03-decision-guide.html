@@ -83,12 +83,12 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html" class="current">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a class="xset" href="../../features/html/index.html">→ features</a></nav>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html" class="current">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
 <main>
 <h1 id="03-選定ガイド-要件からアーキテクチャを決める">03. 選定ガイド — 要件からアーキテクチャを決める</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#決定順序-5-つのゲート">決定順序 — 5 つのゲート</a></li><li><a href="#要件キーワード-効いてくるレイヤー-逆引き">要件キーワード → 効いてくるレイヤー(逆引き)</a></li><li><a href="#判断軸マトリクス-方式の比較">判断軸マトリクス(方式の比較)</a></li><li><a href="#提案時チェックリスト">提案時チェックリスト</a></li><li><a href="#よくある-決めきれない-論点への回答">よくある「決めきれない」論点への回答</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
 <blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
-<p><a href="02-building-blocks.html">02. 構成要素カタログ</a> がレイヤーごとの選択肢の一覧なら、本ページは<strong>どの順番で何を決めるか</strong>の手順書である。順番を間違えると手戻りが大きい項目があるため、決定順序そのものが設計判断になる。</p>
+<p><a href="02-building-blocks.html">02. 構成要素カタログ</a> がレイヤーごとの選択肢の一覧なら、本ページは<strong>どの順番で何を決めるか</strong>の手順書である。順番を間違えると手戻りが大きい項目があるため、決定順序そのものが設計判断になる。なお本ページは「Foundry を使うと決めた後」の判断を扱う。その手前(Copilot Studio か Foundry か・単一エージェントかマルチか・オーケストレーションパターンの選択)は <a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a> を参照。</p>
 <h2 id="決定順序-5-つのゲート">決定順序 — 5 つのゲート</h2>
 <p>後戻りコストの大きい順に並べている。<strong>上から順に閉じていく。</strong></p>
 <pre><code> G1 データ・規制ゲート        「そのデータを、どこで、誰に処理させてよいか」
@@ -453,7 +453,7 @@ footer {
 <h2 id="よくある-決めきれない-論点への回答">よくある「決めきれない」論点への回答</h2>
 <p><strong>Q. とりあえず Prompt agent で始めて、後で MAF に移せるか。</strong> 移せるが、無料ではない。ツール定義・ナレッジ接続・ガードレールは概ね引き継げる一方、オーケストレーションのロジックは書き直しになる。<strong>要件に承認・分岐・再開が入っているなら最初から H を選ぶほうが安い。</strong></p>
 <p><strong>Q. Foundry IQ を使うか、AI Search を自前で組むか。</strong> 「複数のエージェント / アプリで同じナレッジを共有する」「ACL・Purview 連携が要る」なら Foundry IQ の価値が出る。逆に「1 つのアプリのための索引」「チャンク戦略を作り込みたい」なら自前。なお <strong>Foundry IQ の knowledge base は MCP 経由で Foundry Agent Service 以外(MAF・LangGraph・自作アプリ)からも使える</strong>ため、「ナレッジ層だけ Foundry IQ、オーケストレーションは自前」という組合せが成立する。</p>
-<p><strong>Q. マルチエージェントは本当に必要か。</strong> 多くの案件では単一エージェント + 複数ツールで足りる。マルチエージェントが要るのは「担当領域ごとにプロンプト・ナレッジ・権限を分けたい」「並列に調査させたい」場合。<strong>ポータルのビジュアル Workflows が廃止される以上、マルチエージェントを選ぶ = コードファーストを選ぶ</strong>とほぼ同義になった。</p>
+<p><strong>Q. マルチエージェントは本当に必要か。</strong> 多くの案件では単一エージェント + 複数ツールで足りる。マルチエージェントが要るのは「担当領域ごとにプロンプト・ナレッジ・権限を分けたい」「並列に調査させたい」場合。<strong>ポータルのビジュアル Workflows が廃止される以上、マルチエージェントを選ぶ = コードファーストを選ぶ</strong>とほぼ同義になった。CAF が公式の判断基準(最初からマルチにしてよい 3 条件と、単一で始めるべき状況の一覧)を出しており、<a href="11-decision-frameworks.html">11 章 §3</a> にまとめてある。</p>
 <p><strong>Q. コストはどこで効くか。</strong> 推論トークンだけを見積もると外す。実際には (1) ツールの追加課金(File Search / Web search / Code Interpreter / Bing)、(2) hosted agent のコンピュート、(3) AI Search のティア、(4) Cosmos DB、(5) App Insights の取り込み量、が積み上がる。<strong>ツールを増やすほど従量が増える構造</strong>である点を最初に共有する。</p>
 </main>
 <footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>
