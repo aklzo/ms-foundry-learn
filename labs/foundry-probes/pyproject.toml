@@ -1,0 +1,29 @@
+[project]
+name = "foundry-probes"
+version = "0.1.0"
+description = "Foundry 未検証機能の挙動確認 probe 集(実装例に乗らない機能を単純例で検証)"
+requires-python = ">=3.11"
+dependencies = [
+    "openai>=1.60",
+    "azure-identity>=1.19",
+    "azure-ai-projects>=2.0.0b1",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/foundry_probes"]
+
+[dependency-groups]
+dev = ["ruff>=0.8"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# probe は「失敗も観察対象」なので blind except を許可する
+ignore = ["BLE001"]

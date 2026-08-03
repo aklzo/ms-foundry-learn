@@ -1,0 +1,10 @@
+.env
+.venv/
+logs/
+__pycache__/
+*.pyc
+.ruff_cache/
+uv.lock
+
+# bicep のビルド出力
+*.json
