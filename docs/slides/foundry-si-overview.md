@@ -2,7 +2,7 @@
 marp: true
 theme: si-foundry
 paginate: true
-footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)"
+footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)"
 ---
 
 <!-- _class: lead -->
@@ -13,7 +13,7 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ## 技術選定とアーキテクチャ判断の基準
 
-2026-08 / 課内勉強会
+2026-08 / 課内共有
 本リポジトリの調査(survey)+実装検証(labs)の入口となる資料
 
 <!-- 発表の位置づけ: 課内で Foundry を調査した人はいるが情報が未集約、プロジェクト事例がなくアーキ検討に困っている、という状況への回答。この資料は全体の入口で、詳細はすべて survey の HTML に整備済み、と最初に伝える。 -->

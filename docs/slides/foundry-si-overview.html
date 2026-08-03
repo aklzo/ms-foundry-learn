@@ -11,10 +11,10 @@
 </style></head><body><div class="bespoke-marp-osc"><button data-bespoke-marp-osc="prev" tabindex="-1" title="Previous slide">Previous slide</button><span data-bespoke-marp-osc="page"></span><button data-bespoke-marp-osc="next" tabindex="-1" title="Next slide">Next slide</button><button data-bespoke-marp-osc="fullscreen" tabindex="-1" title="Toggle fullscreen (f)">Toggle fullscreen</button><button data-bespoke-marp-osc="overview" tabindex="-1" title="Toggle overview view (o)">Toggle overview view</button><button data-bespoke-marp-osc="presenter" tabindex="-1" title="Open presenter view (p)">Open presenter view</button></div><div id=":$p"><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="1" data-class="lead" data-theme="si-foundry" lang="C" class="lead" style="--class:lead;--theme:si-foundry;">
 <h1 id="microsoft-foundry-%E3%82%92-si-%E3%81%A7%E4%BD%BF%E3%81%86">Microsoft Foundry を SI で使う</h1>
 <h2 id="%E6%8A%80%E8%A1%93%E9%81%B8%E5%AE%9A%E3%81%A8%E3%82%A2%E3%83%BC%E3%82%AD%E3%83%86%E3%82%AF%E3%83%81%E3%83%A3%E5%88%A4%E6%96%AD%E3%81%AE%E5%9F%BA%E6%BA%96">技術選定とアーキテクチャ判断の基準</h2>
-<p>2026-08 / 課内勉強会<br />
+<p>2026-08 / 課内共有<br />
 本リポジトリの調査(survey)+実装検証(labs)の入口となる資料</p>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="2" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§0 はじめに" data-theme="si-foundry" lang="C" data-marpit-pagination="2" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§0 はじめに;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="2" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§0 はじめに" data-theme="si-foundry" lang="C" data-marpit-pagination="2" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§0 はじめに;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§0 はじめに</header>
 
 <h1 id="%E4%BB%8A%E6%97%A5%E3%81%AE%E3%82%B4%E3%83%BC%E3%83%AB">今日のゴール</h1>
@@ -29,9 +29,9 @@
 <li>略語は初出でスペルアウトし、巻末の<strong>付録 A7 に用語集</strong>を用意した</li>
 </ul>
 <div class="refs">2 層目の全体像: <a href="../survey/README.md">survey/README.md</a> — <span class="path">docs/survey/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="3" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§0 はじめに" data-theme="si-foundry" lang="C" data-marpit-pagination="3" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§0 はじめに;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="3" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§0 はじめに" data-theme="si-foundry" lang="C" data-marpit-pagination="3" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§0 はじめに;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§0 はじめに</header>
 <h1 id="%E8%B3%87%E6%96%99%E3%81%AE%E5%85%A8%E4%BD%93%E5%83%8F2-%E5%B1%A4%E6%A7%8B%E6%88%90">資料の全体像(2 層構成)</h1>
 <div class="msg">この資料は入口(1 層目)— 詳細は 2 層目の調査資産に降りられる</div>
@@ -48,9 +48,9 @@
 <li>「公式ドキュメント調査(survey)」と「実装検証(labs)」は<strong>出典を分離</strong> — 提案書で根拠を二本立てにできる</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/features/html/index.html">features</a> / <a href="../survey/architecture/html/index.html">architecture</a> / <a href="../survey/proposal/html/index.html">proposal</a> / <a href="../tech-selection-guide.md">tech-selection-guide</a> — <span class="path">docs/survey/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="4" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="4" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="4" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="4" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§1 Foundry の現在地</header>
 
 <h1 id="%E5%89%8D%E6%8F%90-ignite-2025-%E3%81%AE%E6%94%B9%E7%A7%B0">前提: Ignite 2025 の改称</h1>
@@ -100,9 +100,9 @@
 <li>対応表なしで検索すると、<strong>廃止済み API の記事で設計してしまう</strong>(メンバーの過去調査も旧名義の可能性)</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/features/html/index.html">features/index(前提知識の節)</a> — <span class="path">docs/survey/features/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="5" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="5" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="5" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="5" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§1 Foundry の現在地</header>
 <h1 id="%E6%A9%9F%E8%83%BD%E3%81%AE%E5%85%A8%E4%BD%93%E5%83%8F8-%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA">機能の全体像(8 カテゴリ)</h1>
 <div class="msg">全機能は 8 カテゴリの「地図」に整理済み — 位置だけ覚えれば引ける</div>
@@ -120,9 +120,9 @@
 <li>各カテゴリとも GA / プレビュー+操作手段(ポータル / CLI / SDK / REST)を<strong>全行出典つき</strong>で整理済み</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/features/html/index.html">features/index</a> — <span class="path">docs/survey/features/01〜08-*.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="6" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="6" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="6" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="6" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§1 Foundry の現在地</header>
 <h1 id="ga--%E3%83%97%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%81%AE%E7%8F%BE%E5%AE%9F">GA / プレビューの現実</h1>
 <div class="msg">「GA」を鵜呑みにしない — 選定に効く 4 つの現実</div>
@@ -133,9 +133,9 @@
 <div class="card"><div class="t">④ Claude(Anthropic)は独自制約つき</div>モデルとしては GA。ただし Anthropic SDK+Marketplace 課金+<b>Foundry 組み込みコンテンツフィルター非適用</b></div>
 </div>
 <div class="refs">詳細: <a href="../survey/features/html/index.html">features/index(ハイライトの節)</a> — <span class="path">docs/survey/features/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="7" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="background" data-marpit-advanced-background-split="right"><div data-marpit-advanced-background-container="true" data-marpit-advanced-background-direction="horizontal"><figure style="background-image:url(&quot;../survey/architecture/images/baseline-chat.png&quot;);background-size:contain;"></figure></div></section></foreignObject><foreignObject width="58%" height="720"><section id="7" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="7" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="content" data-marpit-advanced-background-split="right">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="7" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="background" data-marpit-advanced-background-split="right"><div data-marpit-advanced-background-container="true" data-marpit-advanced-background-direction="horizontal"><figure style="background-image:url(&quot;../survey/architecture/images/baseline-chat.png&quot;);background-size:contain;"></figure></div></section></foreignObject><foreignObject width="58%" height="720"><section id="7" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="7" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§1 Foundry の現在地;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="content" data-marpit-advanced-background-split="right">
 <header>§1 Foundry の現在地</header>
 <h1 id="%E5%85%AC%E5%BC%8F%E3%83%AA%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9%E3%82%A2%E3%83%BC%E3%82%AD%E3%83%86%E3%82%AF%E3%83%81%E3%83%A3">公式リファレンスアーキテクチャ</h1>
 <div class="msg">公式リファレンスは 3 本だけ — 本番の出発点は Baseline Chat 一択</div>
@@ -148,9 +148,9 @@
 <li>それ以外の公式ページは検証レベルが下がる — <strong>提案での引用時は区別する</strong></li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/01-official-baselines.html">architecture/01-official-baselines</a> — <span class="path">docs/survey/architecture/01-official-baselines.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject><foreignObject width="1280" height="720" data-marpit-advanced-background="pseudo"><section data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="7" style="" data-marpit-pagination-total="42" data-marpit-advanced-background="pseudo" data-marpit-advanced-background-split="right"></section></foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="8" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§2 判断①: 決める順序" data-theme="si-foundry" lang="C" data-marpit-pagination="8" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§2 判断①: 決める順序;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject><foreignObject width="1280" height="720" data-marpit-advanced-background="pseudo"><section data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§1 Foundry の現在地" data-theme="si-foundry" lang="C" data-marpit-pagination="7" style="" data-marpit-pagination-total="42" data-marpit-advanced-background="pseudo" data-marpit-advanced-background-split="right"></section></foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="8" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§2 判断①: 決める順序" data-theme="si-foundry" lang="C" data-marpit-pagination="8" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§2 判断①: 決める順序;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§2 判断①: 決める順序</header>
 
 <h1 id="%E5%88%A4%E6%96%AD%E2%91%A0-5-%E3%81%A4%E3%81%AE%E3%82%B2%E3%83%BC%E3%83%88">判断①: 5 つのゲート</h1>
@@ -168,9 +168,9 @@
 <li>機能比較表から入ると G1 / G2 の手戻りで壊れる — <strong>上から順に閉じる</strong>のがこのガイドの背骨</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/03-decision-guide.html">architecture/03-decision-guide</a> — <span class="path">docs/survey/architecture/03-decision-guide.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="9" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§2 判断①: 決める順序" data-theme="si-foundry" lang="C" data-marpit-pagination="9" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§2 判断①: 決める順序;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="9" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§2 判断①: 決める順序" data-theme="si-foundry" lang="C" data-marpit-pagination="9" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§2 判断①: 決める順序;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§2 判断①: 決める順序</header>
 <h1 id="g1-%E3%83%87%E3%83%BC%E3%82%BF%E3%83%BBg2-%E3%83%8D%E3%83%83%E3%83%88%E3%83%AF%E3%83%BC%E3%82%AF">G1 データ・G2 ネットワーク</h1>
 <div class="msg">G1・G2 は後付けできない — 最初のヒアリングで確定させる 4 点</div>
@@ -181,9 +181,9 @@
 <div class="card warn"><div class="t">Web 検索はコンプライアンス境界の外</div>Grounding with Bing は DPA(Microsoft のデータ保護補遺)対象外・別課金。<b>規制業種では原則不可</b>として扱う</div>
 </div>
 <div class="refs">詳細: <a href="../survey/architecture/html/07-usecase-regulated-edge.html">architecture/07-usecase-regulated-edge</a> — <span class="path">docs/survey/architecture/07-usecase-regulated-edge.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="10" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§2 判断①: 決める順序" data-theme="si-foundry" lang="C" data-marpit-pagination="10" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§2 判断①: 決める順序;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="10" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§2 判断①: 決める順序" data-theme="si-foundry" lang="C" data-marpit-pagination="10" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§2 判断①: 決める順序;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§2 判断①: 決める順序</header>
 <h1 id="g3%E3%80%9Cg5-%E3%81%A8%E6%9C%BA%E4%B8%8A%E6%B1%BA%E5%AE%9A">G3〜G5 と机上決定</h1>
 <div class="msg">事例がなくても構成は机上で決められる — 公式が「試作省略可」と明言</div>
@@ -197,9 +197,9 @@
 <li>実測が要るのは<strong>品質とコストの実額だけ</strong> — そこは評価ハーネスで回帰可能にする</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/11-decision-frameworks.html">architecture/11-decision-frameworks</a> — <span class="path">docs/survey/architecture/11-decision-frameworks.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="11" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="11" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="11" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="11" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§3 判断②: 要件 → パターンの当たり付け</header>
 
 <h1 id="%E5%88%A4%E6%96%AD%E2%91%A1-%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3%E5%85%A8%E4%BD%93%E3%83%9E%E3%83%83%E3%83%97">判断②: パターン全体マップ</h1>
@@ -213,9 +213,9 @@
 <div class="card"><div class="t">使い方</div>要件を聞いたら<b>この 22 パターンのどれかに落とす</b>。完全版の一覧表は<b>付録 A1</b>、要件の言葉からの逆引きは<b>付録 A6</b></div>
 </div>
 <div class="refs">詳細: <a href="../survey/architecture/html/index.html">architecture/index</a> — <span class="path">docs/survey/architecture/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="12" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="12" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="12" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="12" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§3 判断②: 要件 → パターンの当たり付け</header>
 <h1 id="a-%E7%A4%BE%E5%86%85%E3%83%8A%E3%83%AC%E3%83%83%E3%82%B8%E6%A4%9C%E7%B4%A2%E3%83%BBrag">A: 社内ナレッジ検索・RAG</h1>
 <div class="msg">A1 で小さく始めて、権限制御が要るなら A2 に上げるのが本線</div>
@@ -228,9 +228,9 @@
 <li>PoC 段階で<strong>難しい文書 20〜30 件</strong>の検索品質を測ってから方式を確定する</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/04-usecase-chat-rag.html">architecture/04-usecase-chat-rag</a> — <span class="path">docs/survey/architecture/04-usecase-chat-rag.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="13" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="13" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="13" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="13" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§3 判断②: 要件 → パターンの当たり付け</header>
 <h1 id="a-%E3%83%8A%E3%83%AC%E3%83%83%E3%82%B8%E3%81%AE%E6%8C%81%E3%81%9F%E3%81%9B%E6%96%B9-5-%E5%88%86%E5%B2%90">A: ナレッジの持たせ方 5 分岐</h1>
 <div class="msg">「データの場所と権限」で決まる — 上から順に聞けば 1 つに落ちる</div>
@@ -243,9 +243,9 @@
 </div>
 <div class="callout"><span class="t">⚠ Azure OpenAI On Your Data は 2026-10-14 廃止</span> — 「モデルが直接データを読む」構成の既存提案書は要更新(移行先: Agent Service+Foundry IQ)</div>
 <div class="refs">詳細: <a href="../survey/architecture/html/04-usecase-chat-rag.html">architecture/04-usecase-chat-rag</a> — <span class="path">docs/survey/architecture/04-usecase-chat-rag.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="14" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:46%;" data-marpit-pagination-total="42" data-marpit-advanced-background="background" data-marpit-advanced-background-split="right"><div data-marpit-advanced-background-container="true" data-marpit-advanced-background-direction="horizontal"><figure style="background-image:url(&quot;../survey/architecture/images/b2-hitl-automation.png&quot;);background-size:contain;"></figure></div></section></foreignObject><foreignObject width="54%" height="720"><section id="14" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="14" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:46%;" data-marpit-pagination-total="42" data-marpit-advanced-background="content" data-marpit-advanced-background-split="right">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="14" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:46%;" data-marpit-pagination-total="42" data-marpit-advanced-background="background" data-marpit-advanced-background-split="right"><div data-marpit-advanced-background-container="true" data-marpit-advanced-background-direction="horizontal"><figure style="background-image:url(&quot;../survey/architecture/images/b2-hitl-automation.png&quot;);background-size:contain;"></figure></div></section></foreignObject><foreignObject width="54%" height="720"><section id="14" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="14" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:46%;" data-marpit-pagination-total="42" data-marpit-advanced-background="content" data-marpit-advanced-background-split="right">
 <header>§3 判断②: 要件 → パターンの当たり付け</header>
 <h1 id="b-%E6%89%BF%E8%AA%8D%E4%BB%98%E3%81%8D%E6%A5%AD%E5%8B%99%E8%87%AA%E5%8B%95%E5%8C%96">B: 承認付き業務自動化</h1>
 <div class="msg">本線は B2 —「担当者が承認してから実行」を MAF で作る</div>
@@ -256,9 +256,9 @@
 <li>参照系(読み取りだけ)なら <strong>B1</strong> のツール呼び出し構成で足りる</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/05-usecase-agent-automation.html">architecture/05-usecase-agent-automation</a> — <span class="path">docs/survey/architecture/05-usecase-agent-automation.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject><foreignObject width="1280" height="720" data-marpit-advanced-background="pseudo"><section data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="14" style="" data-marpit-pagination-total="42" data-marpit-advanced-background="pseudo" data-marpit-advanced-background-split="right"></section></foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="15" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="15" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject><foreignObject width="1280" height="720" data-marpit-advanced-background="pseudo"><section data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="14" style="" data-marpit-pagination-total="42" data-marpit-advanced-background="pseudo" data-marpit-advanced-background-split="right"></section></foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="15" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="15" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§3 判断②: 要件 → パターンの当たり付け</header>
 <h1 id="b-%E9%95%B7%E6%99%82%E9%96%93%E5%AE%9F%E8%A1%8C%E3%83%BB%E8%A4%87%E6%95%B0%E3%82%A8%E3%83%BC%E3%82%B8%E3%82%A7%E3%83%B3%E3%83%88">B: 長時間実行・複数エージェント</h1>
 <div class="msg">承認待ちが日単位なら B3、権限を分けたいなら B4 に拡張する</div>
@@ -271,9 +271,9 @@
 <li>B4 に進む前に<strong>まず単一エージェントで始める</strong>(協調の型は §4 で扱う)</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/05-usecase-agent-automation.html">architecture/05-usecase-agent-automation</a> — <span class="path">docs/survey/architecture/05-usecase-agent-automation.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="16" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="background" data-marpit-advanced-background-split="right"><div data-marpit-advanced-background-container="true" data-marpit-advanced-background-direction="horizontal"><figure style="background-image:url(&quot;../survey/architecture/images/b5-flow-engine.png&quot;);background-size:contain;"></figure></div></section></foreignObject><foreignObject width="58%" height="720"><section id="16" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="16" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="content" data-marpit-advanced-background-split="right">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="16" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="background" data-marpit-advanced-background-split="right"><div data-marpit-advanced-background-container="true" data-marpit-advanced-background-direction="horizontal"><figure style="background-image:url(&quot;../survey/architecture/images/b5-flow-engine.png&quot;);background-size:contain;"></figure></div></section></foreignObject><foreignObject width="58%" height="720"><section id="16" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="16" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="content" data-marpit-advanced-background-split="right">
 <header>§3 判断②: 要件 → パターンの当たり付け</header>
 <h1 id="b-%E3%83%93%E3%82%B8%E3%83%A5%E3%82%A2%E3%83%AB-workflows-%E5%BB%83%E6%AD%A2">B: ビジュアル Workflows 廃止</h1>
 <div class="msg">2026-12-01 に廃止 — ポータルでマルチエージェントは組まない</div>
@@ -285,9 +285,9 @@
 <li>ビジュアル保守を続けたいなら <strong>B5</strong> に倒す(境界線は付録 A4)</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/05-usecase-agent-automation.html">architecture/05-usecase-agent-automation</a> — <span class="path">docs/survey/architecture/05-usecase-agent-automation.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject><foreignObject width="1280" height="720" data-marpit-advanced-background="pseudo"><section data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="16" style="" data-marpit-pagination-total="42" data-marpit-advanced-background="pseudo" data-marpit-advanced-background-split="right"></section></foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="17" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="background" data-marpit-advanced-background-split="right"><div data-marpit-advanced-background-container="true" data-marpit-advanced-background-direction="horizontal"><figure style="background-image:url(&quot;../survey/architecture/images/c2-multitenant-saas.png&quot;);background-size:contain;"></figure></div></section></foreignObject><foreignObject width="58%" height="720"><section id="17" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="17" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="content" data-marpit-advanced-background-split="right">
+</foreignObject><foreignObject width="1280" height="720" data-marpit-advanced-background="pseudo"><section data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="16" style="" data-marpit-pagination-total="42" data-marpit-advanced-background="pseudo" data-marpit-advanced-background-split="right"></section></foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="17" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="background" data-marpit-advanced-background-split="right"><div data-marpit-advanced-background-container="true" data-marpit-advanced-background-direction="horizontal"><figure style="background-image:url(&quot;../survey/architecture/images/c2-multitenant-saas.png&quot;);background-size:contain;"></figure></div></section></foreignObject><foreignObject width="58%" height="720"><section id="17" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="17" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;--marpit-advanced-background-split:42%;" data-marpit-pagination-total="42" data-marpit-advanced-background="content" data-marpit-advanced-background-split="right">
 <header>§3 判断②: 要件 → パターンの当たり付け</header>
 <h1 id="c-%E9%A1%A7%E5%AE%A2%E5%90%91%E3%81%91%E5%85%AC%E9%96%8B%E3%83%BBsaas">C: 顧客向け公開・SaaS</h1>
 <div class="msg">主戦場は境界防御 — 会話の認可を Foundry はやってくれない</div>
@@ -299,9 +299,9 @@
 <li>クォータは<strong>デプロイ単位</strong> — 分割で暴走を隔離</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/06-usecase-customer-facing.html">architecture/06-usecase-customer-facing</a> — <span class="path">docs/survey/architecture/06-usecase-customer-facing.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject><foreignObject width="1280" height="720" data-marpit-advanced-background="pseudo"><section data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="17" style="" data-marpit-pagination-total="42" data-marpit-advanced-background="pseudo" data-marpit-advanced-background-split="right"></section></foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="18" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="18" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject><foreignObject width="1280" height="720" data-marpit-advanced-background="pseudo"><section data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="17" style="" data-marpit-pagination-total="42" data-marpit-advanced-background="pseudo" data-marpit-advanced-background-split="right"></section></foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="18" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="18" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§3 判断②: 要件 → パターンの当たり付け</header>
 <h1 id="d-%E8%A6%8F%E5%88%B6%E6%A5%AD%E7%A8%AE%E3%83%BB%E9%96%89%E5%9F%9F%E3%83%BB%E3%82%A8%E3%83%83%E3%82%B8">D: 規制業種・閉域・エッジ</h1>
 <div class="msg">閉域は「使えない機能の一覧」から設計する — 月額の下限は固定費で決まる</div>
@@ -314,9 +314,9 @@
 <li>D2(政府クラウド)は hosted エージェント・MCP(ツール接続規格)・A2A が非対応</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/07-usecase-regulated-edge.html">architecture/07-usecase-regulated-edge</a> — <span class="path">docs/survey/architecture/07-usecase-regulated-edge.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="19" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="19" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="19" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§3 判断②: 要件 → パターンの当たり付け" data-theme="si-foundry" lang="C" data-marpit-pagination="19" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§3 判断②: 要件 → パターンの当たり付け;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§3 判断②: 要件 → パターンの当たり付け</header>
 <h1 id="e-%E3%83%81%E3%83%A3%E3%83%83%E3%83%88%E4%BB%A5%E5%A4%96%E3%81%AE-6-%E9%A1%9E%E5%9E%8B">E: チャット以外の 6 類型</h1>
 <div class="msg">「索引」と「落とし穴」だけ持ち帰る — 各類型の構成図は 2 層目にある</div>
@@ -372,9 +372,9 @@
 <li>IDP = Intelligent Document Processing(帳票・契約書の構造化抽出)。FT = Fine-tuning(追加学習)</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/08-usecase-specialized.html">architecture/08-usecase-specialized</a> — <span class="path">docs/survey/architecture/08-usecase-specialized.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="20" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="20" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="20" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="20" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§4 判断②: ポータルか、コードか、どのフレームワークか</header>
 
 <h1 id="%E5%88%A4%E6%96%AD%E2%91%A1-%E3%83%95%E3%83%AC%E3%83%BC%E3%83%A0%E3%83%AF%E3%83%BC%E3%82%AF%E9%81%B8%E5%AE%9A%E3%81%AE-3-%E8%BB%B8">判断②: フレームワーク選定の 3 軸</h1>
@@ -389,9 +389,9 @@
 <li>「Foundry を使うか」と「MAF を使うか」は<strong>独立した判断</strong>。既存システム組み込み型の SI 案件では軸C の「Responses API のみ」が重要</li>
 </ul>
 <div class="refs">詳細: <span class="path">docs/learning-plan.md §2(技術選定の全体像)</span> — <a href="../learning-plan.md">learning-plan.md</a></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="21" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="21" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="21" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="21" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§4 判断②: ポータルか、コードか、どのフレームワークか</header>
 <h1 id="%E3%83%AC%E3%82%A4%E3%83%A4%E3%83%BC%E5%88%A5%E4%BB%BB%E3%81%9B%E3%82%8B--%E4%BD%9C%E3%82%8B">レイヤー別「任せる / 作る」</h1>
 <div class="msg">16 のレイヤーごとに「Foundry に任せる / 自前で作る」を選ぶ — 全体表は付録 A5</div>
@@ -407,9 +407,9 @@
 <li>「迷ったら」列は<strong>既定値であって正解ではない</strong> — 各レイヤーの全選択肢と根拠は 2 層目に整理済み</li>
 </ul>
 <div class="refs">詳細(16 レイヤー全体): <a href="../survey/architecture/html/02-building-blocks.html">architecture/02-building-blocks</a> / 付録 A5 — <span class="path">docs/survey/architecture/02-building-blocks.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="22" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="22" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="22" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="22" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§4 判断②: ポータルか、コードか、どのフレームワークか</header>
 <h1 id="%E3%83%9E%E3%83%AB%E3%83%81%E3%82%A8%E3%83%BC%E3%82%B8%E3%82%A7%E3%83%B3%E3%83%88%E5%8D%94%E8%AA%BF%E3%81%AE%E5%9E%8B">マルチエージェント協調の型</h1>
 <div class="msg">協調は 2 つの軸で 3 つの型に割り切れる — そもそも単一で始める</div>
@@ -423,9 +423,9 @@
 <li>実測: 元アプリの「handoff」の多くは実は<strong>固定シーケンス</strong> — グラフ化で失うものはなく、型・テスト・可視化を得る</li>
 </ul>
 <div class="refs">詳細: <span class="path">docs/tech-selection-guide.md §1-1</span> / <a href="../survey/architecture/html/11-decision-frameworks.html">architecture/11(公式 5 パターンとの対照)</a></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="23" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="23" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="23" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="23" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§4 判断②: ポータルか、コードか、どのフレームワークか</header>
 <h1 id="%E3%83%95%E3%83%AC%E3%83%BC%E3%83%A0%E3%83%AF%E3%83%BC%E3%82%AF%E7%A7%BB%E8%A1%8C%E3%82%B3%E3%82%B9%E3%83%88">フレームワーク移行コスト</h1>
 <div class="msg">他フレームワークからの書き換えは実測済み — 移行は思ったより軽い</div>
@@ -463,9 +463,9 @@
 <li>共通パターン: <strong>書き換えで元コードの欠陥が見つかる</strong> — 型付きグラフへの移植自体がコードレビューとして機能する</li>
 </ul>
 <div class="refs">詳細(全 14 行+検証元): <span class="path">docs/tech-selection-guide.md §1-3</span> — <a href="../tech-selection-guide.md">tech-selection-guide.md</a></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="24" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="24" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="24" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§4 判断②: ポータルか、コードか、どのフレームワークか" data-theme="si-foundry" lang="C" data-marpit-pagination="24" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§4 判断②: ポータルか、コードか、どのフレームワークか;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§4 判断②: ポータルか、コードか、どのフレームワークか</header>
 <h1 id="%E5%AE%9F%E8%A8%BC%E6%B8%88%E3%81%BF%E3%82%B3%E3%83%BC%E3%83%89%E3%81%AE%E5%AF%BE%E5%BF%9C%E8%A1%A8">実証済みコードの対応表</h1>
 <div class="msg">「事例がない」には動くコードで答える — 8 つの型 × 約 470 テスト</div>
@@ -525,9 +525,9 @@
 <li><strong>Foundry に載せる最初の動機は観測性</strong> — トレース配線は実質 2 行</li>
 </ul>
 <div class="refs">詳細: <span class="path">labs/maf-ports/README.md(進捗表)/ docs/tech-selection-guide.md §3</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="25" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§5 判断③: 見積もりに乗せる現実" data-theme="si-foundry" lang="C" data-marpit-pagination="25" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§5 判断③: 見積もりに乗せる現実;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="25" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§5 判断③: 見積もりに乗せる現実" data-theme="si-foundry" lang="C" data-marpit-pagination="25" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§5 判断③: 見積もりに乗せる現実;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§5 判断③: 見積もりに乗せる現実</header>
 
 <h1 id="%E5%88%A4%E6%96%AD%E2%91%A2-%E3%82%84%E3%81%A3%E3%81%A6%E3%81%8F%E3%82%8C%E3%81%AA%E3%81%84%E3%81%93%E3%81%A8">判断③: やってくれないこと</h1>
@@ -544,9 +544,9 @@
 <li>全 12 項目は<strong>付録 A2</strong> — 提案書の<strong>除外事項・前提条件欄にそのまま転記</strong>できる形にしてある</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/index.html">architecture/index(全案件共通の前提の節)</a> — <span class="path">docs/survey/architecture/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="26" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§5 判断③: 見積もりに乗せる現実" data-theme="si-foundry" lang="C" data-marpit-pagination="26" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§5 判断③: 見積もりに乗せる現実;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="26" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§5 判断③: 見積もりに乗せる現実" data-theme="si-foundry" lang="C" data-marpit-pagination="26" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§5 判断③: 見積もりに乗せる現実;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§5 判断③: 見積もりに乗せる現実</header>
 <h1 id="%E9%87%8D%E8%A6%81%E6%9C%9F%E9%99%90-2026%E2%80%932027">重要期限 2026–2027</h1>
 <div class="msg">提案書には賞味期限がある — 直近 4 つの廃止日は暗記する</div>
@@ -563,9 +563,9 @@
 <li>モデル自体のリタイア(gpt-4o 等 2026-10 前後)も含めた<strong>全体表は付録 A3</strong></li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/10-migration-antipatterns.html">architecture/10-migration-antipatterns</a> / <a href="../survey/features/html/index.html">features/index(期限表)</a></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="27" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§5 判断③: 見積もりに乗せる現実" data-theme="si-foundry" lang="C" data-marpit-pagination="27" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§5 判断③: 見積もりに乗せる現実;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="27" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§5 判断③: 見積もりに乗せる現実" data-theme="si-foundry" lang="C" data-marpit-pagination="27" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§5 判断③: 見積もりに乗せる現実;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§5 判断③: 見積もりに乗せる現実</header>
 <h1 id="%E6%8F%90%E6%A1%88%E3%81%AE%E3%82%A2%E3%83%B3%E3%83%81%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3">提案のアンチパターン</h1>
 <div class="msg">踏みやすい 11 個のうち代表 3 つ — 言う前・見積もる前に確認する</div>
@@ -575,9 +575,9 @@
 <div class="card warn"><div class="t">az CLI で自動化できる前提の見積もり</div>専用の <code>az foundry</code> は存在せず、多くの機能はポータル+SDK / REST のみ<br /><span class="sub">対処: 自動化は Bicep / Terraform(基盤)+SDK / REST(データ操作)前提で工数を積む</span></div>
 </div>
 <div class="refs">詳細(全 11 個): <a href="../survey/architecture/html/10-migration-antipatterns.html">architecture/10-migration-antipatterns</a> — <span class="path">docs/survey/architecture/10-migration-antipatterns.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="28" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§5 判断③: 見積もりに乗せる現実" data-theme="si-foundry" lang="C" data-marpit-pagination="28" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§5 判断③: 見積もりに乗せる現実;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="28" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§5 判断③: 見積もりに乗せる現実" data-theme="si-foundry" lang="C" data-marpit-pagination="28" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§5 判断③: 見積もりに乗せる現実;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§5 判断③: 見積もりに乗せる現実</header>
 <h1 id="%E5%AE%9F%E8%A3%85%E3%81%AE%E3%83%8F%E3%83%9E%E3%82%8A%E3%81%A9%E3%81%93%E3%82%8D">実装のハマりどころ</h1>
 <div class="msg">「半日溶けるポイント」は先に知っておく — 実測 3 点</div>
@@ -587,9 +587,9 @@
 <div class="card"><div class="t">Memory は「書いた直後に読めない」</div>Foundry Memory は同期書き込みではなく<b>非同期処理+既定 300 秒の遅延</b>(LRO+debounce)— UX とテストはその前提で設計する</div>
 </div>
 <div class="refs">詳細(全 13 点+検証元): <span class="path">docs/tech-selection-guide.md §2(実装ナレッジ集)</span> — <a href="../tech-selection-guide.md">tech-selection-guide.md</a></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="29" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§6 提案実務への接続" data-theme="si-foundry" lang="C" data-marpit-pagination="29" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§6 提案実務への接続;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="29" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§6 提案実務への接続" data-theme="si-foundry" lang="C" data-marpit-pagination="29" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§6 提案実務への接続;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§6 提案実務への接続</header>
 
 <h1 id="%E6%8F%90%E6%A1%88%E3%83%95%E3%83%AD%E3%83%BC">提案フロー</h1>
@@ -609,9 +609,9 @@
 <li>ヒアリング後のアウトプット: 構成候補 1〜2 案 / <strong>プレビュー依存リスト</strong> / <strong>廃止日程との衝突チェック</strong> / 概算月額レンジ / 規制・契約の論点リスト</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/proposal/html/index.html">proposal/index</a> — <span class="path">docs/survey/proposal/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="30" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§6 提案実務への接続" data-theme="si-foundry" lang="C" data-marpit-pagination="30" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§6 提案実務への接続;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="30" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§6 提案実務への接続" data-theme="si-foundry" lang="C" data-marpit-pagination="30" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§6 提案実務への接続;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§6 提案実務への接続</header>
 <h1 id="%E3%83%92%E3%82%A2%E3%83%AA%E3%83%B3%E3%82%B0%E3%81%A8%E3%82%B3%E3%82%B9%E3%83%88%E6%A6%82%E7%AE%97">ヒアリングとコスト概算</h1>
 <div class="msg">ヒアリングは「地雷質問」から、コストは「固定費」から積む</div>
@@ -623,9 +623,9 @@
 <li>閉域構成の経験則: <strong>固定費(Firewall / Private Endpoint / APIM)だけで月額の下限が決まる</strong> — 先に固定費、後から変動費</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/proposal/html/01-hearing-sheet.html">proposal/01-hearing-sheet</a> / <a href="../survey/proposal/html/02-cost-estimation.html">proposal/02-cost-estimation</a></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="31" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§6 提案実務への接続" data-theme="si-foundry" lang="C" data-marpit-pagination="31" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§6 提案実務への接続;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="31" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§6 提案実務への接続" data-theme="si-foundry" lang="C" data-marpit-pagination="31" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§6 提案実務への接続;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§6 提案実務への接続</header>
 <h1 id="%E6%97%A5%E6%9C%AC%E3%81%AE%E8%A6%8F%E5%88%B6%E5%AF%BE%E5%BF%9C">日本の規制対応</h1>
 <div class="msg">定番質問への「回答型」を用意済み — 登録状況は案件ごとに最新確認</div>
@@ -639,9 +639,9 @@
 <li>位置づけ: <strong>G1(データ・規制)/ G2(ネットワーク)ゲートの日本ローカル具体化</strong></li>
 </ul>
 <div class="refs">詳細: <a href="../survey/proposal/html/03-japan-compliance.html">proposal/03-japan-compliance</a> — <span class="path">docs/survey/proposal/03-japan-compliance.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="32" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§6 提案実務への接続" data-theme="si-foundry" lang="C" data-marpit-pagination="32" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§6 提案実務への接続;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="32" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§6 提案実務への接続" data-theme="si-foundry" lang="C" data-marpit-pagination="32" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§6 提案実務への接続;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§6 提案実務への接続</header>
 <h1 id="%E5%85%AC%E9%96%8B%E4%BA%8B%E4%BE%8B">公開事例</h1>
 <div class="msg">提案書で引ける事例を 21 件収録 — 公式出典のみ、数値は表現のまま使う</div>
@@ -655,9 +655,9 @@
 <li>事例は「<strong>同業種・同類型で公開実績がある</strong>」ことの証明に使い、<strong>アーキテクチャ選定の根拠には使わない</strong>(その役割は公式リファレンス)</li>
 </ul>
 <div class="refs">詳細(正確な表現+出典 URL): <a href="../survey/proposal/html/05-case-studies.html">proposal/05-case-studies</a> — <span class="path">docs/survey/proposal/05-case-studies.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="33" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§7 クロージング" data-theme="si-foundry" lang="C" data-marpit-pagination="33" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§7 クロージング;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="33" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§7 クロージング" data-theme="si-foundry" lang="C" data-marpit-pagination="33" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§7 クロージング;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§7 クロージング</header>
 
 <h1 id="%E6%83%85%E5%A0%B1%E3%81%AE%E9%AE%AE%E5%BA%A6%E3%81%AE%E4%BF%9D%E3%81%A1%E6%96%B9">情報の鮮度の保ち方</h1>
@@ -672,9 +672,9 @@
 <li>このスライド自体も survey の大型更新に合わせて改訂する(更新手順は明文化済み・生成 AI への依頼手順つき)</li>
 </ul>
 <div class="refs">詳細(更新運用ガイド・ウォッチリストの URL): <a href="../survey/features/html/index.html">features/index</a> — <span class="path">docs/survey/features/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="34" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§7 クロージング" data-theme="si-foundry" lang="C" data-marpit-pagination="34" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§7 クロージング;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="34" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§7 クロージング" data-theme="si-foundry" lang="C" data-marpit-pagination="34" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§7 クロージング;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§7 クロージング</header>
 <h1 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ</h1>
 <div class="msg">3 つの判断能力を、次の案件で「この 3 手」から使い始める</div>
@@ -691,9 +691,9 @@
 <div class="st"><span class="t">3 裏取り</span><br />features で GA / プレビュー確認+期限表と衝突チェック</div>
 </div>
 <div class="refs">最初の 1 手のテンプレート: <a href="../survey/proposal/html/01-hearing-sheet.html">proposal/01-hearing-sheet</a> / 要件の逆引きは付録 A6 — <span class="path">docs/survey/proposal/01-hearing-sheet.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="35" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§7 クロージング" data-theme="si-foundry" lang="C" data-marpit-pagination="35" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§7 クロージング;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="35" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="§7 クロージング" data-theme="si-foundry" lang="C" data-marpit-pagination="35" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:§7 クロージング;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>§7 クロージング</header>
 <h1 id="2-%E5%B1%A4%E7%9B%AE%E3%81%B8%E3%81%AE%E5%85%A5%E5%8F%A3--qa">2 層目への入口 / Q&amp;A</h1>
 <div class="msg">2 層目はビルド済み — リポジトリを clone してブラウザで開くだけ</div>
@@ -742,9 +742,9 @@
 <li>以降は付録: <strong>A1</strong> パターン完全版 / <strong>A2</strong> やってくれないこと全 12 項 / <strong>A3</strong> 期限全体表 / <strong>A4</strong> Copilot Studio 境界 / <strong>A5</strong> 16 レイヤー表 / <strong>A6</strong> 要件逆引き / <strong>A7</strong> 用語集</li>
 </ul>
 <div class="refs"><a href="../survey/features/html/index.html">features</a> / <a href="../survey/architecture/html/index.html">architecture</a> / <a href="../survey/proposal/html/index.html">proposal</a> / <a href="../tech-selection-guide.md">tech-selection-guide</a> / <a href="../learning-plan.md">learning-plan</a> / <a href="../../labs/maf-ports/README.md">labs/maf-ports</a></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="36" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="xdense" data-theme="si-foundry" lang="C" class="xdense" data-marpit-pagination="36" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:xdense;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="36" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="xdense" data-theme="si-foundry" lang="C" class="xdense" data-marpit-pagination="36" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:xdense;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>付録</header>
 
 <h1 id="%E4%BB%98%E9%8C%B2-a1-%E3%83%A6%E3%83%BC%E3%82%B9%E3%82%B1%E3%83%BC%E3%82%B9%E5%88%A5%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3%E5%AE%8C%E5%85%A8%E7%89%88a1%E3%80%9Ce6">付録 A1: ユースケース別パターン完全版(A1〜E6)</h1>
@@ -916,9 +916,9 @@
 </tr>
 </tbody>
 </table>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="37" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="dense" data-theme="si-foundry" lang="C" class="dense" data-marpit-pagination="37" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:dense;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="37" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="dense" data-theme="si-foundry" lang="C" class="dense" data-marpit-pagination="37" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:dense;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>付録</header>
 
 <h1 id="%E4%BB%98%E9%8C%B2-a2-foundry-%E3%81%8C%E3%82%84%E3%81%A3%E3%81%A6%E3%81%8F%E3%82%8C%E3%81%AA%E3%81%84%E3%81%93%E3%81%A8%E5%85%A8-12-%E9%A0%85">付録 A2: Foundry がやってくれないこと(全 12 項)</h1>
@@ -997,9 +997,9 @@
 <li>加えて<strong>コンテンツフィルターはフェイルオープン</strong> — 規制業種は <code>finish_reason</code> / <code>content_filter_results</code> の検証を必須実装に</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/index.html">architecture/index(全案件共通の前提の節)</a> — <span class="path">docs/survey/architecture/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="38" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="xdense" data-theme="si-foundry" lang="C" class="xdense" data-marpit-pagination="38" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:xdense;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="38" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="xdense" data-theme="si-foundry" lang="C" class="xdense" data-marpit-pagination="38" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:xdense;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>付録</header>
 
 <h1 id="%E4%BB%98%E9%8C%B2-a3-%E9%87%8D%E8%A6%81%E6%9C%9F%E9%99%90%E3%81%AE%E5%85%A8%E4%BD%93%E8%A1%A8features-%E5%81%B4">付録 A3: 重要期限の全体表(features 側)</h1>
@@ -1080,9 +1080,9 @@
 </tr>
 </tbody>
 </table>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="39" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-theme="si-foundry" lang="C" data-marpit-pagination="39" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="39" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-theme="si-foundry" lang="C" data-marpit-pagination="39" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>付録</header>
 <h1 id="%E4%BB%98%E9%8C%B2-a4-copilot-studio-%E3%81%A8%E3%81%AE%E5%A2%83%E7%95%8C%E7%B7%9A%E4%B8%80%E6%AC%A1%E6%83%85%E5%A0%B1%E3%81%A7%E5%BC%95%E3%81%91%E3%82%8B">付録 A4: Copilot Studio との境界線(一次情報で引ける)</h1>
 <ul>
@@ -1097,9 +1097,9 @@
 <li><strong>両者は排他ではない</strong> — 入口・M365 チャネル・業務部門の保守は Copilot Studio、複雑な処理は Foundry hosted agent(connected agent として呼ぶ)が公式推奨の分業構成。<strong>SI の受託範囲を「Copilot Studio で簡単に作れないエージェントの開発」とする契約の切り方が公式構成と一致</strong>(ただし接続はプレビュー)</li>
 </ul>
 <div class="refs">詳細: <a href="../survey/architecture/html/11-decision-frameworks.html">architecture/11-decision-frameworks</a> — <span class="path">docs/survey/architecture/11-decision-frameworks.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="40" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="dense" data-theme="si-foundry" lang="C" class="dense" data-marpit-pagination="40" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:dense;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="40" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="dense" data-theme="si-foundry" lang="C" class="dense" data-marpit-pagination="40" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:dense;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>付録</header>
 
 <h1 id="%E4%BB%98%E9%8C%B2-a5-16-%E3%83%AC%E3%82%A4%E3%83%A4%E3%83%BC-%C3%97-m--h--s-%E5%AE%8C%E5%85%A8%E7%89%88foundry-%E6%A9%9F%E8%83%BD-vs-%E8%87%AA%E5%89%8D%E5%AE%9F%E8%A3%85">付録 A5: 16 レイヤー × M / H / S 完全版(Foundry 機能 vs 自前実装)</h1>
@@ -1246,9 +1246,9 @@
 </tbody>
 </table>
 <div class="refs">詳細(各レイヤーの全選択肢と根拠): <a href="../survey/architecture/html/02-building-blocks.html">architecture/02-building-blocks</a> — <span class="path">docs/survey/architecture/02-building-blocks.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="41" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="dense" data-theme="si-foundry" lang="C" class="dense" data-marpit-pagination="41" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:dense;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="41" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="dense" data-theme="si-foundry" lang="C" class="dense" data-marpit-pagination="41" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:dense;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>付録</header>
 
 <h1 id="%E4%BB%98%E9%8C%B2-a6-%E8%A6%81%E4%BB%B6%E3%81%AE%E8%A8%80%E8%91%89%E3%81%AE%E9%80%86%E5%BC%95%E3%81%8D%E8%A1%A8">付録 A6: 要件の言葉の逆引き表</h1>
@@ -1315,9 +1315,9 @@
 </tbody>
 </table>
 <div class="refs">詳細: <a href="../survey/architecture/html/index.html">architecture/index(選定早見表)</a> — <span class="path">docs/survey/architecture/README.md</span></div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
-</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="42" data-paginate="true" data-footer="Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="xdense" data-theme="si-foundry" lang="C" class="xdense" data-marpit-pagination="42" style="--paginate:true;--footer:Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:xdense;--theme:si-foundry;" data-marpit-pagination-total="42">
+</foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="42" data-paginate="true" data-footer="Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)" data-header="付録" data-class="xdense" data-theme="si-foundry" lang="C" class="xdense" data-marpit-pagination="42" style="--paginate:true;--footer:Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照);--header:付録;--class:xdense;--theme:si-foundry;" data-marpit-pagination-total="42">
 <header>付録</header>
 
 <h1 id="%E4%BB%98%E9%8C%B2-a7-%E7%94%A8%E8%AA%9E%E9%9B%86%E6%9C%AC%E8%B3%87%E6%96%99%E3%81%A7%E4%BD%BF%E3%81%86%E7%95%A5%E8%AA%9E">付録 A7: 用語集(本資料で使う略語)</h1>
@@ -1459,7 +1459,7 @@
 </table>
 </div>
 </div>
-<footer>Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
+<footer>Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 詳細: docs/survey/ 配下(各スライド下部のリンク参照)</footer>
 </section>
 <script>!function(){"use strict";const t={h1:{proto:()=>HTMLHeadingElement,attrs:{role:"heading","aria-level":"1"},style:"display: block; font-size: 2em; margin-block-start: 0.67em; margin-block-end: 0.67em; margin-inline-start: 0px; margin-inline-end: 0px; font-weight: bold;"},h2:{proto:()=>HTMLHeadingElement,attrs:{role:"heading","aria-level":"2"},style:"display: block; font-size: 1.5em; margin-block-start: 0.83em; margin-block-end: 0.83em; margin-inline-start: 0px; margin-inline-end: 0px; font-weight: bold;"},h3:{proto:()=>HTMLHeadingElement,attrs:{role:"heading","aria-level":"3"},style:"display: block; font-size: 1.17em; margin-block-start: 1em; margin-block-end: 1em; margin-inline-start: 0px; margin-inline-end: 0px; font-weight: bold;"},h4:{proto:()=>HTMLHeadingElement,attrs:{role:"heading","aria-level":"4"},style:"display: block; margin-block-start: 1.33em; margin-block-end: 1.33em; margin-inline-start: 0px; margin-inline-end: 0px; font-weight: bold;"},h5:{proto:()=>HTMLHeadingElement,attrs:{role:"heading","aria-level":"5"},style:"display: block; font-size: 0.83em; margin-block-start: 1.67em; margin-block-end: 1.67em; margin-inline-start: 0px; margin-inline-end: 0px; font-weight: bold;"},h6:{proto:()=>HTMLHeadingElement,attrs:{role:"heading","aria-level":"6"},style:"display: block; font-size: 0.67em; margin-block-start: 2.33em; margin-block-end: 2.33em; margin-inline-start: 0px; margin-inline-end: 0px; font-weight: bold;"},span:{proto:()=>HTMLSpanElement},pre:{proto:()=>HTMLElement,style:"display: block; font-family: monospace; white-space: pre; margin: 1em 0; --marp-auto-scaling-white-space: pre;"}},e="data-marp-auto-scaling-wrapper",i="data-marp-auto-scaling-svg",n="data-marp-auto-scaling-container";class s extends HTMLElement{container;containerSize;containerObserver;svg;svgComputedStyle;svgPreserveAspectRatio="xMinYMid meet";wrapper;wrapperSize;wrapperObserver;constructor(){super();const t=t=>([e])=>{const{width:i,height:n}=e.contentRect;this[t]={width:i,height:n},this.updateSVGRect()};this.attachShadow({mode:"open"}),this.containerObserver=new ResizeObserver(t("containerSize")),this.wrapperObserver=new ResizeObserver((...e)=>{t("wrapperSize")(...e),this.flushSvgDisplay()})}static get observedAttributes(){return["data-downscale-only"]}connectedCallback(){this.shadowRoot.innerHTML=`\n<style>\n  svg[${i}] { display: block; width: 100%; height: auto; vertical-align: top; }\n  span[${n}] { display: table; white-space: var(--marp-auto-scaling-white-space, nowrap); width: max-content; }\n</style>\n<div ${e}>\n  <svg part="svg" ${i}>\n    <foreignObject><span ${n}><slot></slot></span></foreignObject>\n  </svg>\n</div>\n    `.split(/\n\s*/).join(""),this.wrapper=this.shadowRoot.querySelector(`div[${e}]`)??void 0;const t=this.svg;this.svg=this.wrapper?.querySelector(`svg[${i}]`)??void 0,this.svg!==t&&(this.svgComputedStyle=this.svg?window.getComputedStyle(this.svg):void 0),this.container=this.svg?.querySelector(`span[${n}]`)??void 0,this.observe()}disconnectedCallback(){this.svg=void 0,this.svgComputedStyle=void 0,this.wrapper=void 0,this.container=void 0,this.observe()}attributeChangedCallback(){this.observe()}flushSvgDisplay(){const{svg:t}=this;t&&(t.style.display="inline",requestAnimationFrame(()=>{t.style.display=""}))}observe(){this.containerObserver.disconnect(),this.wrapperObserver.disconnect(),this.wrapper&&this.wrapperObserver.observe(this.wrapper),this.container&&this.containerObserver.observe(this.container),this.svgComputedStyle&&this.observeSVGStyle(this.svgComputedStyle)}observeSVGStyle(t){const e=()=>{const i=(()=>{const e=t.getPropertyValue("--preserve-aspect-ratio");if(e)return e.trim();return`x${(({textAlign:t,direction:e})=>{if(t.endsWith("left"))return"Min";if(t.endsWith("right"))return"Max";if("start"===t||"end"===t){let i="rtl"===e;return"end"===t&&(i=!i),i?"Max":"Min"}return"Mid"})(t)}YMid meet`})();i!==this.svgPreserveAspectRatio&&(this.svgPreserveAspectRatio=i,this.updateSVGRect()),t===this.svgComputedStyle&&requestAnimationFrame(e)};e()}updateSVGRect(){let t=Math.ceil(this.containerSize?.width??0);const e=Math.ceil(this.containerSize?.height??0);void 0!==this.dataset.downscaleOnly&&(t=Math.max(t,this.wrapperSize?.width??0));const i=this.svg?.querySelector(":scope > foreignObject");if(i?.setAttribute("width",`${t}`),i?.setAttribute("height",`${e}`),this.svg&&(this.svg.setAttribute("viewBox",`0 0 ${t} ${e}`),this.svg.setAttribute("preserveAspectRatio",this.svgPreserveAspectRatio),this.svg.style.height=t<=0||e<=0?"0":""),this.container){const t=this.svgPreserveAspectRatio.toLowerCase();this.container.style.marginLeft=t.startsWith("xmid")||t.startsWith("xmax")?"auto":"0",this.container.style.marginRight=t.startsWith("xmi")?"auto":"0"}}}const r=(t,{attrs:e={},style:i})=>class extends t{constructor(...t){super(...t);for(const[t,i]of Object.entries(e))this.hasAttribute(t)||this.setAttribute(t,i);this._shadow()}static get observedAttributes(){return["data-auto-scaling"]}connectedCallback(){this._update()}attributeChangedCallback(){this._update()}_shadow(){if(!this.shadowRoot)try{this.attachShadow({mode:"open"})}catch(t){if(!(t instanceof Error&&"NotSupportedError"===t.name))throw t}return this.shadowRoot}_update(){const t=this._shadow();if(t){const e=i?`<style>:host { ${i} }</style>`:"";let n="<slot></slot>";const{autoScaling:s}=this.dataset;if(void 0!==s){n=`<marp-auto-scaling exportparts="svg:auto-scaling" ${"downscale-only"===s?"data-downscale-only":""}>${n}</marp-auto-scaling>`}t.innerHTML=e+n}}};let o;const a=()=>o??(o=!!document.createElement("div",{is:"marp-auto-scaling"}).outerHTML.startsWith("<div is"),o),l=Symbol();let c;const d="marpitSVGPolyfill:setZoomFactor,",h=Symbol(),g=Symbol();const p=()=>{const t="Apple Computer, Inc."===navigator.vendor,e=t?[v]:[],i={then:e=>(t?(async()=>{if(void 0===c){const t=document.createElement("canvas");t.width=10,t.height=10;const e=t.getContext("2d"),i=new Image(10,10),n=new Promise(t=>{i.addEventListener("load",()=>t())});i.crossOrigin="anonymous",i.src="data:image/svg+xml;charset=utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%201%201%22%3E%3CforeignObject%20width%3D%221%22%20height%3D%221%22%20requiredExtensions%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxhtml%22%3E%3Cdiv%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxhtml%22%20style%3D%22width%3A%201px%3B%20height%3A%201px%3B%20background%3A%20red%3B%20position%3A%20relative%22%3E%3C%2Fdiv%3E%3C%2FforeignObject%3E%3C%2Fsvg%3E",await n,e.drawImage(i,0,0),c=e.getImageData(5,5,1,1).data[3]<128}return c})().then(t=>{null==e||e(t?[v]:[])}):null==e||e([]),i)};return Object.assign(e,i)};let m,u;function v(t){const e="object"==typeof t&&t.target||document,i="object"==typeof t?t.zoom:t;window[g]||(Object.defineProperty(window,g,{configurable:!0,value:!0}),document.body.style.zoom=1.0001,document.body.offsetHeight,document.body.style.zoom=1,window.addEventListener("message",({data:t,origin:e})=>{if(e===window.origin)try{if(t&&"string"==typeof t&&t.startsWith(d)){const[,e]=t.split(","),i=Number.parseFloat(e);Number.isNaN(i)||(u=i)}}catch(t){console.error(t)}}));let n=!1;Array.from(e.querySelectorAll("svg[data-marpit-svg]"),t=>{var e,s,r,o;t.style.transform||(t.style.transform="translateZ(0)");const a=i||u||t.currentScale||1;m!==a&&(m=a,n=a);const l=t.getBoundingClientRect(),{length:c}=t.children;for(let i=0;i<c;i+=1){const n=t.children[i];if(n.getScreenCTM){const t=n.getScreenCTM();if(t){const i=null!==(s=null===(e=n.x)||void 0===e?void 0:e.baseVal.value)&&void 0!==s?s:0,c=null!==(o=null===(r=n.y)||void 0===r?void 0:r.baseVal.value)&&void 0!==o?o:0,d=n.children.length;for(let e=0;e<d;e+=1){const s=n.children[e];if("SECTION"===s.tagName){const{style:e}=s;e.transformOrigin||(e.transformOrigin=`${-i}px ${-c}px`),e.transform=`scale(${a}) matrix(${t.a}, ${t.b}, ${t.c}, ${t.d}, ${t.e-l.left}, ${t.f-l.top}) translateZ(0.0001px)`;break}}}}}}),!1!==n&&Array.from(e.querySelectorAll("iframe"),({contentWindow:t})=>{null==t||t.postMessage(`${d}${n}`,"null"===window.origin?"*":window.origin)})}function w({once:t=!1,target:e=document}={}){const i=function(t=document){if(t[h])return t[h];let e=!0;const i=()=>{e=!1,delete t[h]};Object.defineProperty(t,h,{configurable:!0,value:i});let n=[],s=!1;(async()=>{try{n=await p()}finally{s=!0}})();const r=()=>{for(const e of n)e({target:t});s&&0===n.length||e&&window.requestAnimationFrame(r)};return r(),i}(e);return t?(i(),()=>{}):i}m=1,u=void 0;const b=Symbol(),y=(e=document)=>{if("undefined"==typeof window)throw new Error("Marp Core's browser script is valid only in browser context.");if(((e=document)=>{const i=window[l];i||customElements.define("marp-auto-scaling",s);for(const n of Object.keys(t)){const s=`marp-${n}`,o=t[n].proto();a()&&o!==HTMLElement?i||customElements.define(s,r(o,{style:t[n].style}),{extends:n}):(i||customElements.define(s,r(HTMLElement,t[n])),e.querySelectorAll(`${n}[is="${s}"]`).forEach(t=>{t.outerHTML=t.outerHTML.replace(new RegExp(`^<${n}`,"i"),`<${s}`).replace(new RegExp(`</${n}>$`,"i"),`</${s}>`)}))}window[l]=!0})(e),e[b])return e[b];const i=w({target:e}),n=()=>{i(),delete e[b]},o=Object.assign(n,{cleanup:n,update:()=>y(e)});return Object.defineProperty(e,b,{configurable:!0,value:o}),o},f=document.currentScript;y(f?f.getRootNode():document)}();
 </script></foreignObject></svg></div><div class="bespoke-marp-note" data-index="0" tabindex="0"><p>発表の位置づけ: 課内で Foundry を調査した人はいるが情報が未集約、プロジェクト事例がなくアーキ検討に困っている、という状況への回答。この資料は全体の入口で、詳細はすべて survey の HTML に整備済み、と最初に伝える。</p></div><div class="bespoke-marp-note" data-index="1" tabindex="0"><p>ゴールは知識の網羅ではなく判断力。3 つの判断能力を最後にもう一度出すので、ここでは骨組みだけ覚えてもらえばよい。以降のセクション §2 が①、§3〜§4 が②、§5 が③に対応する。</p></div><div class="bespoke-marp-note" data-index="2" tabindex="0"><p>どの資料がどの問いに答えるかだけ覚えてもらう。features は「使えるか」、architecture は「どう組むか」、proposal は「どう提案するか」。労力の大半は 2 層目に既に積んであり、このスライドは道案内に徹する。</p></div><div class="bespoke-marp-note" data-index="3" tabindex="0"><p>調査情報が未集約になる一因がこの改称。「Azure AI Foundry」で検索して出てくる記事はほぼ旧世代。読み替え表として使ってもらう。</p></div><div class="bespoke-marp-note" data-index="4" tabindex="0"><p>個々の機能はこの場で覚えなくてよい。「この 8 分類のどこかに載っている」と分かればよい。番号は features のファイル番号と一致している。</p></div><div class="bespoke-marp-note" data-index="5" tabindex="0"><p>この 4 点は提案の失敗パターンに直結する。特に④フィルター非適用の Claude と②Workflows 廃止は後のスライドでも繰り返し出てくる。GA=一般提供、SLA つきの正式リリースという意味も一言添える。</p></div><div class="bespoke-marp-note" data-index="6" tabindex="0"><p>「公式の推奨構成はどれか」と聞かれたら Baseline 一択。公式-B は Well-Architected Framework が「AI ワークロードの推奨アーキテクチャ」と名指ししている。それ以外の「ガイド」「ソリューションアイデア」を事例記事と同様にリファレンスとして引用しない、という区別が提案の信頼性を作る。図は Baseline Chat の構成図。</p></div><div class="bespoke-marp-note" data-index="7" tabindex="0"><p>「何から決めればいいか分からない」への回答がこの 5 ゲート。左帯の濃淡が後戻りコストの大きさ。以降のスライドは全部この順序の上に載っている。</p></div><div class="bespoke-marp-note" data-index="8" tabindex="0"><p>ヒアリングの地雷質問「閉域は要件か希望か」「データを国外に出せるか」はここに直結する。曖昧なまま構成を書かない。4 枚とも「あとで発覚すると作り直し」になる系。</p></div><div class="bespoke-marp-note" data-index="9" tabindex="0"><p>「事例がないからアーキを決められない」への直接の回答がこのスライド。公式フレームワーク(CAF / Azure Architecture Center)が 2025-12 以降に整備され、机上で決められる範囲が大きく広がった。</p></div><div class="bespoke-marp-note" data-index="10" tabindex="0"><p>全部は説明しない。「要件を聞いたらこの地図のどれかに落とす」という使い方だけ伝え、A・B・C・D を代表として次のスライドから図で深掘りする。</p></div><div class="bespoke-marp-note" data-index="11" tabindex="0"><p>SI 案件で一番多い類型なので、左(A1)で始めて右(A2)に上げる、という段取りごと覚えてもらう。File Search は埋め込み・チャンク設定が固定で、日本語の長文・表主体文書で品質が出ないことがある。</p></div><div class="bespoke-marp-note" data-index="12" tabindex="0"><p>RAG は「どれが優れているか」ではなく「データの場所・権限・運用体制でどれに落ちるか」。上から順に聞いていけば 1 つに落ちる。On Your Data 廃止は過去の提案書を持っているメンバーに一番効く情報。</p></div><div class="bespoke-marp-note" data-index="13" tabindex="0"><p>「AI に業務をやらせたいが勝手に実行されるのは困る」という要望はほぼ B2。承認ステップの設計(誰が・どの粒度で承認するか)が要件定義の中心になる。MAF は §2 で出た Microsoft Agent Framework(コードでエージェントを組む公式フレームワーク)。</p></div><div class="bespoke-marp-note" data-index="14" tabindex="0"><p>B2 で足りるかをまず問い、待ち時間の長さで B3、組織・権限の分離要件で B4 へ。どちらも「必要になってから」拡張する方向で提案する。</p></div><div class="bespoke-marp-note" data-index="15" tabindex="0"><p>長期案件でビジュアル Workflows を提案すると納品前に廃止が来る。「ポータルで全部作れます」と言わないためのスライド。</p></div><div class="bespoke-marp-note" data-index="16" tabindex="0"><p>公開系は「Foundry の機能」より「Foundry がやらない境界防御」が主戦場。BOLA と按分は §5(やってくれないこと)にも再登場する。429 応答のリトライ実装もアプリ側の責務。</p></div><div class="bespoke-marp-note" data-index="17" tabindex="0"><p>金融・公共の案件はまずこの章。G2 ゲート(後付け不可)の実体がここにある。左が閉域の標準形、右がそもそもクラウドに出せない場合の 3 形態。</p></div><div class="bespoke-marp-note" data-index="18" tabindex="0"><p>「チャット以外」の引き合いが来たときの索引。E6 の「知識は RAG、挙動は FT」は顧客への説明でそのまま使える一行。各類型のアーキ図は architecture/08 に全部ある。</p></div><div class="bespoke-marp-note" data-index="19" tabindex="0"><p>「ポータル vs MAF vs LangGraph」と一列に並べた瞬間に議論が壊れる。3 軸が独立していることだけ持ち帰ってもらえれば、このセクションは成功。</p></div><div class="bespoke-marp-note" data-index="20" tabindex="0"><p>発表ではこの 5 レイヤーだけ。全 16 レイヤーの M/H/S 表は付録 A5 と architecture/02 にある。個別レイヤーの議論になったらそちらに戻る。</p></div><div class="bespoke-marp-note" data-index="21" tabindex="0"><p>Azure Architecture Center の 5 パターン・LangChain の 4 型もこの 2 軸(制御を誰が決めるか×制御が戻るか)に還元できる。労力をかけて覚えるのはこの 1 枚でよい。</p></div><div class="bespoke-marp-note" data-index="22" tabindex="0"><p>「他フレームワークからの乗り換えは怖い」への実測回答。移行コストは思ったより一様に低いが、失うもの(LangChain ルーター行の可観測性など)も正直に書いてある。</p></div><div class="bespoke-marp-note" data-index="23" tabindex="0"><p>「事例がない」への課内の回答がこの表。14 ポート合計約 470 テストをネットワークなしで実行できる。「エージェントはテストできない」は設計の問題。</p></div><div class="bespoke-marp-note" data-index="24" tabindex="0"><p>「Foundry でできます」と言った後に効いてくるのがこのリスト。フェイルオープンは finish_reason と content_filter_results の検証で防ぐ。</p></div><div class="bespoke-marp-note" data-index="25" tabindex="0"><p>「GA だから安心」ではなく「いつ消えるか」で見る。赤の 4 つは直近数か月なので暗記推奨。</p></div><div class="bespoke-marp-note" data-index="26" tabindex="0"><p>残り 8 個(閉域後付け・Claude のガードレール・プレビュー本番投入など)は既に他のスライドで触れたものも多い。設計レビュー前に 10 章を通読するのが実用的な使い方。</p></div><div class="bespoke-marp-note" data-index="27" tabindex="0"><p>「運が悪いと半日〜1 日溶ける系」を 13 点まとめてある。実装フェーズに入るメンバーは tech-selection-guide §2 を最初に読むと元が取れる。</p></div><div class="bespoke-marp-note" data-index="28" tabindex="0"><p>提案の型は既に 5 ステップに分解して資料化済み。「明日から案件で使える」状態であることを伝えるのがこのセクション。</p></div><div class="bespoke-marp-note" data-index="29" tabindex="0"><p>ヒアリングシートは 60〜90 分の初回ヒアリングでそのまま使える。コスト手順は試算例 A / B / C(社内 RAG・顧客向け・文書処理バッチ)つき。</p></div><div class="bespoke-marp-note" data-index="30" tabindex="0"><p>規制の細部を暗記する必要はない。「定番質問の回答型がある」「登録状況は案件ごとに最新確認」の 2 点だけ覚えてもらう。</p></div><div class="bespoke-marp-note" data-index="31" tabindex="0"><p>効果数値は必ず出典の表現のまま引用する(「約」「目標」を落とさない)。「Foundry 事例が少なく見える」のは主に名義変遷の問題。二次記事は収録していないので、そのまま提案書に載せられる。</p></div><div class="bespoke-marp-note" data-index="32" tabindex="0"><p>資料の信頼性は更新運用で決まる。誰でも更新できるよう手順は features README に明文化してあり、生成 AI に更新作業を依頼する手順まで書いてある。</p></div><div class="bespoke-marp-note" data-index="33" tabindex="0"><p>3 手のうち 1 つでも次の案件で実行されたら、この勉強会は成功。質疑では「いま抱えている案件をこの型に当てるとどうなるか」を歓迎する。</p></div><div class="bespoke-marp-note" data-index="34" tabindex="0"><p>資料はここで終わり。以降は発表では飛ばす付録で、後日参照用の完全版テーブルと用語集を収録している。</p></div><script>/*!! License: https://unpkg.com/@marp-team/marp-cli@4.5.0/lib/bespoke.js.LICENSE.txt */
