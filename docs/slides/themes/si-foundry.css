@@ -1,0 +1,155 @@
+/* @theme si-foundry */
+/*
+ * docs/survey/tools/md2html.py の CSS 変数(ライトテーマ)から配色を移植した Marp テーマ。
+ * survey の生成 HTML と並べて見たとき同一ブランドに見えることを狙う。
+ * 16:9 (1280x720) 前提。投影・PDF 配布が主目的のためライト固定。
+ */
+@import 'default';
+
+:root {
+  --fg: #1c1e21;
+  --muted: #57606a;
+  --border: #d8dee4;
+  --accent: #0f6cbd;
+  --code-bg: #f3f5f7;
+  --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1;
+  --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9;
+  --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+
+section {
+  font-family: "Segoe UI", "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 26px;
+  line-height: 1.6;
+  color: var(--fg);
+  background: #ffffff;
+  padding: 45px 60px 60px;
+  /* default テーマの place-content: safe center center(縦センタリング)を上詰めに戻す */
+  place-content: safe start stretch;
+}
+
+section h1 {
+  color: var(--accent);
+  font-size: 1.45em;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.15em;
+  margin-bottom: 0.5em;
+}
+section h2 { color: var(--accent); font-size: 1.2em; }
+section h3 { font-size: 1.05em; }
+section a { color: var(--accent); }
+section strong { color: inherit; }
+
+section code {
+  background: var(--code-bg);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+  font-family: Consolas, "SF Mono", Menlo, monospace;
+  font-size: 0.82em;
+}
+section pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  line-height: 1.45;
+}
+
+section blockquote {
+  margin: 0.6em 0;
+  padding: 0.35em 0.8em;
+  border-left: 4px solid var(--accent);
+  background: var(--nav-bg);
+  border-radius: 0 6px 6px 0;
+  color: var(--muted);
+}
+
+/* 表: スライドでは既定でやや縮小。大型表は _class: dense でさらに詰める */
+section table {
+  font-size: 0.68em;
+  line-height: 1.5;
+  border-collapse: collapse;
+  margin: 0.4em 0;
+}
+section th, section td {
+  border: 1px solid var(--border);
+  padding: 0.3em 0.55em;
+  text-align: left;
+  vertical-align: top;
+}
+section th { background: var(--nav-bg); }
+section tbody tr:nth-child(even) td { background: #fbfcfd; }
+
+section.dense { font-size: 22px; }
+section.dense table { font-size: 0.6em; line-height: 1.35; }
+section.dense th, section.dense td { padding: 0.2em 0.4em; }
+
+/* 20 行級の全体マップ用 */
+section.xdense { font-size: 21px; }
+section.xdense h1 { margin-bottom: 0.25em; }
+section.xdense table { font-size: 0.55em; line-height: 1.3; margin-left: auto; margin-right: auto; }
+section.xdense th, section.xdense td { padding: 0.15em 0.4em; }
+
+/* セクション扉・タイトル */
+section.lead {
+  background: var(--accent);
+  color: #ffffff;
+  text-align: center;
+  place-content: safe center center;
+}
+section.lead h1, section.lead h2 { color: #ffffff; border-bottom: none; }
+section.lead a { color: #cfe6fa; }
+section.lead p { color: #e8f1fa; }
+section.lead footer { color: rgba(255, 255, 255, 0.65); }
+section.lead::after { color: rgba(255, 255, 255, 0.65); }
+
+section img { background: #ffffff; }
+section p img:not([class*="emoji"]) {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* md2html.py と同じステータスバッジ(--html 有効時に <span class="badge ga"> 等で使う) */
+.badge {
+  display: inline-block;
+  font-size: 0.72em;
+  font-weight: 600;
+  line-height: 1.45;
+  padding: 0 0.5em;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge.ga, .badge.ok { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+
+/* 2層目への導線: クリック可能リンク+可視パス表記のセット */
+.path {
+  font-family: Consolas, "SF Mono", Menlo, monospace;
+  font-size: 0.72em;
+  color: var(--muted);
+}
+section .refs {
+  position: absolute;
+  left: 60px; right: 60px; bottom: 52px;
+  font-size: 0.72em;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  padding-top: 0.25em;
+}
+
+/* 2カラム */
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1.2em;
+  align-items: start;
+}
+
+section footer { color: var(--muted); font-size: 0.55em; left: 60px; }
+section header { color: var(--muted); font-size: 0.55em; left: 60px; top: 18px; }
+section::after { color: var(--muted); font-size: 0.6em; }
