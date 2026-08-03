@@ -13,7 +13,7 @@ Microsoft Foundry(旧 Azure AI Foundry)のキャッチアップと、SI 案件�
 | [docs/survey/features/](docs/survey/features/README.md) | **機能一覧・ステータス調査** — GA / プレビューをサーフェス別(ポータル / CLI / SDK)に整理。出典 URL 付き。月次更新 |
 | [docs/survey/architecture/](docs/survey/architecture/README.md) | **アーキテクチャ設計ガイド** — 公式リファレンス、レイヤー別の「Foundry 機能 vs 自前実装」、ユースケース別構成、運用・移行。四半期更新 |
 | [docs/survey/proposal/](docs/survey/proposal/README.md) | **提案実務ガイド** — 要件ヒアリングシート、コスト見積もり手順、日本規制対応メモ、前提 Azure 知識マップ |
-| [docs/slides/](docs/slides/README.md) | **SI チーム向け共有スライド** — survey / labs の要点を 38 枚に再構成した勉強会資料(Marp。HTML / PDF 同梱) |
+| [docs/slides/](docs/slides/README.md) | **SI チーム向け共有スライド** — survey / labs の要点を 42 枚に再構成した勉強会資料(Marp。HTML / PDF 同梱) |
 | [docs/tech-selection-guide.md](docs/tech-selection-guide.md) | **技術選定ガイド(実装検証ベース)** — labs の実装で実証したナレッジのみを集約(調査由来の survey とは出典分離) |
 | [labs/agentic-search-maf/](labs/agentic-search-maf/README.md) | 検証ラボ: 自己評価型リサーチエージェントを MAF で実装した学習用プロジェクト |
 | [labs/maf-ports/](labs/maf-ports/README.md) | 検証ラボ: awesome-llm-apps の7パターンを MAF+Foundry へ移植(Wave 1 完了。Azure リソースは検証後削除済み) |

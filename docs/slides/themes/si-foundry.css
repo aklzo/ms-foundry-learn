@@ -3,6 +3,9 @@
  * docs/survey/tools/md2html.py の CSS 変数(ライトテーマ)から配色を移植した Marp テーマ。
  * survey の生成 HTML と並べて見たとき同一ブランドに見えることを狙う。
  * 16:9 (1280x720) 前提。投影・PDF 配布が主目的のためライト固定。
+ *
+ * スライドは「メッセージライン(h1 = 主張文)+図中心のボディ」形式。
+ * 図解用のコンポーネント(.cards / .gates / .duo / .timeline / .qtree / .axes / .mhs / .flow)を下部に定義。
  */
 @import 'default';
 
@@ -31,9 +34,11 @@ section {
   place-content: safe start stretch;
 }
 
+/* h1 = スライドメッセージ(主張文)。2 行までを想定 */
 section h1 {
   color: var(--accent);
-  font-size: 1.45em;
+  font-size: 1.32em;
+  line-height: 1.4;
   border-bottom: 2px solid var(--border);
   padding-bottom: 0.15em;
   margin-bottom: 0.5em;
@@ -66,9 +71,9 @@ section blockquote {
   color: var(--muted);
 }
 
-/* 表: スライドでは既定でやや縮小。大型表は _class: dense でさらに詰める */
+/* 表: 本編は読める大きさを維持。大型の参照表は付録で dense / xdense を使う */
 section table {
-  font-size: 0.68em;
+  font-size: 0.72em;
   line-height: 1.5;
   border-collapse: collapse;
   margin: 0.4em 0;
@@ -153,3 +158,196 @@ section .refs {
 section footer { color: var(--muted); font-size: 0.55em; left: 60px; }
 section header { color: var(--muted); font-size: 0.55em; left: 60px; top: 18px; }
 section::after { color: var(--muted); font-size: 0.6em; }
+
+/* ===================================================================
+ * 図解コンポーネント(発表資料形式)
+ * Marp の --html 有効時に HTML ブロックとして使う。ブロック内は Markdown が
+ * 展開されないため、強調は <b>、リンクは <a> で書くこと。
+ * =================================================================== */
+
+/* --- カードグリッド: <div class="cards c3"><div class="card"><div class="t">題</div>本文</div>...</div> --- */
+.cards { display: grid; gap: 0.55em; margin: 0.5em 0; }
+.cards.c2 { grid-template-columns: repeat(2, 1fr); }
+.cards.c3 { grid-template-columns: repeat(3, 1fr); }
+.cards.c4 { grid-template-columns: repeat(4, 1fr); }
+.card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--nav-bg);
+  padding: 0.5em 0.7em;
+  font-size: 0.8em;
+  line-height: 1.5;
+}
+.cards.c4 .card { font-size: 0.72em; padding: 0.45em 0.6em; }
+.card .t { font-weight: 700; color: var(--accent); margin-bottom: 0.1em; }
+.card .sub { color: var(--muted); font-size: 0.88em; }
+.card.warn { background: var(--dep-bg); border-color: #f0b6bb; }
+.card.warn .t { color: var(--dep); }
+/* 大きい数字(事例スライド用): <div class="card stat"><div class="n">67%</div>説明</div> */
+.card.stat { text-align: center; }
+.card.stat .n { font-size: 2.1em; font-weight: 800; color: var(--accent); line-height: 1.2; }
+
+/* --- 注意書き: <div class="callout"><span class="t">⚠ 題</span> 本文</div> --- */
+.callout {
+  border: 1px solid #f0b6bb;
+  border-left: 5px solid var(--dep);
+  background: var(--dep-bg);
+  border-radius: 0 8px 8px 0;
+  padding: 0.35em 0.7em;
+  margin: 0.5em 0;
+  font-size: 0.8em;
+  line-height: 1.5;
+}
+.callout .t { font-weight: 700; color: var(--dep); }
+.callout.info { border-color: var(--border); border-left-color: var(--accent); background: var(--nav-bg); }
+.callout.info .t { color: var(--accent); }
+
+/* --- 横フロー: <div class="flow"><div class="st"><span class="t">1. 題</span><br>説明</div><span class="arr">→</span>...</div> --- */
+.flow { display: flex; align-items: stretch; gap: 0.3em; margin: 0.6em 0; }
+.flow .st {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--nav-bg);
+  padding: 0.45em 0.55em;
+  font-size: 0.72em;
+  line-height: 1.45;
+}
+.flow .st .t { font-weight: 700; color: var(--accent); }
+.flow .arr { align-self: center; color: var(--muted); font-weight: 700; }
+
+/* --- ゲート図(G1〜G5): 後戻りコストの大きい順に左帯の色が濃→淡 --- */
+.gates { margin: 0.4em 0; }
+.gates .gate {
+  display: grid;
+  grid-template-columns: 8.6em 1fr 1fr;
+  gap: 0 0.8em;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--accent);
+  border-radius: 8px;
+  background: var(--nav-bg);
+  padding: 0.26em 0.7em;
+  margin: 0.26em 0;
+  font-size: 0.76em;
+  line-height: 1.45;
+}
+.gates .gate .g { font-weight: 700; color: var(--accent); }
+.gates .gate.g1 { border-left-color: #0a4a87; }
+.gates .gate.g2 { border-left-color: #0f6cbd; }
+.gates .gate.g3 { border-left-color: #4a90d0; }
+.gates .gate.g4 { border-left-color: #85b6e0; }
+.gates .gate.g5 { border-left-color: #b7d4ee; }
+.gates .axislabel { text-align: right; color: var(--muted); font-size: 0.62em; line-height: 1.3; }
+
+/* --- アーキ図の並置: <div class="duo"><figure><img src=...><figcaption><b>A1:</b> 説明</figcaption></figure>×2</div> --- */
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1em; margin: 0.35em 0; align-items: start; }
+.duo figure { margin: 0; text-align: center; }
+.duo img {
+  display: block; margin: 0 auto;
+  max-width: 100%; max-height: 345px; width: auto; height: auto;
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.duo figcaption, .fig figcaption { font-size: 0.66em; color: var(--muted); margin-top: 0.2em; line-height: 1.4; }
+.fig { margin: 0.35em 0; text-align: center; }
+.fig img { max-width: 100%; max-height: 400px; width: auto; height: auto; border: 1px solid var(--border); border-radius: 8px; }
+
+/* --- タイムライン(廃止期限): <div class="timeline"><div class="tl hot"><span class="d">2026-08-20</span><br>対象</div>...</div> --- */
+.timeline {
+  display: flex;
+  gap: 0.45em;
+  margin: 1.1em 0 0.5em;
+  padding-top: 0.75em;
+  border-top: 4px solid var(--border);
+}
+.timeline .tl { flex: 1; position: relative; font-size: 0.68em; line-height: 1.45; padding: 0 0.15em; }
+.timeline .tl::before {
+  content: '';
+  position: absolute;
+  top: -1.45em; left: 0.15em;
+  width: 0.6em; height: 0.6em;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.timeline .tl .d { font-weight: 700; color: var(--fg); }
+.timeline .tl.hot .d { color: var(--dep); }
+.timeline .tl.hot::before { background: var(--dep); }
+
+/* --- 判断ツリー(条件→パターン): <div class="qtree"><div class="q"><span class="cond">条件</span><span class="arr">→</span><span class="ans"><b>A2</b> 説明</span></div>...</div> --- */
+.qtree { margin: 0.4em 0; }
+.qtree .q {
+  display: grid;
+  grid-template-columns: 1fr auto 1.15fr;
+  gap: 0 0.55em;
+  align-items: center;
+  margin: 0.3em 0;
+  font-size: 0.76em;
+  line-height: 1.45;
+}
+.qtree .q .cond { border: 1px solid var(--border); border-radius: 8px; padding: 0.26em 0.6em; background: #ffffff; }
+.qtree .q .arr { color: var(--muted); font-weight: 700; }
+.qtree .q .ans {
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--accent);
+  border-radius: 8px;
+  padding: 0.26em 0.6em;
+  background: var(--nav-bg);
+}
+.qtree .q .ans b { color: var(--accent); }
+
+/* --- 選定 3 軸: <div class="axes"><div class="axis"><span class="lab">軸A ...</span><span class="opts"><span class="opt">...</span></span></div>...</div> --- */
+.axes { margin: 0.5em 0; }
+.axes .axis {
+  display: grid;
+  grid-template-columns: 9.5em 1fr;
+  gap: 0 0.8em;
+  align-items: center;
+  margin: 0.5em 0;
+  font-size: 0.78em;
+  line-height: 1.45;
+}
+.axes .axis .lab { font-weight: 700; color: var(--accent); text-align: right; }
+.axes .axis .opts { display: flex; gap: 0.4em; flex-wrap: wrap; }
+.axes .axis .opt {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--nav-bg);
+  padding: 0.2em 0.55em;
+}
+.axes .axis .opt.hl { border-color: var(--accent); background: #e7f1fa; }
+
+/* --- M/H/S ピル: <div class="mhs"><div class="row"><span>L2 ...</span><span class="opts"><span class="opt">M</span><span class="opt sel">H</span><span class="opt">S</span></span></div>...</div> --- */
+.mhs { margin: 0.5em 0; }
+.mhs .row {
+  display: grid;
+  grid-template-columns: 1fr 11.5em;
+  gap: 0 0.8em;
+  align-items: center;
+  margin: 0.32em 0;
+  font-size: 0.78em;
+  line-height: 1.45;
+}
+.mhs .opts { display: flex; gap: 0.3em; }
+.mhs .opt {
+  flex: 1;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.82em;
+  padding: 0 0.3em;
+}
+.mhs .opt.sel { background: var(--accent); border-color: var(--accent); color: #ffffff; font-weight: 700; }
+
+/* --- パターン ID チップ: <span class="chip">A2</span> --- */
+.chip {
+  display: inline-block;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.78em;
+  border-radius: 6px;
+  padding: 0 0.45em;
+  margin-right: 0.25em;
+}
+.chip.gray { background: var(--muted); }
