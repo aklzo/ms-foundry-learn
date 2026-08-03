@@ -22,7 +22,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 <!-- header: "§0 はじめに" -->
 
-# 今日持ち帰るのは機能の知識ではなく、3 つの「判断能力」
+# 今日のゴール
+
+<div class="msg">持ち帰るのは機能の知識ではなく、3 つの「判断能力」</div>
 
 <div class="cards c3">
 <div class="card"><div class="t">① 決める順序</div>後戻りコストの大きい順に<br><b>5 つのゲート(G1〜G5)</b>で閉じる</div>
@@ -39,7 +41,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# この資料は「入口」— 詳細は 2 層目の調査資産に降りられる
+# 資料の全体像(2 層構成)
+
+<div class="msg">この資料は入口(1 層目)— 詳細は 2 層目の調査資産に降りられる</div>
 
 <div class="flow">
 <div class="st" style="flex:1.2"><span class="t">このスライド(1 層目)</span><br>判断の骨組みだけを 45 分で</div>
@@ -61,7 +65,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 <!-- header: "§1 Foundry の現在地" -->
 
-# 検索で出てくる情報の大半は旧名義 — 2025-11 Ignite の改称対応表を頭に入れて読む
+# 前提: Ignite 2025 の改称
+
+<div class="msg">検索で出てくる情報の大半は旧名義 — 新旧対応表を頭に入れて読む</div>
 
 | 観点 | 旧 | 現行 |
 |---|---|---|
@@ -80,7 +86,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# Foundry の全機能は 8 カテゴリの「地図」に整理済み — 位置だけ覚えれば引ける
+# 機能の全体像(8 カテゴリ)
+
+<div class="msg">全機能は 8 カテゴリの「地図」に整理済み — 位置だけ覚えれば引ける</div>
 
 <div class="cards c4">
 <div class="card"><div class="t">01 プラットフォーム基盤</div>リソース / プロジェクト / アクセス制御 / ネットワーク / IaC(コード化したインフラ)</div>
@@ -101,7 +109,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 「GA」を鵜呑みにしない — 選定に効く 4 つの現実
+# GA / プレビューの現実
+
+<div class="msg">「GA」を鵜呑みにしない — 選定に効く 4 つの現実</div>
 
 <div class="cards c2">
 <div class="card"><div class="t">① GA / プレビューは機能単位で混在</div>新ポータル自体は GA でも中身はバラバラ。体系的な一覧は公式 <b>Feature readiness at GA</b> が唯一 — 提案前に必ず引く</div>
@@ -116,7 +126,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 公式リファレンスアーキテクチャは 3 本だけ — 本番の出発点は Baseline Chat 一択
+# 公式リファレンスアーキテクチャ
+
+<div class="msg">公式リファレンスは 3 本だけ — 本番の出発点は Baseline Chat 一択</div>
 
 ![bg right:42% fit](../survey/architecture/images/baseline-chat.png)
 
@@ -136,7 +148,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 <!-- header: "§2 判断①: 決める順序" -->
 
-# 判断① 構成の決定は「後戻りコストの大きい順」— 5 つのゲートを上から閉じる
+# 判断①: 5 つのゲート
+
+<div class="msg">構成の決定は「後戻りコストの大きい順」— 5 つのゲートを上から閉じる</div>
 
 <div class="gates">
 <div class="axislabel">後戻りコスト 大 ▲</div>
@@ -156,7 +170,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# G1・G2 は後付けできない — 最初のヒアリングで確定させる 4 点
+# G1 データ・G2 ネットワーク
+
+<div class="msg">G1・G2 は後付けできない — 最初のヒアリングで確定させる 4 点</div>
 
 <div class="cards c2">
 <div class="card warn"><div class="t">閉域構成は作成後に変更できない</div>BYO VNet 注入(自前の仮想ネットワークへの組み込み)は<b>リソース作成時のみ</b>。後から閉域要件が出ると作り直し</div>
@@ -171,7 +187,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 事例がなくても構成は机上で決められる — 公式が「試作省略可」と明言
+# G3〜G5 と机上決定
+
+<div class="msg">事例がなくても構成は机上で決められる — 公式が「試作省略可」と明言</div>
 
 <div class="cards c3">
 <div class="card"><div class="t">G3 制御</div>分岐・ループ・承認・再開の明示制御が要るなら<b>コードファースト</b></div>
@@ -191,7 +209,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 <!-- header: "§3 判断②: 要件 → パターンの当たり付け" -->
 
-# 判断② 要件の言葉をまず「5 つの家族・22 パターン」に当てる
+# 判断②: パターン全体マップ
+
+<div class="msg">要件の言葉をまず「5 つの家族・22 パターン」に当てる</div>
 
 <div class="cards c3">
 <div class="card"><div class="t">A 社内ナレッジ検索・RAG(A1〜A5)</div>RAG(検索拡張生成: 文書を検索して根拠つきで回答)。<b>SI 案件で最多</b>。部門 FAQ / 全社検索 / M365 連携など</div>
@@ -208,10 +228,12 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# A: RAG は A1 で小さく始めて、権限制御が要るなら A2 に上げるのが本線
+# A: 社内ナレッジ検索・RAG
+
+<div class="msg">A1 で小さく始めて、権限制御が要るなら A2 に上げるのが本線</div>
 
 <div class="duo">
-<figure><img src="../survey/architecture/images/a1-prompt-rag-variants.png" alt="A1"><figcaption><b>A1: File Search 最小構成</b> — PoC 向け。速度優先・権限制御なし・チャンク設定固定</figcaption></figure>
+<figure><img src="../survey/architecture/images/a1-prompt-rag-variants.png" alt="A1"><figcaption><b>A1: File Search 最小構成</b> — PoC 向け。権限制御なし・設定固定</figcaption></figure>
 <figure><img src="../survey/architecture/images/a2-knowledge-search.png" alt="A2"><figcaption><b>A2: AI Search 自前索引</b> — 本番の標準形。ユーザーごとに見える文書を絞れる</figcaption></figure>
 </div>
 
@@ -224,7 +246,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# A: ナレッジをどこに持たせるかは「データの場所と権限」で 5 分岐に落ちる
+# A: ナレッジの持たせ方 5 分岐
+
+<div class="msg">「データの場所と権限」で決まる — 上から順に聞けば 1 つに落ちる</div>
 
 <div class="qtree">
 <div class="q"><span class="cond">ユーザーごとに見える文書が違う?</span><span class="arr">はい →</span><span class="ans"><b>A2</b> AI Search 自前索引(本番の標準形)</span></div>
@@ -242,7 +266,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# B: 業務自動化の本線は B2 —「担当者が承認してから実行」を MAF で作る
+# B: 承認付き業務自動化
+
+<div class="msg">本線は B2 —「担当者が承認してから実行」を MAF で作る</div>
 
 ![bg right:46% fit](../survey/architecture/images/b2-hitl-automation.png)
 
@@ -257,7 +283,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# B: 承認待ちが日単位なら B3、権限を分けたいなら B4 に拡張する
+# B: 長時間実行・複数エージェント
+
+<div class="msg">承認待ちが日単位なら B3、権限を分けたいなら B4 に拡張する</div>
 
 <div class="duo">
 <figure><img src="../survey/architecture/images/b3-durable.png" alt="B3"><figcaption><b>B3: 長時間・確実な再開</b> — Durable Extension+DTS(Durable Task Scheduler)で数時間〜数日の停止・再開</figcaption></figure>
@@ -273,7 +301,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# B: ビジュアル Workflows は 2026-12-01 廃止 — ポータルでマルチは組まない
+# B: ビジュアル Workflows 廃止
+
+<div class="msg">2026-12-01 に廃止 — ポータルでマルチエージェントは組まない</div>
 
 ![bg right:42% fit](../survey/architecture/images/b5-flow-engine.png)
 
@@ -289,7 +319,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# C: 顧客公開の主戦場は境界防御 — 会話の認可を Foundry はやってくれない
+# C: 顧客向け公開・SaaS
+
+<div class="msg">主戦場は境界防御 — 会話の認可を Foundry はやってくれない</div>
 
 ![bg right:42% fit](../survey/architecture/images/c2-multitenant-saas.png)
 
@@ -305,7 +337,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# D: 閉域は「使えない機能の一覧」から設計する — 月額の下限は固定費で決まる
+# D: 規制業種・閉域・エッジ
+
+<div class="msg">閉域は「使えない機能の一覧」から設計する — 月額の下限は固定費で決まる</div>
 
 <div class="duo">
 <figure><img src="../survey/architecture/images/d1-closed-network.png" alt="D1"><figcaption><b>D1: 規制業種・閉域</b> — BYO VNet+Private Endpoint(閉域接続の受け口)群</figcaption></figure>
@@ -321,7 +355,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# E: チャット以外の 6 類型は「索引」と「落とし穴」だけ持ち帰る
+# E: チャット以外の 6 類型
+
+<div class="msg">「索引」と「落とし穴」だけ持ち帰る — 各類型の構成図は 2 層目にある</div>
 
 | ID | 類型 | 使うもの | 落とし穴 |
 |---|---|---|---|
@@ -342,7 +378,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 <!-- header: "§4 判断②: ポータルか、コードか、どのフレームワークか" -->
 
-# 「ポータル vs MAF vs LangGraph」と一列に並べない — 独立した 3 つの軸で決める
+# 判断②: フレームワーク選定の 3 軸
+
+<div class="msg">「ポータル vs MAF vs LangGraph」と一列に並べない — 独立した 3 つの軸で決める</div>
 
 <div class="axes">
 <div class="axis"><span class="lab">軸A 定義方法</span><span class="opts"><span class="opt"><b>Prompt エージェント</b> — 構成のみ・フルマネージド実行</span><span class="opt"><b>Hosted エージェント</b> — 自前コードをデプロイ</span></span></div>
@@ -359,7 +397,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 16 のレイヤーごとに「Foundry に任せる / 自前で作る」を選ぶ — 全体表は付録 A5
+# レイヤー別「任せる / 作る」
+
+<div class="msg">16 のレイヤーごとに「Foundry に任せる / 自前で作る」を選ぶ — 全体表は付録 A5</div>
 
 <div class="mhs">
 <div class="row"><span>凡例: <b>M</b> フルマネージド(Foundry 機能)/ <b>H</b> ハイブリッド / <b>S</b> 自前実装</span><span class="opts"><span class="opt">M</span><span class="opt">H</span><span class="opt">S</span></span></div>
@@ -378,7 +418,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# マルチエージェント協調は 2 つの軸で 3 つの型に割り切れる
+# マルチエージェント協調の型
+
+<div class="msg">協調は 2 つの軸で 3 つの型に割り切れる — そもそも単一で始める</div>
 
 <div class="qtree">
 <div class="q"><span class="cond">制御の流れを<b>コード</b>が決める(順序・分岐が事前に確定)</span><span class="arr">→</span><span class="ans"><b>グラフ型</b> — MAF Workflow。直列・並列・分岐・ループ</span></div>
@@ -395,7 +437,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 他フレームワークからの書き換えコストは実測済み — 移行は思ったより軽い
+# フレームワーク移行コスト
+
+<div class="msg">他フレームワークからの書き換えは実測済み — 移行は思ったより軽い</div>
 
 | 元フレームワーク → MAF | 書き換えの実態(14 本の移植から) |
 |---|---|
@@ -413,7 +457,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 「事例がない」には動くコードで答える — 8 つの型 × 約 470 テスト
+# 実証済みコードの対応表
+
+<div class="msg">「事例がない」には動くコードで答える — 8 つの型 × 約 470 テスト</div>
 
 | 作りたいもの | 実証済みの型 | 検証コード(labs) |
 |---|---|---|
@@ -437,7 +483,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 <!-- header: "§5 判断③: 見積もりに乗せる現実" -->
 
-# 判断③ 「Foundry がやってくれないこと」を先に顧客と合意する — 頻出 5 つ
+# 判断③: やってくれないこと
+
+<div class="msg">「Foundry がやってくれないこと」を先に顧客と合意する — 頻出 5 つ</div>
 
 <div class="cards c3">
 <div class="card"><div class="t">① 災害復旧・フェイルオーバー</div>リージョン間の自動切替なし。<b>復旧は再構築</b> — アプリ層ルーティング+再構築パイプラインで埋める</div>
@@ -456,7 +504,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 提案書には賞味期限がある — 直近 4 つの廃止日は暗記する
+# 重要期限 2026–2027
+
+<div class="msg">提案書には賞味期限がある — 直近 4 つの廃止日は暗記する</div>
 
 <div class="timeline">
 <div class="tl hot"><span class="d">2026-08-20</span><br><b>Hosted エージェント旧基盤</b><br>自動移行なし。再デプロイ必須</div>
@@ -476,7 +526,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 提案・レビューで踏みやすいアンチパターン — 11 個のうち代表 3 つ
+# 提案のアンチパターン
+
+<div class="msg">踏みやすい 11 個のうち代表 3 つ — 言う前・見積もる前に確認する</div>
 
 <div class="cards c3">
 <div class="card warn"><div class="t">「ポータルで全部できます」</div>ポータル完結は「単一エージェント+カタログツール+公開」まで。分岐・承認・ローカルテストは入らない<br><span class="sub">対処: ポータル完結の範囲とコードが要る範囲の線引き表を提案に添える</span></div>
@@ -490,7 +542,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 実装で「半日溶けるポイント」は先に知っておく — 実測 3 点
+# 実装のハマりどころ
+
+<div class="msg">「半日溶けるポイント」は先に知っておく — 実測 3 点</div>
 
 <div class="cards c3">
 <div class="card"><div class="t">権限の反映が遅く・不均一</div>RBAC(ロールベースアクセス制御)の伝播は 5〜15 分。さらに Bicep 作成のプロジェクトは実行 ID にモデル操作権限が<b>自動付与されない</b>(ポータル作成は付く)— 401 エラーの切り分けで半日溶ける</div>
@@ -506,7 +560,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 <!-- header: "§6 提案実務への接続" -->
 
-# 提案は 5 ステップの型に資料を対応済み — 明日から使える
+# 提案フロー
+
+<div class="msg">5 ステップの型に資料を対応済み — 明日から使える</div>
 
 <div class="flow">
 <div class="st"><span class="t">1. ヒアリング</span><br>質問リストで要件採取<br><span class="chip gray">proposal/01</span></div>
@@ -528,7 +584,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# ヒアリングは「地雷質問」から、コストは「固定費」から積む
+# ヒアリングとコスト概算
+
+<div class="msg">ヒアリングは「地雷質問」から、コストは「固定費」から積む</div>
 
 <div class="cards c2">
 <div class="card"><div class="t">ヒアリングシート(proposal/01)</div>Phase 0〜7・約 30 問。太字は<b>地雷質問</b>(聞き漏らすと提案後に手戻り)<br><span class="sub">例: 閉域は要件か希望か / データを国外に出せるか / ユーザーごとに見えるデータが違うか / 引き渡し後は誰が運用するか</span></div>
@@ -543,7 +601,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 日本の規制は「定番質問への回答型」を用意済み — 案件ごとに最新確認
+# 日本の規制対応
+
+<div class="msg">定番質問への「回答型」を用意済み — 登録状況は案件ごとに最新確認</div>
 
 <div class="cards c2">
 <div class="card"><div class="t">ISMAP(政府・自治体)</div>政府情報システムのクラウド登録制度。<b>対象サービスの登録状況の確認が先決</b> — 登録リストは変動するため文書に固定値を書かない設計</div>
@@ -560,7 +620,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# 提案書で引ける公開事例 — Microsoft 公式出典のみ、数値は表現のまま使う
+# 公開事例
+
+<div class="msg">提案書で引ける事例を 21 件収録 — 公式出典のみ、数値は表現のまま使う</div>
 
 <div class="cards c3">
 <div class="card stat"><div class="n">67%</div><b>富士通</b> — 営業支援エージェントで生産性向上(Foundry 名指し)</div>
@@ -579,7 +641,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 <!-- header: "§7 クロージング" -->
 
-# この情報は腐る — ウォッチすべき一次情報は 3 つだけ
+# 情報の鮮度の保ち方
+
+<div class="msg">この情報は腐る — ウォッチすべき一次情報は 3 つだけ</div>
 
 <div class="cards c3">
 <div class="card"><div class="t">What's new in Microsoft Foundry</div>月次の新機能・ステータス変更<br><span class="sub">features の月次更新のトリガー</span></div>
@@ -596,7 +660,9 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 
 ---
 
-# まとめ — 3 つの判断能力を、次の案件でこの 3 手から使う
+# まとめ
+
+<div class="msg">3 つの判断能力を、次の案件で「この 3 手」から使い始める</div>
 
 <div class="cards c3">
 <div class="card"><div class="t">① 決める順序</div><b>G1〜G5</b> を後戻りコストの大きい順に閉じる</div>
@@ -612,11 +678,15 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 <div class="st"><span class="t">3 裏取り</span><br>features で GA / プレビュー確認+期限表と衝突チェック</div>
 </div>
 
+<div class="refs">最初の 1 手のテンプレート: <a href="../survey/proposal/html/01-hearing-sheet.html">proposal/01-hearing-sheet</a> / 要件の逆引きは付録 A6 — <span class="path">docs/survey/proposal/01-hearing-sheet.md</span></div>
+
 <!-- 3 手のうち 1 つでも次の案件で実行されたら、この勉強会は成功。質疑では「いま抱えている案件をこの型に当てるとどうなるか」を歓迎する。 -->
 
 ---
 
-# 2 層目への入口(リンク集)/ Q&A
+# 2 層目への入口 / Q&A
+
+<div class="msg">2 層目はビルド済み — リポジトリを clone してブラウザで開くだけ</div>
 
 | 資料 | 何に使う | 場所 |
 |---|---|---|
@@ -627,7 +697,6 @@ footer: "Microsoft Foundry SI 勉強会 — 詳細: docs/survey/ 配下(各ス�
 | 学習計画(3 軸の原典) | 選定の全体像 | <span class="path">docs/learning-plan.md</span> |
 | 移植ラボ(実装例 14 本) | 動くコード・テスト・IaC | <span class="path">labs/maf-ports/README.md</span> |
 
-- HTML はリポジトリを clone してブラウザで開くだけ(ビルド済みでコミットされている)
 - 以降は付録: **A1** パターン完全版 / **A2** やってくれないこと全 12 項 / **A3** 期限全体表 / **A4** Copilot Studio 境界 / **A5** 16 レイヤー表 / **A6** 要件逆引き / **A7** 用語集
 
 <div class="refs"><a href="../survey/features/html/index.html">features</a> / <a href="../survey/architecture/html/index.html">architecture</a> / <a href="../survey/proposal/html/index.html">proposal</a> / <a href="../tech-selection-guide.md">tech-selection-guide</a> / <a href="../learning-plan.md">learning-plan</a> / <a href="../../labs/maf-ports/README.md">labs/maf-ports</a></div>
