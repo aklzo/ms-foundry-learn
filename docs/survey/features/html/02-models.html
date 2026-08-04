@@ -458,7 +458,7 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>Model lifecycle &amp; support policy</td>
-<td>5段階: Preview → GA → Legacy(任意)→ Deprecated → Retired。GA は起点から 18 か月でリタイア(12 か月で新規顧客不可)、Preview は 90 日目安+強制アップグレード</td>
+<td>5段階: Preview → GA → Legacy(任意)→ Deprecated → Retired。GA は起点から<strong>概ね 18 か月</strong>でリタイア(12 か月で新規顧客不可)、Preview は 90 日目安+強制アップグレード。<strong>実測(2026-08-05、Models API <code>deprecation.inference</code>): 12 か月でリタイアする系列あり</strong>(gpt-5.4 系・gpt-5.6-sol/terra = 12 か月、gpt-5-mini・gpt-5.6-luna = 18 か月)。<strong>提案の温度感はリリースから 18 か月・安全側の計画は 12 か月</strong>で置き、確定日はモデル毎に確認</td>
 <td><span class="badge ga">GA</span>(ポリシー)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirements" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirements">model-retirements</a></td>
 <td>通知: GA 60 日前 / Preview 30 日前。Standard 系は自動アップグレード、<strong>Provisioned は手動</strong>。Models API の <code>lifecycleStatus</code> は表記が異なる(<code>Deprecating</code>=非推奨、<code>Deprecated</code>=廃止済)点に注意</td>

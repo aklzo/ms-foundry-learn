@@ -62,7 +62,7 @@ Foundry を使ったアーキテクチャは「Foundry を使うか使わない�
 
 **Spillover(PTU→Standard 溢れ処理)** は PTU 枯渇時に同一リソースの standard デプロイへ自動転送する GA 機能で、「PTU でベースライン + スパイクは従量」という現実的な構成を Foundry 側だけで組める。DeepSeek / Llama は非対応。
 
-**モデルライフサイクルが最大の運用リスク。** GA モデルは提供開始から 18 か月でリタイア、通知は 60 日前。Standard 系は自動アップグレードされるが Provisioned は手動移行。つまり **PTU を使うほどモデル更改の計画運用が必須**になる。詳細は [features/02-models](../features/02-models.md)。
+**モデルライフサイクルが最大の運用リスク。** GA モデルは提供開始から**概ね 18 か月(系列により 12 か月: 実測は features/02 参照)**でリタイア、通知は 60 日前。提案の温度感は 18 か月・安全側の計画は 12 か月。Standard 系は自動アップグレードされるが Provisioned は手動移行。つまり **PTU を使うほどモデル更改の計画運用が必須**になる。詳細は [features/02-models](../features/02-models.md)。
 
 ---
 

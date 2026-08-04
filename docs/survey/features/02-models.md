@@ -75,7 +75,7 @@
 
 | 機能名 | 説明 | ステータス | 出典 | 備考 |
 |---|---|---|---|---|
-| Model lifecycle & support policy | 5段階: Preview → GA → Legacy(任意)→ Deprecated → Retired。GA は起点から 18 か月でリタイア(12 か月で新規顧客不可)、Preview は 90 日目安+強制アップグレード | GA(ポリシー) | https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirements | 通知: GA 60 日前 / Preview 30 日前。Standard 系は自動アップグレード、**Provisioned は手動**。Models API の `lifecycleStatus` は表記が異なる(`Deprecating`=非推奨、`Deprecated`=廃止済)点に注意 |
+| Model lifecycle & support policy | 5段階: Preview → GA → Legacy(任意)→ Deprecated → Retired。GA は起点から**概ね 18 か月**でリタイア(12 か月で新規顧客不可)、Preview は 90 日目安+強制アップグレード。**実測(2026-08-05、Models API `deprecation.inference`): 12 か月でリタイアする系列あり**(gpt-5.4 系・gpt-5.6-sol/terra = 12 か月、gpt-5-mini・gpt-5.6-luna = 18 か月)。**提案の温度感はリリースから 18 か月・安全側の計画は 12 か月**で置き、確定日はモデル毎に確認 | GA(ポリシー) | https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirements | 通知: GA 60 日前 / Preview 30 日前。Standard 系は自動アップグレード、**Provisioned は手動**。Models API の `lifecycleStatus` は表記が異なる(`Deprecating`=非推奨、`Deprecated`=廃止済)点に注意 |
 | Model retirement schedule | 全モデルのリタイア日一覧 | 随時更新 | https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule | 直近の要注意: gpt-4o 2026-10-01、o1/o3 2026-10-21、o4-mini 2026-10-16。embeddings 系は 2028-02-09 まで延長 |
 
 ## ファインチューニング
