@@ -102,6 +102,32 @@
 - Toolbox 経由のツール共有、エージェント向けガードレール(プレビュー)の実運用
 - マルチリージョン・高可用構成の実証(現状は単一リージョンのラボ構成)
 
+## 5. 外部案件検証からの追記(foundry-servicenow-helpdesk、2026-08-05)
+
+社内ヘルプデスク案件(別リポジトリ)の Azure 実環境検証で得た、labs 未収録の実証
+ナレッジ。出典は同リポジトリの docs/v2/reports/(精度・非機能・コスト)。
+foundry-probes(01/02/08)の発見とは独立検証で一致を確認済み。
+
+1. **gpt-5-mini は実質 reasoning 系挙動**(定量実測)。同一プロンプトで出力トークンの
+   約 7 割が推論トークン(平均出力 1,612 中 1,109)、回答 p50 10.5 秒。gpt-5.4-mini は
+   推論 0・出力 239・p50 3.0 秒、gpt-5.6-luna は軽量適応推論(≈50)・p50 3.2 秒。
+   **「mini 級 = 軽量」の前提は gpt-5-mini には当てはまらない**。チャット UX の既定
+   モデルには 5.4 系 / 5.6-luna が適する
+2. **リタイア間隔はモデル系列で 12〜18 か月に割れる**(Models API `deprecation.inference`
+   実測)。gpt-5.4 系・5.6-sol/terra = 12 か月、gpt-5-mini・5.6-luna = 18 か月。
+   提案の温度感は「リリースから 18 か月・安全側の計画は 12 か月」で置く(survey
+   features/02 に反映済み)
+3. **azure-ai-evaluation SDK は gpt-5 系ジャッジで動作しない**(内部 prompty が
+   `max_tokens` を送り 400 `unsupported_parameter`)。classic 隔離の survey 知見の
+   具体的な壊れ方。**代替の evals API(`client.evals` + `builtin.groundedness`)は
+   gpt-5 系ジャッジで動作し、file_content の一括投入でバッチ採点できる**ことを実証
+4. Bicep でのプロジェクト作成は `allowProjectManagement: true` が必須(欠くと
+   `Project can only created under AIServices Kind account ...` で失敗)。Terraform の
+   `project_management_enabled` と同じ要件
+5. ACA(Container Apps)からの参考実測: フォームターン(LLM 3 呼び出し)E2E p50
+   11.1 秒(gpt-5-mini)、scale-to-zero のコールドスタートは 44.8 秒で 60 秒
+   タイムアウトに接近 — minReplicas=1 か高速モデルへの切替が必要
+
 ## 更新履歴
 
 | 日付 | 内容 |
@@ -109,3 +135,4 @@
 | 2026-07-31 | 初版。Wave 1(7ポート+agentic-search-maf)の実装ナレッジを集約 |
 | 2026-07-31 | 第2版。Wave 2(5ポート: Code Interpreter / クラウド評価 / Foundry IQ / hosted agent+Routines / Voice Live)の実装ナレッジを追加。ハマりどころを8点→12点に拡充 |
 | 2026-07-31 | 第3版。Wave 3(services-agency / governed-agent)を反映。**協調の分水嶺を2軸3値に改訂**(グラフ/相談型 agent-as-tool/担当交代)、middleware の知見を追加、全ポートにアーキテクチャ図を整備 |
+| 2026-08-05 | 第4版。§5 外部案件検証(foundry-servicenow-helpdesk)を追加: gpt-5-mini の reasoning 系挙動、リタイア間隔 12〜18 か月の実測、evals API による groundedness バッチ、allowProjectManagement、ACA 実測値 |
