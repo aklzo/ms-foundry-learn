@@ -1,0 +1,35 @@
+{
+  "video_id": "s07-vdi-silent",
+  "title": "仮想デスクトップ クイックガイド(字幕)",
+  "duration_s": 24.32,
+  "full_transcript": "",
+  "screen_only_facts": {
+    "code": "ERR-187"
+  },
+  "steps": [
+    {
+      "index": 0,
+      "narration": "",
+      "start_s": 1.2,
+      "end_s": 8.02
+    },
+    {
+      "index": 1,
+      "narration": "",
+      "start_s": 8.02,
+      "end_s": 12.92
+    },
+    {
+      "index": 2,
+      "narration": "",
+      "start_s": 12.92,
+      "end_s": 18.12
+    },
+    {
+      "index": 3,
+      "narration": "",
+      "start_s": 18.12,
+      "end_s": 23.32
+    }
+  ]
+}

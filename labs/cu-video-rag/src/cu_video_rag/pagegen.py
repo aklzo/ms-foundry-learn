@@ -43,6 +43,15 @@ _TEMPLATE = """<!doctype html>
           font-size: 25px; line-height: 1.5; color: #333; display: none; }
   #toast { position: absolute; left: 48px; bottom: 40px; background: #217346; color: #fff;
            font-size: 27px; padding: 16px 28px; border-radius: 10px; display: none; }
+  #caption { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.75);
+             color: #fff; font-size: 34px; font-weight: bold; text-align: center;
+             padding: 22px 40px; display: none; }
+  #slide { position: fixed; inset: 0; background: #1f3b5c; color: #fff; display: none;
+           flex-direction: column; padding: 70px 90px; }
+  #slide h1 { font-size: 52px; border-bottom: 4px solid #7fa8d0; padding-bottom: 18px; }
+  #slide ul { margin-top: 44px; display: flex; flex-direction: column; gap: 26px; }
+  #slide li { font-size: 36px; line-height: 1.5; list-style: none; }
+  #slide li::before { content: "■ "; color: #7fa8d0; }
   #overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none;
              align-items: center; justify-content: center; }
   #dialog { background: #fff; border-radius: 14px; padding: 40px 56px; min-width: 640px;
@@ -64,6 +73,8 @@ _TEMPLATE = """<!doctype html>
 </main>
 <div id="note"></div>
 <div id="toast"></div>
+<div id="caption"></div>
+<div id="slide"><h1 id="slide-title"></h1><ul id="slide-bullets"></ul></div>
 <div id="overlay"><div id="dialog"><h2 id="dialog-title"></h2><div id="dialog-body"></div></div></div>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -119,6 +130,18 @@ window.applyOp = function (op) {
     $("toast").textContent = op.text; $("toast").style.display = "block";
   } else if (op.op === "note") {
     $("note").textContent = op.text; $("note").style.display = "block";
+  } else if (op.op === "caption") {
+    $("caption").textContent = op.text; $("caption").style.display = "block";
+  } else if (op.op === "caption_off") {
+    $("caption").style.display = "none";
+  } else if (op.op === "slide") {
+    $("slide-title").textContent = op.title;
+    $("slide-bullets").innerHTML = "";
+    for (const b of op.bullets) {
+      const li = document.createElement("li"); li.textContent = b;
+      $("slide-bullets").appendChild(li);
+    }
+    $("slide").style.display = "flex";
   }
 };
 window.SCENARIO = __SCENARIO_JSON__;

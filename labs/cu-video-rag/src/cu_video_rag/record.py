@@ -19,7 +19,8 @@ from playwright.sync_api import sync_playwright
 
 from . import tts
 from .pagegen import generate_page
-from .scenarios import SCENARIOS, Scenario
+from .corpus import SCENARIOS
+from .scenarios import Scenario
 
 LEAD_SEC = 1.2  # 冒頭の無音(初期画面)
 TAIL_SEC = 1.0  # 末尾の無音
@@ -44,14 +45,24 @@ def build_video(scenario: Scenario, data_dir: Path, *, speech_key: str, region: 
 
     page_path = generate_page(scenario, pages_dir)
 
-    # 1) ナレーション TTS(実測秒数からステップの表示秒数を決める)
+    # 1) ナレーション TTS(実測秒数からステップの表示秒数を決める)。
+    #    無音ステップ(narration="")はテロップの読み時間で表示秒数を決める
+    silence = audio_dir / "silence.wav"
+    _make_silence(silence)
     holds: list[float] = []
     wavs: list[Path] = []
     for i, step in enumerate(scenario.steps):
-        wav = audio_dir / f"step{i}.wav"
-        dur = tts.synthesize(step.narration, wav, key=speech_key, region=region)
-        holds.append(max(dur + 0.8, OP_SEC * len(step.ops) + 2.2))
-        wavs.append(wav)
+        if step.narration:
+            wav = audio_dir / f"step{i}.wav"
+            dur = tts.synthesize(step.narration, wav, key=speech_key, region=region)
+            holds.append(max(dur + 0.8, OP_SEC * len(step.ops) + 2.2))
+            wavs.append(wav)
+        else:
+            caption_chars = sum(
+                len(op.get("text", "")) for op in step.ops if op.get("op") == "caption"
+            )
+            holds.append(max(2.5 + caption_chars * 0.18, OP_SEC * len(step.ops) + 2.2))
+            wavs.append(silence)
 
     # 2) 画面フレーム(op 適用ごとに 1 枚。最後のフレームで残り時間を埋める)
     frame_entries: list[tuple[Path, float]] = []
@@ -79,8 +90,6 @@ def build_video(scenario: Scenario, data_dir: Path, *, speech_key: str, region: 
         browser.close()
 
     # 3) 音声(各 wav の後ろに表示秒数まで無音パディング)
-    silence = audio_dir / "silence.wav"
-    _make_silence(silence)
     audio_path = audio_dir / "narration.wav"
     clips = [(silence, LEAD_SEC), *zip(wavs, holds), (silence, TAIL_SEC)]
     total_sec = tts.concat_with_padding(clips, audio_path)
@@ -132,7 +141,18 @@ def build_video(scenario: Scenario, data_dir: Path, *, speech_key: str, region: 
     return gt
 
 
-def build_all(data_dir: Path, *, speech_key: str, region: str) -> None:
+def build_all(data_dir: Path, *, speech_key: str, region: str, only: str | None = None) -> None:
+    """全シナリオを生成。生成済み(mp4 + ground truth あり)はスキップ = 再開可能。"""
+    skipped = 0
     for sc in SCENARIOS:
+        if only and sc.id != only:
+            continue
+        mp4 = data_dir / "videos" / f"{sc.id}.mp4"
+        gt_path = data_dir / "ground_truth" / f"{sc.id}.json"
+        if mp4.exists() and gt_path.exists():
+            skipped += 1
+            continue
         gt = build_video(sc, data_dir, speech_key=speech_key, region=region)
-        print(f"built {sc.id}: {gt['duration_s']}s, {len(gt['steps'])} steps")
+        print(f"built {sc.id}: {gt['duration_s']}s, {len(gt['steps'])} steps", flush=True)
+    if skipped:
+        print(f"({skipped} 本は生成済みスキップ)")

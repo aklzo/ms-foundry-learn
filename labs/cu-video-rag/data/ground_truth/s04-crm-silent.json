@@ -1,0 +1,35 @@
+{
+  "video_id": "s04-crm-silent",
+  "title": "顧客管理システム クイックガイド(字幕)",
+  "duration_s": 24.44,
+  "full_transcript": "",
+  "screen_only_facts": {
+    "retention": "34 日間"
+  },
+  "steps": [
+    {
+      "index": 0,
+      "narration": "",
+      "start_s": 1.2,
+      "end_s": 7.84
+    },
+    {
+      "index": 1,
+      "narration": "",
+      "start_s": 7.84,
+      "end_s": 13.04
+    },
+    {
+      "index": 2,
+      "narration": "",
+      "start_s": 13.04,
+      "end_s": 18.24
+    },
+    {
+      "index": 3,
+      "narration": "",
+      "start_s": 18.24,
+      "end_s": 23.44
+    }
+  ]
+}

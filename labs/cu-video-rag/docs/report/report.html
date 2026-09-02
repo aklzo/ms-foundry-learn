@@ -1,0 +1,304 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<title>CU 動画 RAG 検証レポート</title><style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: "Noto Sans CJK JP", "Yu Gothic", sans-serif; color: #1c2733;
+           background: #fff; font-size: 10.5pt; line-height: 1.75; }
+    h1 { font-size: 21pt; line-height: 1.4; }
+    h2 { font-size: 14pt; color: #1f4e79; border-left: 6px solid #1f4e79; padding-left: 10px;
+         margin: 26px 0 10px; page-break-after: avoid; }
+    h3 { font-size: 11.5pt; margin: 16px 0 6px; color: #2a4a6a; page-break-after: avoid; }
+    p { margin: 6px 0; }
+    table { border-collapse: collapse; width: 100%; margin: 8px 0 14px; font-size: 9.5pt;
+            page-break-inside: avoid; }
+    th, td { border: 1px solid #c5d0dc; padding: 4.5px 8px; text-align: left; }
+    th { background: #eef3f9; font-weight: 600; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center;
+             page-break-after: always; }
+    .cover .rule { width: 70px; height: 6px; background: #1f4e79; margin: 18px 0; }
+    .cover .meta { margin-top: 40px; color: #445; font-size: 11pt; }
+    .cards { display: flex; gap: 10px; margin: 12px 0; page-break-inside: avoid; }
+    .card { flex: 1; border: 1px solid #c5d0dc; border-top: 5px solid #1f4e79; border-radius: 6px;
+            padding: 10px 12px; }
+    .card .v { font-size: 17pt; font-weight: 700; color: #1f4e79; font-variant-numeric: tabular-nums; }
+    .card .k { font-size: 8.5pt; color: #556; line-height: 1.5; }
+    .note { background: #fff8dc; border: 1px solid #e0c060; border-radius: 6px; padding: 8px 12px;
+            font-size: 9.5pt; margin: 10px 0; page-break-inside: avoid; }
+    .fig { margin: 10px 0 16px; page-break-inside: avoid; }
+    .fig figcaption { font-size: 9pt; color: #556; margin-top: 2px; }
+    .toc td { border: none; border-bottom: 1px dotted #bbc; padding: 3px 4px; }
+    ol, ul { padding-left: 22px; margin: 6px 0; }
+    li { margin: 3px 0; }
+    code { font-family: "Consolas", monospace; font-size: 9pt; background: #f0f3f7; padding: 1px 4px;
+           border-radius: 3px; }
+    .pagebreak { page-break-before: always; }
+    a { color: #1f4e79; }
+    </style></head><body>
+
+<div class="cover">
+  <div style="color:#556;font-size:11pt">検証結果レポート</div>
+  <h1>Azure AI Content Understanding による<br>研修動画ナレッジ化と RAG 検索の精度検証</h1>
+  <div class="rule"></div>
+  <p style="font-size:11.5pt">日本語の画面操作研修動画 104 本(計 72 分)を対象に、
+  動画解析(prebuilt-videoSearch GA)→ Azure AI Search ハイブリッド検索 → RAG 回答生成の
+  各段の精度を定量評価した。</p>
+  <div class="meta">
+    作成日: 2026-09-03<br>
+    対象読者: 実装チーム(動画ナレッジ取り込み機能の設計・実装担当)<br>
+    検証環境: Azure japaneast / Content Understanding API 2025-11-01(GA)<br>
+    リポジトリ: ms-foundry-learn <code>labs/cu-video-rag/</code>(再現手順・全コード同梱)
+  </div>
+</div>
+
+<h2>1. エグゼクティブサマリ</h2>
+<div class="cards">
+  <div class="card"><div class="v">0.60%</div>
+    <div class="k">書き起こし文字誤り率(CER)<br>94 本 micro 平均</div></div>
+  <div class="card"><div class="v">0.955</div>
+    <div class="k">構成 C の hit@3<br>(正解動画が上位 3 位以内)</div></div>
+  <div class="card"><div class="v">0.00 → 0.74</div>
+    <div class="k">画面のみ情報の ans@3<br>書き起こしのみ → カスタムフィールド</div></div>
+  <div class="card"><div class="v">0.790</div>
+    <div class="k">RAG 回答の faithfulness<br>(ragas / 構成 C)</div></div>
+</div>
+<p><b>結論。</b>(1) CU の日本語書き起こしは CER 0.60% と実用水準であり、
+音声書き起こしを別実装する必要はない。
+(2) ただし prebuilt アナライザーを素のまま使うと、画面にしか表示されない情報
+(エラーコード・設定値・連絡先など)は検索・回答にほぼ使えない(ans@3 = 0.12)。
+(3) <b>日本語カスタムフィールド(2 段アナライザー構成)を追加することで ans@3 は 0.74 まで改善</b>し、
+ragas による end-to-end 評価でも全指標で書き起こしのみ構成を上回った。
+実装には §7 の設計(2 段アナライザー+セグメント単位チャンク)を推奨する。</p>
+
+<h2>2. 目次</h2>
+<table class="toc">
+<tr><td>1. エグゼクティブサマリ</td><td>3. 検証の目的と範囲</td></tr>
+<tr><td>4. 検証構成とパイプライン</td><td>5. データセット(104 本の設計)</td></tr>
+<tr><td>6. 評価方法(指標とツール)</td><td>7. 結果 1: 書き起こし精度</td></tr>
+<tr><td>8. 結果 2: 検索精度</td><td>9. 結果 3: RAG 回答品質(ragas)</td></tr>
+<tr><td>10. 処理時間</td><td>11. 実装上の注意点(詰まりどころ)</td></tr>
+<tr><td>12. 制約と限界</td><td>13. 実装チームへの推奨事項 / 付録</td></tr>
+</table>
+
+<h2>3. 検証の目的と範囲</h2>
+<p>ヘルプデスク AI の社内ナレッジに「画面操作手順のガイド・研修動画」が含まれる場合を想定し、
+次の 2 点を定量的に確かめる。</p>
+<ol>
+<li><b>書き起こし精度</b> — Content Understanding(以下 CU)の日本語音声書き起こしは、
+別途 Speech to Text を実装せずに済む水準か。</li>
+<li><b>RAG 検索・回答精度</b> — CU の解析結果を AI Search に取り込んだとき、
+質問に答えられる検索結果・回答が得られるか。特に<b>ナレーションでは言及されず
+画面にのみ表示される情報</b>(エラーコード・設定値・連絡先等)を扱えるか。</li>
+</ol>
+<p>プレビュー機能は使用しない(顧客デプロイ前提)。CU は GA API <code>2025-11-01</code> のみを使用した。</p>
+
+<h2>4. 検証構成とパイプライン</h2>
+<figure class="fig"><svg viewBox="0 0 1020 96" xmlns="http://www.w3.org/2000/svg" role="img" font-family="inherit"><defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#5b7b9b"/></marker></defs><rect x="4" y="14" width="114" height="60" rx="8" fill="#eef3f9" stroke="#1f4e79" stroke-width="1.6"/><text x="61" y="40" text-anchor="middle" font-size="13.5" fill="#1a2a3a">合成データセット</text><text x="61" y="58" text-anchor="middle" font-size="13.5" fill="#1a2a3a">104 本 (mp4)</text><path d="M 122 44.0 L 138 44.0" stroke="#5b7b9b" stroke-width="2" fill="none" marker-end="url(#arr)"/><rect x="144" y="14" width="114" height="60" rx="8" fill="#eef3f9" stroke="#1f4e79" stroke-width="1.6"/><text x="201" y="40" text-anchor="middle" font-size="13.5" fill="#1a2a3a">Blob Storage</text><text x="201" y="58" text-anchor="middle" font-size="13.5" fill="#1a2a3a">(SAS URL)</text><path d="M 262 44.0 L 278 44.0" stroke="#5b7b9b" stroke-width="2" fill="none" marker-end="url(#arr)"/><rect x="284" y="14" width="143" height="60" rx="8" fill="#eef3f9" stroke="#1f4e79" stroke-width="1.6"/><text x="356" y="40" text-anchor="middle" font-size="13.5" fill="#1a2a3a">Content Understanding</text><text x="356" y="58" text-anchor="middle" font-size="13.5" fill="#1a2a3a">prebuilt / カスタム 2 段</text><path d="M 431 44.0 L 447 44.0" stroke="#5b7b9b" stroke-width="2" fill="none" marker-end="url(#arr)"/><rect x="453" y="14" width="114" height="60" rx="8" fill="#eef3f9" stroke="#1f4e79" stroke-width="1.6"/><text x="510" y="40" text-anchor="middle" font-size="13.5" fill="#1a2a3a">セグメント</text><text x="510" y="58" text-anchor="middle" font-size="13.5" fill="#1a2a3a">チャンク化</text><path d="M 571 44.0 L 587 44.0" stroke="#5b7b9b" stroke-width="2" fill="none" marker-end="url(#arr)"/><rect x="593" y="14" width="114" height="60" rx="8" fill="#eef3f9" stroke="#1f4e79" stroke-width="1.6"/><text x="650" y="40" text-anchor="middle" font-size="13.5" fill="#1a2a3a">AI Search</text><text x="650" y="58" text-anchor="middle" font-size="13.5" fill="#1a2a3a">ハイブリッド索引</text><path d="M 711 44.0 L 727 44.0" stroke="#5b7b9b" stroke-width="2" fill="none" marker-end="url(#arr)"/><rect x="733" y="14" width="114" height="60" rx="8" fill="#eef3f9" stroke="#1f4e79" stroke-width="1.6"/><text x="790" y="40" text-anchor="middle" font-size="13.5" fill="#1a2a3a">回答生成</text><text x="790" y="58" text-anchor="middle" font-size="13.5" fill="#1a2a3a">(gpt-5.4-mini)</text><path d="M 851 44.0 L 867 44.0" stroke="#5b7b9b" stroke-width="2" fill="none" marker-end="url(#arr)"/><rect x="873" y="14" width="143" height="60" rx="8" fill="#eef3f9" stroke="#1f4e79" stroke-width="1.6"/><text x="945" y="40" text-anchor="middle" font-size="13.5" fill="#1a2a3a">評価</text><text x="945" y="58" text-anchor="middle" font-size="13.5" fill="#1a2a3a">CER / IR 指標 / ragas</text></svg>
+<figcaption>図 1: 検証パイプライン。CU は prebuilt-videoSearch と日本語カスタムフィールド付き
+2 段アナライザーの両方で解析し、インデックス構成 A〜D を比較する。</figcaption></figure>
+<table>
+<tr><th>構成</th><th>検索インデックスの本文</th><th>ねらい</th></tr>
+<tr><td>A: 書き起こしのみ</td><td>CU の transcriptPhrases のみ</td><td>「音声だけで十分か」のベースライン(自前 STT 相当)</td></tr>
+<tr><td>B: prebuilt-videoSearch</td><td>A + セグメント記述(Summary)</td><td>prebuilt の素の実力</td></tr>
+<tr><td>C: 日本語カスタムフィールド</td><td>A + 日本語要約 + 画面内テキスト転記 + 操作列挙</td><td>B の弱点(英語記述・値の欠落)への対策</td></tr>
+<tr><td>D: C + フィールド分離</td><td>C の画面内テキストを別フィールド化し重み 2.0</td><td>動画内の場面順位の改善</td></tr>
+</table>
+<p>Azure リソース: Foundry リソース(kind AIServices、japaneast)、モデルデプロイ
+gpt-5.4-mini(CU 生成用)/ text-embedding-3-small(ベクトル)/ gpt-4.1-mini(ragas 判定用)、
+AI Search(basic、ja.lucene + HNSW ベクトル、ハイブリッドは RRF 統合)、Blob Storage(動画置き場)。</p>
+
+<h2>5. データセット(104 本の設計)</h2>
+<p>日本語のナレーション付き画面操作研修動画のオープンデータセットは調査の結果存在しなかったため
+(PsTuts-VQA・VideoGUI はいずれも英語)、<b>合成データセットを自作</b>した。台本・画面・操作を
+プログラムで生成するため、書き起こしの正解(CER の基準)とステップ境界時刻が決定的に得られる。</p>
+<table>
+<tr><th>形態</th><th>本数</th><th>内容</th></tr>
+<tr><td>ナレーション付き UI 操作</td><td class="num">88</td>
+<td>手作り 10 本(VPN・パスワード再設定・プリンタ等)+ 26 業務ドメイン × 手続きタイプのテンプレート生成 78 本</td></tr>
+<tr><td>無音・テロップのみ</td><td class="num">10</td>
+<td>ナレーションなし。字幕テロップと画面表示のみ(書き起こしが空になるケース)</td></tr>
+<tr><td>スライド講義型</td><td class="num">5</td>
+<td>講義スライド + ナレーション(UI 操作なし)</td></tr>
+<tr><td>長尺・複数章構成</td><td class="num">1</td>
+<td>約 3 分・3 章構成(セグメント分割の質の確認用)</td></tr>
+</table>
+<p>設計上の仕掛け: (1) 約半数の動画に<b>「画面のみ情報」</b>(ナレーションでは「画面の注意書きを
+確認してください」とだけ言い、値は画面にだけ出す)を配置。値は動画ごとに一意(内線 5xxx、ERR-1xx 等)
+とし、100 本規模でも回答値が衝突しない。(2) VPN と Wi-Fi と Web 会議など<b>語彙が重なる動画</b>を
+意図的に併存させ、表層一致だけでは動画を特定できないようにした。(3) 生成はシード固定で再現可能。</p>
+<p>評価クエリは 111 問(ナレーション由来 N: 42 / 画面のみ S: 61 /
+紛らわしい C: 8)。すべてに参照回答(ref_answer)を付与し、S タイプには回答値の
+文字列(answer)も付与した。</p>
+
+<h2>6. 評価方法(指標とツール)</h2>
+<h3>6.1 書き起こし: CER(文字誤り率)</h3>
+<p>CER = 編集距離 ÷ 正解文字数。正解は台本そのもの。NFKC 正規化と空白・句読点の除去後に測定
+(句読点の位置は音声認識の流儀差であり意味に影響しないため)。無音動画 10 本は対象外。</p>
+<h3>6.2 検索: 情報検索の標準指標</h3>
+<p>ハイブリッド検索(BM25 + ベクトル、RRF 統合)の top-5 に対して、
+hit@1 / hit@3(正解動画のチャンクが 1 位 / 3 位以内)、MRR、
+seg_hit@1(1 位チャンクの時間範囲が正解場面と重なる)、
+ans@k(取得チャンク本文に回答値そのものが含まれる — 検索が「当たった」ように見えても
+本文に値がなければ RAG は答えを生成できない、を測る本検証の中心指標)。</p>
+<h3>6.3 RAG 回答品質: ragas</h3>
+<p>RAG 評価の標準ライブラリ <b>ragas 0.4.3</b> を使用。検索 top-3 をコンテキストに
+gpt-5.4-mini で日本語回答を生成し(コンテキスト外は「分かりません」と答える指示)、
+LLM-as-a-judge(gpt-4.1-mini、温度 0)で 5 指標を測定した:
+faithfulness(コンテキストへの忠実性)/ answer_relevancy(質問への適合)/
+context_precision(上位コンテキストの適合率)/ context_recall(参照回答の根拠の網羅)/
+answer_correctness(参照回答との一致)。</p>
+
+<div class="pagebreak"></div>
+<h2>7. 結果 1: 書き起こし精度(CER)</h2>
+<div class="cards">
+  <div class="card"><div class="v">0.60%</div><div class="k">micro CER(94 本合算)</div></div>
+  <div class="card"><div class="v">0.00%</div><div class="k">中央値</div></div>
+  <div class="card"><div class="v">1.20%</div><div class="k">90 パーセンタイル</div></div>
+  <div class="card"><div class="v">69</div><div class="k">CER 0%(完全一致)の本数</div></div>
+</div>
+<p>誤りの大半は表記ゆれ(「二」→「2」「プリンタ」→「プリンター」等)で、意味を変える誤認識は
+同音のドメイン語(「社給」→「社級」「有線」→「優先」「上長」→「冗長」等)に集中する。
+実運用ではカスタム語彙・後段の用語正規化で対処する典型パターンである。</p>
+<h3>CER 上位(誤りが多い動画)</h3>
+<table>
+<tr><th>動画</th><th>CER</th><th>編集数 / 文字数</th></tr>
+<tr><td>g67-portal-cancel</td><td class='num'>17.99%</td><td class='num'>25 / 139</td></tr><tr><td>slide-files</td><td class='num'>10.58%</td><td class='num'>20 / 189</td></tr><tr><td>newhire-orientation</td><td class='num'>1.86%</td><td class='num'>8 / 431</td></tr><tr><td>password-reset</td><td class='num'>1.83%</td><td class='num'>5 / 273</td></tr><tr><td>g06-elearn-config</td><td class='num'>1.75%</td><td class='num'>3 / 171</td></tr>
+</table>
+<p><b>外れ値の内訳(上位 2 本は個別に原因を確認済み)。</b>
+g67-portal-cancel(17.99%)は<b>末尾ステップの発話 25 文字が書き起こしから欠落</b>したもので、
+本検証で唯一観測した発話の取りこぼし(末尾セグメント)。slide-files(10.58%)は台本に含まれる
+記号・英字(「日付_案件_内容」「v1, v2」)の読み上げ形(アンダーライン等)との差で、
+<b>正解データ側のアーティファクト</b>であり CU の誤りではない。これらを除く動画の CER は
+おおむね 2% 未満に収まる。</p>
+<div class="note"><b>注意:</b> 本データセットは合成音声(単一話者・雑音なし・鮮明な画面)であり、
+CER は実収録動画に対する<b>上限性能</b>として読むこと。実案件では実動画でのパイロット測定を挟む。</div>
+
+<h2>8. 結果 2: 検索精度</h2>
+<h3>8.1 構成 A〜D の比較(全 111 クエリ)</h3>
+<table>
+<tr><th>構成</th><th>hit@1</th><th>hit@3</th><th>MRR</th><th>seg_hit@1</th>
+<th>ans@1(S)</th><th>ans@3(S)</th></tr>
+<tr><td>A: 書き起こしのみ</td><td class='num'>0.577</td><td class='num'>0.784</td><td class='num'>0.682</td><td class='num'>0.369</td><td class='num'>0.000</td><td class='num'>0.000</td></tr><tr><td>B: prebuilt-videoSearch</td><td class='num'>0.658</td><td class='num'>0.847</td><td class='num'>0.754</td><td class='num'>0.477</td><td class='num'>0.082</td><td class='num'>0.115</td></tr><tr><td>C: 日本語カスタムフィールド</td><td class='num'>0.784</td><td class='num'>0.955</td><td class='num'>0.861</td><td class='num'>0.604</td><td class='num'>0.590</td><td class='num'>0.738</td></tr><tr><td>D: C + screenTexts 重み付け</td><td class='num'>0.703</td><td class='num'>0.955</td><td class='num'>0.817</td><td class='num'>0.532</td><td class='num'>0.557</td><td class='num'>0.754</td></tr>
+</table>
+<figure class="fig"><svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img"><line x1="46" y1="16.0" x2="706" y2="16.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="20.0" text-anchor="end" font-size="11" fill="#667">1.00</text><line x1="46" y1="67.0" x2="706" y2="67.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="71.0" text-anchor="end" font-size="11" fill="#667">0.75</text><line x1="46" y1="118.0" x2="706" y2="118.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="122.0" text-anchor="end" font-size="11" fill="#667">0.50</text><line x1="46" y1="169.0" x2="706" y2="169.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="173.0" text-anchor="end" font-size="11" fill="#667">0.25</text><line x1="46" y1="220.0" x2="706" y2="220.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="224.0" text-anchor="end" font-size="11" fill="#667">0.00</text><rect x="77.5" y="102.3" width="31.0" height="117.7" fill="#9db8d2" rx="2"/><text x="93.0" y="98.3" text-anchor="middle" font-size="10.5" fill="#334">0.58</text><rect x="111.5" y="60.1" width="31.0" height="159.9" fill="#7191b8" rx="2"/><text x="127.0" y="56.1" text-anchor="middle" font-size="10.5" fill="#334">0.78</text><rect x="145.5" y="144.7" width="31.0" height="75.3" fill="#3e6c9e" rx="2"/><text x="161.0" y="140.7" text-anchor="middle" font-size="10.5" fill="#334">0.37</text><text x="128.5" y="236" text-anchor="middle" font-size="12" fill="#223">A</text><rect x="242.5" y="85.8" width="31.0" height="134.2" fill="#9db8d2" rx="2"/><text x="258.0" y="81.8" text-anchor="middle" font-size="10.5" fill="#334">0.66</text><rect x="276.5" y="47.2" width="31.0" height="172.8" fill="#7191b8" rx="2"/><text x="292.0" y="43.2" text-anchor="middle" font-size="10.5" fill="#334">0.85</text><rect x="310.5" y="122.7" width="31.0" height="97.3" fill="#3e6c9e" rx="2"/><text x="326.0" y="118.7" text-anchor="middle" font-size="10.5" fill="#334">0.48</text><text x="293.5" y="236" text-anchor="middle" font-size="12" fill="#223">B</text><rect x="407.5" y="60.1" width="31.0" height="159.9" fill="#9db8d2" rx="2"/><text x="423.0" y="56.1" text-anchor="middle" font-size="10.5" fill="#334">0.78</text><rect x="441.5" y="25.2" width="31.0" height="194.8" fill="#7191b8" rx="2"/><text x="457.0" y="21.2" text-anchor="middle" font-size="10.5" fill="#334">0.95</text><rect x="475.5" y="96.8" width="31.0" height="123.2" fill="#3e6c9e" rx="2"/><text x="491.0" y="92.8" text-anchor="middle" font-size="10.5" fill="#334">0.60</text><text x="458.5" y="236" text-anchor="middle" font-size="12" fill="#223">C</text><rect x="572.5" y="76.6" width="31.0" height="143.4" fill="#9db8d2" rx="2"/><text x="588.0" y="72.6" text-anchor="middle" font-size="10.5" fill="#334">0.70</text><rect x="606.5" y="25.2" width="31.0" height="194.8" fill="#7191b8" rx="2"/><text x="622.0" y="21.2" text-anchor="middle" font-size="10.5" fill="#334">0.95</text><rect x="640.5" y="111.5" width="31.0" height="108.5" fill="#3e6c9e" rx="2"/><text x="656.0" y="107.5" text-anchor="middle" font-size="10.5" fill="#334">0.53</text><text x="623.5" y="236" text-anchor="middle" font-size="12" fill="#223">D</text><rect x="46" y="246" width="11" height="11" fill="#9db8d2" rx="2"/><text x="61" y="256" font-size="11.5" fill="#334">hit@1(正解動画が 1 位)</text><rect x="267" y="246" width="11" height="11" fill="#7191b8" rx="2"/><text x="282" y="256" font-size="11.5" fill="#334">hit@3</text><rect x="367" y="246" width="11" height="11" fill="#3e6c9e" rx="2"/><text x="382" y="256" font-size="11.5" fill="#334">seg_hit@1(正解場面が 1 位)</text></svg>
+<figcaption>図 2: 検索指標の構成間比較(全クエリ)。</figcaption></figure>
+<figure class="fig"><svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img"><line x1="46" y1="16.0" x2="706" y2="16.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="20.0" text-anchor="end" font-size="11" fill="#667">1.00</text><line x1="46" y1="67.0" x2="706" y2="67.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="71.0" text-anchor="end" font-size="11" fill="#667">0.75</text><line x1="46" y1="118.0" x2="706" y2="118.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="122.0" text-anchor="end" font-size="11" fill="#667">0.50</text><line x1="46" y1="169.0" x2="706" y2="169.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="173.0" text-anchor="end" font-size="11" fill="#667">0.25</text><line x1="46" y1="220.0" x2="706" y2="220.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="224.0" text-anchor="end" font-size="11" fill="#667">0.00</text><rect x="94.5" y="220.0" width="31.0" height="0.0" fill="#9db8d2" rx="2"/><text x="110.0" y="216.0" text-anchor="middle" font-size="10.5" fill="#334">0.00</text><rect x="128.5" y="220.0" width="31.0" height="0.0" fill="#7191b8" rx="2"/><text x="144.0" y="216.0" text-anchor="middle" font-size="10.5" fill="#334">0.00</text><text x="128.5" y="236" text-anchor="middle" font-size="12" fill="#223">A</text><rect x="259.5" y="203.3" width="31.0" height="16.7" fill="#9db8d2" rx="2"/><text x="275.0" y="199.3" text-anchor="middle" font-size="10.5" fill="#334">0.08</text><rect x="293.5" y="196.5" width="31.0" height="23.5" fill="#7191b8" rx="2"/><text x="309.0" y="192.5" text-anchor="middle" font-size="10.5" fill="#334">0.12</text><text x="293.5" y="236" text-anchor="middle" font-size="12" fill="#223">B</text><rect x="424.5" y="99.6" width="31.0" height="120.4" fill="#9db8d2" rx="2"/><text x="440.0" y="95.6" text-anchor="middle" font-size="10.5" fill="#334">0.59</text><rect x="458.5" y="69.4" width="31.0" height="150.6" fill="#7191b8" rx="2"/><text x="474.0" y="65.4" text-anchor="middle" font-size="10.5" fill="#334">0.74</text><text x="458.5" y="236" text-anchor="middle" font-size="12" fill="#223">C</text><rect x="589.5" y="106.4" width="31.0" height="113.6" fill="#9db8d2" rx="2"/><text x="605.0" y="102.4" text-anchor="middle" font-size="10.5" fill="#334">0.56</text><rect x="623.5" y="66.2" width="31.0" height="153.8" fill="#7191b8" rx="2"/><text x="639.0" y="62.2" text-anchor="middle" font-size="10.5" fill="#334">0.75</text><text x="623.5" y="236" text-anchor="middle" font-size="12" fill="#223">D</text><rect x="46" y="246" width="11" height="11" fill="#9db8d2" rx="2"/><text x="61" y="256" font-size="11.5" fill="#334">ans@1(回答値が 1 位チャンクに含まれる)</text><rect x="355" y="246" width="11" height="11" fill="#7191b8" rx="2"/><text x="370" y="256" font-size="11.5" fill="#334">ans@3(top-3 のいずれかに含まれる)</text></svg>
+<figcaption>図 3: 画面のみ情報(S タイプ 61 問)の回答値含有率。
+書き起こしのみ(A)では原理的に取れず、カスタムフィールド(C/D)で大きく改善する。</figcaption></figure>
+<h3>8.2 構成 C で ans@3 を外した S クエリの内訳(16 / 61 問)</h3>
+<table>
+<tr><th>原因</th><th>件数</th><th>意味・対策</th></tr>
+<tr><td>検索ミス(正解動画が top-3 外)</td><td class="num">5</td>
+<td>ハイブリッド検索の改善余地(クエリ拡張・上位 k 拡大)</td></tr>
+<tr><td>正解動画は当たったが、値を持つセグメントが top-3 外</td><td class="num">9</td>
+<td>同一動画の別セグメントが上位を占有。動画単位の重複排除や「動画→セグメント」の 2 段検索で改善可能</td></tr>
+<tr><td>値そのものが CU 出力に無い(転記漏れ)</td><td class="num">2</td>
+<td>真の視覚転記漏れは S 61 問中 2 件のみ。<b>CU は 59 / 61 問(96.7%)で画面の値を出力できていた</b></td></tr>
+</table>
+<h3>8.3 動画形態別(構成 A vs C)</h3>
+<table>
+<tr><th>構成</th><th>形態</th><th>n</th><th>hit@1</th><th>hit@3</th><th>MRR</th></tr>
+<tr><td>A: 書き起こしのみ</td><td>長尺・複数章構成</td><td class='num'>4</td><td class='num'>1.000</td><td class='num'>1.000</td><td class='num'>1.000</td></tr><tr><td>A: 書き起こしのみ</td><td>ナレーション付き UI 操作</td><td class='num'>93</td><td class='num'>0.581</td><td class='num'>0.828</td><td class='num'>0.707</td></tr><tr><td>A: 書き起こしのみ</td><td>無音・テロップのみ</td><td class='num'>8</td><td class='num'>0.000</td><td class='num'>0.000</td><td class='num'>0.000</td></tr><tr><td>A: 書き起こしのみ</td><td>スライド講義型</td><td class='num'>6</td><td class='num'>1.000</td><td class='num'>1.000</td><td class='num'>1.000</td></tr><tr><td>C: 日本語カスタムフィールド</td><td>長尺・複数章構成</td><td class='num'>4</td><td class='num'>0.750</td><td class='num'>1.000</td><td class='num'>0.875</td></tr><tr><td>C: 日本語カスタムフィールド</td><td>ナレーション付き UI 操作</td><td class='num'>93</td><td class='num'>0.774</td><td class='num'>0.946</td><td class='num'>0.852</td></tr><tr><td>C: 日本語カスタムフィールド</td><td>無音・テロップのみ</td><td class='num'>8</td><td class='num'>0.750</td><td class='num'>1.000</td><td class='num'>0.854</td></tr><tr><td>C: 日本語カスタムフィールド</td><td>スライド講義型</td><td class='num'>6</td><td class='num'>1.000</td><td class='num'>1.000</td><td class='num'>1.000</td></tr>
+</table>
+<p>無音(テロップのみ)動画は書き起こしが空になるため、構成 A では索引にすら入らない。
+視覚情報を扱う構成 C で初めて検索対象になる点が形態別比較の要点である。</p>
+
+<div class="pagebreak"></div>
+<h2>9. 結果 3: RAG 回答品質(ragas)</h2>
+<table>
+<tr><th>ragas 指標</th><th>構成 A(書き起こしのみ)</th><th>構成 C(カスタムフィールド)</th></tr>
+<tr><td>faithfulness</td><td class='num'>0.973</td><td class='num'>0.790</td></tr><tr><td>answer_relevancy</td><td class='num'>0.200</td><td class='num'>0.279</td></tr><tr><td>llm_context_precision_with_reference</td><td class='num'>0.519</td><td class='num'>0.782</td></tr><tr><td>context_recall</td><td class='num'>0.414</td><td class='num'>0.838</td></tr><tr><td>answer_correctness</td><td class='num'>0.432</td><td class='num'>0.561</td></tr>
+</table>
+<figure class="fig"><svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg" role="img"><line x1="46" y1="16.0" x2="846" y2="16.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="20.0" text-anchor="end" font-size="11" fill="#667">1.00</text><line x1="46" y1="67.0" x2="846" y2="67.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="71.0" text-anchor="end" font-size="11" fill="#667">0.75</text><line x1="46" y1="118.0" x2="846" y2="118.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="122.0" text-anchor="end" font-size="11" fill="#667">0.50</text><line x1="46" y1="169.0" x2="846" y2="169.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="173.0" text-anchor="end" font-size="11" fill="#667">0.25</text><line x1="46" y1="220.0" x2="846" y2="220.0" stroke="#dde4ec" stroke-width="1"/><text x="40" y="224.0" text-anchor="end" font-size="11" fill="#667">0.00</text><rect x="92.0" y="21.5" width="31.0" height="198.5" fill="#9db8d2" rx="2"/><text x="107.5" y="17.5" text-anchor="middle" font-size="10.5" fill="#334">0.97</text><rect x="126.0" y="58.9" width="31.0" height="161.1" fill="#7191b8" rx="2"/><text x="141.5" y="54.9" text-anchor="middle" font-size="10.5" fill="#334">0.79</text><text x="126.0" y="236" text-anchor="middle" font-size="12" fill="#223">faithfulness</text><rect x="252.0" y="179.1" width="31.0" height="40.9" fill="#9db8d2" rx="2"/><text x="267.5" y="175.1" text-anchor="middle" font-size="10.5" fill="#334">0.20</text><rect x="286.0" y="163.1" width="31.0" height="56.9" fill="#7191b8" rx="2"/><text x="301.5" y="159.1" text-anchor="middle" font-size="10.5" fill="#334">0.28</text><text x="286.0" y="236" text-anchor="middle" font-size="12" fill="#223">answer relevancy</text><rect x="412.0" y="114.0" width="31.0" height="106.0" fill="#9db8d2" rx="2"/><text x="427.5" y="110.0" text-anchor="middle" font-size="10.5" fill="#334">0.52</text><rect x="446.0" y="60.4" width="31.0" height="159.6" fill="#7191b8" rx="2"/><text x="461.5" y="56.4" text-anchor="middle" font-size="10.5" fill="#334">0.78</text><text x="446.0" y="236" text-anchor="middle" font-size="12" fill="#223">llm context precision with reference</text><rect x="572.0" y="135.5" width="31.0" height="84.5" fill="#9db8d2" rx="2"/><text x="587.5" y="131.5" text-anchor="middle" font-size="10.5" fill="#334">0.41</text><rect x="606.0" y="49.1" width="31.0" height="170.9" fill="#7191b8" rx="2"/><text x="621.5" y="45.1" text-anchor="middle" font-size="10.5" fill="#334">0.84</text><text x="606.0" y="236" text-anchor="middle" font-size="12" fill="#223">context recall</text><rect x="732.0" y="131.8" width="31.0" height="88.2" fill="#9db8d2" rx="2"/><text x="747.5" y="127.8" text-anchor="middle" font-size="10.5" fill="#334">0.43</text><rect x="766.0" y="105.5" width="31.0" height="114.5" fill="#7191b8" rx="2"/><text x="781.5" y="101.5" text-anchor="middle" font-size="10.5" fill="#334">0.56</text><text x="766.0" y="236" text-anchor="middle" font-size="12" fill="#223">answer correctness</text><rect x="46" y="246" width="11" height="11" fill="#9db8d2" rx="2"/><text x="61" y="256" font-size="11.5" fill="#334">構成 A(書き起こしのみ)</text><rect x="234" y="246" width="11" height="11" fill="#7191b8" rx="2"/><text x="249" y="256" font-size="11.5" fill="#334">構成 C(カスタムフィールド)</text></svg>
+<figcaption>図 4: ragas 5 指標の比較(n=111、判定 LLM: gpt-4.1-mini)。</figcaption></figure>
+<p><b>読み方の注意(指標の性質)。</b>
+(1) 構成 A の faithfulness が高い(0.97)のは、
+コンテキストに根拠が無いとき「分かりません」と答える設計のため
+(A の回答の 59/111 問が「分かりません」、C は 38/111 問)。
+無回答は捏造ゼロ=忠実と評価されるので、faithfulness は
+<b>context_recall / answer_correctness とセットで</b>読む必要がある。
+(2) answer_relevancy は「分かりません」型の回答を 0 と評価する仕様のため両構成とも低く出る。
+構成間の相対比較にのみ使用する。
+(3) 総合すると、C は A に対して context_precision +0.26 /
+context_recall +0.42 /
+answer_correctness +0.13 と、
+「答えるべき質問に答えられる」方向で一貫して優位。</p>
+
+<h2>10. 処理時間</h2>
+
+    <table>
+      <tr><th>項目</th><th>prebuilt-videoSearch</th><th>カスタム(videoSearchJa)</th></tr>
+      <tr><td>解析本数</td><td class="num">99</td><td class="num">99</td></tr>
+      <tr><td>1 本あたり中央値</td><td class="num">31 秒</td><td class="num">41 秒</td></tr>
+      <tr><td>1 本あたり p90</td><td class="num">61 秒</td><td class="num">51 秒</td></tr>
+      <tr><td>実時間比(中央値/動画長)</td><td class="num">0.84 倍</td><td class="num">0.92 倍</td></tr>
+    </table>
+<p>CU の解析は非同期(Operation-Location ポーリング)。バッチ取り込みでは並列実行できるが、
+紐づけた補完モデルデプロイの TPM が律速になる(§11)。</p>
+
+<h2>11. 実装上の注意点(検証中に実際に踏んだ詰まりどころ)</h2>
+<table>
+<tr><th>#</th><th>事象</th><th>対処</th></tr>
+<tr><td>1</td><td>defaults へのモデル登録をモデル名で行うと、PATCH は成功するのに analyze が失敗する</td>
+<td>prebuilt アナライザーが参照する<b>エイリアス名</b>(prebuilt-analyzer-completion-mini 等)をキーに登録する。エラーは analyze 時まで遅延する</td></tr>
+<tr><td>2</td><td>カスタムアナライザーの base に prebuilt-videoSearch を指定すると 400</td>
+<td>base に使えるのは基底 4 種のみ(prebuilt-video 等)</td></tr>
+<tr><td>3</td><td>親アナライザーの fieldSchema がセグメントに適用されない</td>
+<td><b>フィールドを持つサブアナライザーを作り、親の contentCategories から参照する 2 段構成</b>にする(公式 analyzer-reference に記載)</td></tr>
+<tr><td>4</td><td>カスタムアナライザーで models.completion を省くと analyze が失敗</td>
+<td>モデル名(デプロイ名ではない)を明示する</td></tr>
+<tr><td>5</td><td>既存アナライザー ID への PUT は変更が黙って無視される</td>
+<td>実質イミュータブル。更新は DELETE → 再作成</td></tr>
+<tr><td>6</td><td>解析の並列実行で 429(RateLimit)が analyze の失敗として返る</td>
+<td>CU 自体でなく補完デプロイの TPM 律速。クォータ増強+指数バックオフ再試行を実装</td></tr>
+<tr><td>7</td><td>omitContent: true とフィールド定義は併用不可(400)</td><td>omitContent: false にする</td></tr>
+<tr><td>8</td><td>defaults・カスタムアナライザーは Bicep に乗らないデータプレーンの状態。環境再作成時に登録を忘れると解析が全滅する</td>
+<td>セットアップスクリプトに defaults 登録(エイリアス込み)とアナライザー作成を含めて固定化</td></tr>
+<tr><td>9</td><td>ソフト削除 → パージ → <b>同名再作成</b>したリソースでは CU の解析が「deployment or resource was not found(404)」で失敗し続けた(外部からのモデル呼び出しは正常)</td>
+<td>別名でリソースを作り直すと即解消。検証環境の再作成は同名を避ける(公式未記載の実測)</td></tr>
+<tr><td>10</td><td>フレームは約 1 FPS・512×512 に縮小され、小さい文字が落ち得る(公式記載)</td>
+<td>本検証の画面文字(25〜40px/720p)は全件読めた。実動画では文字サイズに注意</td></tr>
+</table>
+
+<h2>12. 制約と限界</h2>
+<ul>
+<li><b>合成データ</b>: 実収録より条件が良い(単一話者・雑音なし・非圧縮画面)。CER・画面文字の
+転記率は上限性能。実案件では実動画でパイロット測定を行うこと(本パイプラインは流用可能)。</li>
+<li><b>規模</b>: 104 本・111 クエリでの測定。数千本規模ではベクトル索引のチューニング
+(フィルタ・セマンティックランカー等)の追加検討が必要。</li>
+<li><b>LLM-as-a-judge</b>: ragas の値は判定 LLM(gpt-4.1-mini)に依存する相対比較として読むこと。
+構成間の差(A vs C)の比較には有効だが、絶対値の閾値運用には向かない。</li>
+<li>単価は変動するため、コスト見積もりは最新の料金ページ(付録)で確認すること。</li>
+</ul>
+
+<h2>13. 実装チームへの推奨事項</h2>
+<ol>
+<li><b>採用構成は C</b>(日本語カスタムフィールド、2 段アナライザー)。top-3 を LLM に渡す標準的な
+RAG で ans@3 = 0.74。D(フィールド重み付け)は動画間の切り分けを悪化させる
+トレードオフがあり、top-1 しか使えない場合のみ検討。</li>
+<li>書き起こしの別実装(Speech SDK 等)は不要。CU の出力(transcriptPhrases)をそのまま使う。</li>
+<li>チャンク単位は CU のセグメント。時間範囲(startTimeMs/endTimeMs)をメタデータに持たせ、
+回答には「動画名 + 分:秒」を引用させる。</li>
+<li>フィールド設計 3 点セット: 日本語要約(summaryJa)/ 画面内テキストの一字一句転記(screenTexts)
+/ 操作列挙(uiActions)。description は「ミニプロンプト」として具体例を列挙する。</li>
+<li>バッチ取り込みは並列数と補完デプロイの TPM クォータをセットで設計し、429 再試行を必ず入れる。</li>
+<li>同音ドメイン語の誤認識(社給→社級 等)に備え、用語正規化辞書を後段に用意する。</li>
+</ol>
+
+<h2>付録: 参照資料</h2>
+<ul style="font-size:9pt">
+<li>CU REST クイックスタート: learn.microsoft.com/azure/ai-services/content-understanding/quickstart/use-rest-api</li>
+<li>CU what's new(GA 2025-11-01): learn.microsoft.com/azure/ai-services/content-understanding/whats-new</li>
+<li>CU video 概要(1 FPS / 512×512 等の制約): learn.microsoft.com/azure/ai-services/content-understanding/video/overview</li>
+<li>CU アナライザーリファレンス(contentCategories / fieldSchema): learn.microsoft.com/azure/ai-services/content-understanding/concepts/analyzer-reference</li>
+<li>CU 言語・リージョン対応: learn.microsoft.com/azure/ai-services/content-understanding/language-region-support</li>
+<li>AI Search ハイブリッド検索(RRF): learn.microsoft.com/azure/search/hybrid-search-overview</li>
+<li>AI Search スコアリングプロファイル: learn.microsoft.com/azure/search/index-add-scoring-profiles</li>
+<li>ragas ドキュメント: docs.ragas.io</li>
+<li>CU 料金: azure.microsoft.com/pricing/details/content-understanding/</li>
+<li>データセット調査(PsTuts-VQA / VideoGUI): github.com/adobe-research/PsTuts-VQA-Dataset ほか。詳細は docs/dataset-research.md</li>
+</ul>
+<p style="font-size:9pt;color:#667;margin-top:14px">本レポートの数値はすべてリポジトリ
+<code>labs/cu-video-rag/logs/</code> の評価出力から機械的に転記したもの(gen_report.py)。
+再現手順は README.md を参照。</p>
+</body></html>

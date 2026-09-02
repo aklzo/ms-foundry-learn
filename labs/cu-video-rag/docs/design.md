@@ -1,19 +1,38 @@
 # 検証設計 — 合成データセット・パイプライン・評価
 
-2026-09-02 時点。データセット調査の経緯は [dataset-research.md](./dataset-research.md)。
+2026-09-02〜09-03 実施。データセット調査の経緯は [dataset-research.md](./dataset-research.md)。
+ラウンド 1(5 本・パイロット)→ ラウンド 2(**104 本・111 クエリ + ragas**)の 2 段階で実施した。
+ラウンド 2 の結果は [report/](./report/)(PDF レポート)が正。
 
-## 1. 合成データセット(日本語研修動画 5 本)
+## 1. 合成データセット(日本語研修動画 104 本・計約 72 分)
 
-社内 IT 操作研修を模した 5 本(各 60〜75 秒、計約 5.3 分)。定義の正本は
-[`src/cu_video_rag/scenarios.py`](../src/cu_video_rag/scenarios.py)(台本・画面操作・評価クエリを 1 ファイルに集約)。
+定義の正本は `src/cu_video_rag/` の
+[`scenarios.py`](../src/cu_video_rag/scenarios.py)(コア 5 本)+
+[`scenarios_ext.py`](../src/cu_video_rag/scenarios_ext.py)(形態拡張 9 本)+
+[`gen_scenarios.py`](../src/cu_video_rag/gen_scenarios.py)(テンプレート生成 90 本、シード固定)を
+[`corpus.py`](../src/cu_video_rag/corpus.py) が集約する。
+
+| 形態 | 本数 | 内容 |
+|---|---|---|
+| ナレーション付き UI 操作 | 88 | 手作り 10 本(VPN・パスワード再設定・プリンタ・Wi-Fi 等)+ 26 業務ドメイン × 手続きタイプの生成 78 本 |
+| 無音・テロップのみ | 10 | 書き起こしが空になるケース(構成 A では索引不能) |
+| スライド講義型 | 5 | UI 操作なしの研修(セキュリティ・電話応対等) |
+| 長尺・複数章 | 1 | 約 3 分・3 章構成(セグメント分割の質の確認) |
+
+コアシナリオのねらい(ラウンド 1 から継続):
 
 | video_id | 題材 | ねらい |
 |---|---|---|
-| vpn-setup | 社外から VPN 接続 | 画面のみ情報 2 つ(接続先アドレス・エラー番号)。5 と語彙が被る |
+| vpn-setup | 社外から VPN 接続 | 画面のみ情報 2 つ(接続先アドレス・エラー番号)。meeting-share/wifi-8021x と語彙が被る |
 | password-reset | パスワード再設定 | 画面のみ情報(パスワード要件)をダイアログ大文字で表示 |
-| printer-duplex | プリンタ追加と両面印刷 | 画面のみ情報(ドライバー型番)。英数字 OCR の確認 |
-| expense-apply | 経費精算の申請 | ドメイン外れのノイズ動画。画面のみ情報(上限金額) |
-| meeting-share | Web 会議の画面共有 | 「接続・切断」語彙を vpn-setup と共有(紛らわしさの統制) |
+| printer-duplex | プリンタ追加と両面印刷 | 画面のみ情報(ドライバー型番)。paper-jam と語彙が被る |
+| expense-apply | 経費精算の申請 | kintai-fix と「申請・承認・上長」語彙が被る。画面のみ情報(上限金額) |
+| meeting-share | Web 会議の画面共有 | 「接続・切断」語彙を vpn-setup と共有 |
+| wifi-8021x ほか拡張 9 本 | Wi-Fi・勤怠・メール署名・アクセス権・ウイルス対策・無音 2・スライド・長尺 | 形態と語彙衝突の多様化 |
+
+生成 90 本の設計: 画面のみ情報の値は動画インデックスから**一意に採番**(内線 5xxx・ERR-1xx 等)し、
+104 本規模でも回答値が動画間で衝突しない。自動生成クエリはナレーションと違う言い回し
+(パラフレーズ)にする。
 
 ### 生成方式(Playwright スクリーンショット + ffmpeg concat)
 
@@ -82,13 +101,15 @@ mp4 → Blob(SAS URL)→ CU prebuilt-videoSearch(GA 2025-11-01)→ analyzerResul
 
 | 指標 | 対象 | 定義 |
 |---|---|---|
-| CER | 書き起こし | 文字誤り率 = 編集距離/正解文字数。NFKC 正規化+空白・句読点除去後 |
+| CER | 書き起こし | 文字誤り率 = 編集距離/正解文字数。NFKC 正規化+空白・句読点除去後(無音動画は対象外) |
 | hit@1 / hit@3 | 検索 | 正解動画のチャンクが 1 位 / 3 位以内 |
 | MRR | 検索 | 正解動画の最初の順位の逆数の平均 |
 | seg_hit@1 | 検索 | 1 位チャンクが正解動画かつ正解ステップの時間範囲と重なる |
+| ans@1 / ans@3 | 検索(S タイプ) | 取得チャンク本文に回答値そのものが含まれる(検索が当たっても値が無ければ RAG は答えられない、を測る中心指標) |
+| ragas 5 指標 | RAG 回答 | [ragas](https://docs.ragas.io) 0.4 系: faithfulness / answer_relevancy / context_precision / context_recall / answer_correctness。回答生成は検索 top-3 + gpt-5.4-mini、判定 LLM は gpt-4.1-mini(温度 0) |
 
 CER の正解は台本そのもの(合成データの強み)。句読点を除くのは STT の切り方の流儀差で
-あり意味理解に影響しないため。
+あり意味理解に影響しないため。ragas 用に全クエリへ参照回答(ref_answer)を付与している。
 
 ## 5. Azure 構成
 

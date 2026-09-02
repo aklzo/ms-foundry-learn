@@ -1,0 +1,35 @@
+{
+  "video_id": "s03-project-silent",
+  "title": "案件管理システム クイックガイド(字幕)",
+  "duration_s": 24.08,
+  "full_transcript": "",
+  "screen_only_facts": {
+    "limit": "80 件"
+  },
+  "steps": [
+    {
+      "index": 0,
+      "narration": "",
+      "start_s": 1.2,
+      "end_s": 7.48
+    },
+    {
+      "index": 1,
+      "narration": "",
+      "start_s": 7.48,
+      "end_s": 12.68
+    },
+    {
+      "index": 2,
+      "narration": "",
+      "start_s": 12.68,
+      "end_s": 17.88
+    },
+    {
+      "index": 3,
+      "narration": "",
+      "start_s": 17.88,
+      "end_s": 23.08
+    }
+  ]
+}

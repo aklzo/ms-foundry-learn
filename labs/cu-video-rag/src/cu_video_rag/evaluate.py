@@ -47,6 +47,8 @@ def eval_transcripts(ground_truths: dict[str, dict], hypotheses: dict[str, str])
     total_chars = 0
     for vid, gt in ground_truths.items():
         ref = normalize(gt["full_transcript"])
+        if not ref:  # 無音(テロップのみ)動画は CER の対象外
+            continue
         hyp = normalize(hypotheses.get(vid, ""))
         d = edit_distance(ref, hyp)
         rows[vid] = {"cer": round(d / len(ref), 4), "ref_chars": len(ref), "edits": d}
@@ -60,6 +62,7 @@ def eval_retrieval(
     ground_truths: dict[str, dict],
     search_fn,
     top: int = 5,
+    form_of_video: dict[str, str] | None = None,
 ) -> dict:
     """search_fn(query_text) -> ランク付きチャンク列 [{video_id, start_s, end_s, ...}]"""
     per_query = []
@@ -91,6 +94,8 @@ def eval_retrieval(
             ans = normalize(q["answer"])
             row["ans1"] = bool(hits) and ans in normalize(hits[0]["content"])
             row["ans3"] = any(ans in normalize(h["content"]) for h in hits[:3])
+        if form_of_video:
+            row["form"] = form_of_video.get(expected_video, "?")
         per_query.append(row)
 
     def agg(rows: list[dict]) -> dict:
@@ -111,7 +116,11 @@ def eval_retrieval(
         return out
 
     by_type = {t: agg([r for r in per_query if r["type"] == t]) for t in ("N", "S", "C")}
-    return {"overall": agg(per_query), "by_type": by_type, "per_query": per_query}
+    out = {"overall": agg(per_query), "by_type": by_type, "per_query": per_query}
+    if form_of_video:
+        forms = sorted({r.get("form") for r in per_query if r.get("form")})
+        out["by_form"] = {f: agg([r for r in per_query if r.get("form") == f]) for f in forms}
+    return out
 
 
 def format_table(results_by_config: dict[str, dict]) -> str:

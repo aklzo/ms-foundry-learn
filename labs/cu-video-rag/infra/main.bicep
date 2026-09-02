@@ -23,6 +23,10 @@ param completionVersion string = '2026-03-17'
 param embeddingModel string = 'text-embedding-3-small'
 param embeddingVersion string = '1'
 
+@description('ragas の判定用モデル(温度 0 指定可能な非 reasoning 系)')
+param judgeModel string = 'gpt-4.1-mini'
+param judgeVersion string = '2025-04-14'
+
 @description('署名中ユーザーの objectId(データプレーンロールを割り当てる)')
 param userObjectId string
 
@@ -46,8 +50,11 @@ resource foundry 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
 @batchSize(1) // アカウント配下のデプロイは直列(probes と同じ RequestConflict 回避)
 resource deployments 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = [
   for d in [
-    { name: completionModel, model: completionModel, version: completionVersion, capacity: 50 }
+    // 動画解析はセグメントごとに視覚+生成でトークンを食う。50K TPM では並行解析で
+    // 429 になった実測(findings 1-6)があるため 200K を既定にする
+    { name: completionModel, model: completionModel, version: completionVersion, capacity: 200 }
     { name: embeddingModel, model: embeddingModel, version: embeddingVersion, capacity: 120 }
+    { name: judgeModel, model: judgeModel, version: judgeVersion, capacity: 100 }
   ]: {
     parent: foundry
     name: d.name

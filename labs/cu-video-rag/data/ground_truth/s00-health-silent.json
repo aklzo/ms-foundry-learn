@@ -1,0 +1,35 @@
+{
+  "video_id": "s00-health-silent",
+  "title": "健康診断予約システム クイックガイド(字幕)",
+  "duration_s": 24.14,
+  "full_transcript": "",
+  "screen_only_facts": {
+    "deadline": "毎月 3 日"
+  },
+  "steps": [
+    {
+      "index": 0,
+      "narration": "",
+      "start_s": 1.2,
+      "end_s": 7.84
+    },
+    {
+      "index": 1,
+      "narration": "",
+      "start_s": 7.84,
+      "end_s": 12.74
+    },
+    {
+      "index": 2,
+      "narration": "",
+      "start_s": 12.74,
+      "end_s": 17.94
+    },
+    {
+      "index": 3,
+      "narration": "",
+      "start_s": 17.94,
+      "end_s": 23.14
+    }
+  ]
+}

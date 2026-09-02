@@ -1,0 +1,37 @@
+{
+  "video_id": "paper-jam",
+  "title": "複合機の紙詰まり対処",
+  "duration_s": 31.64,
+  "full_transcript": "",
+  "screen_only_facts": {
+    "error_code": "J-02",
+    "cover": "カバー B",
+    "contact": "内線 1200"
+  },
+  "steps": [
+    {
+      "index": 0,
+      "narration": "",
+      "start_s": 1.2,
+      "end_s": 7.3
+    },
+    {
+      "index": 1,
+      "narration": "",
+      "start_s": 7.3,
+      "end_s": 13.94
+    },
+    {
+      "index": 2,
+      "narration": "",
+      "start_s": 13.94,
+      "end_s": 22.02
+    },
+    {
+      "index": 3,
+      "narration": "",
+      "start_s": 22.02,
+      "end_s": 30.64
+    }
+  ]
+}
