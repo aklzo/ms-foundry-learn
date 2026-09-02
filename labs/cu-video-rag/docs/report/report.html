@@ -61,8 +61,8 @@
     <div class="k">構成 C の hit@3<br>(正解動画が上位 3 位以内)</div></div>
   <div class="card"><div class="v">0.00 → 0.67</div>
     <div class="k">画面のみ情報の ans@3(正解動画限定)<br>書き起こしのみ → カスタムフィールド</div></div>
-  <div class="card"><div class="v">$4</div>
-    <div class="k">検証の総コスト(USD、概算)<br>うち CU 解析 $1.8(§10)</div></div>
+  <div class="card"><div class="v">$12</div>
+    <div class="k">検証の総コスト(USD、概算)<br>うち CU 解析 $8.8(§10)</div></div>
 </div>
 <p><b>結論。</b>(1) CU の日本語書き起こしは CER 0.44%(カスタム 2 段)/
 0.42%(prebuilt、発話欠落 2 本を除く)と実用水準であり、
@@ -78,7 +78,7 @@ ragas による end-to-end 評価でも、根拠のある質問に答えられ�
 +0.117 [+0.045, +0.198]<b>*</b> 改善)。
 また prebuilt のセグメント分割が動画先頭を覆わず発話が丸ごと消える事象を観測した
 (§11 #13。取り込み時の被覆検査が必要)。
-(5) 検証全体のコストは概算 $4(うち CU 解析 $1.8)。
+(5) 検証全体のコストは概算 $12(うち CU 解析 $8.8)。
 研修動画 1 時間あたりの CU 解析コストは prebuilt 約 $2.68、
 カスタム 2 段 約 $2.85(§10.2)。
 実装には §7 の設計(2 段アナライザー+セグメント単位チャンク+単語再配分)を推奨する。</p>
@@ -359,17 +359,17 @@ Neural TTS 15/1M 文字。</p>
 <p><b>(b) 本検証に要したコスト(概算)</b></p>
 <table>
 <tr><th>区分</th><th>費目</th><th>金額(USD)</th><th>根拠</th></tr>
-<tr><td rowspan="5">対応前</td><td>CU 解析(104 本 × 2 アナライザー)</td><td class="num">0.00</td><td>対応前に保存した usage の合算</td></tr>
-<tr><td>回答生成(gpt-5.4-mini、0 問 × 2 構成)</td><td class="num">0.00</td><td>未記録のため対応後の実測を按分(代用)</td></tr>
-<tr><td>ragas 判定(gpt-4.1-mini、0 問 × 2 構成)</td><td class="num">1.05</td><td>同上(同一 n・同一指標)</td></tr>
-<tr><td>AI Search Basic(0.00 時間)+ 埋め込み</td><td class="num">0.00</td><td></td></tr>
-<tr><td>音声合成(Neural TTS、0 文字)</td><td class="num">0.00</td><td>台本の総文字数</td></tr>
-<tr><td rowspan="3">対応後</td><td>CU 再解析(26 本 × 2)</td><td class="num">1.84</td><td>timings の usage(実測)</td></tr>
+<tr><td rowspan="5">対応前(ラウンド 1〜2、2026-09-02)</td><td>CU 解析(104 本 × 2 アナライザー)</td><td class="num">7.01</td><td>対応前に保存した usage の合算</td></tr>
+<tr><td>回答生成(gpt-5.4-mini、111 問 × 2 構成)</td><td class="num">0.11</td><td>未記録のため対応後の実測を按分(代用)</td></tr>
+<tr><td>ragas 判定(gpt-4.1-mini、111 問 × 2 構成)</td><td class="num">1.05</td><td>同上(同一 n・同一指標)</td></tr>
+<tr><td>AI Search Basic(2.73 時間)+ 埋め込み</td><td class="num">0.37</td><td>Activity Log 実測: 環境 1 = 13:06〜13:45Z(0.65h)、環境 2 = 14:05〜16:10Z(2.08h)。AI Search Basic の稼働時間</td></tr>
+<tr><td>音声合成(Neural TTS、17,294 文字)</td><td class="num">0.26</td><td>台本の総文字数</td></tr>
+<tr><td rowspan="3">対応後(ラウンド 3、2026-09-03)</td><td>CU 再解析(26 本 × 2)</td><td class="num">1.84</td><td>timings の usage(実測)</td></tr>
 <tr><td>回答生成 + ragas 判定 + 埋め込み</td><td class="num">1.17</td><td>usage_other.json(実測トークン)</td></tr>
-<tr><td>AI Search Basic(0.00 時間)</td><td class="num">0.00</td><td>環境の作成〜削除時刻</td></tr>
-<tr><td colspan="2"><b>合計</b></td><td class="num"><b>4.06</b></td><td>Storage・Foundry リソースの固定費は 0(従量のみ)</td></tr>
+<tr><td>AI Search Basic(1.08 時間)</td><td class="num">0.14</td><td>環境の作成〜削除時刻</td></tr>
+<tr><td colspan="2"><b>合計</b></td><td class="num"><b>11.94</b></td><td>Storage・Foundry リソースの固定費は 0(従量のみ)</td></tr>
 </table>
-<p>
+<p>・CU の usage は対応前に保存されていた最終結果 104 本 × 2 アナライザーの analyzerResults から合算(ラウンド 1 のアナライザー試行錯誤で上書きされた解析分は含まない = 下限値)<br>・失敗した解析(defaults 未登録による 99 本の失敗、429)はコンテンツ抽出・コンテキスト化とも課金対象外(pricing-explainer)<br>・回答生成(gpt-5.4-mini)と ragas 判定(gpt-4.1-mini)のトークンは対応前は記録していないため、同一設定で計測した対応後の値をクエリ数で按分して代用<br>
 ・Cost Management(実課金 API)は本レポート作成時点で当日分が未集計(429 / 反映待ち)のため、
 本表は usage × 定価の概算。実課金は EA/CSP 契約の割引率で変わる。</p>
 

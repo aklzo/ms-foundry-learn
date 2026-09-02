@@ -1,0 +1,45 @@
+{
+  "before": {
+    "label": "対応前(ラウンド 1〜2、2026-09-02)",
+    "cu_usage": {
+      "prebuilt": {
+        "videos": 104,
+        "videoHours": 1.264,
+        "contextualizationTokens": 1218280,
+        "tokens": {
+          "gpt-5.4-mini-input": 966636,
+          "gpt-5.4-mini-output": 42240
+        }
+      },
+      "custom": {
+        "videos": 104,
+        "videoHours": 1.264,
+        "contextualizationTokens": 1218280,
+        "tokens": {
+          "gpt-5.4-mini-input": 1058980,
+          "gpt-5.4-mini-output": 74232
+        }
+      }
+    },
+    "env_hours": 2.73,
+    "env_note": "Activity Log 実測: 環境 1 = 13:06〜13:45Z(0.65h)、環境 2 = 14:05〜16:10Z(2.08h)。AI Search Basic の稼働時間",
+    "tts_chars": 17294,
+    "n_rag_answers": 111,
+    "n_ragas": 111,
+    "notes": [
+      "CU の usage は対応前に保存されていた最終結果 104 本 × 2 アナライザーの analyzerResults から合算(ラウンド 1 のアナライザー試行錯誤で上書きされた解析分は含まない = 下限値)",
+      "失敗した解析(defaults 未登録による 99 本の失敗、429)はコンテンツ抽出・コンテキスト化とも課金対象外(pricing-explainer)",
+      "回答生成(gpt-5.4-mini)と ragas 判定(gpt-4.1-mini)のトークンは対応前は記録していないため、同一設定で計測した対応後の値をクエリ数で按分して代用"
+    ]
+  },
+  "after": {
+    "label": "対応後(ラウンド 3、2026-09-03)",
+    "env_start": "2026-09-02T17:03:00Z",
+    "env_end": "2026-09-02T18:07:46Z",
+    "tts_chars": 0,
+    "notes": [
+      "定義が変わった 21 本+テンプレート差で作り直した 5 本 = 26 本を再解析(TTS は再利用したため音声合成の課金なし)",
+      "検索・回答生成・判定のトークンは usage_other.json に実測記録"
+    ]
+  }
+}
