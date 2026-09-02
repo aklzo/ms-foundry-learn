@@ -29,7 +29,8 @@ ANSWER_PROMPT = """あなたは社内 IT ヘルプデスクのアシスタント
 
 def generate_answer(
     aoai_endpoint: str, key: str, deployment: str, question: str, contexts: list[str]
-) -> str:
+) -> tuple[str, dict]:
+    """→ (回答, usage{prompt_tokens, completion_tokens})。usage はコスト集計用。"""
     ctx = "\n\n".join(f"[抜粋 {i + 1}]\n{c}" for i, c in enumerate(contexts))
     r = httpx.post(
         f"{aoai_endpoint.rstrip('/')}/openai/deployments/{deployment}"
@@ -44,7 +45,12 @@ def generate_answer(
         timeout=120,
     )
     r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"] or ""
+    body = r.json()
+    usage = body.get("usage") or {}
+    return body["choices"][0]["message"]["content"] or "", {
+        "prompt_tokens": usage.get("prompt_tokens", 0),
+        "completion_tokens": usage.get("completion_tokens", 0),
+    }
 
 
 def run_ragas(
@@ -102,9 +108,13 @@ def run_ragas(
         LLMContextRecall(),
         AnswerCorrectness(),
     ]
-    result = evaluate(dataset, metrics=metrics, llm=llm, embeddings=emb, show_progress=True)
+    from langchain_community.callbacks.manager import get_openai_callback
+
+    with get_openai_callback() as cb:  # 判定 LLM のトークン使用量(コスト集計用)
+        result = evaluate(dataset, metrics=metrics, llm=llm, embeddings=emb, show_progress=True)
     df = result.to_pandas()
     metric_cols = [c for c in df.columns if c not in ("user_input", "response", "retrieved_contexts", "reference")]
     summary = {c: round(float(df[c].mean()), 4) for c in metric_cols}
     details = df[metric_cols].round(4).to_dict(orient="records")
-    return {"summary": summary, "n": len(df), "details": details}
+    usage = {"prompt_tokens": cb.prompt_tokens, "completion_tokens": cb.completion_tokens, "requests": cb.successful_requests}
+    return {"summary": summary, "n": len(df), "details": details, "judge_usage": usage}

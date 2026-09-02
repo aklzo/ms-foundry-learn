@@ -101,8 +101,9 @@ SCENARIOS: list[Scenario] = [
         id="password-reset",
         title="パスワードの再設定",
         app_name="アカウント管理センター",
-        screen_only_facts={
-            "policy": "12文字以上・記号を1つ以上",  # ナレーションでは「画面の要件」とだけ言う
+        screen_only_facts={  # ナレーションでは「画面の要件」とだけ言う(ダイアログの 2 行を別々の値として持つ)
+            "policy_length": "12文字以上",
+            "policy_symbol": "記号を1つ以上",
         },
         steps=[
             Step(

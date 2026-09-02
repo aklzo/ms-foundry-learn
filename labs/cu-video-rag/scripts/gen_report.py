@@ -11,13 +11,14 @@ from __future__ import annotations
 import json
 import statistics
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from cu_video_rag.corpus import FORM_OF_VIDEO, QUERIES, SCENARIOS  # noqa: E402
+from cu_video_rag import cost as cost_mod  # noqa: E402
+from cu_video_rag.corpus import FORM_OF_VIDEO, QUERIES, QUERIES_U, SCENARIOS  # noqa: E402
 
 LOGS = ROOT / "logs"
 OUT_DIR = ROOT / "docs" / "report"
@@ -29,6 +30,7 @@ FORM_LABEL = {
     "long": "長尺・複数章構成",
 }
 CONFIG_LABEL = {
+    "A0": "A0: 書き起こしのみ(再配分なし)",
     "A": "A: 書き起こしのみ",
     "B": "B: prebuilt-videoSearch",
     "C": "C: 日本語カスタムフィールド",
@@ -114,71 +116,98 @@ def svg_pipeline() -> str:
 
 # ---------------------------------------------------------------- 本体
 
+
+
+def load_opt(name: str):
+    p = LOGS / name
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+
+
+def _hours_between(start: str | None, end: str | None) -> float:
+    if not start:
+        return 0.0
+    t0 = datetime.fromisoformat(start.replace("Z", "+00:00"))
+    t1 = datetime.fromisoformat(end.replace("Z", "+00:00")) if end else datetime.now(timezone.utc)
+    return max(0.0, (t1 - t0).total_seconds() / 3600)
+
+
+def _fmt_ci(v: dict) -> str:
+    if not v:
+        return "−"
+    return f"{v['diff']:+.3f} [{v['ci95'][0]:+.3f}, {v['ci95'][1]:+.3f}]" + ("<b>*</b>" if v["significant"] else "")
+
+
 def build_html() -> str:
     today = date.today().isoformat()
     cer = load("cer_prebuilt.json")
-    evals = {c: load(f"eval_{c}.json") for c in "ABCD"}
+    cer_custom = load_opt("cer_custom.json")
+    configs = [c for c in ("A0", "A", "B", "C", "D") if (LOGS / f"eval_{c}.json").exists()]
+    evals = {c: load(f"eval_{c}.json") for c in configs}
+    compare = load_opt("eval_compare.json") or {}
     ragas = {c: load(f"ragas_{c}.json") for c in ("A", "C")}
-    # 処理時間: analyze が保存した per-video タイミングから算出
+    seg = load_opt("segmentation.json") or {}
+    divergence = seg.get("transcript_divergence", [])
+    fact = load_opt("fact_transcription.json") or {}
+    abst = load_opt("abstention.json") or {}
+    ucost = load_opt("usage_cost.json") or {}
+    # 検証ラウンドごとのコスト台帳(手書きの履歴。logs/ は git 外なので docs/report/ に置く)
+    rounds_p = OUT_DIR / "cost_rounds.json"
+    rounds = json.loads(rounds_p.read_text(encoding="utf-8")) if rounds_p.exists() else {}
+    actual = load_opt("cost_actual.json")  # Cost Management の実課金(取得できた場合のみ)
+    prices = cost_mod.PRICES_USD
+
+    gts = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in (ROOT / "data" / "ground_truth").glob("*.json")}
+    total_dur = sum(g["duration_s"] for g in gts.values())
+
+    # --- 処理時間(analyze が保存した per-video タイミング)
     proc = {}
-    _gts_for_dur = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in (ROOT / "data" / "ground_truth").glob("*.json")}
+    timings = {}
     for tag in ("prebuilt", "custom"):
         tp = LOGS / f"timings_{tag}.json"
         if tp.exists():
             rows = json.loads(tp.read_text(encoding="utf-8"))
+            timings[tag] = rows
             secs = sorted(r["sec"] for r in rows)
-            ratios = sorted(
-                r["sec"] / _gts_for_dur[r["vid"]]["duration_s"] for r in rows if r["vid"] in _gts_for_dur
-            )
-            proc[tag] = {
-                "n": len(rows),
-                "median_s": secs[len(secs) // 2],
-                "p90_s": secs[int(len(secs) * 0.9)],
-                "ratio_median": ratios[len(ratios) // 2],
-            }
+            ratios = sorted(r["sec"] / gts[r["vid"]]["duration_s"] for r in rows if r["vid"] in gts)
+            proc[tag] = {"n": len(rows), "median_s": secs[len(secs) // 2], "p90_s": secs[int(len(secs) * 0.9)], "ratio_median": ratios[len(ratios) // 2]}
 
     # --- データセット統計
     n_videos = len(SCENARIOS)
     form_counts: dict[str, int] = {}
     for f in FORM_OF_VIDEO.values():
         form_counts[f] = form_counts.get(f, 0) + 1
-    gts = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in (ROOT / "data" / "ground_truth").glob("*.json")}
-    total_dur = sum(g["duration_s"] for g in gts.values())
     q_types = {t: sum(1 for q in QUERIES if q["type"] == t) for t in "NSC"}
 
     # --- CER 統計
     cers = [r["cer"] for r in cer["per_video"].values()]
-    cer_stats = {
-        "n": len(cers),
-        "micro": cer["micro_cer"],
-        "median": statistics.median(cers),
-        "p90": sorted(cers)[int(len(cers) * 0.9)],
-        "max": max(cers),
-        "zero": sum(1 for c in cers if c == 0.0),
-    }
+    cer_stats = {"n": len(cers), "micro": cer["micro_cer"], "median": statistics.median(cers),
+                 "p90": sorted(cers)[int(len(cers) * 0.9)], "max": max(cers), "zero": sum(1 for c in cers if c == 0.0)}
     worst = sorted(cer["per_video"].items(), key=lambda kv: -kv[1]["cer"])[:5]
-
-    # --- 検索表
-    def m(c, scope, key, typ=None):
-        blk = evals[c]["by_type"][typ] if typ else evals[c]["overall"]
-        return blk.get(key)
-
-    configs = list("ABCD")
+    # 発話欠落(2 系統の CER 差 > 5pt)の動画を除いた prebuilt の micro CER(欠落を除く純粋な認識精度)
+    _div_vids = {r["video"] for r in (seg.get("transcript_divergence") or [])}
+    _rows_ex = [r for v, r in cer["per_video"].items() if v not in _div_vids]
+    cer_excl = sum(r["edits"] for r in _rows_ex) / sum(r["ref_chars"] for r in _rows_ex) if _rows_ex else 0.0
+    cer_custom_micro = cer_custom["micro_cer"] if cer_custom else cer["micro_cer"]
 
     def fmt_or_dash(v):
         return f"{v:.3f}" if isinstance(v, (int, float)) else "−"
 
+    # --- 検索表
     retr_rows = []
     for c in configs:
-        o = evals[c]["overall"]
-        s = evals[c]["by_type"]["S"]
+        o, s = evals[c]["overall"], evals[c]["by_type"]["S"]
         retr_rows.append(
             f"<tr><td>{CONFIG_LABEL[c]}</td>"
             f"<td class='num'>{fmt_or_dash(o.get('hit@1'))}</td><td class='num'>{fmt_or_dash(o.get('hit@3'))}</td>"
             f"<td class='num'>{fmt_or_dash(o.get('mrr'))}</td><td class='num'>{fmt_or_dash(o.get('seg_hit@1'))}</td>"
-            f"<td class='num'>{fmt_or_dash(s.get('ans@1'))}</td><td class='num'>{fmt_or_dash(s.get('ans@3'))}</td></tr>"
+            f"<td class='num'>{fmt_or_dash(s.get('ans@1'))}</td><td class='num'>{fmt_or_dash(s.get('ans@3'))}</td>"
+            f"<td class='num'>{fmt_or_dash(s.get('ans@3_any'))}</td></tr>"
         )
-
+    ci_metrics = ["hit@1", "hit@3", "mrr", "seg_hit@1", "ans@1(S)", "ans@3(S)"]
+    ci_rows = "".join(
+        f"<tr><td>{pair.replace('->', ' → ')}</td>" + "".join(f"<td class='num'>{_fmt_ci(m.get(k, {}))}</td>" for k in ci_metrics) + "</tr>"
+        for pair, m in compare.items()
+    )
     by_form_rows = []
     for c in ("A", "C"):
         for f, blk in evals[c].get("by_form", {}).items():
@@ -186,25 +215,13 @@ def build_html() -> str:
                 by_form_rows.append(
                     f"<tr><td>{CONFIG_LABEL[c]}</td><td>{FORM_LABEL.get(f, f)}</td>"
                     f"<td class='num'>{blk['n']}</td><td class='num'>{blk['hit@1']:.3f}</td>"
-                    f"<td class='num'>{blk['hit@3']:.3f}</td><td class='num'>{blk['mrr']:.3f}</td></tr>"
+                    f"<td class='num'>{blk['hit@3']:.3f}</td><td class='num'>{blk['mrr']:.3f}</td>"
+                    f"<td class='num'>{blk['seg_hit@1']:.3f}</td></tr>"
                 )
 
-    # --- ragas 表
-    ragas_metrics = list(ragas["C"]["summary"].keys())
-    ragas_rows = "".join(
-        f"<tr><td>{name}</td>"
-        + "".join(f"<td class='num'>{ragas[c]['summary'].get(name, float('nan')):.3f}</td>" for c in ("A", "C"))
-        + "</tr>"
-        for name in ragas_metrics
-    )
-
-    # --- S タイプ ans@3 ミスの内訳(構成 C)
-    import re as _re
-    import unicodedata as _ud
-    sys.path.insert(0, str(ROOT / "src"))
+    # --- S タイプ ans@3 ミスの内訳(構成 C。ans@k は正解動画のチャンクに限定した定義)
     from cu_video_rag.chunks import parse_segments as _ps, to_chunks as _tc
-    _P = _re.compile(r"[\s、。,.!?!?・:「」()()]")
-    _norm = lambda x: _P.sub("", _ud.normalize("NFKC", x))
+    from cu_video_rag.evaluate import normalize as _norm
     _qmap = {q["qid"]: q for q in QUERIES}
     _miss = [r for r in evals["C"]["per_query"] if r["type"] == "S" and not r.get("ans3", True)]
     s_break = {"retr": 0, "seg": 0, "transcribe": 0}
@@ -215,41 +232,144 @@ def build_html() -> str:
             continue
         d = json.loads((LOGS / "cu" / "custom" / f"{q['video']}.json").read_text(encoding="utf-8"))
         chunks_v = _tc(_ps(d, q["video"]), "full")
-        if any(_norm(q["answer"]) in _norm(c["content"]) for c in chunks_v):
-            s_break["seg"] += 1
-        else:
-            s_break["transcribe"] += 1
+        s_break["seg" if any(_norm(q["answer"]) in _norm(c["content"]) for c in chunks_v) else "transcribe"] += 1
     n_s = evals["C"]["by_type"]["S"]["n"]
     n_s_miss = len(_miss)
 
-    # 「分かりません」型回答の件数(ragas 解釈用)
+    # --- ragas 表・棄権率
+    ragas_metrics = list(ragas["C"]["summary"].keys())
+
+    def _valid_n(c, name):
+        vals = [d.get(name) for d in ragas[c]["details"]]
+        return sum(1 for v in vals if isinstance(v, (int, float)) and v == v)
+
+    ragas_rows = "".join(
+        f"<tr><td>{name}</td>" + "".join(
+            f"<td class='num'>{ragas[c]['summary'].get(name, float('nan')):.3f}"
+            + (f" <span style='color:#667;font-size:8.5pt'>(有効 {_valid_n(c, name)})</span>" if _valid_n(c, name) < ragas[c]["n"] else "")
+            + "</td>" for c in ("A", "C")) + "</tr>"
+        for name in ragas_metrics
+    )
     nc = {}
     for c in ("A", "C"):
         answers = json.loads((LOGS / f"rag_answers_{c}.json").read_text(encoding="utf-8"))
-        nc[c] = sum(1 for a in answers if "分かりません" in a["answer"])
+        nc[c] = sum(1 for a in answers if a["type"] != "U" and "分かりません" in a["answer"])
+    abst_rows = ""
+    for c in ("A", "C"):
+        a = abst.get(c)
+        if not a:
+            continue
+        u, an = a["unanswerable"], a["answerable"]
+        abst_rows += (
+            f"<tr><td>{CONFIG_LABEL[c]}</td><td class='num'>{u.get('abstain_rate', 0):.3f}({u.get('n', 0)} 問)</td>"
+            f"<td class='num'>{an.get('abstain_rate', 0):.3f}({an.get('n', 0)} 問)</td>"
+            f"<td class='num'>{a['answerable_by_type'].get('S', {}).get('abstain_rate', 0):.3f}</td></tr>"
+        )
+
+    # --- セグメント境界・転記率
+    seg_rows = ""
+    for tag, label in (("prebuilt", "prebuilt-videoSearch"), ("custom", "カスタム(videoSearchJa)")):
+        if tag in seg:
+            o = seg[tag]["overall"]
+            seg_rows += (f"<tr><td>{label}</td><td class='num'>{o['segments']}</td><td class='num'>{o['segments_per_step']:.2f}</td>"
+                         f"<td class='num'>{o['boundary_recall']:.3f}</td><td class='num'>{o['boundary_precision']:.3f}</td><td class='num'>{o['boundary_f1']:.3f}</td>"
+                         f"<td class='num'>{o['coverage_mean']:.3f} / {o['coverage_min']:.3f}</td><td class='num'>{o['videos_with_head_gap_over_3s']}</td></tr>")
+    seg_form_rows = ""
+    if "custom" in seg:
+        for f, o in seg["custom"]["by_form"].items():
+            seg_form_rows += (f"<tr><td>{FORM_LABEL.get(f, f)}</td><td class='num'>{o['videos']}</td><td class='num'>{o['segments_per_step']:.2f}</td>"
+                              f"<td class='num'>{o['boundary_recall']:.3f}</td><td class='num'>{o['boundary_precision']:.3f}</td></tr>")
+    fact_rows = ""
+    for tag, label in (("prebuilt", "prebuilt-videoSearch(Summary)"), ("custom", "カスタム(screenTexts 等)")):
+        if tag in fact:
+            o = fact[tag]["overall"]
+            fact_rows += (f"<tr><td>{label}</td><td class='num'>{o['n']}</td><td class='num'>{o['found_any']:.3f}</td>"
+                          f"<td class='num'>{o['found_in_step']:.3f}</td><td class='num'>{o['found_in_transcript']:.3f}</td></tr>")
+    fact_missing = fact.get("custom", {}).get("missing", [])
+    fact_form_rows = ""
+    if "custom" in fact:
+        for f, o in fact["custom"]["by_form"].items():
+            fact_form_rows += f"<tr><td>{FORM_LABEL.get(f, f)}</td><td class='num'>{o['n']}</td><td class='num'>{o['found_any']:.3f}</td><td class='num'>{o['found_in_step']:.3f}</td></tr>"
+
+    # --- コスト
+    def cu_cost_rows(usage_by_tag: dict) -> tuple[str, float]:
+        rows, total = "", 0.0
+        for tag, label in (("prebuilt", "prebuilt-videoSearch"), ("custom", "カスタム 2 段")):
+            u = usage_by_tag.get(tag)
+            if not u:
+                continue
+            e = cost_mod.estimate_cu_cost(u)
+            tk = u.get("tokens", {})
+            rows += (f"<tr><td>{label}</td><td class='num'>{u['videos']}</td><td class='num'>{u['videoHours']:.3f} h</td>"
+                     f"<td class='num'>{u['contextualizationTokens'] / 1e6:.2f} M</td>"
+                     f"<td class='num'>{sum(v for k, v in tk.items() if k.endswith('input')) / 1e6:.2f} M / {sum(v for k, v in tk.items() if k.endswith('output')) / 1e6:.3f} M</td>"
+                     f"<td class='num'>{e['video_extraction']:.2f}</td><td class='num'>{e['contextualization']:.2f}</td>"
+                     f"<td class='num'>{e.get('model_input', 0) + e.get('model_output', 0):.2f}</td><td class='num'><b>{e['total']:.2f}</b></td></tr>")
+            total += e["total"]
+        return rows, total
+
+    full_usage = ucost.get("cu_usage", {})
+    full_rows, full_total = cu_cost_rows(full_usage)
+    per_hour = {tag: cost_mod.estimate_cu_cost(u)["total"] / u["videoHours"] for tag, u in full_usage.items() if u.get("videoHours")}
+
+    other_usage = ucost.get("other_usage", {})
+    other_cost = ucost.get("other_cost_usd", {})
+    embed_tokens = sum(u.get("embedding_tokens", 0) for u in other_usage.values())
+    rag_usage = {k: u for k, u in other_usage.items() if k.startswith("rag_answer")}
+    ragas_usage = {k: u for k, u in other_usage.items() if k.startswith("ragas")}
+    rag_cost = sum(other_cost.get(k, 0) for k in rag_usage)
+    ragas_cost = sum(other_cost.get(k, 0) for k in ragas_usage)
+    embed_cost = embed_tokens / 1e6 * prices["text-embedding-3-small_per_1m"]
+
+    # 対応前(ラウンド 1〜2)
+    before = rounds.get("before", {})
+    before_rows, before_cu = cu_cost_rows(before.get("cu_usage", {}))
+    n_rag_after = sum(u.get("n", 0) for u in rag_usage.values()) or 1
+    before_rag = rag_cost * (before.get("n_rag_answers", 0) * 2) / n_rag_after
+    before_ragas = ragas_cost  # 同一 n(111 問 × 2 構成)
+    before_env = before.get("env_hours", 0) * prices["search_basic_per_hour"]
+    before_tts = before.get("tts_chars", 0) / 1e6 * prices["speech_neural_tts_per_1m_chars"]
+    before_total = before_cu + before_rag + before_ragas + before_env + before_tts + embed_cost
+    # 対応後(ラウンド 3 増分)
+    after = rounds.get("after", {})
+    incr_usage = {}
+    for tag, rows in timings.items():
+        us = [r["usage"] for r in rows if r.get("usage")]
+        if us:
+            agg = {"videos": len(us), "videoHours": sum(u.get("videoHours", 0) for u in us),
+                   "contextualizationTokens": sum(u.get("contextualizationTokens", 0) for u in us), "tokens": {}}
+            for u in us:
+                for k, v in u.get("tokens", {}).items():
+                    agg["tokens"][k] = agg["tokens"].get(k, 0) + v
+            incr_usage[tag] = agg
+    incr_rows, incr_cu = cu_cost_rows(incr_usage)
+    after_env_h = _hours_between(after.get("env_start"), after.get("env_end"))
+    after_env = after_env_h * prices["search_basic_per_hour"]
+    after_total = incr_cu + rag_cost + ragas_cost + embed_cost + after_env
+    grand_total = before_total + after_total
+
+    actual_html = ""
+    if actual:
+        actual_html = "<h3>10.3 参考: Cost Management の実課金</h3><table><tr><th>期間</th><th>費目</th><th>金額</th></tr>" + "".join(
+            f"<tr><td>{a['label']}</td><td>{a.get('breakdown', '')}</td><td class='num'>{a['total']:.2f} {a['currency']}</td></tr>" for a in actual.get("rows", [])
+        ) + "</table>"
 
     # --- グラフ
     chart_ans = svg_grouped_bars(
         [CONFIG_LABEL[c].split(":")[0] for c in configs],
-        [
-            ("ans@1(回答値が 1 位チャンクに含まれる)", [evals[c]["by_type"]["S"].get("ans@1", 0.0) for c in configs]),
-            ("ans@3(top-3 のいずれかに含まれる)", [evals[c]["by_type"]["S"].get("ans@3", 0.0) for c in configs]),
-        ],
+        [("ans@1(正解動画の 1 位チャンクに回答値)", [evals[c]["by_type"]["S"].get("ans@1", 0.0) for c in configs]),
+         ("ans@3(正解動画の top-3 チャンクに回答値)", [evals[c]["by_type"]["S"].get("ans@3", 0.0) for c in configs])],
     )
     chart_hit = svg_grouped_bars(
         [CONFIG_LABEL[c].split(":")[0] for c in configs],
-        [
-            ("hit@1(正解動画が 1 位)", [evals[c]["overall"]["hit@1"] for c in configs]),
-            ("hit@3", [evals[c]["overall"]["hit@3"] for c in configs]),
-            ("seg_hit@1(正解場面が 1 位)", [evals[c]["overall"]["seg_hit@1"] for c in configs]),
-        ],
+        [("hit@1(正解動画が 1 位)", [evals[c]["overall"]["hit@1"] for c in configs]),
+         ("hit@3", [evals[c]["overall"]["hit@3"] for c in configs]),
+         ("seg_hit@1(正解場面が 1 位)", [evals[c]["overall"]["seg_hit@1"] for c in configs])],
     )
     chart_ragas = svg_grouped_bars(
         [n.replace("_", " ") for n in ragas_metrics],
-        [
-            ("構成 A(書き起こしのみ)", [ragas["A"]["summary"].get(n, 0.0) for n in ragas_metrics]),
-            ("構成 C(カスタムフィールド)", [ragas["C"]["summary"].get(n, 0.0) for n in ragas_metrics]),
-        ],
+        [("構成 A(書き起こしのみ)", [ragas["A"]["summary"].get(n, 0.0) for n in ragas_metrics]),
+         ("構成 C(カスタムフィールド)", [ragas["C"]["summary"].get(n, 0.0) for n in ragas_metrics])],
         width=860,
     )
 
@@ -258,7 +378,7 @@ def build_html() -> str:
         proc_html = f"""
     <table>
       <tr><th>項目</th><th>prebuilt-videoSearch</th><th>カスタム(videoSearchJa)</th></tr>
-      <tr><td>解析本数</td><td class="num">{proc['prebuilt']['n']}</td><td class="num">{proc['custom']['n']}</td></tr>
+      <tr><td>計測本数(analyze 実行分)</td><td class="num">{proc['prebuilt']['n']}</td><td class="num">{proc['custom']['n']}</td></tr>
       <tr><td>1 本あたり中央値</td><td class="num">{proc['prebuilt']['median_s']:.0f} 秒</td><td class="num">{proc['custom']['median_s']:.0f} 秒</td></tr>
       <tr><td>1 本あたり p90</td><td class="num">{proc['prebuilt']['p90_s']:.0f} 秒</td><td class="num">{proc['custom']['p90_s']:.0f} 秒</td></tr>
       <tr><td>実時間比(中央値/動画長)</td><td class="num">{proc['prebuilt']['ratio_median']:.2f} 倍</td><td class="num">{proc['custom']['ratio_median']:.2f} 倍</td></tr>
@@ -290,6 +410,8 @@ def build_html() -> str:
     .card .k { font-size: 8.5pt; color: #556; line-height: 1.5; }
     .note { background: #fff8dc; border: 1px solid #e0c060; border-radius: 6px; padding: 8px 12px;
             font-size: 9.5pt; margin: 10px 0; page-break-inside: avoid; }
+    .fix { background: #eef7ee; border: 1px solid #8fbf8f; border-radius: 6px; padding: 8px 12px;
+           font-size: 9.5pt; margin: 10px 0; page-break-inside: avoid; }
     .fig { margin: 10px 0 16px; page-break-inside: avoid; }
     .fig figcaption { font-size: 9pt; color: #556; margin-top: 2px; }
     .toc td { border: none; border-bottom: 1px dotted #bbc; padding: 3px 4px; }
@@ -303,19 +425,26 @@ def build_html() -> str:
 
     top3_s = evals["C"]["by_type"]["S"].get("ans@3", 0)
     a_s = evals["A"]["by_type"]["S"].get("ans@3", 0)
+    a0a = compare.get("A0->A", {})
+    ac = compare.get("A->C", {})
+    fact_c = fact.get("custom", {}).get("overall", {})
+    seg_c = seg.get("custom", {}).get("overall", {})
+    seg_p = seg.get("prebuilt", {}).get("overall", {})
+    abst_c = abst.get("C", {})
+    abst_a = abst.get("A", {})
 
     return f"""<!doctype html><html lang="ja"><head><meta charset="utf-8">
 <title>CU 動画 RAG 検証レポート</title><style>{css}</style></head><body>
 
 <div class="cover">
-  <div style="color:#556;font-size:11pt">検証結果レポート</div>
+  <div style="color:#556;font-size:11pt">検証結果レポート(第 2 版)</div>
   <h1>Azure AI Content Understanding による<br>研修動画ナレッジ化と RAG 検索の精度検証</h1>
   <div class="rule"></div>
   <p style="font-size:11.5pt">日本語の画面操作研修動画 {n_videos} 本(計 {total_dur / 60:.0f} 分)を対象に、
   動画解析(prebuilt-videoSearch GA)→ Azure AI Search ハイブリッド検索 → RAG 回答生成の
-  各段の精度を定量評価した。</p>
+  各段の精度と、検証に要したコストを定量評価した。</p>
   <div class="meta">
-    作成日: {today}<br>
+    作成日: {today}(第 1 版 2026-09-03 のレビューで見つかった評価設計の不備 3 点を是正して再測定。§6.5)<br>
     対象読者: 実装チーム(動画ナレッジ取り込み機能の設計・実装担当)<br>
     検証環境: Azure japaneast / Content Understanding API 2025-11-01(GA)<br>
     リポジトリ: ms-foundry-learn <code>labs/cu-video-rag/</code>(再現手順・全コード同梱)
@@ -324,58 +453,72 @@ def build_html() -> str:
 
 <h2>1. エグゼクティブサマリ</h2>
 <div class="cards">
-  <div class="card"><div class="v">{cer_stats['micro'] * 100:.2f}%</div>
-    <div class="k">書き起こし文字誤り率(CER)<br>{cer_stats['n']} 本 micro 平均</div></div>
+  <div class="card"><div class="v">{cer_custom_micro * 100:.2f}%</div>
+    <div class="k">書き起こし CER(カスタム、{cer_stats['n']} 本 micro)<br>prebuilt は {cer_stats['micro'] * 100:.2f}%(発話欠落 {len(_div_vids)} 本を含む。除くと {cer_excl * 100:.2f}%)</div></div>
   <div class="card"><div class="v">{evals['C']['overall']['hit@3']:.3f}</div>
     <div class="k">構成 C の hit@3<br>(正解動画が上位 3 位以内)</div></div>
   <div class="card"><div class="v">{a_s:.2f} → {top3_s:.2f}</div>
-    <div class="k">画面のみ情報の ans@3<br>書き起こしのみ → カスタムフィールド</div></div>
-  <div class="card"><div class="v">{ragas['C']['summary'].get('faithfulness', 0):.3f}</div>
-    <div class="k">RAG 回答の faithfulness<br>(ragas / 構成 C)</div></div>
+    <div class="k">画面のみ情報の ans@3(正解動画限定)<br>書き起こしのみ → カスタムフィールド</div></div>
+  <div class="card"><div class="v">${grand_total:.0f}</div>
+    <div class="k">検証の総コスト(USD、概算)<br>うち CU 解析 ${before_cu + incr_cu:.1f}(§10)</div></div>
 </div>
-<p><b>結論。</b>(1) CU の日本語書き起こしは CER {cer_stats['micro'] * 100:.2f}% と実用水準であり、
+<p><b>結論。</b>(1) CU の日本語書き起こしは CER {cer_custom_micro * 100:.2f}%(カスタム 2 段)/
+{cer_excl * 100:.2f}%(prebuilt、発話欠落 {len(_div_vids)} 本を除く)と実用水準であり、
 音声書き起こしを別実装する必要はない。
 (2) ただし prebuilt アナライザーを素のまま使うと、画面にしか表示されない情報
 (エラーコード・設定値・連絡先など)は検索・回答にほぼ使えない(ans@3 = {evals['B']['by_type']['S'].get('ans@3', 0):.2f})。
-(3) <b>日本語カスタムフィールド(2 段アナライザー構成)を追加することで ans@3 は {top3_s:.2f} まで改善</b>し、
-ragas による end-to-end 評価でも全指標で書き起こしのみ構成を上回った。
-実装には §7 の設計(2 段アナライザー+セグメント単位チャンク)を推奨する。</p>
+(3) <b>日本語カスタムフィールド(2 段アナライザー構成)を追加することで ans@3 は {top3_s:.2f} まで改善</b>
+(A→C の差 {_fmt_ci(ac.get('ans@3(S)', {}))}、95% 信頼区間)し、
+画面の値そのものは CU 出力の {fact_c.get('found_any', 0) * 100:.1f}% に転記されていた(§8.6)。
+ragas による end-to-end 評価でも、根拠のある質問に答えられる方向で書き起こしのみ構成を上回った。
+(4) CU のセグメントは書き起こしフレーズを開始時刻のセグメントに丸ごと付けるため、
+<b>単語タイムスタンプでチャンクへ再配分する実装が必要</b>(§11 #11。seg_hit@1 が
+{_fmt_ci(a0a.get('seg_hit@1', {}))} 改善)。
+また prebuilt のセグメント分割が動画先頭を覆わず発話が丸ごと消える事象を観測した
+(§11 #13。取り込み時の被覆検査が必要)。
+(5) 検証全体のコストは概算 ${grand_total:.0f}(うち CU 解析 ${before_cu + incr_cu:.1f})。
+研修動画 1 時間あたりの CU 解析コストは prebuilt 約 ${per_hour.get('prebuilt', 0):.2f}、
+カスタム 2 段 約 ${per_hour.get('custom', 0):.2f}(§10.2)。
+実装には §7 の設計(2 段アナライザー+セグメント単位チャンク+単語再配分)を推奨する。</p>
 
 <h2>2. 目次</h2>
 <table class="toc">
 <tr><td>1. エグゼクティブサマリ</td><td>3. 検証の目的と範囲</td></tr>
 <tr><td>4. 検証構成とパイプライン</td><td>5. データセット(104 本の設計)</td></tr>
-<tr><td>6. 評価方法(指標とツール)</td><td>7. 結果 1: 書き起こし精度</td></tr>
-<tr><td>8. 結果 2: 検索精度</td><td>9. 結果 3: RAG 回答品質(ragas)</td></tr>
-<tr><td>10. 処理時間</td><td>11. 実装上の注意点(詰まりどころ)</td></tr>
+<tr><td>6. 評価方法(指標・ツール・第 1 版からの是正点)</td><td>7. 結果 1: 書き起こし精度</td></tr>
+<tr><td>8. 結果 2: 検索精度・セグメント分割・画面転記率</td><td>9. 結果 3: RAG 回答品質(ragas)と棄権率</td></tr>
+<tr><td>10. 処理時間とコスト</td><td>11. 実装上の注意点(詰まりどころ)</td></tr>
 <tr><td>12. 制約と限界</td><td>13. 実装チームへの推奨事項 / 付録</td></tr>
 </table>
 
 <h2>3. 検証の目的と範囲</h2>
 <p>ヘルプデスク AI の社内ナレッジに「画面操作手順のガイド・研修動画」が含まれる場合を想定し、
-次の 2 点を定量的に確かめる。</p>
+次の 3 点を定量的に確かめる。</p>
 <ol>
 <li><b>書き起こし精度</b> — Content Understanding(以下 CU)の日本語音声書き起こしは、
 別途 Speech to Text を実装せずに済む水準か。</li>
 <li><b>RAG 検索・回答精度</b> — CU の解析結果を AI Search に取り込んだとき、
 質問に答えられる検索結果・回答が得られるか。特に<b>ナレーションでは言及されず
-画面にのみ表示される情報</b>(エラーコード・設定値・連絡先等)を扱えるか。</li>
+画面にのみ表示される情報</b>(エラーコード・設定値・連絡先等)を扱えるか。
+根拠の無い質問に捏造せず棄権できるか。</li>
+<li><b>コスト</b> — 動画 1 時間あたりの CU 解析コストと、本検証全体に要した費用。</li>
 </ol>
 <p>プレビュー機能は使用しない(顧客デプロイ前提)。CU は GA API <code>2025-11-01</code> のみを使用した。</p>
 
 <h2>4. 検証構成とパイプライン</h2>
 <figure class="fig">{svg_pipeline()}
 <figcaption>図 1: 検証パイプライン。CU は prebuilt-videoSearch と日本語カスタムフィールド付き
-2 段アナライザーの両方で解析し、インデックス構成 A〜D を比較する。</figcaption></figure>
+2 段アナライザーの両方で解析し、インデックス構成 A0〜D を比較する。</figcaption></figure>
 <table>
 <tr><th>構成</th><th>検索インデックスの本文</th><th>ねらい</th></tr>
-<tr><td>A: 書き起こしのみ</td><td>CU の transcriptPhrases のみ</td><td>「音声だけで十分か」のベースライン(自前 STT 相当)</td></tr>
+<tr><td>A0: 書き起こしのみ(再配分なし)</td><td>CU がセグメントに付けた transcriptPhrases をそのまま</td><td>CU の素の割り当てで起きる時間ずれの影響測定(§11 #11)</td></tr>
+<tr><td>A: 書き起こしのみ</td><td>単語タイムスタンプでセグメントの時間範囲へ再配分した書き起こし</td><td>「音声だけで十分か」のベースライン(自前 STT 相当)</td></tr>
 <tr><td>B: prebuilt-videoSearch</td><td>A + セグメント記述(Summary)</td><td>prebuilt の素の実力</td></tr>
 <tr><td>C: 日本語カスタムフィールド</td><td>A + 日本語要約 + 画面内テキスト転記 + 操作列挙</td><td>B の弱点(英語記述・値の欠落)への対策</td></tr>
 <tr><td>D: C + フィールド分離</td><td>C の画面内テキストを別フィールド化し重み 2.0</td><td>動画内の場面順位の改善</td></tr>
 </table>
 <p>Azure リソース: Foundry リソース(kind AIServices、japaneast)、モデルデプロイ
-gpt-5.4-mini(CU 生成用)/ text-embedding-3-small(ベクトル)/ gpt-4.1-mini(ragas 判定用)、
+gpt-5.4-mini(CU 生成用・回答生成用)/ text-embedding-3-small(ベクトル)/ gpt-4.1-mini(ragas 判定用)、
 AI Search(basic、ja.lucene + HNSW ベクトル、ハイブリッドは RRF 統合)、Blob Storage(動画置き場)。</p>
 
 <h2>5. データセット(104 本の設計)</h2>
@@ -394,35 +537,66 @@ AI Search(basic、ja.lucene + HNSW ベクトル、ハイブリッドは RRF 統�
 <td>約 3 分・3 章構成(セグメント分割の質の確認用)</td></tr>
 </table>
 <p>設計上の仕掛け: (1) 約半数の動画に<b>「画面のみ情報」</b>(ナレーションでは「画面の注意書きを
-確認してください」とだけ言い、値は画面にだけ出す)を配置。値は動画ごとに一意(内線 5xxx、ERR-1xx 等)
-とし、100 本規模でも回答値が衝突しない。(2) VPN と Wi-Fi と Web 会議など<b>語彙が重なる動画</b>を
+確認してください」とだけ言い、値は画面にだけ出す)を配置。値は全 104 本で一意
+(内線 5xxx、ERR-1xx、毎月 n 日、n 件、n 日間。<b>他の動画の画面・台本に部分文字列としても現れない</b>ことを
+生成時に機械検証)。(2) VPN と Wi-Fi と Web 会議など<b>語彙が重なる動画</b>を
 意図的に併存させ、表層一致だけでは動画を特定できないようにした。(3) 生成はシード固定で再現可能。</p>
 <p>評価クエリは {len(QUERIES)} 問(ナレーション由来 N: {q_types['N']} / 画面のみ S: {q_types['S']} /
-紛らわしい C: {q_types['C']})。すべてに参照回答(ref_answer)を付与し、S タイプには回答値の
-文字列(answer)も付与した。</p>
+紛らわしい C: {q_types['C']})+ <b>コーパスに根拠の無い質問 U: {len(QUERIES_U)} 問</b>(棄権率の測定用)。
+すべてに参照回答(ref_answer)を付与し、S タイプには回答値の文字列(answer)も付与した。</p>
 
 <h2>6. 評価方法(指標とツール)</h2>
 <h3>6.1 書き起こし: CER(文字誤り率)</h3>
 <p>CER = 編集距離 ÷ 正解文字数。正解は台本そのもの。NFKC 正規化と空白・句読点の除去後に測定
-(句読点の位置は音声認識の流儀差であり意味に影響しないため)。無音動画 {form_counts.get('silent', 0)} 本は対象外。</p>
-<h3>6.2 検索: 情報検索の標準指標</h3>
+(句読点の位置は音声認識の流儀差であり意味に影響しないため)。無音動画 {form_counts.get('silent', 0)} 本は対象外。
+prebuilt とカスタムの両方で測り、書き起こしエンジンが同一であることを確認する。</p>
+<h3>6.2 検索: 情報検索の標準指標と信頼区間</h3>
 <p>ハイブリッド検索(BM25 + ベクトル、RRF 統合)の top-5 に対して、
 hit@1 / hit@3(正解動画のチャンクが 1 位 / 3 位以内)、MRR、
 seg_hit@1(1 位チャンクの時間範囲が正解場面と重なる)、
-ans@k(取得チャンク本文に回答値そのものが含まれる — 検索が「当たった」ように見えても
-本文に値がなければ RAG は答えを生成できない、を測る本検証の中心指標)。</p>
-<h3>6.3 RAG 回答品質: ragas</h3>
+<b>ans@k(正解動画のチャンクの本文に回答値そのものが含まれる)</b>を測る。ans@k は
+「検索が当たったように見えても本文に値がなければ RAG は答えを生成できない」を測る本検証の中心指標である。
+構成間の差は同一クエリ集合での<b>対応ありブートストラップ(2,000 回)の 95% 信頼区間</b>で示し、
+区間が 0 を含まないものを有意(*)とする。</p>
+<h3>6.3 CU 出力そのものの品質: セグメント境界一致と画面転記率</h3>
+<p>検索を介さず CU 出力を直接測る 2 指標を追加した。<b>セグメント境界一致</b>は、CU セグメントの開始時刻と
+正解ステップ境界が ±2 秒以内で対応する割合(recall = 正解境界のうち CU 境界があるもの、
+precision = CU 境界のうち正解境界に対応するもの)。<b>画面転記率</b>は、仕込んだ画面のみ情報
+{fact_c.get('n', 0)} 件のうち、値が CU の生成フィールドに一字一句現れた割合(found_any)と、
+表示された場面のセグメントに現れた割合(found_in_step)。</p>
+<h3>6.4 RAG 回答品質: ragas と棄権率</h3>
 <p>RAG 評価の標準ライブラリ <b>ragas 0.4.3</b> を使用。検索 top-3 をコンテキストに
 gpt-5.4-mini で日本語回答を生成し(コンテキスト外は「分かりません」と答える指示)、
 LLM-as-a-judge(gpt-4.1-mini、温度 0)で 5 指標を測定した:
 faithfulness(コンテキストへの忠実性)/ answer_relevancy(質問への適合)/
 context_precision(上位コンテキストの適合率)/ context_recall(参照回答の根拠の網羅)/
-answer_correctness(参照回答との一致)。</p>
+answer_correctness(参照回答との一致)。加えて、根拠の無い U タイプ {len(QUERIES_U)} 問への
+<b>棄権率</b>(「分かりません」と答えた割合。高いほど良い)と、正解のある質問への棄権率
+(低いほど良い)を測る。</p>
+<h3>6.5 第 1 版(2026-09-03)からの是正点</h3>
+<div class="fix">
+第 1 版のレビューで見つけた評価設計の不備を是正し、全指標を再測定した。第 1 版の数値との差は
+主に次の 3 点による。
+<ol>
+<li><b>回答値の衝突</b> — テンプレート生成の仕込み値が動画間で重複していた(「毎月 3 日」が 10 本、
+「14 日間」等が 2 本ずつ。S クエリ 61 問中 16 問)。値を全動画で一意にし(部分文字列の重なりも排除)、
+該当 21 本を再生成・再解析した。</li>
+<li><b>ans@k の定義</b> — 旧定義は「top-k のどれかに回答値があるか」で、別動画の同じ値でも
+ヒット扱いになっていた。<b>正解動画のチャンクに限定</b>する定義に改めた(旧定義は ans@3(any) として参考掲載)。</li>
+<li><b>チャンクの時間ずれ</b> — CU はセグメントの transcriptPhrases を「フレーズの開始時刻が属する
+セグメント」に丸ごと付け、境界で分割しない(104 本 277 セグメント中 115 が書き起こし空)。
+単語タイムスタンプでセグメントへ再配分する処理を追加した(構成 A0 = 再配分なし、A = あり)。</li>
+</ol>
+また、U タイプの棄権率・セグメント境界一致・画面転記率・構成間差の信頼区間・コストを新たに測定した。
+</div>
 
 <div class="pagebreak"></div>
 <h2>7. 結果 1: 書き起こし精度(CER)</h2>
+<p>prebuilt-videoSearch の書き起こし(transcriptPhrases)で測定。カスタム 2 段アナライザーは
+{f"{cer_custom_micro * 100:.2f}%({len(cer_custom['per_video'])} 本)" if cer_custom else "未測定"}。
+書き起こしエンジンは共通で、差は §7 末尾の「発話欠落」の有無による。</p>
 <div class="cards">
-  <div class="card"><div class="v">{cer_stats['micro'] * 100:.2f}%</div><div class="k">micro CER({cer_stats['n']} 本合算)</div></div>
+  <div class="card"><div class="v">{cer_stats['micro'] * 100:.2f}%</div><div class="k">micro CER({cer_stats['n']} 本合算)<br>発話欠落 {len(_div_vids)} 本を除くと {cer_excl * 100:.2f}%</div></div>
   <div class="card"><div class="v">{cer_stats['median'] * 100:.2f}%</div><div class="k">中央値</div></div>
   <div class="card"><div class="v">{cer_stats['p90'] * 100:.2f}%</div><div class="k">90 パーセンタイル</div></div>
   <div class="card"><div class="v">{cer_stats['zero']}</div><div class="k">CER 0%(完全一致)の本数</div></div>
@@ -435,28 +609,45 @@ answer_correctness(参照回答との一致)。</p>
 <tr><th>動画</th><th>CER</th><th>編集数 / 文字数</th></tr>
 {"".join(f"<tr><td>{vid}</td><td class='num'>{r['cer'] * 100:.2f}%</td><td class='num'>{r['edits']} / {r['ref_chars']}</td></tr>" for vid, r in worst)}
 </table>
-<p><b>外れ値の内訳(上位 2 本は個別に原因を確認済み)。</b>
-g67-portal-cancel(17.99%)は<b>末尾ステップの発話 25 文字が書き起こしから欠落</b>したもので、
-本検証で唯一観測した発話の取りこぼし(末尾セグメント)。slide-files(10.58%)は台本に含まれる
-記号・英字(「日付_案件_内容」「v1, v2」)の読み上げ形(アンダーライン等)との差で、
-<b>正解データ側のアーティファクト</b>であり CU の誤りではない。これらを除く動画の CER は
-おおむね 2% 未満に収まる。</p>
+<p><b>外れ値の内訳。</b>slide-files は台本に含まれる記号・英字(「日付_案件_内容」「v1, v2」)の
+読み上げ形との差で、<b>正解データ側のアーティファクト</b>であり CU の誤りではない。
+それ以外の大きな外れ値は<b>発話の欠落</b>で、同一音声を 2 つのアナライザーで書き起こした
+CER の差(5 ポイント超)として検出できる:</p>
+<table>
+<tr><th>動画</th><th>CER prebuilt</th><th>CER カスタム</th><th>prebuilt の先頭欠落 / 末尾ギャップ / セグメント数</th><th>カスタム</th></tr>
+{"".join(f"<tr><td>{r['video']}</td><td class='num'>{r['cer_a'] * 100:.1f}%</td><td class='num'>{r['cer_b'] * 100:.1f}%</td><td class='num'>{r.get('head_gap_a', 0):.1f} s / {r.get('tail_gap_a', 0):.1f} s / {r.get('segments_a', 0)}</td><td class='num'>{r.get('head_gap_b', 0):.1f} s / {r.get('tail_gap_b', 0):.1f} s / {r.get('segments_b', 0)}</td></tr>" for r in divergence) or "<tr><td colspan='5'>なし</td></tr>"}
+</table>
+<p>prebuilt-videoSearch が password-reset を「23.6 秒から始まる 1 セグメント」で返し、先頭 2 ステップの
+発話が出力から消えた(§11 #13)。同じ動画は第 1 版の解析では CER 1.8% だったので、
+セグメント分割の揺れで発話が丸ごと落ちることがある。末尾側の欠落(g67-portal-cancel、最終文 25 文字)は
+2 回とも再現した。これらを除く動画の CER はおおむね 2% 未満に収まる。</p>
 <div class="note"><b>注意:</b> 本データセットは合成音声(単一話者・雑音なし・鮮明な画面)であり、
 CER は実収録動画に対する<b>上限性能</b>として読むこと。実案件では実動画でのパイロット測定を挟む。</div>
 
-<h2>8. 結果 2: 検索精度</h2>
-<h3>8.1 構成 A〜D の比較(全 {len(QUERIES)} クエリ)</h3>
+<h2>8. 結果 2: 検索精度・セグメント分割・画面転記率</h2>
+<h3>8.1 構成 A0〜D の比較(全 {len(QUERIES)} クエリ)</h3>
 <table>
 <tr><th>構成</th><th>hit@1</th><th>hit@3</th><th>MRR</th><th>seg_hit@1</th>
-<th>ans@1(S)</th><th>ans@3(S)</th></tr>
+<th>ans@1(S)</th><th>ans@3(S)</th><th>参考: ans@3(any)</th></tr>
 {"".join(retr_rows)}
 </table>
+<p>ans@3(any) は動画を問わない旧定義。値を一意化した後も差が残るのは、回答値の一部
+(例: 数字 2 桁)が他動画の本文に偶然含まれるためで、正解動画限定の ans@3 を正とする。</p>
 <figure class="fig">{chart_hit}
 <figcaption>図 2: 検索指標の構成間比較(全クエリ)。</figcaption></figure>
 <figure class="fig">{chart_ans}
-<figcaption>図 3: 画面のみ情報(S タイプ {q_types['S']} 問)の回答値含有率。
+<figcaption>図 3: 画面のみ情報(S タイプ {q_types['S']} 問)の回答値含有率(正解動画のチャンク限定)。
 書き起こしのみ(A)では原理的に取れず、カスタムフィールド(C/D)で大きく改善する。</figcaption></figure>
-<h3>8.2 構成 C で ans@3 を外した S クエリの内訳({n_s_miss} / {n_s} 問)</h3>
+<h3>8.2 構成間の差と 95% 信頼区間(対応ありブートストラップ、* = 有意)</h3>
+<table>
+<tr><th>比較(後 − 前)</th>{"".join(f"<th>{m}</th>" for m in ci_metrics)}</tr>
+{ci_rows}
+</table>
+<p>A→C は {"・".join(m for m, v in ac.items() if v and v["significant"]) or "−"} で有意、
+{"・".join(m for m, v in ac.items() if v and not v["significant"]) or "−"} は区間下限が 0 に接する境界的な改善。
+C→D(screenTexts 重み付け)は {"有意差なし" if not any(v and v["significant"] for v in compare.get("C->D", {}).values()) else "一部で有意"}
+(動画内順位と動画間判別のトレードオフで相殺)。A0→A(単語再配分)は seg_hit@1 を有意に改善する。</p>
+<h3>8.3 構成 C で ans@3 を外した S クエリの内訳({n_s_miss} / {n_s} 問)</h3>
 <table>
 <tr><th>原因</th><th>件数</th><th>意味・対策</th></tr>
 <tr><td>検索ミス(正解動画が top-3 外)</td><td class="num">{s_break['retr']}</td>
@@ -464,41 +655,115 @@ CER は実収録動画に対する<b>上限性能</b>として読むこと。実
 <tr><td>正解動画は当たったが、値を持つセグメントが top-3 外</td><td class="num">{s_break['seg']}</td>
 <td>同一動画の別セグメントが上位を占有。動画単位の重複排除や「動画→セグメント」の 2 段検索で改善可能</td></tr>
 <tr><td>値そのものが CU 出力に無い(転記漏れ)</td><td class="num">{s_break['transcribe']}</td>
-<td>真の視覚転記漏れは S {n_s} 問中 {s_break['transcribe']} 件のみ。<b>CU は {n_s - s_break['transcribe']} / {n_s} 問({(n_s - s_break['transcribe']) / n_s * 100:.1f}%)で画面の値を出力できていた</b></td></tr>
+<td>視覚転記の取りこぼし(§8.6 の直接測定と整合)</td></tr>
 </table>
-<h3>8.3 動画形態別(構成 A vs C)</h3>
+<h3>8.4 動画形態別(構成 A vs C)</h3>
 <table>
-<tr><th>構成</th><th>形態</th><th>n</th><th>hit@1</th><th>hit@3</th><th>MRR</th></tr>
+<tr><th>構成</th><th>形態</th><th>n</th><th>hit@1</th><th>hit@3</th><th>MRR</th><th>seg_hit@1</th></tr>
 {"".join(by_form_rows)}
 </table>
 <p>無音(テロップのみ)動画は書き起こしが空になるため、構成 A では索引にすら入らない。
 視覚情報を扱う構成 C で初めて検索対象になる点が形態別比較の要点である。</p>
+<h3>8.5 セグメント分割の質(正解ステップ境界との一致、±{seg.get('custom', {}).get('tol_s', 2.0):.0f} 秒)</h3>
+<table>
+<tr><th>アナライザー</th><th>セグメント数(104 本)</th><th>セグメント/ステップ</th><th>境界 recall</th><th>境界 precision</th><th>F1</th><th>時間軸被覆(平均 / 最小)</th><th>先頭 3 秒超の欠落</th></tr>
+{seg_rows}
+</table>
+<table>
+<tr><th>形態(カスタム)</th><th>本数</th><th>セグメント/ステップ</th><th>境界 recall</th><th>境界 precision</th></tr>
+{seg_form_rows}
+</table>
+<p>CU の分割は正解ステップより粗く(1 ステップ ≒ {1 / seg_c.get('segments_per_step', 1):.1f} セグメント)、
+切る位置は正確(precision {seg_c.get('boundary_precision', 0):.2f})だが切り漏らしがある(recall {seg_c.get('boundary_recall', 0):.2f})。
+時間軸被覆の平均 {seg_c.get('coverage_mean', 0):.2f} は末尾の無音(約 5 秒)がセグメントに入らないためで欠落ではないが、
+先頭側の欠落(prebuilt で {seg_p.get('videos_with_head_gap_over_3s', 0)} 本)は発話の消失を伴う(§7、§11 #13)。
+セグメント=チャンクの設計では、1 チャンクに複数手順が入ることを前提に回答生成側で
+「場面(分:秒)」を引用させるのが実務的である。</p>
+<h3>8.6 画面のみ情報の転記率(CU 出力の直接測定、{fact_c.get('n', 0)} 件)</h3>
+<table>
+<tr><th>アナライザー</th><th>n</th><th>found_any(どこかのセグメントに一字一句)</th><th>found_in_step(表示場面のセグメントに)</th><th>書き起こしにも出現</th></tr>
+{fact_rows}
+</table>
+<table>
+<tr><th>形態(カスタム)</th><th>n</th><th>found_any</th><th>found_in_step</th></tr>
+{fact_form_rows}
+</table>
+<p>カスタムフィールド(screenTexts)は仕込んだ値の {fact_c.get('found_any', 0) * 100:.1f}% を一字一句転記できた
+(720p 画面の 25〜40px 文字。1 FPS・512×512 縮小でも読めた)。
+転記漏れ {len(fact_missing)} 件: {", ".join(f"{m['video']}({m['value']})" for m in fact_missing) or "なし"}。
+「書き起こしにも出現」が 0 であることは、S タイプの仕掛け(値は画面にしか無い)が成立している検査である。</p>
 
 <div class="pagebreak"></div>
-<h2>9. 結果 3: RAG 回答品質(ragas)</h2>
+<h2>9. 結果 3: RAG 回答品質(ragas)と棄権率</h2>
 <table>
 <tr><th>ragas 指標</th><th>構成 A(書き起こしのみ)</th><th>構成 C(カスタムフィールド)</th></tr>
 {ragas_rows}
 </table>
 <figure class="fig">{chart_ragas}
 <figcaption>図 4: ragas 5 指標の比較(n={ragas['C']['n']}、判定 LLM: gpt-4.1-mini)。</figcaption></figure>
+<h3>9.1 棄権率(根拠の無い質問に「分かりません」と答えられるか)</h3>
+<table>
+<tr><th>構成</th><th>U タイプ(根拠なし)の棄権率 ↑</th><th>正解あり質問の棄権率 ↓</th><th>うち S タイプの棄権率 ↓</th></tr>
+{abst_rows}
+</table>
+<p>根拠の無い質問 {abst_c.get('unanswerable', {}).get('n', 0)} 問はいずれの構成でも
+{abst_c.get('unanswerable', {}).get('abstain_rate', 0) * 100:.0f}% 棄権し(捏造なし)、
+正解のある質問への不要な棄権は A の {abst_a.get('answerable', {}).get('abstain_rate', 0) * 100:.0f}% から
+C の {abst_c.get('answerable', {}).get('abstain_rate', 0) * 100:.0f}% に減った。</p>
 <p><b>読み方の注意(指標の性質)。</b>
 (1) 構成 A の faithfulness が高い({ragas['A']['summary']['faithfulness']:.2f})のは、
 コンテキストに根拠が無いとき「分かりません」と答える設計のため
 (A の回答の {nc['A']}/{ragas['A']['n']} 問が「分かりません」、C は {nc['C']}/{ragas['C']['n']} 問)。
 無回答は捏造ゼロ=忠実と評価されるので、faithfulness は
-<b>context_recall / answer_correctness とセットで</b>読む必要がある。
-(2) answer_relevancy は「分かりません」型の回答を 0 と評価する仕様のため両構成とも低く出る。
-構成間の相対比較にのみ使用する。
+<b>context_recall / answer_correctness / 棄権率とセットで</b>読む必要がある。
+(2) answer_relevancy は「分かりません」型の回答を 0 と評価する仕様に加え、本環境では
+判定 LLM が要求 3 生成に対し 1 生成しか返さず(ragas の警告)、短い事実回答(「PR-8600 Series です」等)にも
+低い値が付いた。また埋め込み呼び出しの一時的な 404(DeploymentNotFound)で一部サンプルが欠損した
+(表の「有効 n」)。本データでは信頼性が低いため<b>参考値</b>とし、構成間の相対比較にのみ用いる。
 (3) 総合すると、C は A に対して context_precision +{(ragas['C']['summary']['llm_context_precision_with_reference'] - ragas['A']['summary']['llm_context_precision_with_reference']):.2f} /
 context_recall +{(ragas['C']['summary']['context_recall'] - ragas['A']['summary']['context_recall']):.2f} /
 answer_correctness +{(ragas['C']['summary']['answer_correctness'] - ragas['A']['summary']['answer_correctness']):.2f} と、
 「答えるべき質問に答えられる」方向で一貫して優位。</p>
 
-<h2>10. 処理時間</h2>
+<h2>10. 処理時間とコスト</h2>
+<h3>10.1 処理時間</h3>
 {proc_html}
 <p>CU の解析は非同期(Operation-Location ポーリング)。バッチ取り込みでは並列実行できるが、
 紐づけた補完モデルデプロイの TPM が律速になる(§11)。</p>
+<h3>10.2 コスト</h3>
+<p>CU の課金は「動画コンテンツ抽出(時間課金)+ 標準コンテキスト化トークン + 紐づけたモデルデプロイの
+トークン(Foundry 側に計上)」の 3 階建て(pricing-explainer)。各解析の <code>usage</code>
+(videoHours / contextualizationTokens / tokens)を合算し、{ucost.get('prices_source', '')}の単価で概算した。
+単価(USD): CU 動画抽出 {prices['cu_video_extraction_per_hour']:.2f}/時間、標準コンテキスト化 {prices['cu_std_contextualization_per_1m_tokens']:.2f}/1M トークン、
+gpt-5.4-mini 入力 {prices['gpt-5.4-mini_input_per_1m']:.2f} / 出力 {prices['gpt-5.4-mini_output_per_1m']:.2f}/1M、
+gpt-4.1-mini 入力 {prices['gpt-4.1-mini_input_per_1m']:.2f} / 出力 {prices['gpt-4.1-mini_output_per_1m']:.2f}/1M、
+text-embedding-3-small {prices['text-embedding-3-small_per_1m']:.2f}/1M、AI Search Basic {prices['search_basic_per_hour']:.3f}/時間、
+Neural TTS {prices['speech_neural_tts_per_1m_chars']:.0f}/1M 文字。</p>
+<p><b>(a) 104 本(計 {total_dur / 60:.1f} 分)を 1 回解析するコスト(現在のコーパス、実測 usage)</b></p>
+<table>
+<tr><th>アナライザー</th><th>本数</th><th>動画時間</th><th>コンテキスト化</th><th>モデル入力 / 出力</th><th>抽出 $</th><th>コンテキスト化 $</th><th>モデル $</th><th>合計 $</th></tr>
+{full_rows}
+</table>
+<p>→ 研修動画 <b>1 時間あたり prebuilt 約 ${per_hour.get('prebuilt', 0):.2f}、カスタム 2 段 約 ${per_hour.get('custom', 0):.2f}</b>
+(gpt-5.4-mini Global)。カスタムの増分はモデルの出力トークン(日本語要約・転記)によるもので、
+コンテンツ抽出・コンテキスト化はアナライザーによらず同額。</p>
+<p><b>(b) 本検証に要したコスト(概算)</b></p>
+<table>
+<tr><th>区分</th><th>費目</th><th>金額(USD)</th><th>根拠</th></tr>
+<tr><td rowspan="5">{before.get('label', '対応前')}</td><td>CU 解析(104 本 × 2 アナライザー)</td><td class="num">{before_cu:.2f}</td><td>対応前に保存した usage の合算</td></tr>
+<tr><td>回答生成(gpt-5.4-mini、{before.get('n_rag_answers', 0)} 問 × 2 構成)</td><td class="num">{before_rag:.2f}</td><td>未記録のため対応後の実測を按分(代用)</td></tr>
+<tr><td>ragas 判定(gpt-4.1-mini、{before.get('n_ragas', 0)} 問 × 2 構成)</td><td class="num">{before_ragas:.2f}</td><td>同上(同一 n・同一指標)</td></tr>
+<tr><td>AI Search Basic({before.get('env_hours', 0):.2f} 時間)+ 埋め込み</td><td class="num">{before_env + embed_cost:.2f}</td><td>{before.get('env_note', '')}</td></tr>
+<tr><td>音声合成(Neural TTS、{before.get('tts_chars', 0):,} 文字)</td><td class="num">{before_tts:.2f}</td><td>台本の総文字数</td></tr>
+<tr><td rowspan="3">{after.get('label', '対応後')}</td><td>CU 再解析({sum(u['videos'] for u in incr_usage.values()) // 2 if incr_usage else 0} 本 × 2)</td><td class="num">{incr_cu:.2f}</td><td>timings の usage(実測)</td></tr>
+<tr><td>回答生成 + ragas 判定 + 埋め込み</td><td class="num">{rag_cost + ragas_cost + embed_cost:.2f}</td><td>usage_other.json(実測トークン)</td></tr>
+<tr><td>AI Search Basic({after_env_h:.2f} 時間)</td><td class="num">{after_env:.2f}</td><td>環境の作成〜削除時刻</td></tr>
+<tr><td colspan="2"><b>合計</b></td><td class="num"><b>{grand_total:.2f}</b></td><td>Storage・Foundry リソースの固定費は 0(従量のみ)</td></tr>
+</table>
+<p>{"".join(f"・{n}<br>" for n in before.get('notes', []))}
+・Cost Management(実課金 API)は本レポート作成時点で当日分が未集計(429 / 反映待ち)のため、
+本表は usage × 定価の概算。実課金は EA/CSP 契約の割引率で変わる。</p>
+{actual_html}
 
 <h2>11. 実装上の注意点(検証中に実際に踏んだ詰まりどころ)</h2>
 <table>
@@ -521,32 +786,43 @@ answer_correctness +{(ragas['C']['summary']['answer_correctness'] - ragas['A']['
 <tr><td>9</td><td>ソフト削除 → パージ → <b>同名再作成</b>したリソースでは CU の解析が「deployment or resource was not found(404)」で失敗し続けた(外部からのモデル呼び出しは正常)</td>
 <td>別名でリソースを作り直すと即解消。検証環境の再作成は同名を避ける(公式未記載の実測)</td></tr>
 <tr><td>10</td><td>フレームは約 1 FPS・512×512 に縮小され、小さい文字が落ち得る(公式記載)</td>
-<td>本検証の画面文字(25〜40px/720p)は全件読めた。実動画では文字サイズに注意</td></tr>
+<td>本検証の画面文字(25〜40px/720p)は {fact_c.get('found_any', 0) * 100:.0f}% 転記できた。実動画では文字サイズに注意</td></tr>
+<tr><td>11</td><td><b>セグメントの transcriptPhrases はフレーズの開始時刻のセグメントに丸ごと付き、境界で分割されない</b>。無音の短い話し方だと 1 フレーズが 20〜30 秒に伸び、隣のセグメントの書き起こしが空になる(277 セグメント中 115 が空)。「セグメント=チャンク」で索引すると本文と時刻がずれる</td>
+<td>各フレーズの <code>words[]</code>(単語タイムスタンプ)でセグメントの時間範囲へ再配分してからチャンク化する。効果: seg_hit@1 {_fmt_ci(a0a.get('seg_hit@1', {}))}(A0→A、95% CI)</td></tr>
+<tr><td>12</td><td>コストの実測には analyzerResults の <code>usage</code> を保存しておく</td>
+<td>videoHours / contextualizationTokens / tokens(モデル別入出力)が返る。失敗した解析は課金対象外(公式)。本レポートの §10.2 はこの合算</td></tr>
+<tr><td>13</td><td><b>セグメントが動画の先頭を覆わないと、その区間の発話が transcriptPhrases にも markdown にも出ない</b>(password-reset: 先頭 23.6 秒・2 ステップ分が欠落、CER 46%。同じ動画が別の実行では 1.8%)。末尾でも最終文の欠落を観測。prebuilt ではセグメントの時間重複も起き、同じフレーズが 2 セグメントに付く</td>
+<td>取り込み時にセグメントの時間軸被覆(先頭開始 ≒ 0、大きな隙間なし)を検査し、低い動画は再解析するか書き起こしを分割なしアナライザーで取り直す。フレーズ・単語は (開始, 終了, テキスト) で重複除去する。同一音声を 2 系統で書き起こして CER 差を見るのが安価な健全性検査</td></tr>
 </table>
 
 <h2>12. 制約と限界</h2>
 <ul>
 <li><b>合成データ</b>: 実収録より条件が良い(単一話者・雑音なし・非圧縮画面)。CER・画面文字の
 転記率は上限性能。実案件では実動画でパイロット測定を行うこと(本パイプラインは流用可能)。</li>
-<li><b>規模</b>: 104 本・{len(QUERIES)} クエリでの測定。数千本規模ではベクトル索引のチューニング
+<li><b>規模</b>: 104 本・{len(QUERIES)} クエリでの測定。S タイプ 61 問の信頼区間幅は ±0.1 程度あり、
+数 % 単位の差は有意でない(§8.2)。数千本規模ではベクトル索引のチューニング
 (フィルタ・セマンティックランカー等)の追加検討が必要。</li>
 <li><b>LLM-as-a-judge</b>: ragas の値は判定 LLM(gpt-4.1-mini)に依存する相対比較として読むこと。
-構成間の差(A vs C)の比較には有効だが、絶対値の閾値運用には向かない。</li>
-<li>単価は変動するため、コスト見積もりは最新の料金ページ(付録)で確認すること。</li>
+answer_relevancy は本データでは信頼性が低い(§9)。</li>
+<li><b>コスト</b>は usage × 定価の概算で、契約割引・為替・単価改定で変わる。対応前の回答生成・判定トークンは
+未記録のため対応後の実測で代用している。</li>
 </ul>
 
 <h2>13. 実装チームへの推奨事項</h2>
 <ol>
 <li><b>採用構成は C</b>(日本語カスタムフィールド、2 段アナライザー)。top-3 を LLM に渡す標準的な
-RAG で ans@3 = {top3_s:.2f}。D(フィールド重み付け)は動画間の切り分けを悪化させる
+RAG で ans@3 = {top3_s:.2f}。D(フィールド重み付け)は ans@k を有意に改善せず動画間の切り分けを悪化させる
 トレードオフがあり、top-1 しか使えない場合のみ検討。</li>
 <li>書き起こしの別実装(Speech SDK 等)は不要。CU の出力(transcriptPhrases)をそのまま使う。</li>
-<li>チャンク単位は CU のセグメント。時間範囲(startTimeMs/endTimeMs)をメタデータに持たせ、
-回答には「動画名 + 分:秒」を引用させる。</li>
+<li>チャンク単位は CU のセグメント。ただし<b>transcriptPhrases は words[] の時刻でセグメントへ再配分</b>してから
+本文にする(#11)。時間範囲(startTimeMs/endTimeMs)をメタデータに持たせ、回答には「動画名 + 分:秒」を引用させる。</li>
 <li>フィールド設計 3 点セット: 日本語要約(summaryJa)/ 画面内テキストの一字一句転記(screenTexts)
 / 操作列挙(uiActions)。description は「ミニプロンプト」として具体例を列挙する。</li>
-<li>バッチ取り込みは並列数と補完デプロイの TPM クォータをセットで設計し、429 再試行を必ず入れる。</li>
+<li>バッチ取り込みは並列数と補完デプロイの TPM クォータをセットで設計し、429 再試行を必ず入れる。
+解析ごとの <code>usage</code> を保存してコストを実測する(1 時間あたり約 ${per_hour.get('custom', 0):.2f} が目安)。</li>
 <li>同音ドメイン語の誤認識(社給→社級 等)に備え、用語正規化辞書を後段に用意する。</li>
+<li>回答生成には「根拠が無ければ分からないと答える」指示を入れる(U タイプ棄権率 {abst_c.get('unanswerable', {}).get('abstain_rate', 0) * 100:.0f}%)。
+評価には根拠の無い質問を必ず含める。</li>
 </ol>
 
 <h2>付録: 参照資料</h2>
@@ -555,11 +831,11 @@ RAG で ans@3 = {top3_s:.2f}。D(フィールド重み付け)は動画間の切�
 <li>CU what's new(GA 2025-11-01): learn.microsoft.com/azure/ai-services/content-understanding/whats-new</li>
 <li>CU video 概要(1 FPS / 512×512 等の制約): learn.microsoft.com/azure/ai-services/content-understanding/video/overview</li>
 <li>CU アナライザーリファレンス(contentCategories / fieldSchema): learn.microsoft.com/azure/ai-services/content-understanding/concepts/analyzer-reference</li>
-<li>CU 言語・リージョン対応: learn.microsoft.com/azure/ai-services/content-understanding/language-region-support</li>
+<li>CU 課金モデル(usage の読み方): learn.microsoft.com/azure/ai-services/content-understanding/pricing-explainer</li>
+<li>単価: Azure Retail Prices API prices.azure.com/api/retail/prices(japaneast、USD)/ azure.microsoft.com/pricing/details/content-understanding/</li>
 <li>AI Search ハイブリッド検索(RRF): learn.microsoft.com/azure/search/hybrid-search-overview</li>
 <li>AI Search スコアリングプロファイル: learn.microsoft.com/azure/search/index-add-scoring-profiles</li>
 <li>ragas ドキュメント: docs.ragas.io</li>
-<li>CU 料金: azure.microsoft.com/pricing/details/content-understanding/</li>
 <li>データセット調査(PsTuts-VQA / VideoGUI): github.com/adobe-research/PsTuts-VQA-Dataset ほか。詳細は docs/dataset-research.md</li>
 </ul>
 <p style="font-size:9pt;color:#667;margin-top:14px">本レポートの数値はすべてリポジトリ

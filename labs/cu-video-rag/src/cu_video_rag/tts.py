@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import wave
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 import httpx
 
@@ -22,7 +23,7 @@ def synthesize(text: str, out_path: Path, *, key: str, region: str = "japaneast"
     """text を wav に合成して秒数を返す。"""
     ssml = (
         '<speak version="1.0" xml:lang="ja-JP">'
-        f'<voice name="{VOICE}">{text}</voice></speak>'
+        f'<voice name="{VOICE}">{escape(text)}</voice></speak>'  # & < > を SSML でエスケープ
     )
     resp = httpx.post(
         f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1",

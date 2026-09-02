@@ -151,14 +151,18 @@ window.SCENARIO = __SCENARIO_JSON__;
 """
 
 
-def generate_page(scenario: Scenario, out_dir: Path) -> Path:
+def render_page(scenario: Scenario) -> str:
+    """シナリオ → HTML 文字列(決定的。既存ページとの比較にも使う)。"""
     meta = {"id": scenario.id, "steps": [s.ops for s in scenario.steps]}
-    html = (
+    return (
         _TEMPLATE.replace("__TITLE__", scenario.title)
         .replace("__APP__", scenario.app_name)
         .replace("__SCENARIO_JSON__", json.dumps(meta, ensure_ascii=False))
     )
+
+
+def generate_page(scenario: Scenario, out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{scenario.id}.html"
-    path.write_text(html, encoding="utf-8")
+    path.write_text(render_page(scenario), encoding="utf-8")
     return path

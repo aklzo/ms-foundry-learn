@@ -4,12 +4,15 @@
   (1536 次元)を HNSW で検索。ハイブリッド = 両方を投げて RRF 統合(サービス既定)
 - 埋め込みはアカウントエンドポイント経由(foundry-probes 08 の実測: プロジェクト
   経由の embeddings は 404。本ラボは最初からアカウント直)
+- インデックスは投入のたびに削除→再作成する(同名インデックスに merge-upload すると、
+  再解析でセグメント数が変わった動画の古いチャンクが残るため)
 """
 
 from __future__ import annotations
 
 import httpx
 from azure.core.credentials import AzureKeyCredential
+from azure.core.exceptions import ResourceNotFoundError
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -27,6 +30,8 @@ from azure.search.documents.indexes.models import (
 from azure.search.documents.models import VectorizedQuery
 
 EMBED_DIM = 1536
+EMBED_BATCH = 64  # 1 リクエストあたりの入力数(API 上限 2048 だがトークン上限に余裕をとる)
+UPLOAD_BATCH = 500  # upload_documents の 1 バッチ(上限 1000)
 
 
 class Embedder:
@@ -36,11 +41,17 @@ class Embedder:
             "/embeddings?api-version=2024-10-21"
         )
         self.http = httpx.Client(headers={"api-key": key}, timeout=60)
+        self.total_tokens = 0  # コスト記録用
 
     def embed(self, texts: list[str]) -> list[list[float]]:
-        r = self.http.post(self.url, json={"input": texts})
-        r.raise_for_status()
-        return [d["embedding"] for d in r.json()["data"]]
+        out: list[list[float]] = []
+        for i in range(0, len(texts), EMBED_BATCH):
+            r = self.http.post(self.url, json={"input": texts[i : i + EMBED_BATCH]})
+            r.raise_for_status()
+            body = r.json()
+            self.total_tokens += body.get("usage", {}).get("total_tokens", 0)
+            out.extend(d["embedding"] for d in body["data"])
+        return out
 
 
 def build_index(index_client: SearchIndexClient, name: str) -> None:
@@ -73,7 +84,11 @@ def build_index(index_client: SearchIndexClient, name: str) -> None:
             )
         ],
     )
-    index_client.create_or_update_index(index)
+    try:
+        index_client.delete_index(name)
+    except ResourceNotFoundError:
+        pass
+    index_client.create_index(index)
 
 
 def upload_chunks(
@@ -87,8 +102,10 @@ def upload_chunks(
     )
     docs = [{**c, "content_vector": v} for c, v in zip(chunks, vectors)]
     client = SearchClient(endpoint, index_name, AzureKeyCredential(admin_key))
-    result = client.upload_documents(docs)
-    return sum(1 for r in result if r.succeeded)
+    ok = 0
+    for i in range(0, len(docs), UPLOAD_BATCH):
+        ok += sum(1 for r in client.upload_documents(docs[i : i + UPLOAD_BATCH]) if r.succeeded)
+    return ok
 
 
 def hybrid_search(

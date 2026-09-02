@@ -431,3 +431,20 @@ QUERIES_EXT: list[dict] = [
     {"qid": "E23", "type": "C", "text": "新入社員がプリンタを登録する手順は?", "video": "newhire-orientation", "expected_step": 5, "ref_answer": "設定アプリからプリンタの追加を開き、自分のフロアの複合機を選んでインストールする。"},
     {"qid": "E24", "type": "S", "text": "セットアップで困ったときのヘルプデスクの内線番号は?", "video": "newhire-orientation", "expected_step": 7, "answer": "内線 1234", "ref_answer": "ヘルプデスク 内線 1234 へ連絡する。"},
 ]
+
+
+# コーパスに根拠が無い質問(U タイプ)。RAG が「分かりません」と棄権できるか(捏造しないか)を
+# 測る。retrieval 指標(hit@k 等)の対象外で、rag-answer → 棄権率(abstention)にのみ使う。
+# 題材は 26 業務ドメイン+コア 14 本のいずれにも無いものを選んでいる。
+QUERIES_UNANSWERABLE: list[dict] = [
+    {"qid": "U01", "type": "U", "text": "出張の航空券はどのシステムで手配する?"},
+    {"qid": "U02", "type": "U", "text": "社員食堂の支払いに使える決済方法は?"},
+    {"qid": "U03", "type": "U", "text": "名刺の追加発注はどこに依頼する?"},
+    {"qid": "U04", "type": "U", "text": "育児休業の申請書はどこで入手できる?"},
+    {"qid": "U05", "type": "U", "text": "社内図書室の本は何冊まで借りられる?"},
+    {"qid": "U06", "type": "U", "text": "制服のサイズ交換は誰に申し出る?"},
+    {"qid": "U07", "type": "U", "text": "従業員持株会の拠出額の上限は?"},
+    {"qid": "U08", "type": "U", "text": "社内駐車場の月極利用料はいくら?"},
+]
+for _q in QUERIES_UNANSWERABLE:
+    _q["ref_answer"] = "コーパスに根拠が無いため「提供された情報からは分かりません」と答えるのが正しい。"

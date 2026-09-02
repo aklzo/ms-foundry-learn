@@ -35,6 +35,7 @@ COMPLETION_MODEL=gpt-5.4-mini
 COMPLETION_DEPLOYMENT=gpt-5.4-mini
 EMBED_MODEL=text-embedding-3-small
 EMBED_DEPLOYMENT=text-embedding-3-small
+JUDGE_DEPLOYMENT=gpt-4.1-mini
 EOF
 echo "wrote .env (endpoint=$FOUNDRY_ENDPOINT)"
 
