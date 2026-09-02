@@ -1,0 +1,19 @@
+{
+  "baseAnalyzerId": "prebuilt-video",
+  "description": "videoSearch 相当のセグメント分割 + 日本語フィールド(日本語要約・画面内テキスト転記・操作列挙)",
+  "config": {
+    "returnDetails": true,
+    "disableFaceBlurring": false,
+    "enableSegment": true,
+    "omitContent": true,
+    "contentCategories": {
+      "segment": {
+        "description": "Divide the video into smaller segments by identifying changes in topic, scene, or operation step - using visual or audio cues, dialogue shifts, or transitions as indicators. If the video centers on a single main topic, segment it further by breaking out distinct subtopics. Avoid returning a single segment for the entire video.",
+        "analyzerId": "segmentFieldsJa"
+      }
+    }
+  },
+  "models": {
+    "completion": "gpt-5.4-mini"
+  }
+}

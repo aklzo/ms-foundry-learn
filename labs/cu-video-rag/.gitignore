@@ -1,0 +1,6 @@
+data/videos/
+data/audio/
+data/pages/
+logs/
+.env
+data/eval/video_urls.json

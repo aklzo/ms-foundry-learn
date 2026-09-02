@@ -1,0 +1,32 @@
+{
+  "baseAnalyzerId": "prebuilt-video",
+  "description": "研修動画セグメント用の日本語フィールド抽出(日本語要約・画面内テキスト転記・操作列挙)",
+  "config": {
+    "returnDetails": true
+  },
+  "fieldSchema": {
+    "name": "TrainingSegmentFields",
+    "fields": {
+      "summaryJa": {
+        "type": "string",
+        "method": "generate",
+        "description": "このセグメントの内容を日本語で 2〜3 文に要約する。ナレーションの内容と画面上で行われた操作の両方を含めること。"
+      },
+      "screenTexts": {
+        "type": "array",
+        "method": "generate",
+        "items": { "type": "string" },
+        "description": "画面に表示されている重要なテキストを一字一句そのまま書き出す。サーバーアドレス・エラーコードやエラー番号・設定値・パスワード要件・金額・型番・製品名・ボタン名などを、読み取れる限り省略せず正確に転記すること。"
+      },
+      "uiActions": {
+        "type": "array",
+        "method": "generate",
+        "items": { "type": "string" },
+        "description": "このセグメントで行われた画面操作を日本語で列挙する(例: 「接続」ボタンをクリック、ダイアログを閉じる)。"
+      }
+    }
+  },
+  "models": {
+    "completion": "gpt-5.4-mini"
+  }
+}
