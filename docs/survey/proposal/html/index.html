@@ -87,7 +87,7 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html" class="current">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a href="05-case-studies.html">05. 公開事例集</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<body><nav class="site"><a href="index.html" class="current">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a href="05-case-studies.html">05. 公開事例集</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a><a class="xset" href="../../casebook/html/index.html">→ casebook</a></nav>
 <main>
 <h1 id="foundry-提案実務ガイド">Foundry 提案実務ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント構成">ドキュメント構成</a></li><li><a href="#使い方-提案フローとの対応">使い方(提案フローとの対応)</a></li><li><a href="#更新方針">更新方針</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
 <blockquote><p><strong>最終更新:</strong> 2026-07-31 / <strong>版:</strong> 初版<br><a href="../../features/html/index.html">features(機能ステータス)</a> が「その機能は使えるのか」、<a href="../../architecture/html/index.html">architecture(設計ガイド)</a> が「どう組むか」に答えるのに対し、本セットは <strong>SI の提案活動そのもの</strong>(ヒアリング → 構成決定 → 見積もり → リスク説明)を支援する実務ドキュメント群。</p></blockquote>
@@ -131,7 +131,7 @@ footer {
 </tbody></table></div>
 <h2 id="使い方-提案フローとの対応">使い方(提案フローとの対応)</h2>
 <ol>
-<li><strong>ヒアリング</strong>: <a href="01-hearing-sheet.html">01</a> の質問リストで要件を採取 → 構成候補(architecture のユースケース型)を 1〜2 案に絞る</li>
+<li><strong>ヒアリング</strong>: <a href="01-hearing-sheet.html">01</a> の質問リストで要件を採取 → 構成候補(architecture のユースケース型)を 1〜2 案に絞る → 最も近い要件シナリオを <a href="../../casebook/html/01-scenario-playbook.html">casebook 01</a> で照合し、詰まりどころ(P-ID)を <a href="../../casebook/html/02-pitfalls-index.html">casebook 02</a> から抽出</li>
 <li><strong>実現可否チェック</strong>: 候補構成で使う機能を <a href="../../features/html/index.html">features</a> で GA / プレビュー確認 → プレビュー依存と廃止日程をリスク一覧化</li>
 <li><strong>概算</strong>: <a href="02-cost-estimation.html">02</a> の手順で月額レンジを試算</li>
 <li><strong>リスク・規制説明</strong>: <a href="03-japan-compliance.html">03</a> で顧客説明の論点を準備</li>
@@ -150,6 +150,10 @@ footer {
 <tr>
 <td>2026-07-31</td>
 <td>初版作成(4ドキュメント)</td>
+</tr>
+<tr>
+<td>2026-09-04</td>
+<td>casebook セット(要件シナリオ別プレイブック / 詰まりどころ索引 / 案件事例)への導線を 01 の 4-1・クイックマップ末尾・アウトプット 6 と本ページの使い方に追加</td>
 </tr>
 <tr>
 <td>2026-08-02</td>

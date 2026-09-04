@@ -2,7 +2,7 @@
 
 [← 提案実務ガイド TOP](./README.md)
 
-> **最終更新:** 2026-07-31
+> **最終更新:** 2026-07-31 / 2026-09-04(casebook への導線・閉域 Lv 定義を追加)
 > 初回〜2回目のヒアリング(60〜90分)を想定。各質問に「なぜ聞くか」と「回答が構成に与える影響」を付けてある。**回答をこのシートに沿って埋めると、[architecture のユースケース型](../architecture/README.md)のどれかに落ちる**ように設計している。
 
 ## 使い方
@@ -61,7 +61,7 @@
 
 | # | 質問 | なぜ聞くか | 回答 → 構成への影響 |
 | --- | --- | --- | --- |
-| 4-1 | **閉域(インターネット非経由)が必須か。それは要件か希望か** | BYO VNet 注入は**作成後の変更不可**。最初に決めないと作り直しになる | 必須 → [architecture 07](../architecture/07-usecase-regulated-edge.md) の「使えない機能一覧」から設計を始める(File Search / Browser Automation / Computer Use / Image Generation / Logic Apps 等が非対応) |
+| 4-1 | **閉域(インターネット非経由)が必須か。それは要件か希望か** | BYO VNet 注入は**作成後の変更不可**。最初に決めないと作り直しになる | 必須 → [architecture 07](../architecture/07-usecase-regulated-edge.md) の「使えない機能一覧」から設計を始める(File Search / Browser Automation / Computer Use / Image Generation / Logic Apps 等が非対応)。**「閉鎖」の Lv 定義(Lv3 = インバウンド遮断のみ / Lv4 = egress 統制・外部 SaaS・PyPI 禁止)も同時に確定**する — CI/CD・搬入・監視の設計と見積もりが別物になる([casebook S-12](../casebook/01-scenario-playbook.md#s-12-顧客閉域環境への納品-ci-cd・構築・搬入・プロンプト運用)) |
 | 4-2 | 業種の規制・ガイドラインは?(FISC / 3省2 / ISMAP / 社内基準) | [03 規制メモ](./03-japan-compliance.md)の該当節を適用 | 政府 → ISMAP 登録状況の確認が先決。金融 → FISC 対応整理 + 閉域 |
 | 4-3 | **Web 検索・外部サービス呼び出しを許容するか** | Web search / Bing 系は **DPA 対象外・地理境界外送信・別課金** | 不許容 → Web グラウンディング機能を全て外す(サブスクリプション単位で無効化も可) |
 | 4-4 | 認証は?(Entra ID / 外部 IdP / 匿名) | Agents は Entra ID 必須(API キー不可)。顧客向けは別途 IdP 統合 | 外部 IdP → フロント側で変換。B2C 相当の設計を工数に |
@@ -105,6 +105,8 @@
 | 国内データ処理必須 | Regional Standard (Japan East) + 評価は国外の扱いを合意 | Japan East のモデル提供状況・クォータを個別確認 |
 | 文書処理中心 | Content Understanding(+ DI)+ Batch | CU は BYO モデル接続必須 / ページ・サイズ上限 |
 
+**シナリオ別の判断根拠と詰まりどころ:** 上表の構成候補ごとに、ゲート判定・却下案とその理由・詰まりどころ(P-ID)・見積もりで効く点を [casebook 01 要件シナリオ別プレイブック](../casebook/01-scenario-playbook.md) に整理してある(社内 RAG = S-01、ヘルプデスク × ITSM = S-02、承認付き自動化 = S-03、閉域 = S-04、顧客向け = S-05、SaaS = S-06、既存組込み = S-07、Copilot Studio 引き継ぎ = S-08、文書・動画処理 = S-09、音声 = S-10、廃止期限駆動の移行 = S-11、顧客環境納品 = S-12)。
+
 ## ヒアリング後のアウトプット(提案までの ToDo)
 
 1. 構成候補 1〜2 案(architecture 該当章の構成図をベースに)
@@ -112,3 +114,4 @@
 3. **廃止日程との衝突チェック**(features README の期限表)
 4. 概算月額レンジ([02](./02-cost-estimation.md) の手順で)
 5. 規制・契約の論点リスト([03](./03-japan-compliance.md) から該当分)
+6. **詰まりどころリスト**(該当シナリオが参照する [casebook 02](../casebook/02-pitfalls-index.md) の P-ID)— 提案書のリスク欄と設計レビューのチェック項目に転記する

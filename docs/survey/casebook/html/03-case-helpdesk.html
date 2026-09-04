@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03. 案件事例: 社内ヘルプデスク × ServiceNow — 設計判断が 3 回変わった経緯と実測</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html">Foundry SI ケースブック</a><a href="01-scenario-playbook.html">01. 要件シナリオ別プレイブック</a><a href="02-pitfalls-index.html">02. 詰まりどころ索引</a><a href="03-case-helpdesk.html" class="current">03. 案件事例</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
+<main>
+<h1 id="03-案件事例-社内ヘルプデスク-servicenow-設計判断が-3-回変わった経緯と実測">03. 案件事例: 社内ヘルプデスク × ServiceNow — 設計判断が 3 回変わった経緯と実測</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この事例から持ち帰るもの-先に結論">この事例から持ち帰るもの(先に結論)</a></li><li><a href="#1-案件の骨格">1. 案件の骨格</a></li><li><a href="#2-判断の変遷-タイムライン">2. 判断の変遷(タイムライン)</a></li><li><a href="#3-v4-の設計判断-adr-12-本の要約">3. v4 の設計判断(ADR 12 本の要約)</a></li><li><a href="#4-実測-2026-08-30・japaneast・2-ラウンド">4. 実測(2026-08-30・japaneast・2 ラウンド)</a></li><li><a href="#5-顧客閉域環境への納品で問題になった点-v2-期の洗い出し-2026-08-07">5. 顧客閉域環境への納品で問題になった点(v2 期の洗い出し、2026-08-07)</a></li><li><a href="#6-提案への含意-一般化">6. 提案への含意(一般化)</a></li><li><a href="#参照">参照</a></li></ul></div>
+<p><a href="index.html">← ケースブック TOP</a></p>
+<blockquote><p><strong>最終更新:</strong> 2026-09-04(初版)<br><strong>出典:</strong> 外部案件リポジトリ <code>foundry-servicenow-helpdesk</code>(非公開)の docs/v2〜v4(ADR・検証計画・実測記録)。本リポジトリの <a href="../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">tech-selection-guide §5</a> に載せた v2/v3 期の実測に、<strong>v4(2026-08-30、hosted agent + standard setup、公開+閉域の 2 ラウンド)の実測</strong>を加えて、判断の変遷ごと記録する。顧客名・固有情報は含まない。</p></blockquote>
+<h2 id="この事例から持ち帰るもの-先に結論">この事例から持ち帰るもの(先に結論)</h2>
+<ol>
+<li><strong>「Foundry を使うか」は 1 回で決まらない。</strong>同じ案件で「フル活用(v2)→ 意図的撤退(v3)→ hosted agent で再挑戦(v4)」と 3 回判断が変わった。変わった理由は技術の不足ではなく、<strong>顧客制約(データ所在・プレビュー不使用・閉域)の解像度が上がったこと</strong>と、<strong>公式側の対応(standard setup の BYO、hosted agents GA)が追いついたこと</strong>の 2 つ</li>
+<li><strong>撤退の根拠は後から弁別にならないことがある。</strong>v3 は「会話・ファイルがサービス側に保存されるから」を撤退理由にしたが、v3 自身も会話を自前 Cosmos に 1 年保持しており、<strong>会話については弁別になっていなかった</strong>。本当に効いていたのは「添付原本を保存しない」「ServiceNow 書き込み・状態遷移をアプリ層で決定的に実行する」の 2 点。<strong>撤退理由は「何が Foundry だと満たせないか」を機能単位で書く</strong></li>
+<li><strong>閉域 × hosted agent は「デプロイ成功・実行だけ失敗」という気づきにくい断面で壊れる。</strong>アウトバウンド VNet 注入(作成時のみ設定可)なしの閉域では、hosted agent は自プロジェクト(モデル・Conversations)にも BYO AI Search にも戻れない。公式の閉域ツール表「PE 経由で対応」は<strong>注入構成が前提</strong></li>
+<li><strong>hosted agent は cold start +数秒で keep-warm 不要</strong>(実測 cold 12.4 秒 / warm 8.1 秒)。ACA の scale-to-zero(44.8 秒)とは別物で、「常時起動なしで応答性を両立」できる点が ACA に対する優位。ただし運用モデル(デプロイ経路・資格情報・観測)が 2 種類になるのがコスト</li>
+<li><strong>v3 脳 → v4 脳の同一データセット比較で品質劣化なし。</strong>「Foundry に載せ替えると精度が変わるか」は評価ハーネスがあれば 1 日で答えが出る。<strong>載せ替え判断の前に評価ゲートを作る</strong>のが正しい順序</li>
+</ol>
+<h2 id="1-案件の骨格">1. 案件の骨格</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>業務</td>
+<td>社内ヘルプデスクの問い合わせ AI。利用者は ServiceNow(SN)のフォームから起票 → AI が聞き返し・FAQ / 過去チケット / マニュアルを検索して一次回答 → 解決 or 担当者へ引き継ぎ。<strong>SN が業務の正(データの正は SN)</strong></td>
+</tr>
+<tr>
+<td>顧客制約</td>
+<td>①「Azure 保存は最終手段」(添付原本は保存しない)②プレビュー機能・プレリリースライブラリ不使用(顧客環境にデプロイして納品するため)③閉域 Lv2〜3(インバウンド遮断+PE。アウトバウンドは NAT 許容。Lv4 = egress 統制は当初スコープ外)</td>
+</tr>
+<tr>
+<td>ガードレール方針</td>
+<td>SN への書き込み・処理ステータス遷移・解決 / 引き継ぎの発火は<strong>ツールにせずアプリ層が決定的に実行</strong>(誤発火防止・監査の確定)。これは v2〜v4 で不変</td>
+</tr>
+<tr>
+<td>評価</td>
+<td>自前 4 指標(retrieval hit@3 / unanswerable / category / hearing)のゲート+groundedness。同一データセットで版間比較</td>
+</tr>
+</tbody></table></div>
+<p>architecture の型で言えば <strong>B1(単一エージェント+基幹 API)+ A2(AI Search 自前索引)+ D1(閉域)</strong> の複合。ヒアリングシート(<a href="../../proposal/html/01-hearing-sheet.html">proposal 01</a>)なら Phase 2-3(機密区分)・4-1(閉域は要件か希望か)・7-2(プレビュー許容)が全部「厳しい側」に倒れた案件。</p>
+<h2 id="2-判断の変遷-タイムライン">2. 判断の変遷(タイムライン)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>版</th>
+<th>時期</th>
+<th>構成</th>
+<th>決め手</th>
+<th>後から見てどうだったか</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>v2</strong></td>
+<td>〜2026-08 上旬</td>
+<td><strong>Foundry フル活用</strong>: Prompt agent + Conversations(basic)+ evals API + Foundry トレーシング。Azure 実環境 6 ラウンド(閉域 2 回)、groundedness 4.46、同時 10 負荷試験</td>
+<td>「可能な限り Foundry 活用」の基本方針</td>
+<td>技術的には成立。<strong>顧客閉域環境への納品</strong>を考えると、プロンプトのポータル編集と Git の乖離・イメージ搬入経路未設計・閉域 CI/CD 未設計が露出(§5)</td>
+</tr>
+<tr>
+<td><strong>v3</strong></td>
+<td>2026-08-15 決定</td>
+<td><strong>意図的撤退</strong>: AOAI chat completions + AI Search + <strong>自前 Python オーケストレータ(function calling)on Container Apps</strong>。モデル実行基盤としての Foundry(AIServices アカウント+デプロイ)は使用継続</td>
+<td>①会話・ファイルがサービス側保存 → 「Azure 保存は最終手段」と衝突 ②SN 書き込み・状態遷移をアプリ層で決定的に</td>
+<td>①は<strong>会話については弁別になっていなかった</strong>(v3 も Cosmos に保持)。②は正しい。<strong>Standard setup(BYO)・hosted agent を対案として検討した記録がなかった</strong>のが反省点</td>
+</tr>
+<tr>
+<td>顧客質疑</td>
+<td>2026-08-18</td>
+<td>「なぜ Foundry(エージェント機能)を使わないのか」</td>
+<td>—</td>
+<td>文書で回答したが、<strong>「技術的には移行可能、方針として V3R-37 を優先」</strong>という説明は顧客の基本方針(Foundry 活用)と緊張。→ v4 で「動く対案+実測」を作る判断</td>
+</tr>
+<tr>
+<td><strong>v4</strong></td>
+<td>2026-08-30 構築・実測</td>
+<td><strong>ハイブリッド</strong>: 決定的シェル(聞き返し・SN 書き込み・状態機械)は ACA のまま、<strong>RAG 回答コアだけ hosted agent + Conversations(standard setup / BYO)</strong> に載せる。<code>AGENT_MODE=hosted</code> で v3 と切替可能、src 共有</td>
+<td><span class="badge ga">GA</span> かつ閉域対応(一次情報で確認)。standard setup が「全エージェントデータが自社テナント内」を公式に明文化 → V3R-37 への正式回答になった</td>
+<td>公開環境では成立・品質劣化なし。<strong>閉域(Lv3・注入なし)では実行だけ失敗</strong>(§4)。v3 は現行本流のまま維持し、v4 は「対案の実証」として並走</td>
+</tr>
+</tbody></table></div>
+<p><strong>変遷の読み方:</strong> 判断が変わるたびに「顧客制約の言語化」が進んだ。v2 は「Foundry 活用」、v3 は「データ所在」、v4 は「GA・閉域対応・全データ自社テナント内」。<strong>提案時にここまで制約を言語化できていれば v3 の撤退は「部分撤退」で済んだ可能性が高い</strong>(→ <a href="01-scenario-playbook.html#s-02-社内ヘルプデスク-itsm-servicenow-連携">01 S-02</a>)。</p>
+<h2 id="3-v4-の設計判断-adr-12-本の要約">3. v4 の設計判断(ADR 12 本の要約)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>判断</th>
+<th>決定</th>
+<th>却下した案と理由</th>
+</tr></thead><tbody>
+<tr>
+<td>実行基盤</td>
+<td>会話脳 = <strong>hosted agent</strong>(GA・japaneast)。API/UI/Jobs = ACA 継続</td>
+<td>ACA 継続のみ(v3): サーバー・監視配線・版管理のグルーが自前。hosted は App Insights 自動注入・不変バージョン・スケールゼロがマネージドで付く</td>
+</tr>
+<tr>
+<td>コンテナ内サーバー</td>
+<td><strong>FastAPI で Responses protocol 2.0.0 を自前実装</strong>。デプロイは <code>azure-ai-projects</code>(GA)の <code>create_version_from_code</code>(zip + REMOTE_BUILD、ACR 不要)</td>
+<td><code>agent-framework-foundry-hosting</code>: <strong>プレリリース版のみ</strong>で「プレリリース不使用」制約と衝突。MAF ごと採用も同 lib 依存で不可。→ プロトコル改訂への追随義務を負う代わりに契約テストで検知</td>
+</tr>
+<tr>
+<td>責務分割</td>
+<td>ヒアリング・カテゴリ修正 = 決定的シェル(ACA)/ 検索 3 種 = hosted agent 内の LLM ツール選択</td>
+<td>全部 hosted: SN 書き込みの決定性が失われる</td>
+</tr>
+<tr>
+<td>会話ストア</td>
+<td><strong>自前 Cosmos(SoR: 状態機械・所有権・ETag)+ Conversations(BYO)の二重保持</strong>。自前 Cosmos が削除台帳を兼ねる</td>
+<td>(a) 自前のみ = Foundry の会話面を検証できない (b) Conversations basic = Microsoft 管理ストレージで方針と衝突</td>
+</tr>
+<tr>
+<td>standard setup</td>
+<td><strong>使い捨て RG の新規アカウントで作成時に有効化</strong>(後付け不可)。BYO Cosmos はエージェント用と自前 SoR で<strong>別アカウント</strong>(誤操作防止)</td>
+<td>既存環境への in-place 追加は不可能なので設計しない。長命環境なら第 2 アカウント並設(TPM クォータ分割・PE 追加が必要)</td>
+</tr>
+<tr>
+<td>API version</td>
+<td>capabilityHosts / connections の ARM API は <strong>2025-04-01-preview のみ</strong>(2026-08-30 時点) → 「コントロールプレーン IaC の版」と「顧客が触るサービス面の GA」を区別し、例外として採用・記録</td>
+<td>—</td>
+</tr>
+<tr>
+<td>検索方式</td>
+<td>faq / ticket = AI Search 継続、manual も <strong>AiSearchTool を恒久採用</strong>(File Search は不成立、§4)</td>
+<td>File Search: 素の検索 API がなく決定的ヒット列に写像できない</td>
+</tr>
+<tr>
+<td>保持期間</td>
+<td>Conversations に TTL なし → <strong>終端フック(best-effort)+ 日次スイープ</strong>の 2 段削除。順序は Foundry 先・台帳後</td>
+<td>—</td>
+</tr>
+<tr>
+<td>プレビュー不使用</td>
+<td>採用機能ごとに <strong>GA 証跡(URL・確認日)</strong> を記録してから採用。除外: Memory / Routines / Workflows / Foundry IQ(ポータル面 Preview)/ model router(既定で非 OpenAI へ)/ Bing・Web・SharePoint(公開経路+DPA 外)/ <strong>Tracing VNet(Preview)</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>プロンプト正本</td>
+<td><strong>Git 一方向</strong>(Foundry へはデプロイのみ)。v2 の「ポータル編集が Git と乖離して退行」の教訓</td>
+<td>ポータル編集開放: 評価ゲートを通らない変更が本番に入る</td>
+</tr>
+<tr>
+<td>評価</td>
+<td>自前 4 指標ゲート(ブロッキング)+ evals API groundedness(レポート指標)。<strong>azure-ai-evaluation SDK は不使用</strong>(gpt-5 系ジャッジで 400)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>監視</td>
+<td><strong>主系 = 自前 OTel + App Insights</strong>、Foundry トレーシングは開発時の付加系</td>
+<td>Tracing VNet が Preview のため閉域運用の前提に置けない</td>
+</tr>
+</tbody></table></div>
+<h2 id="4-実測-2026-08-30・japaneast・2-ラウンド">4. 実測(2026-08-30・japaneast・2 ラウンド)</h2>
+<h3 id="4-1-公開環境-ラウンド-1">4-1. 公開環境(ラウンド 1)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>実測</th>
+<th>設計への含意</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td><strong>エージェント面エンドポイント(<code>/agents/{name}/endpoint/protocols/openai/responses</code>)は <code>?api-version=v1</code> クエリ必須</strong>(欠くと 400)。プロジェクトの <code>/openai/v1</code> 面は逆にクエリを拒否 — 非対称</td>
+<td>Routines REST(<a href="../../tech-selection-guide.md#2-実装ナレッジ集ハマりどころ">tech-selection-guide 罠 10</a>)と同型。SDK の <code>default_query</code> で固定</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>agent identity の既定アクセスに Conversations の読み取りは含まれない</strong>。履歴フェッチが失敗しコンテナ内 500。<strong>Azure AI User + Cognitive Services OpenAI User</strong> を 2 段目テンプレートで明示付与</td>
+<td>公式の「モデル推論・セッションストレージへ既定アクセス」を「Conversations も読める」と読まない</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>RBAC 伝播は 15〜45 分規模・MI ごとに不均一</strong>(API / ジョブ / agent identity)。デプロイ直後の E2E は伝播窓に入り失敗</td>
+<td>CI/CD に伝播待ち(ポーリング)を入れる。伝播中の失敗は「バグ」と誤診しない</td>
+</tr>
+<tr>
+<td>4</td>
+<td>hosted agent provisioning <strong>初回 125.9 秒 / 2 回目 45.9 秒</strong>(zip 55 ファイル・REMOTE_BUILD)</td>
+<td>デプロイ工程に 2〜3 分のポーリングを見込む</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>cold start 12.4 秒(17 分アイドル後)/ warm 8.1 秒</strong>(E2E = API シェル+エージェント面+LLM ツールループ込み)。サンドボックス復帰ペナルティは +数秒</td>
+<td>ACA scale-to-zero 44.8 秒(v2 実測)と違い <strong>keep-warm 不要</strong>。対話 UX でも許容範囲</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>File Search に素の検索 API はない</strong>(<code>vector_stores.search</code> = 全面 404)。モデル内ツール専用(<code>file_search_call.queries</code> で書き換えクエリは取得可)。<strong>.xlsx / .jpg / .png は <code>unsupported_file</code> で投入不可</strong></td>
+<td>「決定的ヒット列を返す検索ツール」としては使えない。RRF 統合・引用順位制御が要るなら AI Search</td>
+</tr>
+<tr>
+<td>7</td>
+<td>BYO Cosmos に <strong><code>enterprise_memory</code> DB + 5 コンテナ</strong>(agent-entity-store / thread-message-store / run-state-v1 / system-thread-message-store / agent-definitions-v1)。<strong>5 コンテナ × autoscale 最大 1,000 RU/s</strong>(課金下限 100)。アイドル月 6〜7 千円規模</td>
+<td>v2 期の記録「最低 3,000〜5,000 RU/s 固定」より大幅に軽い。<strong>standard setup のコスト障壁は当時より小さい</strong>(<a href="../../proposal/html/02-cost-estimation.html">proposal 02</a> の BYO 行は要更新)</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>project → App Insights 接続(<code>connections/appinsights</code>)がないと hosted agent へ接続文字列が注入されず、コンテナ内部ログがどこにも届かない</strong></td>
+<td>障害切り分けで最初に確認する項目。Bicep に接続を含める</td>
+</tr>
+<tr>
+<td>9</td>
+<td>v3 脳 vs v4 脳(同一データセット・実インデックス): retrieval hit@3 0.708 → 0.667(誤差域)、unanswerable 0.000 → 0.200(改善: LLM ツール選択が無関係な質問で検索を抑制)、category / hearing 1.000 → 1.000</td>
+<td><strong>載せ替えによる品質劣化なし</strong>。比較ゲートが RRF 重み付けの実装差を実検出した(回帰検出として機能)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>破棄: standard setup ではエージェント・会話・ファイルの実体が全て自社 RG 内 → <strong>RG 削除で破棄が閉じる</strong>(basic では Microsoft 管理側の消滅を自分で確認できない)</td>
+<td>「消したことを証明できる」のは BYO の運用上の利点</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>openai</code> SDK 3.x は <code>httpx2</code>(改名フォーク)を使い <code>respx</code> でモック不能 → <code>openai&lt;3</code> にピン</td>
+<td>テスト戦略が SDK メジャーに依存する</td>
+</tr>
+</tbody></table></div>
+<h3 id="4-2-閉域-lv3-ラウンド-2-本トラック最大の発見">4-2. 閉域 Lv3(ラウンド 2)— 本トラック最大の発見</h3>
+<p>公網遮断(PNA Disabled + PE + internal ingress)後、API / UI / Foundry project / AI Search の 4 面すべて遮断を確認し、ジャンプボックスからは PE 経由で受付・聞き返しまで到達。しかし<strong>回答ターンだけが縮退応答</strong>になった。切り分け(Search のみ開放 → 変化なし / Foundry PNA も開放 → 即座に実回答)で確定:</p>
+<blockquote><p><strong>アウトバウンド VNet 注入なしの閉域(Lv3 = インバウンド遮断のみ)では hosted agent は成立しない。</strong>hosted agent コンテナは顧客 VNet 外の Foundry 管理コンピュートで動くため、PNA Disabled にした<strong>自プロジェクト(モデル・Conversations)にも BYO AI Search にも到達できない</strong>。閉域ツール表の「AI Search = PE 経由」「File Search = PE 経由」は<strong>アウトバウンド VNet 注入構成(<a href="https://github.com/microsoft-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep/15-private-network-standard-agent-setup">公式 15-private-network-standard-agent-setup</a>)が前提</strong>で、注入は<strong>作成時のみ設定可</strong>。</p></blockquote>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>実測</th>
+<th>設計への含意</th>
+</tr></thead><tbody>
+<tr>
+<td>12</td>
+<td>上記。インフラ(standard setup・PE・エージェント配布)は注入なしでも立つため <strong>「デプロイは成功するが実行だけが通らない」</strong></td>
+<td><strong>閉域で hosted agent を使うなら Lv3 要件でも最初から VNet 注入つきで作る。</strong>代替は「会話脳を ACA に留める(v3 構成)」か「Foundry を選択ネットワーク+信頼サービスで部分開放」</td>
+</tr>
+<tr>
+<td>13</td>
+<td>PNA Disabled ではデータプレーン配布(<code>create_version_from_code</code>・ナレッジ投入)も公網から届かない → 「一時開放 → 配布 → 再遮断」で運用(スクリプト化)</td>
+<td>恒久運用では閉域内の配布経路(セルフホストランナー等)が必要。<a href="../../architecture/html/07-usecase-regulated-edge.html#その他の運用上の制約">architecture 07 §3</a> の「VNet 化後は <code>azd up</code> 不可」と同じ問題</td>
+</tr>
+<tr>
+<td>14</td>
+<td>閉域作成アカウントでは(一時開放中でも)<strong>vector store 作成自体が 500</strong> で継続失敗(公開作成アカウントでは成功)。原因未特定</td>
+<td>File Search 不採用の追加補強。閉域で File Search を提案しない</td>
+</tr>
+<tr>
+<td>15</td>
+<td>閉域の Key Vault シークレット参照は PE / DNS 完成後でないと解決に失敗(<code>dependsOn</code> 必須)</td>
+<td>Bicep の依存順序</td>
+</tr>
+<tr>
+<td>16</td>
+<td>capabilityHost の再 PUT(同一構成)は<strong>冪等</strong>。Foundry アカウントの <code>networkAcls</code> は未設定だとプロパティ自体が存在しない(PNA のみで切替)</td>
+<td>stack 再デプロイは安全</td>
+</tr>
+<tr>
+<td>17</td>
+<td>テレメトリの閉域到達は<strong>未確認のまま環境破棄</strong>(理論上は NAT 経由で届くはず)</td>
+<td>次回閉域検証の持ち越し</td>
+</tr>
+</tbody></table></div>
+<h2 id="5-顧客閉域環境への納品で問題になった点-v2-期の洗い出し-2026-08-07">5. 顧客閉域環境への納品で問題になった点(v2 期の洗い出し、2026-08-07)</h2>
+<p>Foundry の機能可否とは別に、<strong>「顧客の閉鎖環境に構築して引き渡す」SI 固有の問題</strong>が v2 期に洗い出された。Foundry 案件に限らない普遍的な地雷なので、<a href="01-scenario-playbook.html#s-12-顧客閉域環境への納品-ci-cd・構築・搬入・プロンプト運用">01 S-12</a> の根拠として残す。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>論点</th>
+<th>深刻度</th>
+<th>何が起きるか</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>コンテナイメージのビルド・搬入経路が閉域未設計(ベースイメージは ghcr.io、<code>uv sync</code> で PyPI 直、ACR Basic = PE 非対応)</td>
+<td>致命</td>
+<td>Lv3(インバウンド遮断のみ)なら <code>az acr build</code>(クラウド側ビルド)で成立するが、<strong>Lv4(外部レジストリ・PyPI 禁止)では ACR Premium + PE + 「自社でビルド → <code>az acr import</code> / tar 持ち込み」の搬入手順が必要</strong>で、その手順書が存在しなかった</td>
+</tr>
+<tr>
+<td>2</td>
+<td>管理画面のプロンプト編集がコンテナ内で揮発し Git と乖離</td>
+<td>致命</td>
+<td>評価ゲートを通らない変更が本番に入る / 再デプロイで消える。→ v4 で「プロンプト正本は Git 一方向」に</td>
+</tr>
+<tr>
+<td>3</td>
+<td>閉域向け CI/CD が事実上未設計(GitHub ホストランナー + PyPI + OIDC 前提)</td>
+<td>高</td>
+<td><strong>Lv3 か Lv4 かで答えが変わる。</strong>Lv3 なら Azure DevOps 不要(成果物だけ届ける)。Lv4 なら Azure DevOps + VNet 内セルフホストエージェント + Azure Artifacts(PyPI upstream)+ ベースイメージの ACR ミラー。<strong>「どちらか」をヒアリングで確定しないと見積もれない</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>1 本以外のプロンプト・評価データがイメージ同梱で、変更 = イメージ再ビルド</td>
+<td>高</td>
+<td>運用で「プロンプトを直す」たびに搬入経路(#1)を通る</td>
+</tr>
+<tr>
+<td>5</td>
+<td>初期セットアップが ARM PUT の非冪等な手作業</td>
+<td>高</td>
+<td>戻し忘れリスク。→ v4 では capabilityHost 再 PUT 冪等を実証し stack 化</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Lv3 でも外に出る通信 6 種(ARM 管理プレーン・Entra・App Insights 等)</td>
+<td>中〜高</td>
+<td>顧客の「閉鎖」の定義次第でスコープ外になる。<strong>T-xx(顧客了承事項)として明文化</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td>閉域内ブラウザ → 管理画面の Entra ログイン経路が未設計</td>
+<td>中〜高</td>
+<td>Bastion / jump box / VPN のどれかを顧客側と合意</td>
+</tr>
+<tr>
+<td>8</td>
+<td>監視の閉域化(AMPLS)未実装</td>
+<td>中</td>
+<td>Lv4 では App Insights も PE 化が必要</td>
+</tr>
+</tbody></table></div>
+<h2 id="6-提案への含意-一般化">6. 提案への含意(一般化)</h2>
+<ol>
+<li><strong>撤退理由は機能単位で書く。</strong>「Foundry はデータがサービス側に残る」ではなく「添付原本の不保存は File Search / Conversations では満たせない(理由: …)」「SN 書き込みの決定性は prompt agent のツール呼び出しでは保証できない」まで書く。前者は standard setup の登場で反証されたが、後者は今も成立している</li>
+<li><strong>ハイブリッド(決定的シェル + LLM コア)が SI の現実解。</strong>「全部 Foundry」「全部自前」の二択にしない。決定性が要る部分(書き込み・状態遷移・監査)を自前シェルに、LLM に任せる部分(検索・回答生成)を hosted agent に置くと、Foundry の運用機能(版管理・観測・スケールゼロ)を使いつつガードレールを保てる</li>
+<li><strong>閉域 hosted agent は「作成時に注入」を提案書に書く。</strong>後付け不可なので、Lv3 要件でも注入前提で VNet・委任サブネット(/27 以上)・PE を最初から積む。注入なしで作ると「デプロイは通るのに実行が失敗」で PoC が破綻する</li>
+<li><strong>評価ハーネスを先に作る。</strong>v3 → v4 の載せ替え判断は、同一データセット比較があったから 1 日で「劣化なし」と言えた。技術選定の A/B は評価基盤がないと感想戦になる</li>
+<li><strong>顧客の「閉鎖環境」は Lv 定義を先に合意する。</strong>Lv3(インバウンド遮断)と Lv4(egress 統制・外部 SaaS 禁止)で CI/CD・搬入・監視の設計と見積もりが別物になる</li>
+<li><strong>プレビュー不使用ポリシーは「サービス面」と「IaC の API version」を分けて運用する。</strong>standard setup は GA 機能だが Bicep の API は preview 版しかない(2026-08-30 時点)。一律「preview 禁止」だと GA 機能が使えなくなる</li>
+</ol>
+<h2 id="参照">参照</h2>
+<ul>
+<li>本リポジトリ側の関連: <a href="../../tech-selection-guide.md">tech-selection-guide §5・§6</a> / <a href="../../architecture/html/05-usecase-agent-automation.html">architecture 05 B1・B2</a> / <a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07 §2〜3</a> / <a href="02-pitfalls-index.html">02 詰まりどころ索引</a>(P-H・P-I・P-N 系)</li>
+<li>公式一次情報(v4 GA 証跡で使用): <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a>(ms.date 2026-08-14)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link">Configure network isolation</a>(2026-08-14)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents">Hosted agents</a>(2026-08-19)</li>
+</ul>
+</main>
+<footer>このHTMLは docs/survey/casebook/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

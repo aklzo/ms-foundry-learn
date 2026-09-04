@@ -1,6 +1,6 @@
 # 技術選定ガイド(実装検証ベース)
 
-> **最終更新:** 2026-07-31 / **版:** 第3版(Wave 1+2+3 反映)
+> **最終更新:** 2026-09-04 / **版:** 第5版(Wave 1+2+3 + 外部案件 v3 / v4 反映)
 > **出典の分離:** 本ドキュメントは **labs/ での実装検証から得たナレッジのみ**を集約する。公式ドキュメント調査由来の知見は [docs/survey/](./survey/README.md)(features / architecture / proposal)にあり、混在させない。各主張には検証元(どのラボ/ポートで実証したか)を付す。
 > **検証環境:** agent-framework 1.10〜1.13 / azure-ai-projects 2.4 / Microsoft Foundry(Japan East、gpt-5.4-mini)/ 2026-07 時点。フレームワークの進化が速いため、**版が変われば結論も変わりうる**。
 
@@ -101,6 +101,7 @@
 - 音声入出力の実機検証(Wave 2 は WebSocket 接続+ツールループまで。マイク環境が必要)
 - Toolbox 経由のツール共有、エージェント向けガードレール(プレビュー)の実運用
 - マルチリージョン・高可用構成の実証(現状は単一リージョンのラボ構成)
+- **閉域 × VNet 注入つき hosted agent の構築**(外部案件では注入なしでの失敗を実証したのみ。§6-16)
 
 ## 5. 外部案件検証からの追記(foundry-servicenow-helpdesk、2026-08-05)
 
@@ -128,6 +129,38 @@ foundry-probes(01/02/08)の発見とは独立検証で一致を確認済み。
    11.1 秒(gpt-5-mini)、scale-to-zero のコールドスタートは 44.8 秒で 60 秒
    タイムアウトに接近 — minReplicas=1 か高速モデルへの切替が必要
 
+## 6. 外部案件検証からの追記 第 2 弾(foundry-servicenow-helpdesk v4、2026-08-30)
+
+同案件で hosted agent + Conversations(standard setup / BYO)の対案(v4)を構築し、公開環境と閉域 Lv3 の
+2 ラウンドで実測した。判断の変遷(フル活用 → 意図的撤退 → hosted agent 再挑戦)と全実測は
+[casebook 03](./survey/casebook/03-case-helpdesk.md)、詰まりどころとしての索引は
+[casebook 02](./survey/casebook/02-pitfalls-index.md)。ここでは §2 の続きとして実装ナレッジの要点のみ。
+
+14. **エージェント面エンドポイント(`/agents/{name}/endpoint/protocols/openai/responses`)は `?api-version=v1`
+    必須**(欠くと 400)。プロジェクトの `/openai/v1` 面は逆にクエリを拒否する非対称。罠 10(Routines)と同型 — v4
+15. **agent identity の既定アクセスに Conversations の読み取りは含まれない。**履歴フェッチ失敗 → コンテナ内 500。
+    Azure AI User + Cognitive Services OpenAI User を第 2 段テンプレートで明示付与。**RBAC 伝播は 15〜45 分規模で
+    MI ごとに不均一**(罠 1 の 5〜15 分より長い) — v4
+16. **閉域 × hosted agent はアウトバウンド VNet 注入(作成時のみ)が実質必須。**注入なし Lv3 ではコンテナ
+    (顧客 VNet 外)が PNA Disabled の自プロジェクト / BYO Search に戻れず「デプロイ成功・実行だけ失敗」になる。
+    閉域ツール表の「PE 経由」は注入前提 — v4 ラウンド 2
+17. **File Search に素の検索 API はない**(`vector_stores.search` = 全面 404)。モデル内ツール専用で決定的ヒット列に
+    写像できない。`.xlsx` / 画像は投入不可。閉域作成アカウントでは vector store 作成自体が 500 — v4
+18. **Conversations BYO の実プロビジョニングは 5 コンテナ × autoscale 最大 1,000 RU/s**(アイドル月 6〜7 千円規模)。
+    v2 期の「固定 3,000〜5,000 RU/s」より大幅に軽い — v4
+19. **hosted agent は cold 12.4 秒 / warm 8.1 秒(provisioning 初回 125 秒・2 回目 45 秒)で keep-warm 不要。**
+    ACA scale-to-zero の 44.8 秒(§5 の 5)とは別物 — v4
+20. **project → App Insights 接続がないと hosted agent へ接続文字列が注入されず内部ログが消える。**capabilityHost の
+    再 PUT は冪等。閉域の Key Vault 参照は PE / DNS 完成後でないと ACA デプロイが失敗(dependsOn 必須) — v4
+21. **公式ホスティングライブラリ(`agent-framework-foundry-hosting`)はプレリリース版のみ。**プレリリース不使用の
+    顧客制約下では FastAPI で Responses protocol 2.0.0 を自前実装し、`azure-ai-projects`(GA)の
+    `create_version_from_code`(zip + REMOTE_BUILD、ACR 不要)でデプロイする構成が成立する — v4
+22. **`openai` SDK 3.x は `httpx2`(改名フォーク)を使い `respx` でモック不能** → `openai<3` にピン
+    (azure-ai-projects と両立) — v4
+23. **同一データセットで v3 脳(自前 function calling on ACA)vs v4 脳(hosted agent)を比較し品質劣化なし**
+    (retrieval hit@3 0.708 → 0.667 は誤差域、unanswerable は 0.0 → 0.2 に改善)。載せ替え判断は評価ハーネスが
+    あれば 1 日で決まる — v4
+
 ## 更新履歴
 
 | 日付 | 内容 |
@@ -135,4 +168,5 @@ foundry-probes(01/02/08)の発見とは独立検証で一致を確認済み。
 | 2026-07-31 | 初版。Wave 1(7ポート+agentic-search-maf)の実装ナレッジを集約 |
 | 2026-07-31 | 第2版。Wave 2(5ポート: Code Interpreter / クラウド評価 / Foundry IQ / hosted agent+Routines / Voice Live)の実装ナレッジを追加。ハマりどころを8点→12点に拡充 |
 | 2026-07-31 | 第3版。Wave 3(services-agency / governed-agent)を反映。**協調の分水嶺を2軸3値に改訂**(グラフ/相談型 agent-as-tool/担当交代)、middleware の知見を追加、全ポートにアーキテクチャ図を整備 |
+| 2026-09-04 | 第5版。§6 外部案件検証 第 2 弾(v4: hosted agent + standard setup、公開+閉域 Lv3 の 2 ラウンド)を追加: api-version=v1、agent identity の Conversations 権限、閉域の VNet 注入必須、File Search の検索 API 不在、BYO Cosmos の実 RU、cold start、App Insights 接続、プレリリース lib 回避、SDK ピン、v3 / v4 品質比較。§4 に未検証領域(注入つき hosted agent)を追記。casebook(docs/survey/casebook)を新設 |
 | 2026-08-05 | 第4版。§5 外部案件検証(foundry-servicenow-helpdesk)を追加: gpt-5-mini の reasoning 系挙動、リタイア間隔 12〜18 か月の実測、evals API による groundedness バッチ、allowProjectManagement、ACA 実測値 |

@@ -17,7 +17,7 @@
 | 07 | [UC-D 規制業種・閉域・データ主権](./07-usecase-regulated-edge.md) | 3 つの egress モデル、閉域で使えない機能一覧、CMK、Purview の限界、Gov クラウド、エッジ | 金融・公共・医療の案件 |
 | 08 | [UC-E 音声・文書処理・バッチ・M365](./08-usecase-specialized.md) | Voice Live とテレフォニー、DI と Content Understanding の使い分け、Batch、マルチモーダル生成、Teams 公開、ファインチューニング運用 | チャット以外の類型 |
 | 09 | [運用アーキテクチャ](./09-operations.md) | PTU サイジング、BCDR、可観測性、評価、コスト、CI/CD | 本番運用を設計する |
-| 10 | [移行とアンチパターン](./10-migration-antipatterns.md) | 確定済み廃止スケジュール、移行パターン、**踏みやすい 11 のアンチパターン** | 既存資産があるとき / レビュー前 |
+| 10 | [移行とアンチパターン](./10-migration-antipatterns.md) | 確定済み廃止スケジュール、移行パターン、**踏みやすい 15 のアンチパターン** | 既存資産があるとき / レビュー前 |
 | 11 | [エージェント構成の判断フレームワーク](./11-decision-frameworks.md) | CAF デシジョンツリー、単一 vs マルチ判断、AAC オーケストレーション 5 パターン、**Copilot Studio の上限ライン** | プラットフォームとエージェント構成を根拠付きで決める / 「試作で比較するしかないか」と聞かれた |
 
 **人間用 HTML:** `html/index.html`(Markdown が正。HTML は `python3 docs/survey/tools/md2html.py` で自動生成するので直接編集しない)
@@ -175,6 +175,7 @@
 - 公式ドキュメントに書かれている事実と、本ドキュメントの判断・推測を区別して書いている。**公式に書かれていない判断には「本ドキュメントの判断」と明記**している。
 - **公式ドキュメント間で記述が食い違っている箇所**(Data Zone の APAC 記載漏れ、hosted agents の GA / preview 表記、Reservation の交換可否など)は、その旨を併記している。
 - **リンク切れ・削除済みリソース**(ALZ 版 baseline の実装リポジトリなど)も、探して見つからないことに時間を使わないよう明記している。
+- **本ガイドは公式ドキュメント由来の構成判断に限定する。**現場で詰まった点(公開記事・labs・外部案件の実測)と、要件シナリオ別の判断(「ヘルプデスク × ITSM」「閉域必須」等)は [casebook/](../casebook/README.md) に分離した。各章の「⚠ 現場知見」「→ casebook P-xx」はそこへの導線。
 - **アーキテクチャ図(Azure 公式アイコン)は `images/*.png`(全 18 枚)。**生成スクリプトと再生成手順は [diagrams/](./diagrams/README.md)(maf-ports の描画ヘルパーを共有。図中テキストは英語)。公式-B と A〜E の主要パターンを整備済み。構成が既存図と実質同じもの(公式-A/C、A3/A4、C1/C3、D2)は作図せず理由を diagrams/README に記載。ASCII 図は生成 AI 用にそのまま残している。
 
 ### 更新運用
@@ -205,4 +206,5 @@
 | 2026-08-01 | **Azure アイコンのアーキテクチャ図を導入。**代表 4 パターン(公式-B Baseline / A2 / B2 / D1)を `diagrams/*.py` → `images/*.png` で生成し 01・04・05・07 章に埋め込み。md2html.py に画像対応(`![...]` → `<img>`、html/ からの相対パス書き換え)を追加 |
 | 2026-08-01 | **アーキテクチャ図を全 18 枚に拡充。**A1(A3/A4 統合)/ A5 / B1 / B3 / B4 / B5 / C2 / D3 / E1〜E6 の 14 枚を追加し全ユースケース章に埋め込み。構成が同型のパターン(公式-A/C、C1/C3、D2)は作図せず理由を diagrams/README に記載 |
 | 2026-08-01 | **11 章(エージェント構成の判断フレームワーク)を新設。**「要件→エージェント構成の指標は事前に構築できるか、複数試作して比較するしかないか」への回答として、CAF ai-agents セクション(2025-12 新設: デシジョンツリー・単一 vs マルチの判断表)、AAC オーケストレーションパターン(複雑度の階段・5 パターン・アンチパターン)、Copilot Studio の公式上限ライン(30〜40 アクションで精度劣化・connected agents の多段連鎖不可・Foundry 接続はプレビュー)、業界指標(Anthropic 3 条件・LangChain 4 型)を整理。03 章・tech-selection-guide との対照表つき |
+| 2026-09-04 | **casebook セット新設に伴う更新。**03 章 G2 表を公式 2026-08-14 版(File Search「PE 経由」表記・Tracing VNet Preview)+外部案件実測(hosted agent は PNA Disabled で VNet 注入必須)で改訂、05 章 B2 に現場知見 6 点、07 章 §3 のツール表・機能表を更新、10 章にアンチパターン A12〜A15(注入なし hosted agent / App Insights 接続なし / プロンプト二重化 / 反証される撤退理由)を追加 |
 | 2026-07-30 | **全 11 ファイルのファクトチェック(公式ドキュメント突合)と訂正を適用。**確定日の反映: On Your Data 廃止 **2026-10-14**、コンテナプロトコル 1.0.0 ブロック開始 **2026-07-31**。古い記述の更新: **Foundry Local GA(2026-04-09 公式ブログ)**、Toolbox GA、FLUX.2 GA、tsuzumi-7b Legacy(2026-08-31 リタイア)、Groundedness detection 6→4 リージョン、SharePoint「ライセンス必須」→ pay-as-you-go 併記、全遮断 PE のポータル対応。誤りの訂正: capabilityHost 変更は「プロジェクト再作成」でなく「capability host の削除・再作成」、MACAE の org(microsoft)、FT デプロイ上限 10/リソース、Cosmos DB コンテナー 3〜5 個(追加関係)、agent identity とマネージド ID の混同、ガードレール既定閾値「画像 Low」→ テキスト・画像とも Medium、File Search「固定」→ 既定値。ミスリードの限定: 「国内処理必須 → Data Zone(APAC)」を Regional Standard(Japan East)に分離、A2A「ポータル未対応」を incoming 有効化に限定、Front Door パターンのベースライン記事への帰属を Front Door 一般ドキュメントに修正、Cost Analysis「約5時間遅延」を時間非特定に。公式間不整合の両論併記: AI Red Teaming リージョン(2 vs 5)、Traces VNet(非対応 vs プレビュー)、azd コマンド列挙 |

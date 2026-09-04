@@ -2,9 +2,9 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(G2 表を公式 2026-08-14 更新と外部案件実測で改訂、casebook への導線)
 
-[02. 構成要素カタログ](./02-building-blocks.md) がレイヤーごとの選択肢の一覧なら、本ページは**どの順番で何を決めるか**の手順書である。順番を間違えると手戻りが大きい項目があるため、決定順序そのものが設計判断になる。なお本ページは「Foundry を使うと決めた後」の判断を扱う。その手前(Copilot Studio か Foundry か・単一エージェントかマルチか・オーケストレーションパターンの選択)は [11. エージェント構成の判断フレームワーク](./11-decision-frameworks.md) を参照。
+[02. 構成要素カタログ](./02-building-blocks.md) がレイヤーごとの選択肢の一覧なら、本ページは**どの順番で何を決めるか**の手順書である。順番を間違えると手戻りが大きい項目があるため、決定順序そのものが設計判断になる。なお本ページは「Foundry を使うと決めた後」の判断を扱う。その手前(Copilot Studio か Foundry か・単一エージェントかマルチか・オーケストレーションパターンの選択)は [11. エージェント構成の判断フレームワーク](./11-decision-frameworks.md) を参照。**要件の言葉からシナリオ単位で逆引きしたい場合**(「ヘルプデスク × ITSM」「閉域必須」「Copilot Studio から引き継ぎ」等)は [casebook 01 要件シナリオ別プレイブック](../casebook/01-scenario-playbook.md)、現場で詰まった点(公式・実測・公開記事)は [casebook 02](../casebook/02-pitfalls-index.md) を併読する。
 
 ## 決定順序 — 5 つのゲート
 
@@ -48,15 +48,17 @@
 
 | 機能 | 閉域での状態 |
 |---|---|
-| Tracing | **VNet 対応は公式間で表記が揺れる(configure-private-link は非対応、GA 一覧はプレビュー)。安全側は非対応前提** |
+| Tracing | トレース本体は prompt / hosted agent で GA だが **Tracing VNet は Preview**(GA 一覧 2026-08-14 版)。閉域の監査主系には置かない(→ [casebook P-N14](../casebook/02-pitfalls-index.md#d-ネットワークと閉域)) |
 | Memory | **VNet 非対応** |
 | Work IQ | **VNet 統合非対応** |
-| File Search / Logic Apps / Browser Automation / Computer Use / Image Generation | Private Link 環境で「Not supported / Under development」と明記 |
+| File Search | 公式ツール表は 2026-08-14 更新で「✅ Through private endpoint」に変わった。**ただし外部案件の実測(2026-08-30)では閉域作成アカウントで vector store 作成自体が 500**、Blob 連携は非対応のまま。閉域では提案しない(→ [casebook P-N13](../casebook/02-pitfalls-index.md#d-ネットワークと閉域)) |
+| Logic Apps / Browser Automation / Computer Use / Image Generation | Private Link 環境で「Not supported / Under development」と明記 |
 | Foundry MCP Server | ネットワーク分離未対応(Private Link 裏のリソース不可) |
-| Teams / M365 への公開 | パブリックネットワーク無効プロジェクトは**ポータルからの公開不可・REST のみ** |
+| Teams / M365 への公開 | パブリックネットワーク無効プロジェクトは**ポータルからの公開不可・REST のみ**(送信元 IP フィルタ付きの公開 Activity 経路を作る = 完全閉域にはならない) |
 | Workflow Agents | アウトバウンド注入非対応 |
+| **hosted agents** | 公式は「network-isolated Foundry で動作」と記載するが、**PNA Disabled 環境ではアウトバウンド VNet 注入(作成時のみ設定可)が実質必須**。注入なしでは「デプロイ成功・実行だけ失敗」になる(外部案件実測 2026-08-30 → [casebook P-H01](../casebook/02-pitfalls-index.md#a-hosted-agent))。private ACR は 2026-06-25 以降作成のプロジェクトのみ |
 
-**判断:** 閉域が必須なら、RAG は File Search ではなく自前索引(L5 の H/S)、記憶は自前(L4 の S)、観測は自前 OTel(L12 の H)に倒す前提でコストを積む。「閉域だが Foundry のマネージド機能をフルに使う」は成立しない。
+**判断:** 閉域が必須なら、RAG は File Search ではなく自前索引(L5 の H/S)、記憶は自前(L4 の S)、観測は自前 OTel(L12 の H)に倒す前提でコストを積む。「閉域だが Foundry のマネージド機能をフルに使う」は成立しない。**hosted agent を閉域で使うなら Lv3(インバウンド遮断のみ)要件でも最初から VNet 注入つきで作る**(後付け不可。注入なしの失敗断面は [casebook 03 §4-2](../casebook/03-case-helpdesk.md#4-2-閉域-lv3-ラウンド-2-本トラック最大の発見))。
 
 ### G3. 制御ゲート
 

@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(§3 のツール表を configure-private-link 2026-08-14 版と外部案件実測で改訂)
 
 金融・公共・医療など、**ネットワーク分離とデータ所在を先に決めなければ設計が始まらない**類型。このページの内容は [03. 選定ガイド](./03-decision-guide.md) の G1(データ・規制ゲート)と G2(ネットワークゲート)の詳細版にあたる。
 
@@ -138,13 +138,13 @@ Micro VM は専用 NIC を持ち自身の送信は直接出るが、**ツール�
 | Azure AI Search | 対応 | **Private Endpoint 経由** |
 | OpenAPI tool / Azure Functions / A2A | 対応 | 自 VNet サブネット経由 |
 | Function Calling | 対応 | Microsoft バックボーン |
-| Foundry IQ | 対応 | MCP 経由 |
-| **Code Interpreter** | **部分** | **ファイルの上り下りを伴わないシナリオのみ動作。**回避策は SDK でコンテナーを作り `container_id` を渡す(**ポータル UI では不可**) |
+| Foundry IQ(ツール表では「(preview)」表記) | 対応 | MCP 経由。GA 一覧は Partial GA(API GA・ポータル Preview)で表記が割れる |
+| **Code Interpreter** | **部分** | **ファイルの上り下りを伴わないシナリオのみ動作。**回避策は SDK でコンテナーを作り `container_id` を渡す(**ポータル UI では不可**)。configure-private-link 2026-08-14 版は「✅ Microsoft backbone」表記だが、virtual-networks ページは BYO 構成でのファイル I/O 不可を維持 |
 | **Bing Grounding / Websearch / SharePoint Grounding** | 動くが**パブリックエンドポイント経由** | ↓ 下記の警告 |
 | Fabric IQ | 部分 | Fabric アイテム種別依存(Power BI セマンティックモデルは**パブリックアクセスのみ**) |
 | **Fabric Data Agent** | **非対応** | Fabric 側でパブリックネットワークアクセス有効が必須 |
 | **Logic Apps** | **非対応** | 開発中 |
-| **File Search** | **非対応** | 開発中 |
+| **File Search** | **表記変更あり(要注意)** | configure-private-link 2026-08-14 版で「✅ Through private endpoint」に変更。**ただし外部案件の実測(2026-08-30)では閉域作成アカウントで vector store 作成自体が 500 で継続失敗**、Blob 連携は非対応のまま。閉域では File Search を提案せず AI Search ツールに寄せる(→ [casebook P-N13](../casebook/02-pitfalls-index.md#d-ネットワークと閉域)) |
 | **Browser Automation** | **非対応** | 開発中 |
 | **Computer Use** | **非対応** | 開発中 |
 | **Image Generation** | **非対応** | 開発中 |
@@ -153,13 +153,13 @@ Micro VM は専用 NIC を持ち自身の送信は直接出るが、**ツール�
 >
 > さらに Architecture Center 側では「**web search ツールは `api.bing.microsoft.com` を呼ぶが、Agent Service が内部機構で呼ぶため egress サブネットを完全にバイパスする**」と明記。「443 を許可すれば Firewall を通るだろう」という想定が成り立たない。**全ツールを実測で検証せよ**と書かれている。
 
-**File Search 非対応の影響が最も大きい。**閉域では **Azure AI Search ツール(PE 経由・対応)** に寄せる必要がある(→ [04 章の A2/A3](./04-usecase-chat-rag.md))。Blob Storage のファイルを File Search で使うことも別途「非対応」と明記されている。
+**File Search は公式表記が「対応」に変わったが実測では成立していない。**閉域では **Azure AI Search ツール(PE 経由・対応)** に寄せる(→ [04 章の A2/A3](./04-usecase-chat-rag.md))。ただし **AI Search ツールの「PE 経由」はアウトバウンド VNet 注入構成(公式 15-private-network-standard-agent-setup)が前提**で、注入なし(インバウンド遮断のみ)では hosted agent から PNA Disabled の BYO Search に到達できず「デプロイ成功・実行だけ失敗」になる(外部案件実測 → [casebook P-H01](../casebook/02-pitfalls-index.md#a-hosted-agent))。Blob Storage のファイルを File Search で使うことも別途「非対応」と明記されている。
 
 ### 機能レベルの非対応
 
 | 機能 | 状況 |
 |---|---|
-| **Traces** | **非対応**(プライベート Application Insights での VNet サポートが未提供) |
+| **Traces** | トレース本体は prompt / hosted agent で GA、**Tracing VNet は Preview**(GA 一覧 2026-08-14 版)。閉域の監査主系には置かず、自前 OTel + App Insights(AMPLS)を主系にする |
 | **Memory** | **VNet 非対応** |
 | **Work IQ** | **VNet 統合非対応** |
 | Evaluations の Synthetic Data Generation | **非対応**(自前データを持ち込んで評価する) |
@@ -167,9 +167,9 @@ Micro VM は専用 NIC を持ち自身の送信は直接出るが、**ツール�
 | **AI Gateway(APIM)** | 新ポータルからプライベート Foundry に対して作れるが**自動的にパブリックになる。**Azure portal でゲートウェイ側のネットワーク分離を別途設定する必要 |
 | **Foundry MCP Server** | ネットワーク分離未対応(Private Link 裏のリソース不可) |
 | Teams / M365 への公開 | 可能だが**パブリックネットワーク無効プロジェクトではポータル不可・REST のみ** |
-| **hosted agent のエンドポイント** | **現プレビューでは公開のまま。**ユーザーごとの分離はネットワークではなく ID ベースのセッション分離 |
+| **hosted agents** | GA(2026-06〜07)。「network-isolated Foundry で動作」と記載されるが、**PNA Disabled では VNet 注入(作成時のみ設定可)が実質必須**(注入なしは実行だけ失敗)。private ACR は 2026-06-25 以降作成プロジェクトのみ。virtual-networks ページには azd プレビュー期の「エンドポイントは公開のまま」の記述が残存 |
 
-> **Traces 非対応は監査要件に直撃する。**可観測性が要る規制ワークロードで、トレースだけパブリック Application Insights になる構成をどう説明するかが課題になる。**監査ログ設計を Purview Audit / Defender アラート / APIM ログ / アプリ独自の監査ログの組み合わせで再設計する**必要がある。
+> **Tracing VNet が Preview のままなのは監査要件に直撃する。**可観測性が要る規制ワークロードで、トレースだけパブリック Application Insights になる構成をどう説明するかが課題になる。**監査ログ設計を Purview Audit / Defender アラート / APIM ログ / アプリ独自の監査ログの組み合わせで再設計する**必要がある。
 
 ### その他の運用上の制約
 

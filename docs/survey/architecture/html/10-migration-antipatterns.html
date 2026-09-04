@@ -87,12 +87,12 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html" class="current">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html" class="current">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a><a class="xset" href="../../casebook/html/index.html">→ casebook</a></nav>
 <main>
 <h1 id="10-移行アーキテクチャとアンチパターン集">10. 移行アーキテクチャとアンチパターン集</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-確定済み廃止スケジュールと設計への影響">1. 確定済み廃止スケジュールと設計への影響</a></li><li><a href="#2-移行パターン別アーキテクチャ">2. 移行パターン別アーキテクチャ</a></li><li><a href="#3-アンチパターン集">3. アンチパターン集</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
-<p>Foundry は「GA だが足元が動いている」プラットフォームで、<strong>2026 年後半から 2027 年にかけて確定済みの廃止が集中している</strong>。新規設計であっても、廃止スケジュールを知らずに選ぶと 1 年以内に作り直しになる。本ページは (1) 既存資産からの移行アーキテクチャ、(2) 廃止期限の設計への効き方、(3) 提案時に踏みやすいアンチパターン、をまとめる。</p>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(アンチパターン A12〜A15 を外部案件実測から追加)</p></blockquote>
+<p>Foundry は「GA だが足元が動いている」プラットフォームで、<strong>2026 年後半から 2027 年にかけて確定済みの廃止が集中している</strong>。新規設計であっても、廃止スケジュールを知らずに選ぶと 1 年以内に作り直しになる。本ページは (1) 既存資産からの移行アーキテクチャ、(2) 廃止期限の設計への効き方、(3) 提案時に踏みやすいアンチパターン、をまとめる。公式ドキュメント以外の出典(公開記事・実測)による詰まりどころは <a href="../../casebook/html/02-pitfalls-index.html">casebook 02</a> に分離してある。</p>
 <h2 id="1-確定済み廃止スケジュールと設計への影響">1. 確定済み廃止スケジュールと設計への影響</h2>
 <div class="tablewrap"><table><thead><tr>
 <th>期限</th>
@@ -362,5 +362,17 @@ footer {
 <h3 id="a11-ドキュメントのステータス表記を-1-ページだけ見て判断する">A11. ドキュメントのステータス表記を 1 ページだけ見て判断する</h3>
 <p>hosted agents(GA と preview の混在表記)、Trace Replay、Toolbox、Claude のライフサイクルなど、<strong>公式ページ間でステータスが食い違っている</strong>箇所が複数ある。</p>
 <p><strong>対処:</strong> <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a> を一次情報とし、モデルのリタイア日は <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule">Model retirement schedule</a> 側を採用する。</p>
+<h3 id="a12-閉域で-hosted-agent-を-vnet-注入なしで作る">A12. 閉域で hosted agent を VNet 注入なしで作る</h3>
+<p>インバウンド遮断(PE)だけで hosted agent を作ると、standard setup・PE・エージェント配布まで<strong>デプロイは成功するのに実行だけが縮退応答</strong>になる。hosted agent コンテナは顧客 VNet 外の Foundry 管理コンピュートで動くため、PNA Disabled の自プロジェクト(モデル・Conversations)にも BYO AI Search にも戻れない。注入は作成時のみ設定可(外部案件実測 2026-08-30 → <a href="../../casebook/html/02-pitfalls-index.html#a-hosted-agent">casebook P-H01</a>)。</p>
+<p><strong>対処:</strong> 閉域で hosted agent を使うなら Lv3(インバウンド遮断のみ)要件でも最初から VNet 注入つきで作る。代替は LLM コアを ACA に留めるか、選択ネットワーク+信頼サービスで部分開放。</p>
+<h3 id="a13-project-app-insights-接続なしで-hosted-agent-を運用する">A13. project → App Insights 接続なしで hosted agent を運用する</h3>
+<p>接続がないとプラットフォームは接続文字列を注入せず、コンテナ内部ログがどこにも届かない。障害時に「無応答の原因が分からない」状態になる(<a href="../../casebook/html/02-pitfalls-index.html#a-hosted-agent">casebook P-H02</a>)。</p>
+<p><strong>対処:</strong> Bicep に <code>connections/appinsights</code> を含め、「テレメトリ 0 件でも失敗扱い」のスモークテストをデプロイ直後に置く。</p>
+<h3 id="a14-プロンプトの正本をポータル-管理画面-と-git-で二重化する">A14. プロンプトの正本をポータル(管理画面)と Git で二重化する</h3>
+<p>ポータル編集は評価ゲートを通らず、再デプロイで消え、Git と乖離して退行事故になる(外部案件 v2 期の実例 → <a href="../../casebook/html/02-pitfalls-index.html#j-iac-cli-ci-cd">casebook P-C09</a>)。</p>
+<p><strong>対処:</strong> 正本は Git、Foundry へは一方向デプロイ。ポータル編集を開放するなら評価ゲート付きの反映経路を作ってから。</p>
+<h3 id="a15-撤退理由を-foundry-はデータがサービス側に残る-と書く">A15. 撤退理由を「Foundry はデータがサービス側に残る」と書く</h3>
+<p>standard setup(BYO)の登場で反証される(「全エージェントデータが自社テナント内に留まる」と公式明文)。撤退理由が反証されると、顧客の「なぜ Foundry を使わないのか」質疑に耐えられない(<a href="../../casebook/html/03-case-helpdesk.html">casebook 03</a>)。</p>
+<p><strong>対処:</strong> 撤退理由は機能単位で書く。「添付原本の不保存は File Search / Conversations では満たせない」「ITSM 書き込みの決定性は prompt agent のツール呼び出しでは保証できない」の粒度。</p>
 </main>
 <footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

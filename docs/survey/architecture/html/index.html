@@ -87,7 +87,7 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html" class="current">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
+<body><nav class="site"><a href="index.html" class="current">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a><a class="xset" href="../../casebook/html/index.html">→ casebook</a></nav>
 <main>
 <h1 id="microsoft-foundry-アーキテクチャ設計ガイド">Microsoft Foundry アーキテクチャ設計ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント一覧">ドキュメント一覧</a></li><li><a href="#アーキテクチャ一覧">アーキテクチャ一覧</a></li><li><a href="#選定早見表-3-分で当たりをつける">選定早見表 — 3 分で当たりをつける</a></li><li><a href="#全案件に共通する前提-foundry-が-やってくれないこと">全案件に共通する前提 — Foundry が「やってくれないこと」</a></li><li><a href="#重要な期限-アーキテクチャ判断に直結するもの">重要な期限(アーキテクチャ判断に直結するもの)</a></li><li><a href="#本ドキュメント群について">本ドキュメント群について</a></li></ul></div>
 <blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)/ <strong>版:</strong> 初版<br>SI の技術選定・アーキテクチャ選定基準の構築を目的に、<strong>Microsoft Foundry を使ったシステムアーキテクチャ</strong>を、インフラを含めた広い視点で整理したもの。機能単位の GA / プレビュー調査は <a href="../../features/html/index.html">features/</a> を参照。</p></blockquote>
@@ -161,7 +161,7 @@ footer {
 <tr>
 <td>10</td>
 <td><a href="10-migration-antipatterns.html">移行とアンチパターン</a></td>
-<td>確定済み廃止スケジュール、移行パターン、<strong>踏みやすい 11 のアンチパターン</strong></td>
+<td>確定済み廃止スケジュール、移行パターン、<strong>踏みやすい 15 のアンチパターン</strong></td>
 <td>既存資産があるとき / レビュー前</td>
 </tr>
 <tr>
@@ -763,6 +763,7 @@ footer {
 <li>公式ドキュメントに書かれている事実と、本ドキュメントの判断・推測を区別して書いている。<strong>公式に書かれていない判断には「本ドキュメントの判断」と明記</strong>している。</li>
 <li><strong>公式ドキュメント間で記述が食い違っている箇所</strong>(Data Zone の APAC 記載漏れ、hosted agents の GA / preview 表記、Reservation の交換可否など)は、その旨を併記している。</li>
 <li><strong>リンク切れ・削除済みリソース</strong>(ALZ 版 baseline の実装リポジトリなど)も、探して見つからないことに時間を使わないよう明記している。</li>
+<li><strong>本ガイドは公式ドキュメント由来の構成判断に限定する。</strong>現場で詰まった点(公開記事・labs・外部案件の実測)と、要件シナリオ別の判断(「ヘルプデスク × ITSM」「閉域必須」等)は <a href="../../casebook/html/index.html">casebook/</a> に分離した。各章の「⚠ 現場知見」「→ casebook P-xx」はそこへの導線。</li>
 <li><strong>アーキテクチャ図(Azure 公式アイコン)は <code>images/*.png</code>(全 18 枚)。</strong>生成スクリプトと再生成手順は <a href="./diagrams/README.md">diagrams/</a>(maf-ports の描画ヘルパーを共有。図中テキストは英語)。公式-B と A〜E の主要パターンを整備済み。構成が既存図と実質同じもの(公式-A/C、A3/A4、C1/C3、D2)は作図せず理由を diagrams/README に記載。ASCII 図は生成 AI 用にそのまま残している。</li>
 </ul>
 <h3 id="更新運用">更新運用</h3>
@@ -808,6 +809,10 @@ footer {
 <tr>
 <td>2026-08-01</td>
 <td><strong>11 章(エージェント構成の判断フレームワーク)を新設。</strong>「要件→エージェント構成の指標は事前に構築できるか、複数試作して比較するしかないか」への回答として、CAF ai-agents セクション(2025-12 新設: デシジョンツリー・単一 vs マルチの判断表)、AAC オーケストレーションパターン(複雑度の階段・5 パターン・アンチパターン)、Copilot Studio の公式上限ライン(30〜40 アクションで精度劣化・connected agents の多段連鎖不可・Foundry 接続はプレビュー)、業界指標(Anthropic 3 条件・LangChain 4 型)を整理。03 章・tech-selection-guide との対照表つき</td>
+</tr>
+<tr>
+<td>2026-09-04</td>
+<td><strong>casebook セット新設に伴う更新。</strong>03 章 G2 表を公式 2026-08-14 版(File Search「PE 経由」表記・Tracing VNet Preview)+外部案件実測(hosted agent は PNA Disabled で VNet 注入必須)で改訂、05 章 B2 に現場知見 6 点、07 章 §3 のツール表・機能表を更新、10 章にアンチパターン A12〜A15(注入なし hosted agent / App Insights 接続なし / プロンプト二重化 / 反証される撤退理由)を追加</td>
 </tr>
 <tr>
 <td>2026-07-30</td>

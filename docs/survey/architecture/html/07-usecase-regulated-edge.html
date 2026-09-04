@@ -87,11 +87,11 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html" class="current">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
+<body><nav class="site"><a href="index.html">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html" class="current">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a><a class="xset" href="../../casebook/html/index.html">→ casebook</a></nav>
 <main>
 <h1 id="07-ユースケース編-d-規制業種・閉域・データ主権・エッジ">07. ユースケース編 D — 規制業種・閉域・データ主権・エッジ</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この章で最初に伝えるべき-3-つの事実">この章で最初に伝えるべき 3 つの事実</a></li><li><a href="#1-最上位の分岐-3-つの-egress-モデル">1. 最上位の分岐 — 3 つの egress モデル</a></li><li><a href="#2-byo-vnet-standard-agent-setup-の設計">2. BYO VNet(Standard agent setup)の設計</a></li><li><a href="#3-閉域で使えない機能の一覧-設計の出発点">3. 閉域で使えない機能の一覧(設計の出発点)</a></li><li><a href="#4-network-security-perimeter-という代替-private-link-とは排他">4. Network Security Perimeter という代替(Private Link とは排他)</a></li><li><a href="#5-データ主権とデータ所在">5. データ主権とデータ所在</a></li><li><a href="#6-コンプライアンス統制">6. コンプライアンス統制</a></li><li><a href="#7-評価とレッドチーミングのリージョン制約-日本案件で必ず効く">7. 評価とレッドチーミングのリージョン制約(日本案件で必ず効く)</a></li><li><a href="#8-ソブリンクラウド-azure-government">8. ソブリンクラウド(Azure Government)</a></li><li><a href="#9-エッジ・オンプレ・ハイブリッド">9. エッジ・オンプレ・ハイブリッド</a></li><li><a href="#規制案件で早期に潰すべき論点-チェックリスト">規制案件で早期に潰すべき論点(チェックリスト)</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(§3 のツール表を configure-private-link 2026-08-14 版と外部案件実測で改訂)</p></blockquote>
 <p>金融・公共・医療など、<strong>ネットワーク分離とデータ所在を先に決めなければ設計が始まらない</strong>類型。このページの内容は <a href="03-decision-guide.html">03. 選定ガイド</a> の G1(データ・規制ゲート)と G2(ネットワークゲート)の詳細版にあたる。</p>
 <h2 id="この章で最初に伝えるべき-3-つの事実">この章で最初に伝えるべき 3 つの事実</h2>
 <ol>
@@ -330,14 +330,14 @@ footer {
 <td>Microsoft バックボーン</td>
 </tr>
 <tr>
-<td>Foundry IQ</td>
+<td>Foundry IQ(ツール表では「(preview)」表記)</td>
 <td><span class="badge ok">対応</span></td>
-<td>MCP 経由</td>
+<td>MCP 経由。GA 一覧は Partial GA(API GA・ポータル Preview)で表記が割れる</td>
 </tr>
 <tr>
 <td><strong>Code Interpreter</strong></td>
 <td><strong>部分</strong></td>
-<td><strong>ファイルの上り下りを伴わないシナリオのみ動作。</strong>回避策は SDK でコンテナーを作り <code>container_id</code> を渡す(<strong>ポータル UI では不可</strong>)</td>
+<td><strong>ファイルの上り下りを伴わないシナリオのみ動作。</strong>回避策は SDK でコンテナーを作り <code>container_id</code> を渡す(<strong>ポータル UI では不可</strong>)。configure-private-link 2026-08-14 版は「✅ Microsoft backbone」表記だが、virtual-networks ページは BYO 構成でのファイル I/O 不可を維持</td>
 </tr>
 <tr>
 <td><strong>Bing Grounding / Websearch / SharePoint Grounding</strong></td>
@@ -361,8 +361,8 @@ footer {
 </tr>
 <tr>
 <td><strong>File Search</strong></td>
-<td><strong>非対応</strong></td>
-<td>開発中</td>
+<td><strong>表記変更あり(要注意)</strong></td>
+<td>configure-private-link 2026-08-14 版で「✅ Through private endpoint」に変更。<strong>ただし外部案件の実測(2026-08-30)では閉域作成アカウントで vector store 作成自体が 500 で継続失敗</strong>、Blob 連携は非対応のまま。閉域では File Search を提案せず AI Search ツールに寄せる(→ <a href="../../casebook/html/02-pitfalls-index.html#d-ネットワークと閉域">casebook P-N13</a>)</td>
 </tr>
 <tr>
 <td><strong>Browser Automation</strong></td>
@@ -381,7 +381,7 @@ footer {
 </tr>
 </tbody></table></div>
 <blockquote><p><strong>金融・公共での決定的な論点:</strong> Bing Grounding / Websearch / SharePoint Grounding は「動く」が<strong>パブリックインターネット経由である</strong>とドキュメント自身が明記している。「すべての通信をプライベート網に閉じる」要件があるなら、これらは<strong>要件を満たさない。</strong>ブロック手段として <strong>Azure Policy による利用禁止</strong>が公式に案内されている。<br><br>さらに Architecture Center 側では「<strong>web search ツールは <code>api.bing.microsoft.com</code> を呼ぶが、Agent Service が内部機構で呼ぶため egress サブネットを完全にバイパスする</strong>」と明記。「443 を許可すれば Firewall を通るだろう」という想定が成り立たない。<strong>全ツールを実測で検証せよ</strong>と書かれている。</p></blockquote>
-<p><strong>File Search 非対応の影響が最も大きい。</strong>閉域では <strong>Azure AI Search ツール(PE 経由・対応)</strong> に寄せる必要がある(→ <a href="04-usecase-chat-rag.html">04 章の A2/A3</a>)。Blob Storage のファイルを File Search で使うことも別途「非対応」と明記されている。</p>
+<p><strong>File Search は公式表記が「対応」に変わったが実測では成立していない。</strong>閉域では <strong>Azure AI Search ツール(PE 経由・対応)</strong> に寄せる(→ <a href="04-usecase-chat-rag.html">04 章の A2/A3</a>)。ただし <strong>AI Search ツールの「PE 経由」はアウトバウンド VNet 注入構成(公式 15-private-network-standard-agent-setup)が前提</strong>で、注入なし(インバウンド遮断のみ)では hosted agent から PNA Disabled の BYO Search に到達できず「デプロイ成功・実行だけ失敗」になる(外部案件実測 → <a href="../../casebook/html/02-pitfalls-index.html#a-hosted-agent">casebook P-H01</a>)。Blob Storage のファイルを File Search で使うことも別途「非対応」と明記されている。</p>
 <h3 id="機能レベルの非対応">機能レベルの非対応</h3>
 <div class="tablewrap"><table><thead><tr>
 <th>機能</th>
@@ -389,7 +389,7 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td><strong>Traces</strong></td>
-<td><strong>非対応</strong>(プライベート Application Insights での VNet サポートが未提供)</td>
+<td>トレース本体は prompt / hosted agent で GA、<strong>Tracing VNet は Preview</strong>(GA 一覧 2026-08-14 版)。閉域の監査主系には置かず、自前 OTel + App Insights(AMPLS)を主系にする</td>
 </tr>
 <tr>
 <td><strong>Memory</strong></td>
@@ -420,11 +420,11 @@ footer {
 <td>可能だが<strong>パブリックネットワーク無効プロジェクトではポータル不可・REST のみ</strong></td>
 </tr>
 <tr>
-<td><strong>hosted agent のエンドポイント</strong></td>
-<td><strong>現プレビューでは公開のまま。</strong>ユーザーごとの分離はネットワークではなく ID ベースのセッション分離</td>
+<td><strong>hosted agents</strong></td>
+<td><span class="badge ga">GA</span>(2026-06〜07)。「network-isolated Foundry で動作」と記載されるが、<strong>PNA Disabled では VNet 注入(作成時のみ設定可)が実質必須</strong>(注入なしは実行だけ失敗)。private ACR は 2026-06-25 以降作成プロジェクトのみ。virtual-networks ページには azd プレビュー期の「エンドポイントは公開のまま」の記述が残存</td>
 </tr>
 </tbody></table></div>
-<blockquote><p><strong>Traces 非対応は監査要件に直撃する。</strong>可観測性が要る規制ワークロードで、トレースだけパブリック Application Insights になる構成をどう説明するかが課題になる。<strong>監査ログ設計を Purview Audit / Defender アラート / APIM ログ / アプリ独自の監査ログの組み合わせで再設計する</strong>必要がある。</p></blockquote>
+<blockquote><p><strong>Tracing VNet が Preview のままなのは監査要件に直撃する。</strong>可観測性が要る規制ワークロードで、トレースだけパブリック Application Insights になる構成をどう説明するかが課題になる。<strong>監査ログ設計を Purview Audit / Defender アラート / APIM ログ / アプリ独自の監査ログの組み合わせで再設計する</strong>必要がある。</p></blockquote>
 <h3 id="その他の運用上の制約">その他の運用上の制約</h3>
 <ul>
 <li><strong>ACR のプライベート化は 2026-06-25 以降に作成したプロジェクトのみ。</strong>それ以前のプロジェクトは ACR にパブリックエンドポイントが必要。</li>

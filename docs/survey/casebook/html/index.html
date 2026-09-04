@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foundry SI ケースブック — 要件別プレイブック・詰まりどころ索引・案件事例</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+</style></head>
+<body><nav class="site"><a href="index.html" class="current">Foundry SI ケースブック</a><a href="01-scenario-playbook.html">01. 要件シナリオ別プレイブック</a><a href="02-pitfalls-index.html">02. 詰まりどころ索引</a><a href="03-case-helpdesk.html">03. 案件事例</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
+<main>
+<h1 id="foundry-si-ケースブック-要件別プレイブック・詰まりどころ索引・案件事例">Foundry SI ケースブック — 要件別プレイブック・詰まりどころ索引・案件事例</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント構成">ドキュメント構成</a></li><li><a href="#出典の格付け-本セット固有のルール">出典の格付け(本セット固有のルール)</a></li><li><a href="#使い方-提案フローとの対応">使い方(提案フローとの対応)</a></li><li><a href="#更新運用">更新運用</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
+<blockquote><p><strong>最終更新:</strong> 2026-09-04 / <strong>版:</strong> 初版<br><a href="../../features/html/index.html">features</a> が「その機能は使えるのか」、<a href="../../architecture/html/index.html">architecture</a> が「どう組むか」、<a href="../../proposal/html/index.html">proposal</a> が「どう提案するか」に答えるのに対し、本セットは <strong>「この要件が来たら何を決め、どこで詰まるか」</strong> に答える。公式ドキュメント調査(survey)と実装検証(<a href="../../tech-selection-guide.md">tech-selection-guide</a> / labs)の<strong>間を埋める実務層</strong>で、公開されている第三者の記事(「ハマった」「苦労した」系)も出典として扱う唯一のセット。</p></blockquote>
+<h2 id="ドキュメント構成">ドキュメント構成</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>ドキュメント</th>
+<th>内容</th>
+<th>使うタイミング</th>
+</tr></thead><tbody>
+<tr>
+<td>01</td>
+<td><a href="01-scenario-playbook.html">要件シナリオ別プレイブック</a></td>
+<td>SI で頻出する 12 の要件セットについて「ゲート判定 → 推奨構成 → 却下案と理由 → 詰まりどころ → 見積もり・契約で効く点」を 1 シナリオ 1 節で</td>
+<td>ヒアリング直後、構成案を 1〜2 に絞るとき</td>
+</tr>
+<tr>
+<td>02</td>
+<td><a href="02-pitfalls-index.html">詰まりどころ索引</a></td>
+<td>機能・レイヤー別に「症状 → 原因 → 設計上の対処 → 出典」を索引化。出典は <strong>[公式] / [実測] / [記事]</strong> の 3 種を明記</td>
+<td>設計レビュー前、提案書のリスク欄を書くとき、障害切り分け</td>
+</tr>
+<tr>
+<td>03</td>
+<td><a href="03-case-helpdesk.html">案件事例: 社内ヘルプデスク × ServiceNow</a></td>
+<td>外部案件で「Foundry フル活用 → 意図的撤退 → hosted agent で再挑戦」と設計判断が 3 回変わった経緯と実測。<strong>判断が後から見てどう評価されたか</strong>まで記録</td>
+<td>「なぜ Foundry を使う / 使わないのか」を顧客に説明するとき</td>
+</tr>
+</tbody></table></div>
+<h2 id="出典の格付け-本セット固有のルール">出典の格付け(本セット固有のルール)</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>表記</th>
+<th>意味</th>
+<th>信頼の置き方</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>[公式]</strong></td>
+<td>Microsoft Learn / 公式ブログ / 公式サンプルリポジトリ</td>
+<td>一次情報。ただし<strong>ページ間で表記が揺れる</strong>ことがある(→ <a href="../../architecture/html/10-migration-antipatterns.html#a11-ドキュメントのステータス表記を-1-ページだけ見て判断する">architecture 10 章 A11</a>)</td>
+</tr>
+<tr>
+<td><strong>[実測]</strong></td>
+<td>本リポジトリの labs(<a href="../../../labs/maf-ports/README.md">maf-ports</a> / <a href="../../../labs/foundry-probes/README.md">foundry-probes</a> / <a href="../../../labs/cu-video-rag/README.md">cu-video-rag</a>)または外部案件(<a href="03-case-helpdesk.html">03</a>)で再現した事実</td>
+<td>日付・バージョン付きの事実。<strong>版が変われば結論も変わりうる</strong></td>
+</tr>
+<tr>
+<td><strong>[記事]</strong></td>
+<td>第三者の公開記事(Zenn / Qiita / Tech Community / GitHub issue / Microsoft Q&amp;A 等)</td>
+<td>二次情報。<strong>執筆時点の挙動</strong>であり、修正済みの可能性がある。採用前に日付と対象バージョンを確認し、可能なら [実測] か [公式] で裏を取る</td>
+</tr>
+</tbody></table></div>
+<p><strong>[記事] を載せる基準:</strong> (1) URL を実際に開いて内容を確認できたもの (2) 症状と原因(または回避策)が具体的に書かれているもの (3) 公式ドキュメントだけでは気づけない点を含むもの。「やってみた」だけで詰まりどころのない記事は載せない。</p>
+<h2 id="使い方-提案フローとの対応">使い方(提案フローとの対応)</h2>
+<pre><code> proposal/01 ヒアリングシート ──▶ casebook/01 シナリオ照合(最も近い S-xx を 1〜2 本)
+                                        │
+                                        ▼
+                               casebook/02 詰まりどころ抽出(S-xx が参照する P-xx を列挙)
+                                        │
+                                        ▼
+                    提案書のリスク欄 / 設計レビューのチェック項目 / 見積もりの前提条件
+                                        │
+                                        ▼
+                     architecture 該当章で構成を詳細化 → features で GA/プレビューを再確認</code></pre>
+<ul>
+<li>シナリオは「要件の言葉」で引く。複数に跨る案件は、後戻りコストの大きいほう(閉域・マルチテナント・移行期限)を主シナリオにする</li>
+<li>詰まりどころは <strong>ID(P-xx)で提案書・設計書から参照</strong>できるようにしてある。案件で新たに踏んだものは 02 に追記し、ID を振る</li>
+<li>03 の案件事例は「判断の変遷」を含めて読む。<strong>最初の判断が正しかったかではなく、どの根拠が後から弁別にならなかったか</strong>が再利用できる知見</li>
+</ul>
+<h2 id="更新運用">更新運用</h2>
+<p><strong>推奨頻度:</strong> 02 は月次(公開記事・GitHub issue の追加)、01 は四半期(architecture と同サイクル)、03 は案件の節目ごと。</p>
+<p><strong>[記事] のウォッチ先:</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>ソース</th>
+<th>見るもの</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>Zenn(トピック <code>azureaifoundry</code> / <code>microsoftfoundry</code> / <code>agentframework</code>)、Qiita(タグ <code>AzureAIFoundry</code> / <code>MicrosoftFoundry</code>)</td>
+<td>日本語の「ハマった」「やってみた」記事。Ignite(11 月)・Build(5 月)直後に増える</td>
+</tr>
+<tr>
+<td>2</td>
+<td><a href="https://techcommunity.microsoft.com/category/azure-ai-foundry/blog/azure-ai-foundry-blog">Microsoft Foundry Blog(Tech Community)</a></td>
+<td>公式の「through the corporate firewall」系トラブルシュート記事</td>
+</tr>
+<tr>
+<td>3</td>
+<td><a href="https://github.com/microsoft/agent-framework/issues">microsoft/agent-framework issues</a>、<a href="https://github.com/Azure/azure-sdk-for-python/issues?q=azure-ai-projects">Azure/azure-sdk-for-python issues(azure-ai-projects)</a>、<a href="https://github.com/microsoft-foundry/foundry-samples/issues">microsoft-foundry/foundry-samples issues</a></td>
+<td>SDK・サンプルの再現性のある不具合</td>
+</tr>
+<tr>
+<td>4</td>
+<td><a href="https://learn.microsoft.com/en-us/answers/tags/133/azure">Microsoft Q&amp;A(Foundry タグ)</a></td>
+<td>公式回答つきのトラブル</td>
+</tr>
+</tbody></table></div>
+<p><strong>リンク切れの扱い:</strong> [記事] は削除・移転が起きる。リンク切れを見つけたら行を消さず「(リンク切れ YYYY-MM-DD 確認)」を付記して残す(症状の記録自体に価値があるため)。</p>
+<p><strong>HTML の再生成:</strong> リポジトリルートで <code>python3 docs/survey/tools/md2html.py casebook</code>(引数なしで全セット)。</p>
+<h2 id="更新履歴">更新履歴</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-04</td>
+<td>初版。01 シナリオ 12 本、02 詰まりどころ索引(公式・実測・公開記事)、03 外部案件事例(v2→v3→v4 の判断変遷と 2026-08-30 実測)を作成</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>このHTMLは docs/survey/casebook/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

@@ -2,9 +2,9 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(アンチパターン A12〜A15 を外部案件実測から追加)
 
-Foundry は「GA だが足元が動いている」プラットフォームで、**2026 年後半から 2027 年にかけて確定済みの廃止が集中している**。新規設計であっても、廃止スケジュールを知らずに選ぶと 1 年以内に作り直しになる。本ページは (1) 既存資産からの移行アーキテクチャ、(2) 廃止期限の設計への効き方、(3) 提案時に踏みやすいアンチパターン、をまとめる。
+Foundry は「GA だが足元が動いている」プラットフォームで、**2026 年後半から 2027 年にかけて確定済みの廃止が集中している**。新規設計であっても、廃止スケジュールを知らずに選ぶと 1 年以内に作り直しになる。本ページは (1) 既存資産からの移行アーキテクチャ、(2) 廃止期限の設計への効き方、(3) 提案時に踏みやすいアンチパターン、をまとめる。公式ドキュメント以外の出典(公開記事・実測)による詰まりどころは [casebook 02](../casebook/02-pitfalls-index.md) に分離してある。
 
 ## 1. 確定済み廃止スケジュールと設計への影響
 
@@ -199,3 +199,27 @@ basic セットアップの会話は Microsoft 管理ストレージにあり、
 hosted agents(GA と preview の混在表記)、Trace Replay、Toolbox、Claude のライフサイクルなど、**公式ページ間でステータスが食い違っている**箇所が複数ある。
 
 **対処:** [Feature readiness at GA](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability) を一次情報とし、モデルのリタイア日は [Model retirement schedule](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule) 側を採用する。
+
+### A12. 閉域で hosted agent を VNet 注入なしで作る
+
+インバウンド遮断(PE)だけで hosted agent を作ると、standard setup・PE・エージェント配布まで**デプロイは成功するのに実行だけが縮退応答**になる。hosted agent コンテナは顧客 VNet 外の Foundry 管理コンピュートで動くため、PNA Disabled の自プロジェクト(モデル・Conversations)にも BYO AI Search にも戻れない。注入は作成時のみ設定可(外部案件実測 2026-08-30 → [casebook P-H01](../casebook/02-pitfalls-index.md#a-hosted-agent))。
+
+**対処:** 閉域で hosted agent を使うなら Lv3(インバウンド遮断のみ)要件でも最初から VNet 注入つきで作る。代替は LLM コアを ACA に留めるか、選択ネットワーク+信頼サービスで部分開放。
+
+### A13. project → App Insights 接続なしで hosted agent を運用する
+
+接続がないとプラットフォームは接続文字列を注入せず、コンテナ内部ログがどこにも届かない。障害時に「無応答の原因が分からない」状態になる([casebook P-H02](../casebook/02-pitfalls-index.md#a-hosted-agent))。
+
+**対処:** Bicep に `connections/appinsights` を含め、「テレメトリ 0 件でも失敗扱い」のスモークテストをデプロイ直後に置く。
+
+### A14. プロンプトの正本をポータル(管理画面)と Git で二重化する
+
+ポータル編集は評価ゲートを通らず、再デプロイで消え、Git と乖離して退行事故になる(外部案件 v2 期の実例 → [casebook P-C09](../casebook/02-pitfalls-index.md#j-iac-cli-ci-cd))。
+
+**対処:** 正本は Git、Foundry へは一方向デプロイ。ポータル編集を開放するなら評価ゲート付きの反映経路を作ってから。
+
+### A15. 撤退理由を「Foundry はデータがサービス側に残る」と書く
+
+standard setup(BYO)の登場で反証される(「全エージェントデータが自社テナント内に留まる」と公式明文)。撤退理由が反証されると、顧客の「なぜ Foundry を使わないのか」質疑に耐えられない([casebook 03](../casebook/03-case-helpdesk.md))。
+
+**対処:** 撤退理由は機能単位で書く。「添付原本の不保存は File Search / Conversations では満たせない」「ITSM 書き込みの決定性は prompt agent のツール呼び出しでは保証できない」の粒度。

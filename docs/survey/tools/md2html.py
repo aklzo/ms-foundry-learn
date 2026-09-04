@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 SURVEY_DIR = Path(__file__).resolve().parent.parent
-DOC_SETS = ["features", "architecture", "proposal"]
+DOC_SETS = ["features", "architecture", "proposal", "casebook"]
 
 # セル先頭にあるときバッジ化するステータス語 (長い語を先に)
 BADGE_CLASSES = [

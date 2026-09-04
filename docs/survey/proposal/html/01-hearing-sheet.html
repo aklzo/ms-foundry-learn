@@ -87,11 +87,11 @@ footer {
   color: var(--muted); font-size: 0.8rem;
 }
 </style></head>
-<body><nav class="site"><a href="index.html">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html" class="current">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a href="05-case-studies.html">05. 公開事例集</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a></nav>
+<body><nav class="site"><a href="index.html">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html" class="current">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a href="05-case-studies.html">05. 公開事例集</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a><a class="xset" href="../../casebook/html/index.html">→ casebook</a></nav>
 <main>
 <h1 id="01-要件ヒアリングシート-質問-構成への分岐">01. 要件ヒアリングシート(質問 → 構成への分岐)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#使い方">使い方</a></li><li><a href="#phase-0-前提確認-5分">Phase 0: 前提確認(5分)</a></li><li><a href="#phase-1-業務・目的-10分">Phase 1: 業務・目的(10分)</a></li><li><a href="#phase-2-データ-15分">Phase 2: データ(15分)</a></li><li><a href="#phase-3-ユーザー・規模・sla-10分">Phase 3: ユーザー・規模・SLA(10分)</a></li><li><a href="#phase-4-セキュリティ・規制-15分">Phase 4: セキュリティ・規制(15分)</a></li><li><a href="#phase-5-既存資産・統合先-10分">Phase 5: 既存資産・統合先(10分)</a></li><li><a href="#phase-6-運用体制・スキル-10分">Phase 6: 運用体制・スキル(10分)</a></li><li><a href="#phase-7-予算・スケジュール・リスク許容度-5分">Phase 7: 予算・スケジュール・リスク許容度(5分)</a></li><li><a href="#回答-構成クイックマップ">回答 → 構成クイックマップ</a></li><li><a href="#ヒアリング後のアウトプット-提案までの-todo">ヒアリング後のアウトプット(提案までの ToDo)</a></li></ul></div>
 <p><a href="index.html">← 提案実務ガイド TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-31<br>初回〜2回目のヒアリング(60〜90分)を想定。各質問に「なぜ聞くか」と「回答が構成に与える影響」を付けてある。<strong>回答をこのシートに沿って埋めると、<a href="../../architecture/html/index.html">architecture のユースケース型</a>のどれかに落ちる</strong>ように設計している。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31 / 2026-09-04(casebook への導線・閉域 Lv 定義を追加)<br>初回〜2回目のヒアリング(60〜90分)を想定。各質問に「なぜ聞くか」と「回答が構成に与える影響」を付けてある。<strong>回答をこのシートに沿って埋めると、<a href="../../architecture/html/index.html">architecture のユースケース型</a>のどれかに落ちる</strong>ように設計している。</p></blockquote>
 <h2 id="使い方">使い方</h2>
 <ul>
 <li>Phase 0〜7 を順に聞く。全部で 30 問前後だが、Phase 1 の回答で無関係な Phase は飛ばせる。</li>
@@ -269,7 +269,7 @@ footer {
 <td>4-1</td>
 <td><strong>閉域(インターネット非経由)が必須か。それは要件か希望か</strong></td>
 <td>BYO VNet 注入は<strong>作成後の変更不可</strong>。最初に決めないと作り直しになる</td>
-<td>必須 → <a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07</a> の「使えない機能一覧」から設計を始める(File Search / Browser Automation / Computer Use / Image Generation / Logic Apps 等が非対応)</td>
+<td>必須 → <a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07</a> の「使えない機能一覧」から設計を始める(File Search / Browser Automation / Computer Use / Image Generation / Logic Apps 等が非対応)。<strong>「閉鎖」の Lv 定義(Lv3 = インバウンド遮断のみ / Lv4 = egress 統制・外部 SaaS・PyPI 禁止)も同時に確定</strong>する — CI/CD・搬入・監視の設計と見積もりが別物になる(<a href="../../casebook/html/01-scenario-playbook.html#s-12-顧客閉域環境への納品-ci-cd・構築・搬入・プロンプト運用">casebook S-12</a>)</td>
 </tr>
 <tr>
 <td>4-2</td>
@@ -428,6 +428,7 @@ footer {
 <td>CU は BYO モデル接続必須 / ページ・サイズ上限</td>
 </tr>
 </tbody></table></div>
+<p><strong>シナリオ別の判断根拠と詰まりどころ:</strong> 上表の構成候補ごとに、ゲート判定・却下案とその理由・詰まりどころ(P-ID)・見積もりで効く点を <a href="../../casebook/html/01-scenario-playbook.html">casebook 01 要件シナリオ別プレイブック</a> に整理してある(社内 RAG = S-01、ヘルプデスク × ITSM = S-02、承認付き自動化 = S-03、閉域 = S-04、顧客向け = S-05、SaaS = S-06、既存組込み = S-07、Copilot Studio 引き継ぎ = S-08、文書・動画処理 = S-09、音声 = S-10、廃止期限駆動の移行 = S-11、顧客環境納品 = S-12)。</p>
 <h2 id="ヒアリング後のアウトプット-提案までの-todo">ヒアリング後のアウトプット(提案までの ToDo)</h2>
 <ol>
 <li>構成候補 1〜2 案(architecture 該当章の構成図をベースに)</li>
@@ -435,6 +436,7 @@ footer {
 <li><strong>廃止日程との衝突チェック</strong>(features README の期限表)</li>
 <li>概算月額レンジ(<a href="02-cost-estimation.html">02</a> の手順で)</li>
 <li>規制・契約の論点リスト(<a href="03-japan-compliance.html">03</a> から該当分)</li>
+<li><strong>詰まりどころリスト</strong>(該当シナリオが参照する <a href="../../casebook/html/02-pitfalls-index.html">casebook 02</a> の P-ID)— 提案書のリスク欄と設計レビューのチェック項目に転記する</li>
 </ol>
 </main>
 <footer>このHTMLは docs/survey/proposal/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>
