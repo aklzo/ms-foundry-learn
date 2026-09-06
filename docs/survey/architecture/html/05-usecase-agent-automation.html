@@ -371,7 +371,7 @@ footer {
 <ul>
 <li><strong>Prompt agent は既定で A2A エンドポイントを公開できる。Hosted agent は Responses プロトコルを実装している場合のみ。</strong></li>
 <li>プロトコル v1.0 と v0.3 の両方をサポートし、<strong>バージョン未指定時は既定で v0.3。</strong></li>
-<li><strong>incoming A2A エンドポイントの有効化はポータル未対応</strong>(REST または Python SDK のみ)。A2A ツール接続の作成はポータルで可能。agent card 設定は REST のみ。</li>
+<li><strong>incoming A2A エンドポイントの有効化はポータル未対応</strong>(REST または Python SDK のみ)。A2A ツール接続の作成はポータルで可能。agent card 設定は Python SDK <code>agents.update_details()</code> / JS <code>patchAgentObject()</code> でも可(2026-08-26 版で REST 限定が解消。バージョン未指定時の既定は v0.3)。</li>
 <li><strong>Entra ID 認証必須</strong>(キー認証・匿名アクセス不可)。呼び出し側に <code>Foundry Agent Consumer</code> ロール以上が必要。</li>
 <li><strong>制限が厳しい:</strong> テキストモダリティのみ(ファイル等不可)、<strong>ストリーミング(SSE)非対応</strong>、v1.0 は JSONRPC のみ、gRPC 非対応、本番非推奨。</li>
 </ul>

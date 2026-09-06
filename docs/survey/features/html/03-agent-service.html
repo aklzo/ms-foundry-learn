@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="03-foundry-agent-service">03. Foundry Agent Service</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#機能一覧">機能一覧</a></li><li><a href="#廃止・移行期限-このカテゴリ分">廃止・移行期限(このカテゴリ分)</a></li><li><a href="#補足ノート">補足ノート</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照) / 2026-09-04(hosted agents 行を 2026-08-19 版で追記)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照) / 2026-09-04(hosted agents 行を 2026-08-19 版で追記) / 2026-09-07(一次情報で再検証。訂正・追記は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要">概要</h2>
 <p>Foundry Agent Service は Responses API を単一エントリポイントとするエージェント構築・実行のマネージドプラットフォーム。<strong>サービス本体は GA</strong>(「Foundry Agent Service is generally available (GA). Some sub-features are in public preview.」)。ただし旧世代(Agents v1 / Assistants API)の廃止と、Memory・Routines 等の新プレビュー機能の追加が同時進行しており、<strong>「GA だが足元が動いている」状態</strong>である点に注意。</p>
 <p><strong>用語マッピング(v1 → v2)</strong>(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate">migrate</a> ):</p>
@@ -155,12 +155,12 @@ footer {
 <tr>
 <td>Assistants API (Azure OpenAI)</td>
 <td>ステートフルな Assistants/Threads API</td>
-<td><span class="badge deprecated">非推奨</span> → <strong>2026-08-26 廃止</strong></td>
-<td>classic のみ</td>
+<td><strong>廃止(2026-08-26 期限到来)</strong></td>
+<td>classic のみ(廃止済)</td>
 <td>—</td>
-<td>OpenAI SDK beta</td>
+<td>OpenAI SDK beta(廃止済)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/assistants" title="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/assistants">assistants</a></td>
-<td>新 Agent Service(Responses API)へ移行</td>
+<td>新 Agent Service(Responses API)へ移行。出典冒頭で「<strong>The Assistants API is retired</strong>」を確認(本文更新 2026-02-27、ms.date 2025-09-24)</td>
 </tr>
 <tr>
 <td>Prompt agents</td>
@@ -180,7 +180,7 @@ footer {
 <td><strong>azd</strong> <code>microsoft.foundry</code> 拡張(<code>az cognitiveservices agent</code> は廃止)</td>
 <td><span class="badge ok">対応</span>(<code>create_version_from_code</code> 等)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents">hosted-agents</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/quickstarts/quickstart-hosted-agent" title="https://learn.microsoft.com/en-us/azure/foundry/agents/quickstarts/quickstart-hosted-agent">quickstart-hosted-agent</a></td>
-<td><strong>初期プレビュー基盤は 2026-08-20 でサポート終了(要再デプロイ)</strong>。Python / C# のみ。31 リージョン。コンテナプロトコル 1.0.0 は非推奨(2.0.0 へ)。<strong>⚠ hosted agent はエージェント定義にツールを直付けできない</strong>(「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」。<code>create_version</code> の <code>tools</code> パラメータは削除済み)→ <strong>Toolbox 経由が前提</strong>(コンテナ内の自前コードのツールは対象外)。idle timeout は 5〜60 分で設定可(既定 15 分。2026-08-19 版)。private ACR は 2026-06-25 以降作成プロジェクトのみ。現場の詰まりどころは <a href="../../casebook/html/02-pitfalls-index.html#a-hosted-agent">casebook 02 §A</a></td>
+<td><strong>初期プレビュー基盤は 2026-08-20 で期限到来(サポート終了・要再デプロイ)</strong>。migrate-hosted-agent-preview(2026-08-06 版)は「supported only until August 20, 2026」の表現のままで retired 表記は未反映。Python / C# のみ・31 リージョン(2026-08-19 版で再確認、変化なし)。コンテナプロトコル 1.0.0 は非推奨(2.0.0 へ。猶予期間の日付は未公表のまま)。プロトコルは Responses / Invocations / <strong>Invocations (WebSocket)</strong>(<code>invocations_ws</code>、リアルタイム音声用。hosted agents 全リージョンで利用可)+ Activity(Responses から自動ブリッジ)+ A2A(プレビュー)。<strong>ソースコード(.zip)デプロイ</strong>が追加(<code>azd ai agent init --deploy-mode code</code> → <code>azd deploy</code> で Foundry 側リモートビルド。quickstart 2026-08-11 版。C# SDK 側は「Source-code deployment APIs are currently available in a prerelease version」と明記)。長時間実行(preview)・BYO 外部レジストリ・Autopilot・Skills は本表の後段行を参照。<strong>⚠ hosted agent はエージェント定義にツールを直付けできない</strong>(「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」。<code>create_version</code> の <code>tools</code> パラメータは削除済み)→ <strong>Toolbox 経由が前提</strong>(コンテナ内の自前コードのツールは対象外)。idle timeout は 5〜60 分で設定可(既定 15 分。2026-08-19 版)。private ACR は 2026-06-25 以降作成プロジェクトのみ。現場の詰まりどころは <a href="../../casebook/html/02-pitfalls-index.html#a-hosted-agent">casebook 02 §A</a></td>
 </tr>
 <tr>
 <td>Multi-agent workflows(ビジュアル)</td>
@@ -208,9 +208,9 @@ footer {
 <td><span class="badge preview">パブリックプレビュー</span></td>
 <td><span class="badge no">未対応</span>(「isn't yet configurable in the Foundry portal」)</td>
 <td>REST (<code>az rest</code>)</td>
-<td><span class="badge ok">対応</span>(agent card 設定は REST のみ)</td>
+<td><span class="badge ok">対応</span>(<strong>agent card + A2A 有効化を Python <code>agents.update_details()</code> / JS <code>patchAgentObject()</code> で設定可</strong>。2026-08-26 版。旧記載「REST のみ」は訂正)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/enable-agent-to-agent-endpoint" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/enable-agent-to-agent-endpoint">enable-agent-to-agent-endpoint</a></td>
-<td>v1.0 は JSONRPC のみ、テキストのみ、ストリーミング非対応、Entra 認証必須</td>
+<td>v1.0 は JSONRPC のみ、テキストのみ、ストリーミング非対応、Entra 認証必須(いずれも 2026-08-26 版で再確認)。<strong>バージョン未指定時の既定は v0.3</strong>(v1.0 は <code>A2A-Version</code> ヘッダー / クエリ、または v1.0 agent card 取得で SDK に交渉させる)</td>
 </tr>
 <tr>
 <td>Memory</td>
@@ -224,23 +224,23 @@ footer {
 </tr>
 <tr>
 <td>Routines</td>
-<td>タイマー/cron/イベント(GitHub issue)トリガーでエージェントを自動起動。1トリガー+1アクション</td>
+<td>タイマー/cron/イベント(GitHub issue・<strong>Teams チャネル新規メッセージ</strong>)トリガーでエージェントを自動起動。1トリガー+1アクション</td>
 <td><span class="badge preview">パブリックプレビュー</span></td>
-<td><span class="badge ok">対応</span></td>
-<td><strong>azd</strong> routines 拡張(プレビュー)</td>
-<td><span class="badge ok">対応</span>(C#/JS SDK プレビュー版。REST は <code>Foundry-Features: Routines=V1Preview</code> ヘッダー必須)</td>
+<td><span class="badge ok">対応</span>(Teams トリガーは接続をポータルで作成後、ルーチン本体は REST / SDK / azd で作成)</td>
+<td><strong>azd</strong> <code>azure.ai.routines</code> 拡張(プレビュー。azd 1.23.13+。インライン <code>--trigger schedule</code> は非対応で YAML マニフェスト経由)</td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects&gt;=2.4.0</code>。.NET は <code>2.1.0-beta.4</code> 系プレビュー版のみ〈stable 2.0.1 に routines なし〉、JS もプレビュー。REST は <code>Foundry-Features: Routines=V1Preview</code> ヘッダー必須)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/routines" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/routines">routines</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-routines" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-routines">use-routines</a></td>
-<td>リージョン限定。多段オーケストレーションは対象外(→workflow / Agent Framework)</td>
+<td><strong>8 リージョン限定</strong>(East US / East US 2 / West US / West US 2 / West Central US / North Central US / Sweden Central / <strong>Japan East</strong>。use-routines 2026-08-05 版)。cron 最小間隔 5 分。Teams トリガーは use-routines(2026-08-05 版)のみ記載で concepts/routines(2026-07-08 版)の制限一覧は GitHub issue のみ → 表記揺れ。イベントトリガーは<strong>ルーチン作成者の ID で外部システムに認証</strong>。hosted agent は Toolbox 経由の reminder ツールで自己再スケジュール可。多段オーケストレーションは対象外(→workflow / Agent Framework)</td>
 </tr>
 <tr>
 <td>Agent optimizer</td>
-<td>評価データセットに対して hosted agent の instructions / skills / tool 説明 / モデル選定を自動改善</td>
-<td><strong>限定プレビュー(Limited preview)</strong> — GA 一覧表の表記。単なる public preview ではなく利用可否が絞られる</td>
-<td><span class="badge ok">対応</span>(Agents &gt; Optimize タブで結果閲覧)</td>
-<td><strong>azd</strong>(<code>azd ai agent optimize</code>)</td>
-<td><span class="badge na">記載なし</span>(azd 中心)</td>
-<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-optimizer-overview" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-optimizer-overview">agent-optimizer-overview</a></td>
-<td><strong>hosted agents(Responses protocol)専用</strong>。Norway East 以外の hosted agent リージョン</td>
+<td>評価データセットに対して <strong>prompt agent / hosted agent</strong> の instructions / function-calling tool 説明 / モデル選定(hosted はさらに skills)を自動改善</td>
+<td><strong>プレビュー(表記揺れ)</strong> — GA 一覧表(2026-08-14 版)は「<strong>Limited preview</strong>」、概要・クイックスタート(2026-08-07 版)は「Agent Optimizer is currently in preview」(パブリックプレビュー定型文)。両方併記</td>
+<td><span class="badge ok">対応</span>(<strong>prompt agent はポータルの Optimize タブのウィザードで実行し、候補を新バージョンへ昇格</strong>。事前コスト見積〈Minimum / Estimated / Maximum〉もポータルの prompt agent のみ。hosted は結果閲覧)</td>
+<td><strong>azd</strong>(<code>azd ai agent optimize</code> / <code>optimize apply</code>。hosted 用。<code>microsoft.foundry</code> 拡張)</td>
+<td><span class="badge na">記載なし</span>(hosted は <code>azure-ai-agentserver-optimization</code> パッケージ+baseline 設定で optimizer-ready 化。VS Code の Foundry Toolkit 1.6.4+ が自動スキャフォールド)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-optimizer-overview" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-optimizer-overview">agent-optimizer-overview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/quickstarts/quickstart-optimize-prompt-agent" title="https://learn.microsoft.com/en-us/azure/foundry/agents/quickstarts/quickstart-optimize-prompt-agent">quickstart-optimize-prompt-agent</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-optimizer-costs" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-optimizer-costs">agent-optimizer-costs</a></td>
+<td>旧記載「hosted agents 専用」は訂正(prompt agent 対応は 2026-08-07 版で追加)。hosted は <strong>Responses protocol 必須</strong>・Norway East 以外の hosted agent リージョン。optimization model は gpt-5 / 5.1 / 5.2 / 5.4 / 5.5 / DeepSeek-V4-Pro / V-3.2、eval model は任意のチャットモデル。<strong>最適化中はデータセット全件でエージェントを実際に実行しツールも本当に呼ぶ</strong>(課金・副作用注意、テスト用エンドポイント推奨)。スコア改善 0.03 未満はノイズ扱い</td>
 </tr>
 <tr>
 <td>M365 Copilot / Teams への公開</td>
@@ -249,8 +249,8 @@ footer {
 <td><span class="badge ok">対応</span>(公開はポータルか REST)</td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span>(公開自動化は REST)</td>
-<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot">publish-copilot</a></td>
-<td>Bot Service リソース必要(<code>Microsoft.BotService</code>)。組織公開は M365 管理者承認。パブリックネットワーク無効時の扱いは公式間で表記揺れ(publish-copilot ページは「ポータル不可・REST のみ」、configure-private-link〈2026-07-28 更新〉は「公開ネットワーク無効でも公開可」)。旧 Agent Applications 形式は新規公開不可(要フォーマット移行)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot">publish-copilot</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot-virtual-network" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot-virtual-network">publish-copilot-virtual-network</a></td>
+<td>Bot Service リソース必要(<code>Microsoft.BotService</code>)。組織公開は M365 管理者承認。パブリックネットワーク(PNA)無効時は<strong>ポータル不可・REST のみ</strong>で、<code>enable_m365_public_endpoint</code> により <strong>Activity Protocol ルートだけ</strong>を Bot Service / M365 のソース IP 限定で公開する(Responses / Invocations / A2A / MCP は公開されない)。publish-copilot 2026-08-26 版+publish-copilot-virtual-network 2026-08-28 版で手順確定し、旧「公式間で表記揺れ」は解消(公開自体は可、ポータルからは不可)。スコープ名は「Just you = Individual(旧 Shared)/ People in your organization = Tenant」。旧 Agent Applications 形式は新規公開不可(要フォーマット移行)</td>
 </tr>
 <tr>
 <td>Agent catalog(テンプレート)</td>
@@ -272,6 +272,66 @@ footer {
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents">hosted-agents</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot">publish-copilot</a></td>
 <td>prompt agent は FixedRatio でトラフィック%指定可。hosted agent は 1 バージョン 100% のみ(分割不可)。有効リビジョン上限 1,000/agent</td>
 </tr>
+<tr>
+<td><strong>Autopilot(自律型エージェント種別・Agent 365 連携)</strong></td>
+<td>自身の <strong>Entra agent user account</strong>(メール・カレンダー・OneDrive・Teams プレゼンス・組織図上の席)を持ち、ユーザー代理ではなく「本人として」M365 上で動くエージェント。開発者は <strong>blueprint</strong> を公開し、テナント管理者の承認後に各チームの manager が instance を「hire」する 1:N モデル</td>
+<td><strong>要確認(Foundry 側 4 ページに GA / preview のラベルなし)</strong> — ただし前提の Agent 365 側は <strong>Frontier プレビュープログラム加入+Agent 365 Frontier ライセンス(25 席のプレビューサブスクリプション)</strong>、publish API は <code>api-version=2025-11-15-preview</code>、テンプレートスキーマ <code>0.1.0-preview</code> → 実質プレビュー相当。確認 URL: 出典欄</td>
+<td><span class="badge na">記載なし</span>(作成・公開は azd + REST。承認は <strong>M365 管理センター</strong>の 4 段ウィザード、hire は Teams / M365 Copilot のストア「Agents for your team」)</td>
+<td><strong>azd</strong>(<code>azd provision</code> 一発でインフラ→hosted agent 作成→publish。サンプルは C# / Python)</td>
+<td><span class="badge na">記載なし</span>(publish は REST <code>POST /agents/{name}/microsoft365/publish</code> に <code>publishAsAutopilot: true</code>・<code>publishScope: Tenant</code>・<code>useAgenticUserTemplate: true</code>・<code>agenticUserTemplate{...}</code>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/autopilot-overview" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/autopilot-overview">autopilot-overview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/autopilot-lifecycle" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/autopilot-lifecycle">autopilot-lifecycle</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/agent-365" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/agent-365">agent-365</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-365-integration" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-365-integration">agent-365-integration</a></td>
+<td>「<strong>Only Foundry hosted agents can be published as autopilot blueprints</strong>」(prompt agent は Agent 365 registry 同期のみで autopilot 公開不可)。承認者は Global Administrator / AI Administrator。<strong>1 instance = 1 ライセンス消費</strong>(instance 作成時に agent identity + agent user account を生成)。テナントに M365 Copilot または Agent 365 ライセンス(E7 含む)が 1 つ以上必要。Agent 365 本体は 2026-05-01 GA(商用・ユーザー単位課金)だが、Foundry autopilot の前提は Frontier <strong>プレビュー</strong>。データ所在は Foundry=Azure リージョン / Agent 365=Entra テナント地域で異なる(Foundry リソース単位で Agent 365 へのデータ送信をオプトアウト可)。Azure リソース削除(<code>azd down</code>)では hire 済 instance は消えない(blueprint の retire は管理者側)。2026-08-25〜26 版</td>
+</tr>
+<tr>
+<td><strong>長時間実行 hosted agents(resilient / steerable、preview)</strong></td>
+<td>クラッシュ・OOM・再デプロイ・スケールインをまたいで作業を回復(lease ベースのプロセス喪失検知+入力永続化+ハンドラ再入)、ストリームのカーソル再接続、進行中ターンの steering(新入力をキューして現ターンを協調的に終了)、HITL の無期限待機</td>
+<td><strong>パブリックプレビュー</strong>(全 9 ページがプレビュー表記。うち 8 ページは「Long-running agents are in preview. APIs and package versions are subject to change」の定型文)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><strong>azd</strong>(<code>azd ai agent init -m &lt;sample azure.yaml&gt;</code> → <code>azd up</code>。Python 3.13)</td>
+<td>AgentServer SDK: <code>azure-ai-agentserver-core&gt;=2.0.0</code> / <code>-responses&gt;=2.0.0</code> / <code>-invocations&gt;=1.0.0</code>(<strong>Python パッケージは GA、.NET は <code>1.0.0-beta.*</code> プレビュー</strong>)。Responses は <code>ResponsesServerOptions(resilient_background=True, steerable_conversations=True)</code>、Invocations は <code>@task</code> / <code>@multi_turn_task</code> プリミティブ</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/long-running-agent-resilience" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/long-running-agent-resilience">long-running-agent-resilience</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/long-running-agent-reference" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/long-running-agent-reference">long-running-agent-reference</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/deploy-resilient-agent" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/deploy-resilient-agent">deploy-resilient-agent</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/stream-with-reconnect" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/stream-with-reconnect">stream-with-reconnect</a></td>
+<td><strong>hosted agents 専用</strong>(prompt agent は対象外)。Responses protocol での回復対象は <strong><code>store=true</code> かつ <code>background=true</code> の保存済みバックグラウンド応答のみ</strong>(フォアグラウンド応答はクラッシュ時 failed。<code>resilient_background</code> 既定は False)。回復は「ハンドラ先頭から再入」であり決定的リプレイではない — チェックポイント・冪等キー・副作用ウォーターマークは<strong>アプリ側責務</strong>(Agent Framework / LangGraph の checkpointer と併用が前提)。再接続は <code>GET /responses/{id}?stream=true&amp;starting_after=&lt;seq&gt;</code>。関連 how-to: add-human-in-the-loop / deploy-steerable-agent / manage-task-state / recover-long-running-work / steer-hosted-agent(2026-08-05〜20 版)</td>
+</tr>
+<tr>
+<td>Hosted agents — BYO 外部コンテナレジストリ(OIDC トークン交換)</td>
+<td>JFrog Artifactory や自前 Docker Distribution など <strong>Azure 外の認証付きレジストリ</strong>からイメージを pull。プロジェクト MI の Entra トークンを短命資格情報に交換し、レジストリのユーザー名/パスワードを保存しない</td>
+<td><span class="badge na">記載なし</span>(ページにプレビュー表記なし。hosted agents 本体は GA)— 確認 URL: 出典欄</td>
+<td><span class="badge na">記載なし</span></td>
+<td><strong>azd</strong>(<code>azd ai connection create &lt;name&gt; --kind custom-keys --metadata type=registry_connection --metadata mode=oauth_token_exchange</code> / <code>azd ai agent init --image &lt;外部イメージ&gt; --registry-connection &lt;接続名&gt;</code>)/ Bicep(<code>connections@2025-04-01-preview</code>、category <code>CustomKeys</code>)</td>
+<td><span class="badge ok">対応</span>(<code>agents.create_version(... image=..., registry_connection_id=&quot;&lt;接続名&gt;&quot;)</code>。azure.yaml は <code>docker.imagePassthrough: true</code>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/private-registry-connections" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/private-registry-connections">private-registry-connections</a></td>
+<td>2026-09-01 版。<strong>このページの「private registry」= 認証必須レジストリの意味で、private endpoint 付き ACR とは別物</strong>(閉域 ACR は 2026-06-25 以降作成プロジェクトのみ、の制約は従来どおり)。JFrog は「validated example」、<strong>Docker Distribution は OAuth 2.0 トークン交換エンドポイントを持たないため認証アダプターの自作が必要</strong>(Foundry は汎用アダプター契約を定義しない)。接続作成に Foundry Project Manager ロール。azd 1.32.0+ / <code>azure.ai.agents</code> 1.0.0-beta.13+</td>
+</tr>
+<tr>
+<td>Skills(<code>SKILL.md</code>)/ Private skill catalog</td>
+<td>振る舞い指針・手順を <code>SKILL.md</code> として<strong>バージョン管理された Skills API</strong> に集中管理し、(a) Toolbox に添付して MCP Resources として配布、(b) hosted agent にダウンロードして同梱、の 2 経路で配信。Private skill catalog は <strong>Azure API Center</strong> に組織スコープの skill を登録し、Foundry の Build &gt; Skills から検出させる</td>
+<td><strong>パブリックプレビュー</strong>(skills 2026-08-05 版・private-skill-catalog 2026-08-19 版ともプレビュー定型文)</td>
+<td><span class="badge ok">対応</span>(Build &gt; Skills でカタログ検索・詳細閲覧。skill 登録・「Allowed tools」定義・品質評価は Azure ポータルの API Center 側)</td>
+<td><strong>azd</strong>(<code>azd ai skill create/update</code>、<code>azd ai toolbox skill add</code>、azure.yaml の <code>azure.ai.skill</code> サービス)</td>
+<td><span class="badge ok">対応</span>(<code>project.beta.skills.create()</code> / <code>create_from_files()</code>、Toolbox 側は <code>ToolboxSkillReference</code>。C# / JS も。REST は <code>Foundry-Features: Skills=V1Preview</code> ヘッダー必須)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/skills" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/skills">skills</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/private-skill-catalog" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/private-skill-catalog">private-skill-catalog</a></td>
+<td>overview(2026-08-19 版)の比較表は prompt / hosted とも「Skill support: Yes」。Toolbox 経由の skill 検出は MCP Skills 拡張(SEP-2640)準拠で、<strong>添付できるのは同一プロジェクト内の skill のみ</strong>(クロスプロジェクト不可)。private catalog は利用者に <code>Azure API Center Data Reader</code> が必要(RBAC 伝播に最大 24 時間)。「Allowed tools」が skill のガバナンス境界(未承認のエンドポイントに届かない)。Agent optimizer の skill 改善対象は hosted のみ。ツール面の詳細は <a href="04-tools-knowledge.html">04-tools-knowledge</a></td>
+</tr>
+<tr>
+<td>Responses API マルチエージェント オーケストレーション(subagents)</td>
+<td>ルートモデルが <strong>subagent を並列に生成・調整</strong>して最終応答に統合する、Azure OpenAI Responses API のモデル側機能(Agent Service のエージェント定義・Workflows とは独立)</td>
+<td><strong>プレビュー</strong>(「This feature is in preview」)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td>OpenAI SDK(<code>multi_agent={&quot;enabled&quot;: True, &quot;max_concurrent_subagents&quot;: 3}</code>。REST は <code>/openai/v1/responses?api-version=preview</code>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses-multi-agent" title="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses-multi-agent">responses-multi-agent</a></td>
+<td>2026-08-11 版。<strong>GPT-5.6 デプロイ必須</strong>、<code>api-version=preview</code> 必須。<code>max_concurrent_subagents</code> はツリー全体(子孫含む、ルート除く)の上限で既定 3。subagent 追加でトークン消費増。ビジュアル Workflows 廃止(2026-12-01)後の軽量マルチエージェント手段の一つだが、順序依存の推論・共有状態の頻繁な更新・単一の遅い外部処理には不向きと明記</td>
+</tr>
+<tr>
+<td>音声エージェント(Agents の Voice Live 連携 / hosted <code>invocations_ws</code>)</td>
+<td>(a) Agents の Voice Live 連携、(b) hosted agent の WebSocket プロトコル <code>invocations_ws</code> で Pipecat / LiveKit / Voice Live をコンテナ内に載せる全二重リアルタイム音声</td>
+<td>(a) <strong>プレビュー</strong>(GA 一覧表 2026-08-14 版「Agents — Voice Live: Preview」)/(b) build-voice-agent(2026-08-06 版)にライフサイクル表記なし → 要確認(確認 URL: 出典欄)</td>
+<td>(a) 記載なし(GA 一覧表のみ)/(b) 記載なし</td>
+<td>(b) azd</td>
+<td>(b) <code>azure-ai-agentserver-invocations</code> の WebSocket ハンドラ(HTTP <code>/invocations</code> と同一ホストに <code>GET /invocations_ws</code> を追加)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">general-availability</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/build-voice-agent" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/build-voice-agent">build-voice-agent</a></td>
+<td>(b) フレーム上限 1 MB(超過は close 1009)、<strong>1 接続は約 30 分で切断</strong>(ローリング更新の close 1001。再接続前提の実装が必須)、Entra Bearer で認証しコンテナには Authorization ヘッダーが届かない。1 コンテナで Responses / Invocations / WebSocket の 3 プロトコル同時公開可。Voice Live 本体は <a href="07-foundry-tools.html">07-foundry-tools</a></td>
+</tr>
 </tbody></table></div>
 <h2 id="廃止・移行期限-このカテゴリ分">廃止・移行期限(このカテゴリ分)</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -280,14 +340,14 @@ footer {
 <th>対応</th>
 </tr></thead><tbody>
 <tr>
-<td>2026-08-20</td>
+<td><strong>2026-08-20(期限到来)</strong></td>
 <td>Hosted agents 初期プレビュー基盤</td>
-<td>新基盤へ再デプロイ( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-hosted-agent-preview" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-hosted-agent-preview">migrate-hosted-agent-preview</a> )</td>
+<td><strong>サポート終了済。</strong>新基盤へ再デプロイ( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-hosted-agent-preview" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-hosted-agent-preview">migrate-hosted-agent-preview</a> )。出典(2026-08-06 版)は「supported only until August 20, 2026」の表現のままで retired 表記は未確認</td>
 </tr>
 <tr>
-<td>2026-08-26</td>
+<td><strong>2026-08-26(期限到来・廃止済)</strong></td>
 <td>Assistants API</td>
-<td>Responses API(Agents v2)へ移行</td>
+<td>Responses API(Agents v2)へ移行。出典で「The Assistants API is retired」を確認( <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/assistants" title="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/assistants">assistants</a> )</td>
 </tr>
 <tr>
 <td>2026-12-01</td>
@@ -313,7 +373,7 @@ footer {
 <h2 id="補足ノート">補足ノート</h2>
 <p><strong>1. v1→v2 移行の実務ポイント</strong> 移行ツール( <a href="https://aka.ms/agent/migrate/tool" title="https://aka.ms/agent/migrate/tool">tool</a> )はコード構造を変換するが、<strong>状態データ(過去の runs / threads / messages)は移行されない</strong>(新 API 側で会話を作り直す)。新 API では会話/レスポンスは OpenAI クライアント(<code>project.get_openai_client()</code>)、エージェント作成・バージョン管理はプロジェクトクライアント、という<strong>2クライアント構成</strong>。旧 <code>create_agent()</code> は SDK v2.0.0 で削除済み。</p>
 <p><strong>2. ツールの GA/プレビュー差(移行ガイドの対比より)</strong> 新 Foundry では MCP=GA、Web Search=GA(limits ページに preview 扱いの記述もありリージョン依存)、A2A=パブリックプレビュー、Image Generation=パブリックプレビュー、Work IQ=プレビュー。<strong>Azure Functions ツールと Deep Research ツールは新 Foundry の対比表上「なし」扱い</strong>の記述があるが、ツールカタログ側の詳細は <a href="04-tools-knowledge.html">04-tools-knowledge</a> を参照(Deep Research は非推奨が確定、後継は <code>o3-deep-research</code> モデル+Web search)。</p>
-<p><strong>3. CLI サーフェスの注意</strong> <code>az cognitiveservices agent</code> は公式間で表記揺れ: Agent Service ドキュメントは削除済みとして azd を案内する一方、<strong>Azure CLI リファレンスには Core・Preview として現存</strong>(hosted agent の create/logs/start/stop 等。 <a href="https://learn.microsoft.com/en-us/cli/azure/cognitiveservices" title="https://learn.microsoft.com/en-us/cli/azure/cognitiveservices">cognitiveservices</a> )。開発フローの主線は <strong>azd</strong>(<code>azd ai agent init/run/invoke</code> 等 — コマンド列挙もページ間で揺れあり)、管理操作は <code>az rest</code>。ほかに VS Code の Foundry Toolkit、コーディングエージェント用 Microsoft Foundry Skill がクイックスタートの正式手段。</p>
+<p><strong>3. CLI サーフェスの注意</strong> <code>az cognitiveservices agent</code> は公式間で表記揺れ: Agent Service ドキュメントは削除済みとして azd を案内する一方、<strong>Azure CLI リファレンスには Core・Preview として現存</strong>(hosted agent の create/logs/start/stop 等。 <a href="https://learn.microsoft.com/en-us/cli/azure/cognitiveservices" title="https://learn.microsoft.com/en-us/cli/azure/cognitiveservices">cognitiveservices</a> )。開発フローの主線は <strong>azd</strong>(<code>azd ai agent init/run/invoke</code> 等 — コマンド列挙もページ間で揺れあり)、管理操作は <code>az rest</code>。ほかに VS Code の Foundry Toolkit、コーディングエージェント用 Microsoft Foundry Skill がクイックスタートの正式手段。<strong>azd の設定は <code>azure.yaml</code> 単一ファイルに統合</strong>(旧 <code>agent.manifest.yaml</code> + <code>agent.yaml</code> の 2 ファイル構成を置換。<code>azure.ai.agent</code> / <code>azure.ai.toolbox</code> / <code>azure.ai.skill</code> / <code>azure.ai.routine</code> の各サービス種別と <code>memoryStores</code> を宣言。azure-yaml-reference 2026-08-19 版)。拡張のインストールコマンドもページ間で揺れあり(<code>azd ext install microsoft.foundry</code> / <code>azd extension install azure.ai.agents</code> / <code>azd extension install azure.ai.routines</code>)。</p>
 <p><strong>4. 課金・クォータ概要</strong></p>
 <ul>
 <li>Prompt agents: 呼び出しごとの推論+ツール使用分(コンピュート課金なし)。</li>

@@ -772,15 +772,15 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 
 | 期限 | 対象 | 影響・移行先 |
 |---|---|---|
-| 2026-08-20 | Hosted agents 初期プレビュー基盤 | サポート終了。新基盤へ再デプロイ必須 |
-| 2026-08-26 | Assistants API(Azure OpenAI) | 廃止。Responses API(Agents v2)へ |
-| 2026-08-26 | `azure-ai-inference` SDK | 廃止(beta のまま GA せず終了)。OpenAI SDK + v1 API へ |
-| **2026-08-31** | NTT Data `tsuzumi-7b`(Legacy) | 廃止。後継 `tsuzumi2` へ。**日本語特化モデル案件で効く** |
-| 2026-10-01 前後 | gpt-4o / o1 / o3 / o4-mini 等の旧モデル群 | リタイア |
-| **2026-10-14** | `gpt-4.1-nano` | リタイア(gpt-4.1 / mini より約半年早い。混同しない) |
+| ~~2026-08-20~~ 到来 | Hosted agents 初期プレビュー基盤 | サポート終了済。未移行なら新基盤へ再デプロイ |
+| ~~2026-08-26~~ 廃止済 | Assistants API(Azure OpenAI) | 「The Assistants API is retired」。Responses API(Agents v2)へ |
+| ~~2026-08-26~~ 廃止済 | `azure-ai-inference` SDK | 「retired on August 26, 2026」(beta のまま GA せず終了)。OpenAI SDK + v1 API へ |
+| ~~2026-08-31~~ 到来 | NTT Data `tsuzumi-7b`(Legacy) | リタイア日到来。後継 `tsuzumi2` へ。**日本語特化モデル案件で効く** |
+| 2026-10-01 〜 10-21 | gpt-4o(2024-05-13)/ o3-mini / o4-mini / Claude 4.5 世代 / o1 / o3 | リタイア集中期間(版を確認。gpt-4o 08-06 / 11-20 版は 2027-04-14 まで) |
 | 2026-10-14 | Azure OpenAI On Your Data | 廃止。Foundry Agent Service + Foundry IQ へ |
 | 2026-12-01 | ビジュアル Workflows | 廃止。MAF / Logic Apps / A2A へ |
 | 2027-03-31 | Agents (classic)(v1、Threads / Runs) | 廃止。Agents v2 へ(状態データは自動移行されない) |
+| 2027-04-14 | `gpt-4.1` / `gpt-4.1-mini` / `gpt-4.1-nano` | リタイア(nano は 2026-10-14 → **2027-04-14 に延長**、3 モデル同日。2026-09-02 版で確認) |
 | 2027-04-20 | prompt flow | 廃止。新規開発に非推奨。MAF へ |
 | 2028-09-25 | Azure AI Vision Image Analysis 4.0 / 3.2 | 廃止。DI / Content Understanding / Foundry Models へ |
 | 日付未公表 | Agent Applications / コンテナプロトコル 1.0.0 | 廃止予告済み(1.0.0 は 2026-07-31 からブロック開始と公表) |

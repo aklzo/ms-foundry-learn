@@ -10,7 +10,7 @@ README.md は index.html になる。標準ライブラリのみ使用。
 
 対応しているMarkdownサブセット:
   見出し(h1-h4) / 段落 / 箇条書き(1段ネスト) / 番号付きリスト / テーブル /
-  フェンスコードブロック / 引用 / 水平線 / **強調** / `コード` / [リンク](url) /
+  フェンスコードブロック / 引用 / 水平線 / **強調** / ~~取り消し線~~ / `コード` / [リンク](url) /
   ![画像](path)(相対パスは html/ からの参照に自動書き換え)
 
 テーブルセル先頭のステータス語 (GA / パブリックプレビュー / 非推奨 など) は
@@ -197,6 +197,7 @@ def inline(text: str) -> str:
     text = re.sub(r"\x01(\d+)\x01", lambda m: anchors[int(m.group(1))], text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
+    text = re.sub(r"~~([^~]+)~~", r"<del>\1</del>", text)
     return re.sub(r"\x00(\d+)\x00", lambda m: codes[int(m.group(1))], text)
 
 

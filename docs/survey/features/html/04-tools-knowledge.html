@@ -91,10 +91,11 @@ footer {
 <main>
 <h1 id="04-エージェントツール・ナレッジ-rag">04. エージェントツール・ナレッジ(RAG)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#ツールカタログ掲載ツールとステータス-カタログ表記ベース">ツールカタログ掲載ツールとステータス(カタログ表記ベース)</a></li><li><a href="#ツール個別詳細">ツール個別詳細</a></li><li><a href="#補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照) / 2026-09-07(一次情報で再検証。訂正・追記は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要">概要</h2>
-<p>Foundry Agent Service のツール群とナレッジ(RAG)機構を扱う。ツールカタログのページ冒頭に「<strong>The Foundry tool catalog and the core tools framework are generally available. Some individual tools are still in preview</strong>」と明記されており、<strong>カタログとコアツール基盤は GA、個別ツールは一部プレビュー</strong>という構図(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/tool-catalog" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/tool-catalog">tool-catalog</a> )。</p>
-<p>カタログのエントリ種別は Remote MCP server / Local MCP server / Custom(Logic Apps コネクタから変換した MCP サーバー)の3種。組織限定の Private tool catalog あり。ポータル操作は新ポータルの Build &gt; Tools。</p>
+<p>Foundry Agent Service のツール群とナレッジ(RAG)機構を扱う。<strong>カタログとコアツール基盤は GA、個別ツールは一部プレビュー</strong>という構図は変わらず、GA 一覧表(2026-08-14 版)に「Discover &gt; Tools = GA」「Build &gt; Tools = GA (check label on individual tools in the catalog)」「Build &gt; Toolboxes = GA」と明記(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">general-availability</a> )。</p>
+<p><strong>2026-09-07 注記:</strong> 初版が引用した旧「ツールカタログ」概念ページ(/azure/foundry/agents/concepts/tool-catalog)は <strong>/azure/foundry/agents/concepts/toolbox-overview(「What is Toolbox in Foundry?」、2026-07-28 版)へ 301 リダイレクト</strong>され、「The Foundry tool catalog and the core tools framework are generally available...」の文言はリダイレクト先に存在しない。ドキュメント側でツール別の GA / Public Preview ラベルを最も明示的に列挙しているのは<strong>移行ガイドの「Agent tool availability」表</strong>(classic → 新の対応表、2026-08-05 版: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate#agent-tool-availability" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate#agent-tool-availability">migrate</a> )で、下表のラベルはこれと各ツールページのタイトル「(preview)」表記・TOC ラベルに基づく。</p>
+<p>カタログのエントリ種別は Remote MCP server / Local MCP server / Custom(Logic Apps コネクタから変換した MCP サーバー)の3種(旧 tool-catalog ページ時点の記載)。<strong>2026-09-07 時点</strong>のドキュメント構成は「Toolboxes &gt; Add tools and skills」配下に各ツールが並び、カタログ由来の機構として <strong>Managed MCP servers(コネクタ名前空間、1,000+ コネクタ、プレビュー)</strong>・<strong>Private tool catalog(Azure API Center ベース、プレビュー)</strong>・<strong>Private skill catalog(プレビュー)</strong> の 3 つが個別ページ化されている(下表の追加行と補足ノート (g) 参照)。ポータル操作は新ポータルの Build &gt; Tools(Toolbox は「Build &amp; customize &gt; Toolboxes」の記載もあり)。</p>
 <h2 id="ツールカタログ掲載ツールとステータス-カタログ表記ベース">ツールカタログ掲載ツールとステータス(カタログ表記ベース)</h2>
 <div class="tablewrap"><table><thead><tr>
 <th>分類</th>
@@ -104,12 +105,12 @@ footer {
 <tr>
 <td>Built-in</td>
 <td>Web search</td>
-<td><span class="badge ga">GA</span>(表記なし)</td>
+<td><strong>GA</strong>(移行ガイド対応表で「Yes (GA)」、web-overview で「Stage: GA」と明示。2026-09-07 確認)</td>
 </tr>
 <tr>
 <td>Built-in</td>
 <td>Code Interpreter</td>
-<td><span class="badge ga">GA</span>(表記なし)</td>
+<td><strong>GA</strong>(移行ガイド対応表で「Yes (GA)」)</td>
 </tr>
 <tr>
 <td>Built-in</td>
@@ -119,22 +120,22 @@ footer {
 <tr>
 <td>Built-in</td>
 <td>File Search</td>
-<td><span class="badge ga">GA</span>(表記なし)</td>
+<td><strong>GA</strong>(移行ガイド対応表で「Yes (GA)」)</td>
 </tr>
 <tr>
 <td>Built-in</td>
 <td>Azure AI Search</td>
-<td><span class="badge ga">GA</span>(表記なし)</td>
+<td><strong>GA</strong>(移行ガイド対応表で「Yes (GA)」)</td>
 </tr>
 <tr>
 <td>Built-in</td>
 <td>Azure Functions</td>
-<td><span class="badge ga">GA</span>(表記なし)</td>
+<td><strong>要確認(記載が矛盾)</strong> — 移行ガイド対応表(2026-08-05 版)は Foundry (new) = <strong>No</strong>。一方 how-to ページ(2026-08-21 版)は新 SDK 手順と Usage support を掲載し、閉域ツール表・toolbox-overview の対応表にも掲載。両論併記</td>
 </tr>
 <tr>
 <td>Built-in</td>
 <td>Function calling</td>
-<td><span class="badge ga">GA</span>(表記なし)</td>
+<td><strong>GA</strong>(移行ガイド対応表で「Function = Yes (GA)」)</td>
 </tr>
 <tr>
 <td>Built-in</td>
@@ -164,12 +165,12 @@ footer {
 <tr>
 <td>Custom</td>
 <td>Model Context Protocol (MCP)</td>
-<td><span class="badge ga">GA</span>(表記なし)</td>
+<td><strong>GA</strong>(移行ガイド対応表で「Yes (GA)」。classic 側は Public Preview だった)</td>
 </tr>
 <tr>
 <td>Custom</td>
 <td>OpenAPI tool</td>
-<td><span class="badge ga">GA</span>(表記なし)</td>
+<td><strong>GA</strong>(移行ガイド対応表で「Yes (GA)」)</td>
 </tr>
 <tr>
 <td>Custom</td>
@@ -179,10 +180,41 @@ footer {
 <tr>
 <td>Custom</td>
 <td>Toolbox</td>
-<td><strong>GA</strong>(カタログ表に preview ラベルなし。GA 一覧表でも「Toolboxes = GA」と明記)</td>
+<td><strong>GA</strong>(GA 一覧表 2026-08-14 版「Build &gt; Toolboxes = GA」)。<strong>ただし</strong> Foundry 公式ブログ(2026-06-02 Build 特集・2026-06-03 Toolbox 記事)は「Toolboxes in Foundry is in public preview」と記載。GA 一覧表を最終権威として GA とし、表記揺れとして併記</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>Tool search(toolbox 内)</td>
+<td><strong>プレビュー</strong>(toolbox-overview 2026-07-28 版で「Tool search (preview)」と明記。初版の「Toolbox に準ずる」を訂正)</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>Skills / Private skill catalog</td>
+<td><span class="badge preview">プレビュー</span>(skills ページ 2026-08-05 版・private-skill-catalog ページ 2026-08-19 版ともタイトルに「(preview)」。詳細は補足ノート (g) と <a href="03-agent-service.html">03-agent-service</a>)</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>Managed MCP servers(コネクタ名前空間)</td>
+<td><span class="badge preview">プレビュー</span>(connectors ページ 2026-08-19 版。Foundry Tools Catalog の 1,000+ コネクタを Foundry 管理の MCP サーバーとして提供)</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>Private tool catalog</td>
+<td><span class="badge preview">プレビュー</span>(private-tool-catalog ページ 2026-08-19 版。Azure API Center に登録した組織限定 MCP サーバーを Build &gt; Tools で発見)</td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Reminder tool(<code>reminder_preview</code>)</td>
+<td><span class="badge preview">プレビュー</span>(<strong>hosted agent 専用・toolbox 経由のみ</strong>。2026-07-16 版)</td>
+</tr>
+<tr>
+<td>Built-in</td>
+<td>Azure Speech MCP Server(Foundry Tools)</td>
+<td>表記なし(ページに GA / preview ラベルなし。MCP ツールとして接続、<strong>Enterprise tier 必須・閉域(Network-secured)非対応</strong>。2026-05-31 版。確認 URL: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/azure-ai-speech" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/azure-ai-speech">azure-ai-speech</a> )</td>
 </tr>
 </tbody></table></div>
 <p>※ 旧来の「Grounding with Bing Search」は built-in 表から外れ <strong>Web search が推奨経路</strong>。高度シナリオ向けに「Grounding with Bing tools」ページが別途存在。<strong>Deep Research と Logic Apps 専用ツールはカタログに存在しない</strong>(後述)。</p>
+<p><strong>2026-09-07 追記:</strong> 移行ガイド対応表(2026-08-05 版)では Grounding with Bing Search = GA、Bing Custom Search = Public Preview、<strong>Deep Research = No(Deep Research モデル + Web Search ツールを推奨)</strong>、<strong>Connected Agents = No(A2A ツールを推奨)</strong>、Image Generation / Web Search / A2A は新 API 専用。Image Generation・Browser Automation・Computer Use・Fabric data agent・SharePoint・A2A のプレビュー表記は同表と各ページタイトルで再確認(変化なし)。A2A の個別ページ URL は <code>/how-to/tools/agent-to-agent</code>(<code>/tools/a2a</code> は 404)。</p>
 <h2 id="ツール個別詳細">ツール個別詳細</h2>
 <p>凡例: SDK 列は Python SDK の対応(各ページの Usage support 表に基づく。多くは C#/JS/Java/REST も対応)。Azure CLI はツール実行用の記載はどのページにもなし(接続作成に <code>az cognitiveservices</code> を使う例のみ)。</p>
 <div class="tablewrap"><table><thead><tr>
@@ -203,7 +235,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(basic/standard 両対応)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/file-search" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/file-search">file-search</a></td>
-<td>モデル利用料と別に<strong>追加課金</strong>。埋め込みは text-embedding-3-large(256次元)、チャンク 800 / オーバーラップ 400 トークン。standard セットアップでは自前の AI Search + Blob にデータ保持</td>
+<td>モデル利用料と別に<strong>追加課金</strong>。埋め込みは text-embedding-3-large(256次元)、チャンク 800 / オーバーラップ 400 トークン。standard セットアップでは自前の AI Search + Blob にデータ保持。<strong>閉域:</strong> configure-private-link(2026-08-14 版)・toolbox-network-isolation(2026-08-03 版)の両表で「Supported — Through private endpoint」。<strong>リージョン:</strong> Italy North・Brazil South では利用不可(limits-quotas-regions 2026-08-20 版)。Java SDK は toolbox 作成 API 未提供のため toolbox 経由時は他言語 / REST / ポータルで作成(2026-08-05 版)</td>
 </tr>
 <tr>
 <td>Azure AI Search</td>
@@ -213,17 +245,17 @@ footer {
 <td>接続作成のみ <code>az cognitiveservices ... connection create</code></td>
 <td><span class="badge ok">対応</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/ai-search" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/ai-search">ai-search</a></td>
-<td>1ツール1インデックスのみ。同一テナント必須。private VNet では Entra 認証必須。「マネージドなナレッジベース体験は Foundry IQ 参照」と誘導あり</td>
+<td>1ツール1インデックスのみ。同一テナント必須。private VNet では Entra 認証必須(キー認証は private VNet 非対応、プロジェクト MI を使う)。「マネージドなナレッジベース体験は Foundry IQ 参照」と誘導あり。<strong>閉域:</strong> private endpoint 経由で対応。インデクサーが private endpoint を跨ぐ場合は <code>executionEnvironment: Private</code> が必要(未設定だと無音で失敗し空インデックスになる警告あり。indexed knowledge source の自動生成インデクサーは private 実行環境非対応)(configure-private-link 2026-08-14 版・ai-search 2026-08-21 版)</td>
 </tr>
 <tr>
 <td>Web search</td>
 <td>パブリック Web をリアルタイム検索し引用付き回答(Web グラウンディングの<strong>推奨手段</strong>)</td>
-<td><span class="badge ga">GA</span></td>
+<td><strong>GA</strong>(web-overview 2026-04-08 版「Stage: GA」・移行ガイド対応表「Yes (GA)」で明示)</td>
 <td><span class="badge na">記載なし</span></td>
-<td>管理者用に <code>az feature register</code>(サブスクリプション単位で無効化可)</td>
-<td><span class="badge ok">対応</span></td>
+<td>管理者用に <code>az feature register --name OpenAI.BlockedTools.web_search --namespace Microsoft.CognitiveServices</code>(サブスクリプション単位で無効化可。PIM で Contributor を一時昇格して実行)</td>
+<td><span class="badge ok">対応</span>(Python / C# / JS / Java / REST、basic・standard 両対応)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/web-search" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/web-search">web-search</a></td>
-<td>内部は Grounding with Bing (Custom) Search を使用。<strong>追加課金あり・DPA 対象外・データはコンプライアンス境界外へ</strong>。<code>o3-deep-research</code> モデル+Web search が旧 Deep Research ツールの後継</td>
+<td>内部は Grounding with Bing (Custom) Search を使用。<strong>追加課金あり・DPA 対象外・データはコンプライアンス境界外へ</strong>。<code>o3-deep-research</code> モデル+Web search が旧 Deep Research ツールの後継。<strong>2026-09-07 追記(2026-08-19 版):</strong> パラメータは <code>user_location</code> と <code>search_context_size</code>(low/medium/high、既定 medium)。<strong>リージョン:</strong> limits 対応表の 30 リージョンすべてで Web Search = yes(Japan East / Japan West 含む)。<strong>閉域:</strong> 対応だが <strong>Public endpoint 経由</strong>(「全通信を私設網内」要件には不適合。Azure Policy でブロック可)。Deep research 用途は toolbox を経由せず <strong><code>WebSearchPreviewTool</code>(<code>web_search_preview</code>)を prompt agent に直付け</strong>(o3-deep-research が直接の Responses web search ツールを要求)。Responses API 側(openai/how-to/web-search 2026-05-13 版)では <code>web_search</code> が推奨、<code>web_search_preview</code> は「supported but not recommended」</td>
 </tr>
 <tr>
 <td>Grounding with Bing Search</td>
@@ -233,7 +265,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/bing-tools" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/bing-tools">bing-tools</a></td>
-<td>課金あり。モデル制限あり(limits-quotas-regions の「Tool support by region and model」参照)。送信されるのは検索クエリ・ツールパラメータ・リソースキーのみ</td>
+<td>課金あり。モデル制限あり(limits-quotas-regions の「Tool support by region and model」参照)。送信されるのは検索クエリ・ツールパラメータ・リソースキーのみ。<strong>閉域:</strong> 対応(Public endpoint 経由)。private networking 構成時の対応リージョンは限定列挙(Japan East 含む 26 リージョン。limits 2026-08-20 版)。Web search との差分は count / freshness / market / set_lang パラメータと非 OpenAI モデル対応(web-overview 2026-04-08 版)</td>
 </tr>
 <tr>
 <td>Grounding with Bing Custom Search</td>
@@ -253,17 +285,17 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/code-interpreter" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/code-interpreter">code-interpreter</a></td>
-<td>セッション単位の<strong>追加課金</strong>(アクティブ1時間/アイドル30分)。Azure Container Apps dynamic sessions 基盤・Hyper-V 分離・アウトバウンド通信不可。リージョン制限あり</td>
+<td>セッション単位の<strong>追加課金</strong>(アクティブ1時間/アイドル30分)。Azure Container Apps dynamic sessions 基盤・Hyper-V 分離・アウトバウンド通信不可。リージョン制限あり。<strong>閉域:</strong> Microsoft backbone 経由で対応(private endpoint 不要)。Java SDK は toolbox 作成 API 未提供(2026-08-05 版)</td>
 </tr>
 <tr>
 <td>Custom Code Interpreter</td>
-<td>Code Interpreter のパッケージ/リソース/Container Apps 環境をカスタマイズ</td>
-<td><span class="badge preview">パブリックプレビュー</span>(カタログ表記)</td>
-<td><span class="badge unknown">要確認</span></td>
-<td><span class="badge unknown">要確認</span></td>
-<td><span class="badge unknown">要確認</span></td>
-<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/custom-code-interpreter" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/custom-code-interpreter">custom-code-interpreter</a> (確認URL)</td>
-<td>カタログ表記に基づく。個別ページ詳細は未取得</td>
+<td>Code Interpreter のパッケージ/リソース/Container Apps 環境をカスタマイズ(コンテナが MCP サーバーを公開)</td>
+<td><span class="badge preview">パブリックプレビュー</span>(ページタイトル「(preview)」、2026-08-21 版)</td>
+<td><span class="badge na">記載なし</span>(コード中心)</td>
+<td>インフラ構築は Azure CLI / Bicep 手順あり(<code>az feature register --namespace Microsoft.App --name SessionPoolsSupportMCP</code> の登録が必要、反映に 15〜30 分)</td>
+<td><span class="badge ok">対応</span>(<strong>MCP ツール型</strong>として接続。MCP 対応 SDK なら可)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/custom-code-interpreter" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/custom-code-interpreter">custom-code-interpreter</a></td>
+<td>2026-09-07 に個別ページを確認し「要確認」を解消。Agent Service と <strong>Azure Container Apps Dynamic Sessions の両方が対応するリージョン</strong>が必要。Java SDK は toolbox 作成 API 未提供</td>
 </tr>
 <tr>
 <td>OpenAPI tool</td>
@@ -273,17 +305,17 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(basic/standard 両対応)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/openapi" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/openapi">openapi</a></td>
-<td>認証: anonymous / API key / managed identity(Bearer トークンは Custom keys 接続で)。API key 1スキーム/ツール</td>
+<td>認証: anonymous / API key / managed identity(Bearer トークンは Custom keys 接続で)。API key 1スキーム/ツール。<strong>2026-09-07 追記(2026-08-21 版):</strong> azd では <code>--auth-type oauth2</code> 接続も可。Java は <code>com.azure:azure-ai-agents</code> パッケージ(<code>azure-ai-projects</code> は OpenAPI ツール型未対応)。<strong>閉域:</strong> VNet サブネット経由で対応</td>
 </tr>
 <tr>
 <td>Azure Functions</td>
 <td>Storage キュー経由で Azure Functions をツールとして非同期呼び出し</td>
-<td><span class="badge ga">GA</span></td>
+<td><strong>要確認(記載が矛盾)</strong> — how-to ページ(2026-08-21 版)は新 Agent Service の手順を掲載する一方、移行ガイドの対応表(2026-08-05 版)は Foundry (new) = <strong>No</strong></td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span></td>
-<td><span class="badge ok">対応</span></td>
-<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/azure-functions" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/azure-functions">azure-functions</a></td>
-<td><strong>standard セットアップのみ(basic 非対応)</strong>。応答に CorrelationId 必須。MCP サーバーとして Functions をホストする選択肢も併記</td>
+<td><span class="badge ok">対応</span>(Python / C# / JS / Java / REST)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/azure-functions" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/azure-functions">azure-functions</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate#agent-tool-availability" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate#agent-tool-availability">migrate</a></td>
+<td><strong>standard セットアップのみ(basic 非対応)</strong>。応答に CorrelationId 必須。MCP サーバーとして Functions をホストする選択肢も併記。<strong>閉域:</strong> configure-private-link 表では「Supported — Through your VNet subnet」。新 Foundry での位置づけは矛盾のため要確認(toolbox には入れられず direct のみ、toolbox-overview 表)</td>
 </tr>
 <tr>
 <td>Azure Logic Apps(コネクタ→MCP 変換)</td>
@@ -293,7 +325,17 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span>(ポータル操作)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/logic-apps/add-agent-tools-connector-actions" title="https://learn.microsoft.com/en-us/azure/logic-apps/add-agent-tools-connector-actions">add-agent-tools-connector-actions</a></td>
-<td>旧来の専用「Logic Apps ツール」は新ポータルのカタログに存在せず、「Custom(Logic Apps connectors)」枠に移行。現状 1コネクタ/ツール、OAuth 2.0 コネクタ非対応、マネージドコネクタのみ</td>
+<td>旧来の専用「Logic Apps ツール」は新ポータルのカタログに存在せず、「Custom(Logic Apps connectors)」枠に移行。現状 1コネクタ/ツール、OAuth 2.0 コネクタ非対応、マネージドコネクタのみ。<strong>閉域:</strong> configure-private-link(2026-08-14 版)で「Logic Apps = Not supported(Under development)」。<strong>2026-08 に Foundry 側で Managed MCP servers(コネクタ名前空間、プレビュー)が個別ページ化</strong>(次行)</td>
+</tr>
+<tr>
+<td>Managed MCP servers(コネクタ名前空間)</td>
+<td>Foundry Tools Catalog の <strong>1,000+ コネクタ</strong>を選ぶと、Foundry アカウントの Connector Namespace 内に Foundry 管理の MCP サーバーが作成され、選択したアクションが MCP ツールになる</td>
+<td><span class="badge preview">パブリックプレビュー</span>(ページタイトル「(preview)」、2026-08-19 版)</td>
+<td><span class="badge ok">対応</span>(Add tool カタログ。ポータルでは <strong>validated コネクタのみ</strong>新体験、未検証コネクタは従来体験)</td>
+<td>azd(コードファースト経路はコネクタのゲートなし)</td>
+<td><span class="badge ok">対応</span>(REST / SDK / azd はコネクタ制限なし)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/connectors" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/connectors">connectors</a></td>
+<td>Browse → Connect → Select actions → Add の 4 ステップ。サードパーティツールは Non-Microsoft Products 扱い(認証キー・プロンプト内容がコンプライアンス境界外へ出うる注意)。Toolbox 経由推奨</td>
 </tr>
 <tr>
 <td>SharePoint</td>
@@ -303,7 +345,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/sharepoint" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/sharepoint">sharepoint</a></td>
-<td><strong>M365 Copilot ライセンスまたは Retrieval API 従量課金が必須</strong>。同一テナント必須・app-only 不可・1エージェント1ツール。基盤は M365 Copilot Retrieval API</td>
+<td><strong>M365 Copilot ライセンスまたは Retrieval API 従量課金が必須</strong>。同一テナント必須・app-only 不可・1エージェント1ツール。基盤は M365 Copilot Retrieval API。<strong>2026-09-07 追記(2026-08-21 版):</strong> <strong>Teams に公開したエージェントでは動作しない</strong>。<strong>閉域:</strong> 対応だが Public endpoint 経由。toolbox には入れられず direct のみ</td>
 </tr>
 <tr>
 <td>Microsoft Fabric (data agent)</td>
@@ -313,7 +355,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric">fabric</a></td>
-<td>ID パススルー(OBO)必須、サービスプリンシパル不可。同一テナント必須。データソースごとに最低権限要件あり(PBI semantic model は Build 権限)</td>
+<td>ID パススルー(OBO)必須、サービスプリンシパル不可。同一テナント必須。データソースごとに最低権限要件あり(PBI semantic model は Build 権限)。<strong>閉域:</strong> <strong>非対応</strong>(Fabric リソース側の public network access が必須、workspace-level private link 非対応)(configure-private-link 2026-08-14 版)。データエージェントとデータソースは同一リージョンの容量に置く必要(2026-08-05 版)</td>
 </tr>
 <tr>
 <td>Browser Automation</td>
@@ -323,7 +365,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/browser-automation" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/browser-automation">browser-automation</a></td>
-<td>基盤の Playwright Workspaces 自体は GA サービス(課金はそちらで発生)。プライベートサイト対応は限定プレビュー。重大なセキュリティリスク警告あり</td>
+<td>基盤の Playwright Workspaces 自体は GA サービス(課金はそちらで発生)。プライベートサイト対応は限定プレビュー。重大なセキュリティリスク警告あり。<strong>閉域:</strong> 非対応(Under development。toolbox-network-isolation 表でも「Not supported」)。Japan West / Switzerland West / West Central US は no(limits 2026-08-20 版)</td>
 </tr>
 <tr>
 <td>Computer Use</td>
@@ -333,7 +375,27 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/computer-use" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/computer-use">computer-use</a></td>
-<td><strong>限定アクセス(登録申請制、o3 アクセス済みでも要申請)</strong>。対応リージョン限定(モデル配置に依存)。safety checks 内蔵</td>
+<td><strong>限定アクセス(登録申請制、o3 アクセス済みでも要申請)</strong>。対応リージョン限定(モデル配置に依存)。safety checks 内蔵。<strong>閉域:</strong> 非対応(Under development)。limits 表(2026-08-20 版)で yes は Canada Central / Central US / East US 2 / Japan West / South India / Sweden Central / Switzerland West / West Central US / West Europe の 9 リージョン(<strong>Japan East は no</strong>)。toolbox には入れられず direct のみ</td>
+</tr>
+<tr>
+<td>Image Generation</td>
+<td>会話・多段ワークフロー内でテキストから画像を生成(base64 で返却)</td>
+<td><span class="badge preview">パブリックプレビュー</span>(ページタイトル「(preview)」、移行ガイド対応表「Yes (Public Preview)」。2026-08-21 版)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge ok">対応</span>(<code>ImageGenTool</code>。Python / C# / JS / Java / REST)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/image-generation" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/image-generation">image-generation</a></td>
+<td><strong><code>gpt-image-1</code>(利用申請が必要)+ オーケストレーター LLM(例: gpt-5)を同一プロジェクトに 2 デプロイ</strong>必須。REST では <code>x-ms-oai-image-generation-deployment</code> ヘッダーで画像モデルを指定。<strong>閉域:</strong> 非対応(Under development)。toolbox には入れられず direct のみ。新 API 専用(classic なし)</td>
+</tr>
+<tr>
+<td>Agent-to-Agent (A2A)</td>
+<td>A2A プロトコル対応のリモートエージェント(別 Foundry agent 含む)にタスクを委任</td>
+<td><span class="badge preview">パブリックプレビュー</span>(ページタイトル「(preview)」、移行ガイド対応表「Yes (Public Preview)」。2026-08-05 版)</td>
+<td><span class="badge na">記載なし</span></td>
+<td>azd(<code>azd ai connection create --kind remote-a2a</code>、auth: none / custom-keys / oauth2)</td>
+<td><span class="badge ok">対応</span>(<code>A2APreviewTool</code> / <code>A2APreviewToolboxTool</code>。Python / C# / JS / Java / REST、basic・standard 両対応)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/agent-to-agent" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/agent-to-agent">agent-to-agent</a></td>
+<td><strong>classic の Connected Agents(<code>agent.as_tool</code>)の後継</strong>(移行ガイドが A2A か Workflows を推奨)。A2A 1.0(JSON-RPC)/ 0.3 対応、<strong>テキストのみ・ストリーミング非対応</strong>。<strong>閉域:</strong> VNet サブネット経由で対応。Work IQ も内部的に A2A で接続</td>
 </tr>
 <tr>
 <td>Deep Research</td>
@@ -343,47 +405,47 @@ footer {
 <td>—</td>
 <td><span class="badge ok">対応</span>(旧 SDK)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/agents/how-to/tools-classic/deep-research" title="https://learn.microsoft.com/en-us/azure/foundry-classic/agents/how-to/tools-classic/deep-research">deep-research</a></td>
-<td>新パス(/azure/foundry/agents/how-to/tools/deep-research)は 404。<code>2025-05-15-preview</code> API 限定。後継 = Web search ツール + <code>o3-deep-research</code> モデル(web-search ページに移行例あり)</td>
+<td>新パス(/azure/foundry/agents/how-to/tools/deep-research)は 404(2026-09-07 再確認)。<code>2025-05-15-preview</code> API 限定。後継 = Web search ツール + <code>o3-deep-research</code> モデル(web-search ページに移行例あり)。移行ガイド対応表(2026-08-05 版)も Foundry (new) = No(Deep Research モデル + Web Search ツールを推奨)</td>
 </tr>
 <tr>
 <td>MCP ツール(リモート MCP サーバー接続)</td>
 <td>MCP サーバーエンドポイント上のツールにエージェントを接続</td>
-<td><span class="badge ga">GA</span></td>
+<td><strong>GA</strong>(移行ガイド対応表 2026-08-05 版で「Yes (GA)」と明示。classic 時代は Public Preview)</td>
 <td><span class="badge ok">対応</span>(カタログから構成)</td>
-<td><span class="badge na">記載なし</span></td>
+<td>azd(<code>azd ai connection create --kind remote-tool</code>、auth: none / custom-keys / api-key / oauth2 / user-entra-token / project-managed-identity / agentic-identity)</td>
 <td><span class="badge ok">対応</span>(basic/standard 両対応)</td>
-<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol">model-context-protocol</a></td>
-<td>認証: キー / Entra(マネージド ID)/ OAuth ID パススルー。<strong>長時間実行(long-running operations)はプレビュー</strong>。カタログ個別サーバーにプレビューあり(例: Azure DevOps MCP Server)。classic 版 MCP ページは「(Preview) (classic)」のまま</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol">model-context-protocol</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/mcp-authentication" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/mcp-authentication">mcp-authentication</a></td>
+<td>認証: キー / Entra(agent identity または project MI)/ OAuth ID パススルー(mcp-authentication 2026-09-04 版)。<strong>長時間実行(long-running operations)はプレビュー</strong>: 同期呼び出しは <strong>100 秒タイムアウト</strong>、超える処理は background mode + MCP tasks(<code>io.modelcontextprotocol/related-task</code>)で非同期化(background mode 対応モデル例: gpt-5.4 / gpt-5.5)。toolbox MCP エンドポイントの MCP tasks もプレビュー(2026-08-26 版)。<strong>閉域:</strong> private MCP は VNet 内の専用 MCP サブネット(Microsoft.App/environments 委任)に Container Apps 内部 ingress で配置(サンプル 19-private-network-agents-tools)。Azure DevOps MCP Server はカタログから追加可(Entra バックの組織のみ、MSA 組織不可)。classic 版 MCP ページは「(preview) (classic)」のまま</td>
 </tr>
 <tr>
 <td>Toolbox(intent-based toolbox)</td>
-<td>複数ツールを1つの MCP 互換エンドポイントに束ね、バージョニング・集中認証を提供。MAF / LangGraph / GitHub Copilot SDK 等の外部ランタイムからも消費可</td>
-<td><strong>GA</strong>(GA 一覧表に「Build &gt; Toolboxes = GA」と明記。ツールカタログ表にも preview ラベルなし)</td>
-<td><span class="badge ok">対応</span>(Build &gt; Tools &gt; Create a toolbox。作成手順は VS Code Foundry Toolkit 中心)</td>
-<td><strong>azd</strong>(<code>microsoft.foundry</code> 拡張)対応。Azure CLI 記載なし</td>
-<td><span class="badge ok">対応</span>(<code>client.beta.toolboxes.create_version</code> — beta 名前空間)</td>
-<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox">toolbox</a></td>
-<td>バージョン作成→バージョン別エンドポイントでテスト→default へ昇格。Code Interpreter / File Search を toolbox 経由で使うと<strong>ユーザー分離なし</strong>。unnamed ツールは各タイプ1個まで</td>
+<td>複数ツールを1つの MCP 互換エンドポイントに束ね、バージョニング・集中認証・<strong>toolbox 単位のガードレール(RAI ポリシー)</strong>を提供。MAF / LangGraph / GitHub Copilot SDK 等の外部ランタイムからも消費可</td>
+<td><strong>GA</strong>(GA 一覧表 2026-08-14 版「Build &gt; Toolboxes = GA」)。※公式ブログ 2026-06-02/03 は「public preview」表記で揺れあり(GA 一覧表を優先)</td>
+<td><span class="badge ok">対応</span>(VS Code Foundry Toolkit の Tools ビュー中心。ポータルは「Build &amp; customize &gt; Toolboxes」の記載あり。ガードレール設定は VS Code 拡張未対応)</td>
+<td><strong>azd</strong>(<code>microsoft.foundry</code> 統合バンドル、azd 1.27.1+。<code>azd ai toolbox create --from-file</code>)対応。Azure CLI 記載なし</td>
+<td><span class="badge ok">対応</span>(<strong><code>project.toolboxes.create_version</code></strong> — 2026-08-26 版で beta 名前空間ではなくなった)。.NET SDK は preview(2.1.0-beta.4)、JS 対応、<strong>Java は toolbox 作成 API 未提供</strong></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox">toolbox</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/toolbox-overview" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/toolbox-overview">toolbox-overview</a></td>
+<td>バージョン作成→バージョン別エンドポイントでテスト→default へ昇格(初版は自動で default)。エンドポイントは <code>{project_endpoint}/toolboxes/{name}/mcp?api-version=v1</code>(消費者)/ <code>.../versions/{v}/mcp</code>(開発者)。Code Interpreter / File Search を toolbox 経由で使うと<strong>ユーザー分離なし</strong>(初版記載。2026-08-26 版ページでは該当文言を確認できず <strong>要再確認</strong>)。unnamed ツールは各タイプ1個まで(Web Search / AI Search / Code Interpreter / File Search)。<strong>閉域:</strong> 専用ページ toolbox-network-isolation(新規、2026-08-03 版)がツール別の経路を表で整理(補足ノート (c-3))</td>
 </tr>
 <tr>
 <td>Tool search(<code>toolbox_search</code>)</td>
 <td>Toolbox 内ツールを隠し、<code>tool_search</code> / <code>call_tool</code> の2メタツールで意図ベース発見(BM25)</td>
-<td>Toolbox に準ずる(対応表で「Available」・preview 表記なしだが、Toolbox 本体と同じ V1Preview フィーチャーヘッダー配下)</td>
+<td><strong>パブリックプレビュー</strong>(toolbox-overview 2026-07-28 版で「Tool search (preview)」と明記。初版の「Toolbox に準ずる」を訂正。tool-search ページ自体(2026-08-19 版)にはラベルなし)</td>
 <td>VS Code Foundry Toolkit 対応(「Tool search」チェックボックス)</td>
 <td>azd 対応</td>
 <td><span class="badge ok">対応</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/tool-search" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/tool-search">tool-search</a></td>
-<td><code>pin</code> / <code>additional_search_text</code> / 自動ピン(利用頻度ベース)で調整可。limit 既定5・最大10。Responses API 版の tool search は別ページ(/azure/foundry/openai/how-to/tool-search)</td>
+<td><code>pin</code> / <code>additional_search_text</code> / 自動ピン(利用頻度ベース)で調整可。limit 既定5・最大10。<code>toolbox_search</code> エントリは tools/list に現れず unnamed 制限にも数えない(2026-08-19 版)。Responses API 版の tool search は別ページ(/azure/foundry/openai/how-to/tool-search)</td>
 </tr>
 <tr>
 <td>Work IQ</td>
 <td>M365(メール・会議・ファイル・チャット)を横断するインテリジェンス層に A2A で委任。全リクエストがサインインユーザー文脈で実行</td>
-<td><span class="badge preview">パブリックプレビュー</span>(<code>work_iq_preview</code>)</td>
+<td><span class="badge preview">パブリックプレビュー</span>(<code>work_iq_preview</code>。2026-09-04 版でもタイトル「(preview)」)</td>
 <td>接続作成はポータル(Settings &gt; Connections &gt; Work IQ)。ツール追加は VS Code Toolkit / コード</td>
-<td><span class="badge na">記載なし</span></td>
-<td><span class="badge ok">対応</span>(C#/JS/REST 対応、Java 非対応)</td>
+<td>azd(<code>azd ai connection create --kind remote-a2a --auth-type oauth2</code>)</td>
+<td><span class="badge ok">対応</span>(C#/JS/REST 対応、Java は「—」)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/work-iq" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/work-iq">work-iq</a></td>
-<td><strong>M365 Copilot ライセンス必須</strong>(エンドユーザーも)。BYO Entra アプリ + <code>WorkIQAgent.Ask</code> 委任権限 + Global Admin の同意が必須。<strong>VNet 統合非対応</strong>。データは M365 テナント内・モデル学習に不使用</td>
+<td><strong>ライセンス要件を訂正(2026-09-04 版):</strong> Work IQ API(A2A / REST / MCP 経由)は <strong>Copilot Credits による従量課金</strong>でコネクタライセンス不要、<strong>コネクタ経由の M365 ツールのみ</strong>呼び出しユーザーごとに M365 Copilot ライセンスが必要な場合あり(初版の「M365 Copilot ライセンス必須(エンドユーザーも)」は現行ページと不一致)。BYO Entra アプリ(単一テナント)+ <code>WorkIQAgent.Ask</code> 委任権限 + Global Admin の同意(PIM で一時昇格)は継続。<strong>VNet 統合非対応</strong>(toolbox-network-isolation 表で「Not supported in network-isolated projects」)。A2A エンドポイントは <code>https://workiq.svc.cloud.microsoft/a2a/</code>(旧 agent365 エンドポイントから変更)、A2A 1.0 / 0.3 対応。データは M365 テナント内・モデル学習に不使用(初版記載。現行ページでも関連文言あり)</td>
 </tr>
 <tr>
 <td>Fabric IQ</td>
@@ -393,17 +455,17 @@ footer {
 <td>azd で接続作成例あり</td>
 <td><span class="badge ok">対応</span>(C#/JS/REST 対応、Java 非対応)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric-iq" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/fabric-iq">fabric-iq</a></td>
-<td>Fabric ライセンス必須。OBO のみ(app-only 不可)。data agent エンドポイントのみ background mode(長時間実行)対応。VNet 対応はアイテム種別で異なる</td>
+<td>Fabric ライセンス必須(呼び出しユーザーにも)。OBO のみ(app-only 不可)。data agent エンドポイントのみ background mode(長時間実行)対応。VNet 対応はアイテム種別で異なる。<strong>2026-09-07 追記(2026-08-05 版):</strong> Power BI のみの Fabric リージョンでは利用不可。<strong>閉域:</strong> 「Partial」— data agent は tenant / workspace-level private link、ontology は tenant-level のみ、PBI semantic model は public のみ(configure-private-link 2026-08-14 版・fabric-iq「Virtual network support」)。OneLake Catalog 接続は VS Code Toolkit から作成不可(ポータルで作成)。Java SDK は「—」</td>
 </tr>
 <tr>
 <td>Foundry IQ / ナレッジベース (knowledge bases)</td>
 <td>Azure AI Search を基盤とするマネージドナレッジ層。複数ナレッジソース(Blob・SharePoint・OneLake・Web 等)を束ねた knowledge base を agentic retrieval(クエリ分解→並列検索→再ランク→統合)で照会。複数エージェントで共有可</td>
-<td>一部 GA / 一部プレビュー: 「Some Foundry IQ features are now generally available, while others remain in preview.」agentic retrieval の一部は <strong>2026-04-01 REST API で GA</strong>、フル機能は 2026-05-01-preview。<strong>ポータル体験は全機能プレビュー扱い</strong></td>
+<td><strong>Partial GA</strong>(GA 一覧表 2026-08-14 版「Knowledge (Foundry IQ) = Partial GA (API-level GA; portal access remains Preview)」)。<strong>Knowledge base 本体と search index / Blob / OneLake / Web の各ナレッジソースは Azure AI Search REST 2026-04-01(安定版)で GA</strong>(Azure AI Search What's new 2026年4月・Foundry ブログ 2026-06-02「Foundry IQ knowledge bases are generally available」)。<strong>プレビュー継続:</strong> クエリプランニング(minimal 以外の reasoning effort)・answer synthesis・multi-turn messages・Work IQ / Fabric IQ / File / Azure SQL / MCP ナレッジソース・Serverless(Developer tier)。<strong>ポータル(Foundry / Azure)は全 agentic retrieval 機能がプレビュー扱い</strong>(what-is-foundry-iq 2026-07-31 版)</td>
 <td><span class="badge ok">対応</span>(新ポータル Build &gt; Knowledge タブで KB 作成・エージェント接続)</td>
 <td><span class="badge na">記載なし</span>(接続作成に az CLI トークン取得例のみ)</td>
 <td><span class="badge ok">対応</span>(接続ページの Usage support: Python + REST のみ。C#/JS/Java 未対応)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/what-is-foundry-iq" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/what-is-foundry-iq">what-is-foundry-iq</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/foundry-iq-connect" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/foundry-iq-connect">foundry-iq-connect</a></td>
-<td>エージェントからは <strong>MCP ツールとして接続</strong>(<code>{search-endpoint}/knowledgebases/{name}/mcp?api-version=2026-05-01-preview</code>、公開ツールは <code>knowledge_base_retrieve</code> のみ)。GA/プレビューの内訳は移行ガイド(/azure/search/agentic-retrieval-how-to-migrate)参照</td>
+<td>エージェントからは <strong>MCP ツールとして接続</strong>(接続ページ 2026-08-07 版は <code>{search-endpoint}/knowledgebases/{name}/mcp?api-version=2026-08-01-preview</code> を使用 — 旧: 2026-05-01-preview。公開ツールは <code>knowledge_base_retrieve</code> のみ)。Python は <code>azure-ai-projects&gt;=2.0.0</code>、<strong>hub ベースプロジェクト非対応</strong>。<strong>閉域:</strong> configure-private-link 表で「Foundry IQ (preview) — Supported — Via MCP」、私設 agentic retrieval の 3 部チュートリアルあり(foundry-iq-tutorial-private-overview 2026-07-13 版)。2026-08-01-preview で indexed ナレッジソースの private network ingestion(プレビュー)。<strong>Serverless(Developer tier)はプレビューで 2026-09-13 課金開始</strong>(ブログ 2026-06-02)。Copilot Studio エージェントへの接続もプレビュー。GA/プレビューの内訳は移行ガイド(/azure/search/agentic-retrieval-how-to-migrate、2026-08-20 版)参照</td>
 </tr>
 <tr>
 <td>ベクトルストア / 埋め込み(ナレッジ接続基盤)</td>
@@ -413,22 +475,24 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(OpenAI 互換 <code>vector_stores</code> API 経由)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/vector-stores" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/vector-stores">vector-stores</a></td>
-<td>10,000 ファイル/ストア、エージェント・会話に各1ストアまで。会話由来ストアは既定7日で失効。basic = Microsoft 管理ストレージ、standard = 自前 Blob + Azure AI Search。埋め込みは text-embedding-3-large(256次元)固定(既定)</td>
+<td>10,000 ファイル/ストア、エージェント・会話に各1ストアまで。会話由来ストアは既定7日で失効。basic = Microsoft 管理ストレージ、standard = 自前 Blob + Azure AI Search。埋め込みは text-embedding-3-large(256次元)固定(既定)。コンテキストへ投入する最大チャンク数 20(2026-08-21 版)</td>
 </tr>
 </tbody></table></div>
 <h2 id="補足ノート-si-判断に効く要点">補足ノート(SI 判断に効く要点)</h2>
-<p><strong>(a) Deep Research の廃止と後継</strong> 「Deep Research をツールとして使う」構成は今後組めない。web-search ページが「This approach replaces the deprecated Deep Research tool」と明言し、<code>o3-deep-research</code> モデル + Web search ツール(Responses API)への移行コードを掲載。</p>
-<p><strong>(b) Web search と Grounding with Bing の関係</strong> Web search(GA)が推奨経路で、Bing リソース接続不要のシンプル構成。市場フィルタ等の細かい制御が要るときのみ Grounding with Bing Search(GA)/ Bing Custom Search(プレビュー)。<strong>いずれも DPA 対象外・コンプライアンス境界外へのデータ送信・別課金</strong>という制約は共通で、規制業種の SI では要注意。</p>
-<p><strong>(c) Toolbox は GA(2026-07-30 に確定)</strong> 初版では「明確な GA 宣言が確認できない」としていたが、<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">GA 一覧表</a>に <strong>「Build &gt; Toolboxes = GA」</strong> と明記されているのを確認した。ツールカタログ表にも preview ラベルはない。ただし <strong>REST/MCP の検証例に <code>Foundry-Features: Toolboxes=V1Preview</code> ヘッダーが残り、Python SDK も <code>client.beta.toolboxes</code> 名前空間</strong>という実装上のねじれは残っている(GA 宣言と SDK の成熟度は別物として扱う)。</p>
-<p>なお <strong>hosted agent はエージェント定義にツールを直付けできず、Toolbox 経由が前提</strong>になる(<a href="03-agent-service.html">03-agent-service</a>)。コードファーストを選ぶ案件では Toolbox が必須要素になる。</p>
-<p><strong>(c-2) ⚠ Azure OpenAI On Your Data は非推奨でリタイア間近</strong> Azure Architecture Center の Secure Multitenant RAG 記事に Important として「<strong>Azure OpenAI On Your Data is deprecated and approaching retirement.</strong> We recommend that you migrate Azure OpenAI On Your Data workloads to <strong>Foundry Agent Service</strong> with <strong>Foundry IQ</strong> to retrieve content and generate grounded answers from your data.」と明記されている(具体的なリタイア日は未公表)。 <strong>含意:</strong> 「オーケストレーターを挟まず、モデルが直接データストアを読む」構成は新規設計で選べない。下記(d)の3層はいずれもオーケストレーター型(エージェントまたは自前アプリ)を前提にする。既存の On Your Data ベースの提案書・PoC は棚卸しが必要。 出典: <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/secure-multitenant-rag" title="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/secure-multitenant-rag">secure-multitenant-rag</a></p>
+<p><strong>(a) Deep Research の廃止と後継</strong> 「Deep Research をツールとして使う」構成は今後組めない。web-search ページが「This approach replaces the deprecated Deep Research tool」と明言し、<code>o3-deep-research</code> モデル + Web search ツール(Responses API)への移行コードを掲載。2026-08-19 版では <strong><code>WebSearchPreviewTool</code>(<code>web_search_preview</code>)を prompt agent に直付け</strong>する例に更新され、「Don't route web search through a toolbox for deep research」と明記(toolbox 経由では不可)。</p>
+<p><strong>(b) Web search と Grounding with Bing の関係</strong> Web search(GA)が推奨経路で、Bing リソース接続不要のシンプル構成。市場フィルタ等の細かい制御が要るときのみ Grounding with Bing Search(GA)/ Bing Custom Search(プレビュー)。<strong>いずれも DPA 対象外・コンプライアンス境界外へのデータ送信・別課金</strong>という制約は共通で、規制業種の SI では要注意。web-overview(2026-04-08 版)は「both Web Search and Grounding with Bing Search are GA options on the new agents API」と明示し、比較表で Stage = GA / GA。閉域環境でも両者は「対応」だが <strong>Public endpoint 経由</strong>(configure-private-link 2026-08-14 版)。</p>
+<p><strong>(c) Toolbox は GA(2026-07-30 に確定)</strong> 初版では「明確な GA 宣言が確認できない」としていたが、<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">GA 一覧表</a>に <strong>「Build &gt; Toolboxes = GA」</strong> と明記されているのを確認した。ツールカタログ表にも preview ラベルはない。初版時点では <strong>REST/MCP の検証例に <code>Foundry-Features: Toolboxes=V1Preview</code> ヘッダーが残り、Python SDK も <code>client.beta.toolboxes</code> 名前空間</strong>という実装上のねじれがあった。 <strong>2026-09-07 更新:</strong> 2026-08-26 版の toolbox ページでは <strong><code>Toolboxes=V1Preview</code> ヘッダーは消え、Python SDK も <code>project.toolboxes.create_version</code>(非 beta)</strong>に整理された。残るねじれは (1) <code>Foundry-Features: Skills=V1Preview</code> ヘッダー(skills はプレビューなので整合)、(2) .NET SDK が preview(2.1.0-beta.4)、(3) Java SDK に toolbox 作成 API がない、(4) <strong>公式ブログ(2026-06-02 Build 特集・2026-06-03 Toolbox 記事)が「Toolboxes in Foundry is in public preview」と書いている</strong>こと。GA 一覧表(2026-08-14 版)を最終権威として GA と扱うが、提案書では「GA 一覧表上は GA、ブログ表記に揺れ」と注記するのが安全。</p>
+<p>なお <strong>hosted agent はエージェント定義にツールを直付けできず、Toolbox 経由が前提</strong>になる(<a href="03-agent-service.html">03-agent-service</a>)。コードファーストを選ぶ案件では Toolbox が必須要素になる。各ツールページ(2026-08 版)も「Consider adding this tool using a toolbox」の Tip と Prompt agents / Hosted agents の 2 タブ構成(hosted 側は MAF の <code>FoundryChatClient</code> + <code>FoundryToolbox</code>)に統一された。</p>
+<p><strong>(c-3) Toolbox の閉域化(2026-08 新規ページ)</strong> <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox-network-isolation">Network isolation for a toolbox</a>(2026-08-03 版)が新設。<strong>toolbox 自体はネットワークリソースを持たず、ホストするプロジェクトの網構成に従う</strong>。ツール別の経路: MCP / OpenAPI / A2A = VNet サブネット経由、Azure AI Search / File search = private endpoint 経由、Code interpreter = Microsoft backbone、Web search = 対応(Microsoft 管理の public endpoint)、Skills = 内包ツール依存、<strong>Fabric IQ = Partial、Work IQ / Browser automation = 非対応</strong>、Tool search = N/A。Basic は <code>11-private-network-basic-vnet</code>、Standard は <code>15-private-network-standard-agent-setup</code> テンプレートが起点。configure-private-link(2026-08-14 版)の「Agent tools with network isolation」表も同趣旨で、追加で <strong>Function Calling = backbone、Bing / SharePoint = public endpoint、Azure Functions = VNet サブネット、Foundry IQ = Via MCP、Fabric Data Agent / Logic Apps / Computer Use / Image Generation = 非対応</strong>。閉域案件のツール選定はこの 2 表が一次情報。</p>
+<p><strong>(c-2) ⚠ Azure OpenAI On Your Data は非推奨で 2026-10-14 リタイア</strong> 初版は Azure Architecture Center の Secure Multitenant RAG 記事の Important(「<strong>Azure OpenAI On Your Data is deprecated and approaching retirement.</strong> We recommend that you migrate ... to <strong>Foundry Agent Service</strong> with <strong>Foundry IQ</strong> ...」)を出典にしていたが、<strong>2026-09-07 再確認:</strong> 同記事(2026-08-19 版)からはこの callout が削除されている。一方、一次情報である On Your Data のページ(foundry-classic/openai/concepts/use-your-data、2026-06-24 更新)に「Azure OpenAI On Your Data is deprecated and approaching retirement. <strong>The service will be retired on October 14, 2026</strong>」と明記され、リタイア日が確定した(初版の「具体的なリタイア日は未公表」を更新)。 <strong>含意:</strong> 「オーケストレーターを挟まず、モデルが直接データストアを読む」構成は新規設計で選べない。下記(d)の3層はいずれもオーケストレーター型(エージェントまたは自前アプリ)を前提にする。既存の On Your Data ベースの提案書・PoC は棚卸しが必要で、<strong>移行先は Foundry Agent Service + Foundry IQ(または AI Search ツール / File search)</strong>。 出典: <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/use-your-data" title="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/use-your-data">use-your-data</a> (旧出典: <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/secure-multitenant-rag" title="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/secure-multitenant-rag">secure-multitenant-rag</a> — 2026-08-19 版では該当文言なし)</p>
 <p><strong>(d) ナレッジ(RAG)の3層構造</strong></p>
 <ol>
 <li><strong>File search + ベクトルストア</strong>(GA)— 手軽なマネージド RAG。1ストア/エージェント制限あり。</li>
 <li><strong>Azure AI Search ツール</strong>(GA)— 既存インデックス直結。1インデックス制限。</li>
-<li><strong>Foundry IQ knowledge bases</strong>(一部 GA / 一部プレビュー)— マルチソース+agentic retrieval+ACL/Purview 対応の上位層。接続は MCP 経由で、<strong>Foundry Agent Service 以外(Microsoft Agent Framework、カスタムアプリ)からも同じ KB を利用可能</strong> — MAF / LangGraph 比較の観点では、ナレッジ層をエージェントフレームワークから切り離せるのが設計上のポイント。</li>
+<li><strong>Foundry IQ knowledge bases</strong>(<strong>KB 本体と主要ナレッジソースは API で GA(2026-04-01)、ポータルとリッチ機能はプレビュー</strong> = GA 一覧表の「Partial GA」)— マルチソース+agentic retrieval+ACL/Purview 対応の上位層。接続は MCP 経由で、<strong>Foundry Agent Service 以外(Microsoft Agent Framework、カスタムアプリ)からも同じ KB を利用可能</strong> — MAF / LangGraph 比較の観点では、ナレッジ層をエージェントフレームワークから切り離せるのが設計上のポイント。</li>
 </ol>
-<p><strong>(e) IQ ファミリーの整理</strong> Foundry IQ = エンタープライズデータのナレッジ層(一部 GA)、Fabric IQ = Fabric の分析データ層(プレビュー)、Work IQ = M365 のコラボレーション文脈層(プレビュー)。3つは独立だが併用可能。</p>
-<p><strong>(f) サーフェス全般の傾向</strong> ツール個別ページの Usage support 表は「Python / C# / JS / Java SDK + REST + basic/standard setup」形式で、<strong>Azure CLI 列は存在しない</strong>。Work IQ・Fabric IQ 接続は Java SDK 非対応、Foundry IQ 接続は C#/JS SDK も未対応(Python + REST のみ)という偏りがある。</p>
+<p><strong>(e) IQ ファミリーの整理</strong> Foundry IQ = エンタープライズデータのナレッジ層(Partial GA)、Fabric IQ = Fabric の分析データ層(プレビュー)、Work IQ = M365 のコラボレーション文脈層(プレビュー)。3つは独立だが併用可能。Foundry IQ は他 2 つを<strong>ナレッジソースとして取り込む</strong>方向にも拡張中(Work IQ / Fabric IQ ナレッジソースはプレビュー。ブログ 2026-06-02、Azure AI Search What's new 2026年8月)。</p>
+<p><strong>(f) サーフェス全般の傾向</strong> ツール個別ページの Usage support 表は「Python / C# / JS / Java SDK + REST + basic/standard setup」形式で、<strong>Azure CLI 列は存在しない</strong>。Work IQ・Fabric IQ 接続は Java SDK 非対応、Foundry IQ 接続は C#/JS SDK も未対応(Python + REST のみ)という偏りがある。<strong>2026-09-07 追記:</strong> この偏りは 2026-08〜09 版でも継続(Fabric IQ・Work IQ の Java = 「—」、Foundry IQ 接続は Python + REST のみ)。A2A は Java 含め全 SDK 対応。Toolbox 作成 API は Java SDK 未提供(Code Interpreter / File Search / Custom CI の Java 節で明記)。.NET SDK は各ツールページで「currently in preview」の注記が付く。</p>
+<p><strong>(g) Skills / Private catalog 系(2026-08 新規)— hosted agent 側の詳細は <a href="03-agent-service.html">03-agent-service</a></strong> Skills(プレビュー)は SKILL.md をバージョン管理付き(不変バージョン)で Foundry に保存し、<strong>toolbox に MCP Resources として添付</strong>するか <strong>hosted agent に直接ダウンロード</strong>して使う機構。toolbox 側の扱いは本ページ、hosted agent 側の利用は 03 を参照。Private skill catalog(プレビュー)・Private tool catalog(プレビュー)はいずれも <strong>Azure API Center</strong> に組織限定のスキル / MCP サーバーを登録し、開発者に <code>Azure API Center Data Reader</code> を付与して Foundry の Build &gt; Skills / Build &gt; Tools から発見させる仕組み(ロール反映は最大 24 時間)。スキルの「Allowed tools」がガバナンス境界。出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/skills" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/skills">skills</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/private-skill-catalog" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/private-skill-catalog">private-skill-catalog</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/private-tool-catalog" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/private-tool-catalog">private-tool-catalog</a></p>
 </main>
 <footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

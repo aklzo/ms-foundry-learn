@@ -227,7 +227,7 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 
 - **Prompt agent は既定で A2A エンドポイントを公開できる。Hosted agent は Responses プロトコルを実装している場合のみ。**
 - プロトコル v1.0 と v0.3 の両方をサポートし、**バージョン未指定時は既定で v0.3。**
-- **incoming A2A エンドポイントの有効化はポータル未対応**(REST または Python SDK のみ)。A2A ツール接続の作成はポータルで可能。agent card 設定は REST のみ。
+- **incoming A2A エンドポイントの有効化はポータル未対応**(REST または Python SDK のみ)。A2A ツール接続の作成はポータルで可能。agent card 設定は Python SDK `agents.update_details()` / JS `patchAgentObject()` でも可(2026-08-26 版で REST 限定が解消。バージョン未指定時の既定は v0.3)。
 - **Entra ID 認証必須**(キー認証・匿名アクセス不可)。呼び出し側に `Foundry Agent Consumer` ロール以上が必要。
 - **制限が厳しい:** テキストモダリティのみ(ファイル等不可)、**ストリーミング(SSE)非対応**、v1.0 は JSONRPC のみ、gRPC 非対応、本番非推奨。
 

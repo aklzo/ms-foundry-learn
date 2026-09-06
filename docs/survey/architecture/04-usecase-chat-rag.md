@@ -268,7 +268,7 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 
 ### エージェントからの接続と、その制約
 
-Foundry Agent Service との接続は **MCP 経由**(`knowledge_base_retrieve` ツールのみ)。MCP エンドポイントは `2026-05-01-preview` 必須。
+Foundry Agent Service との接続は **MCP 経由**(`knowledge_base_retrieve` ツールのみ)。MCP エンドポイントは `2026-05-01-preview` 必須(2026-09-07 追記: Foundry 側の接続手順 foundry-iq-connect〈2026-08-07 版〉は `2026-08-01-preview` を使用。詳細は [features 04](../features/04-tools-knowledge.md))。
 
 > このプレビューでは、**Foundry Agent Service は MCP ツールのリクエスト単位ヘッダーをサポートしない。**エージェント定義で設定したヘッダーは全呼び出しに適用され、ユーザーやリクエストごとに変えられない。
 

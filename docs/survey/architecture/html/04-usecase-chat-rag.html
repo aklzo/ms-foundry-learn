@@ -425,7 +425,7 @@ footer {
 <li><strong>⚠ 移行時の落とし穴:</strong> 2026-04-01 以降 <code>semanticSearch</code> と <code>knowledgeRetrieval</code> は分離され、<strong>旧 <code>semanticSearch=standard</code> の同意は <code>knowledgeRetrieval</code> に引き継がれない。</strong></li>
 </ul>
 <h3 id="エージェントからの接続と-その制約">エージェントからの接続と、その制約</h3>
-<p>Foundry Agent Service との接続は <strong>MCP 経由</strong>(<code>knowledge_base_retrieve</code> ツールのみ)。MCP エンドポイントは <code>2026-05-01-preview</code> 必須。</p>
+<p>Foundry Agent Service との接続は <strong>MCP 経由</strong>(<code>knowledge_base_retrieve</code> ツールのみ)。MCP エンドポイントは <code>2026-05-01-preview</code> 必須(2026-09-07 追記: Foundry 側の接続手順 foundry-iq-connect〈2026-08-07 版〉は <code>2026-08-01-preview</code> を使用。詳細は <a href="../../features/html/04-tools-knowledge.html">features 04</a>)。</p>
 <blockquote><p>このプレビューでは、<strong>Foundry Agent Service は MCP ツールのリクエスト単位ヘッダーをサポートしない。</strong>エージェント定義で設定したヘッダーは全呼び出しに適用され、ユーザーやリクエストごとに変えられない。</p></blockquote>
 <p>→ 公式は「<strong>remote SharePoint ナレッジソースでユーザー単位の権限透過をやるなら、Foundry Agent Service ではなく Azure OpenAI Responses API を使え</strong>」と明記している。<strong>エンドユーザー ID ベースの認可が要件なら、この一文が構成を決める。</strong></p>
 <p><strong>逆に価値になる点:</strong> knowledge base は <strong>MCP 経由なので Foundry Agent Service 以外(Microsoft Agent Framework / LangGraph / 自作アプリ)からも同じナレッジを使える。</strong>「ナレッジ層だけ Foundry IQ、オーケストレーションは自前」という組合せが成立する。</p>

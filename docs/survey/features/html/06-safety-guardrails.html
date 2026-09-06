@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="06-安全性・ガードレール-trustworthy-ai">06. 安全性・ガードレール(Trustworthy AI)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要-ignite-2025-以降の再編">概要(Ignite 2025 以降の再編)</a></li><li><a href="#機能一覧">機能一覧</a></li><li><a href="#補足ノート">補足ノート</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照) / 2026-09-07(一次情報で再検証。訂正・追記は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
 <h2 id="概要-ignite-2025-以降の再編">概要(Ignite 2025 以降の再編)</h2>
 <p>旧「コンテンツフィルター」は「<strong>Guardrails and controls</strong>」枠組みに再編された。新ドキュメントは <a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guardrails-overview"><code>/azure/foundry/guardrails/</code> 配下</a>(※パス自体の <code>.../guardrails/</code> は 404。個別記事を参照する)。ガードレール=コントロールの名前付きコレクションで、各コントロールは「リスク × 介入ポイント × アクション」で定義される。</p>
 <ul>
@@ -102,6 +102,8 @@ footer {
 <li><strong>モデル向けガードレールは Azure が販売する全 Foundry Models に適用(音声モデル除く)。エージェント向けガードレールはプレビュー</strong>で、Foundry Agent Service のエージェントのみ対象</li>
 <li>エージェントに割り当てたガードレールは、基盤モデルのガードレールを<strong>完全に上書き</strong>する</li>
 <li>REST API 上の実体は従来どおり <strong>RAI policy</strong>(ARM リソース)で、デプロイの <code>raiPolicyName</code> で割当て。リクエスト単位の上書きは <code>x-policy-id</code> ヘッダー</li>
+<li><strong>(2026-09-07 追記)hosted agent は同じガードレール(RAI policy)に「Network egress controls(送信先制御・プレビュー)」を持てる</strong>(guardrails-overview 2026-07-31 版)。コンテンツ系コントロールとは別系統で、hosted agent のみ対象</li>
+<li><strong>(2026-09-07 追記)サードパーティ製ガードレール(Palo Alto Networks Prisma AIRS / Zenity)を Foundry ガードレールに接続する「Third-party guardrail integrations」が GA</strong>(devblogs 2026-04-09 号「now generally available」)。詳細は下表</li>
 </ul>
 <h2 id="機能一覧">機能一覧</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -122,7 +124,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span>(注釈読取は OpenAI SDK 経由のみ例示)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guardrails-overview" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guardrails-overview">guardrails-overview</a></td>
-<td>REST: RAI Policies Create Or Update(ARM)。<code>x-policy-id</code> でリクエスト単位上書き可(画像入力チャットでは不可)</td>
+<td>REST: RAI Policies Create Or Update(ARM)。<code>x-policy-id</code> でリクエスト単位上書き可(画像入力チャットでは不可)。<strong>(2026-09-07 追記)</strong>作成に必要なロールは Foundry Account Owner(旧 Azure AI Account Owner)。リージョン可用性は Content Safety の region availability 表を参照と明記(how-to-create-guardrails 2026-06-29 版)。<strong>Responses API では結果が top-level の <code>content_filters</code> 配列(Foundry 拡張・SDK に型なし)で返り、入力ブロックは HTTP 400 <code>content_filter</code></strong>( <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses#handle-guardrails-and-content-filtering" title="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses#handle-guardrails-and-content-filtering">responses</a> 2026-08-18 版)</td>
 </tr>
 <tr>
 <td>Content filters(既定フィルター/カスタム構成)</td>
@@ -177,12 +179,12 @@ footer {
 <tr>
 <td>Groundedness correction</td>
 <td>非接地箇所をソースに基づき自動修正</td>
-<td><span class="badge preview">パブリックプレビュー</span></td>
+<td><span class="badge preview">パブリックプレビュー</span>(Foundry 側 Groundedness ページにも「Groundedness correction (preview)」節が追加。2026-07-31 版)</td>
 <td><span class="badge na">記載なし</span>(API 機能)</td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span></td>
-<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview">overview</a></td>
-<td>Content Safety API の correction オプションとして提供</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview">overview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-groundedness#groundedness-correction-preview" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-groundedness#groundedness-correction-preview">content-filter-groundedness</a></td>
+<td>Content Safety API の correction オプションとして提供。ドメイン(Medical / Generic)とタスク(Summarization / QnA)の指定で挙動が変わる</td>
 </tr>
 <tr>
 <td>Protected material detection(テキスト)</td>
@@ -207,12 +209,12 @@ footer {
 <tr>
 <td>Custom categories(standard / rapid)</td>
 <td>独自カテゴリの学習・定義によるカスタム検出</td>
-<td><span class="badge preview">パブリックプレビュー</span>(両方)</td>
+<td><span class="badge preview">パブリックプレビュー</span>(両方)。<strong>standard は期限到来(2026-09-01 廃止予定日を経過)</strong> — concepts / quickstart ページ冒頭に「Custom categories (standard) is retiring on September 1, 2026. Migrate to the Custom text API in Foundry Custom text classification」(updated_at 2026-07-30)。2026-09-07 時点で「retired」への表記更新は未確認</td>
 <td>classic: Content Safety の Try it out 相当</td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span></td>
-<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview">overview</a></td>
-<td><strong>新 Foundry ガードレールのリスク一覧には未統合</strong>(スタンドアロン API のみ)。standard は英語のみ・リージョン限定</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview">overview</a> ・ <a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/concepts/custom-categories" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/concepts/custom-categories">custom-categories</a></td>
+<td><strong>新 Foundry ガードレールのリスク一覧には未統合</strong>(スタンドアロン API のみ。Foundry TOC 上は「Custom controls」配下に掲載)。standard は英語のみ・リージョン限定。<strong>standard の移行先</strong> Custom text classification(Azure Language / Foundry Tools)自体も 2029-03-31 廃止予定( <a href="https://learn.microsoft.com/en-us/azure/ai-services/language-service/custom-text-classification/overview" title="https://learn.microsoft.com/en-us/azure/ai-services/language-service/custom-text-classification/overview">overview</a> )。rapid には廃止予告なし</td>
 </tr>
 <tr>
 <td>PII 検出/リダクション</td>
@@ -222,7 +224,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span></td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-personal-information" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/content-filter-personal-information">content-filter-personal-information</a></td>
-<td>Annotate / Annotate and Block の2モード(カテゴリ別設定可)。注釈に <code>redacted</code> フラグあり。API 2025-01-01-preview 以降</td>
+<td>Annotate / Annotate and Block の2モード(カテゴリ別設定可)。注釈に <code>redacted</code> フラグあり。API 2025-01-01-preview 以降。Foundry TOC 上の名称は「<strong>Sensitive Data Leakage (PII)</strong>」(ページタイトルは PII filter。2026-09-07 確認)</td>
 </tr>
 <tr>
 <td>Task adherence</td>
@@ -232,7 +234,57 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span>(REST + ポータル)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/task-adherence" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/task-adherence">task-adherence</a></td>
-<td>REST: <code>contentsafety/agent:analyzeTaskAdherence</code>(2024-12-15-preview)。最大 10 万字。<strong>データが指定 Geo 外(US/EU)で処理される可能性の明記あり</strong></td>
+<td>REST: <code>contentsafety/agent:analyzeTaskAdherence</code>(2024-12-15-preview)。最大 10 万字。<strong>データが指定 Geo 外(US/EU)で処理される可能性の明記あり</strong>。2026-03 以降は Foundry ガードレールのネイティブなリスク種別として構成可(スタンドアロン API 直結が不要。devblogs 2026-04-09 号)。ガードレール枠組み上のラベルは引き続き Task Adherence (Preview)(guardrails-overview 2026-07-31 版)</td>
+</tr>
+<tr>
+<td>Guided guardrail set-up(エージェント向けガイド付き設定)</td>
+<td>利用者(公開/社内)・入力元・機微データ(PII)・外部ツール・実行動・コード生成の質問に答えると、介入点別の推奨コントロールを生成して適用</td>
+<td><span class="badge preview">パブリックプレビュー</span>(ページタイトルに「(preview)」・devblogs Build 2026 号「public preview」。capability reference でも「Guided Guardrail (preview)」)</td>
+<td>新: Build &gt; Agents &gt; 対象エージェント &gt; Guardrails &gt; Manage guardrail &gt; Guided guardrails setup</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up">guided-set-up</a></td>
+<td>エージェント単位に実行(同じモデルでもエージェントごとに再実行を推奨)。外部ツール=あり で tool response 検証+Spotlighting、実行動=あり で Task adherence、コード=あり で Protected material(code)が推奨に入る(2026-05-21 版)</td>
+</tr>
+<tr>
+<td>Network egress controls(hosted agent の送信先制御)</td>
+<td>hosted agent の<strong>アウトバウンド接続</strong>を許可/拒否/ヘッダー変換/リライトの順序付き規則で制御。サンドボックス内で送信前に強制</td>
+<td><strong>パブリックプレビュー</strong>(「Network egress controls are in preview」。hosted agent のみ。prompt agent・モデルデプロイには無関係)</td>
+<td>新: Guardrails の「Network」コントロール(hosted agent のみ有効)</td>
+<td>azd: <code>azure.yaml</code> の <code>policies:</code>(<code>type: rai_policy</code> + <code>raiPolicyName</code> = RAI policy の ARM ID)で割当て(<code>az</code> 専用コマンドなし)</td>
+<td><code>azure-ai-projects&gt;=2.2.0</code> の <code>HostedAgentDefinition(rai_config=RaiConfig(rai_policy_name=&lt;ARM ID&gt;))</code>(JS/TS SDK・REST も同形)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/add-hosted-agent-guardrails" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/add-hosted-agent-guardrails">add-hosted-agent-guardrails</a></td>
+<td>ARM の RAI policy に <code>egressPolicy</code> を持たせる(<strong>api-version 2026-05-15-preview</strong>)。上から順に最初に一致した規則が勝つ・既定アクション(Deny 推奨=許可リスト)・評価不能時は fail-closed・<strong>最大 480 規則/ポリシー</strong>・Audit / Enforce の 2 モード(Audit でも Transform / Rewrite は実行される)。<strong>ヘッダー変換は静的値のみ</strong>(<code>valueRef</code> による MI トークン/シークレット注入は未実装)。「ツールのみの提供、送信先のデータ取扱いは顧客責任」と明記(2026-06-29 版、updated_at 2026-09-01)</td>
+</tr>
+<tr>
+<td>Third-party guardrail integrations(Prisma AIRS / Zenity)</td>
+<td>Palo Alto Networks Prisma AIRS・Zenity(AI Detection and Response)の実行時セキュリティを Foundry ガードレールの介入点に接続(prompt injection・有害コンテンツ・悪性 URL・機微データ漏えい・ツール誤用)</td>
+<td><strong>GA</strong>(devblogs 2026-04-09 号「Third-party guardrail integrations are now generally available」。docs ページ 2026-03-16 版にはラベルなし)</td>
+<td>新: Build &gt; Guardrails &gt; <strong>Integrations</strong> タブで接続し、任意のガードレールに紐付け</td>
+<td><span class="badge na">記載なし</span></td>
+<td><span class="badge na">記載なし</span>(検知結果は <code>content_filter_result.external_safety_provider</code> 注釈で返る)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/third-party-integrations" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/third-party-integrations">third-party-integrations</a></td>
+<td><strong>BYOL</strong>(パートナー側ライセンス持込)。<strong>データは Foundry 外(パートナーのサービス)で処理</strong>され、パートナーの規約が適用。前提: Key Vault(Key Vault Administrator)+ユーザー割当て MI を Foundry リソースに付与+サブスク Owner。対応リージョン表(2026-05-15 版)は US / Europe / South India / Southeast Asia / East Asia のみで <strong>日本リージョンなし</strong>(プロジェクトとパートナーエンドポイントの同一リージョン推奨)</td>
+</tr>
+<tr>
+<td>ガードレール ポリシー(Operate &gt; Compliance)</td>
+<td>サブスクリプション / リソースグループ単位で「モデルデプロイに最低限求めるガードレール設定(content safety・prompt injection・protected material)」を Azure Policy として強制。例外(RG / デプロイ単位)設定可</td>
+<td><span class="badge ga">GA</span> 一覧表で <strong>Operate — Compliance = Preview</strong>(quickstart ページ自体にラベルなし)</td>
+<td><strong>新ポータル限定</strong>(「available only in the Microsoft Foundry (new) portal」): Operate &gt; Compliance &gt; Create policy</td>
+<td><span class="badge na">記載なし</span>(実体は Azure Policy 割当て。ポータルでの削除は Azure Policy 側の割当ても削除)</td>
+<td><span class="badge na">記載なし</span></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/control-plane/quickstart-create-guardrail-policy" title="https://learn.microsoft.com/en-us/azure/foundry/control-plane/quickstart-create-guardrail-policy">quickstart-create-guardrail-policy</a></td>
+<td>必要ロールは Owner または Resource Policy Contributor。コンプライアンス評価は Azure Policy のスキャン完了待ち(即時反映しない)。対象として記載があるのは<strong>モデルデプロイ</strong>のみ(エージェントへの適用は記載なし。2026-05-06 版)</td>
+</tr>
+<tr>
+<td>Content provenance(C2PA Content Credentials / 不可視ウォーターマーク)</td>
+<td>Azure 直販の対応モデルが生成した画像・音声に C2PA 署名メタデータと不可視ウォーターマークを付与し、来歴(生成に使ったサービス・時刻・AI 生成の事実)を開示。検出は Content Safety の Content Provenance Detection(Web サイト / API)</td>
+<td><strong>開示ページに GA / preview 表記なし</strong>(「selected Microsoft Foundry models で利用可」。2026-08-13 版、What's new 8 月号の新規記事)。<strong>検出 API は <code>2026-07-01-preview</code>(プレビュー)</strong></td>
+<td>検出サイト <a href="https://ai.azure.com/nextgen/validate" title="https://ai.azure.com/nextgen/validate">validate</a> (画像・音声・動画ファイルをアップロードして確認)</td>
+<td><span class="badge na">記載なし</span>(Azure CLI はトークン取得・Blob 操作の補助のみ)</td>
+<td><span class="badge na">記載なし</span>(REST <code>POST {endpoint}/contentsafety/provenance:detect</code> 非同期・Blob URI 指定・MI or SAS)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/content-safety/provenance-disclosure" title="https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/content-safety/provenance-disclosure">provenance-disclosure</a> ・ <a href="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/how-to/how-to-provenance-detection" title="https://learn.microsoft.com/en-us/azure/ai-services/content-safety/how-to/how-to-provenance-detection">how-to-provenance-detection</a></td>
+<td>対象表(2026-08-13 版): <strong>画像</strong> = gpt-image-1-mini / 1.5 / 2、MAI-Image-2.5 / 2.5-Flash / 2e / 2.5-Pro、Flux-1.1-Pro / .1-Kontext-pro / .2-flex / .2-Pro。<strong>音声</strong> = gpt-audio / -mini / -1.5、MAI-Voice-1 / 2、Azure AI Speech TTS(ストリーミング含む・構成依存)。<strong>テキストはモデル依存で一覧なし、動画生成モデルは対象表に載っていない</strong>(検出 API は video ファイルも解析可)。既定ガードレール(画像生成モデル)の表にも「Content credentials(Completions 側、閾値 N/A)」行あり(default-safety-policies 2026-05-31 版)。来歴は真偽・著作者を証明しない/編集・再保存・変換で失われ得ると明記。classic の Content Credentials ページは DALL-E / GPT-image-1 系のみ記載( <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/content-credentials" title="https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/content-credentials">content-credentials</a> )</td>
 </tr>
 <tr>
 <td>ブロックリスト</td>
@@ -257,7 +309,7 @@ footer {
 <tr>
 <td>Risks &amp; safety モニタリング</td>
 <td>デプロイ単位のブロック率・カテゴリ別統計と「潜在的悪用ユーザー検出」ダッシュボード</td>
-<td><span class="badge unknown">要確認</span>(ページに GA/preview 表記なし)。<strong>classic ポータル専用</strong>(「新ポータルでは利用不可」と明記)</td>
+<td><strong>パブリックプレビュー</strong>(2026-01-30 版でページ見出しが「Use Risks &amp; Safety monitoring in Microsoft Foundry (preview) (classic)」に。旧: 表記なし→要確認)。<strong>classic ポータル専用</strong>(「新ポータルでは利用不可」と明記)</td>
 <td>classic のみ: Models + endpoints &gt; デプロイ &gt; Monitoring</td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span></td>
@@ -276,16 +328,23 @@ footer {
 </tr>
 </tbody></table></div>
 <h2 id="補足ノート">補足ノート</h2>
-<p><strong>1. エージェント/デプロイ単位の適用と継承ルール</strong> 1つのガードレールを複数のモデルデプロイ・複数のエージェントに割当て可能。エージェントに明示割当てがない場合は基盤モデルデプロイのガードレールを継承し、明示割当てがあればモデル側設定を<strong>完全に上書き</strong>(Tool call / Tool response にコントロールがなければその経路は未スキャンになる点に注意)。Spotlighting と Groundedness はエージェント未対応で、割当てても無効化される。ガードレール処理のレイテンシは介入ポイントあたり約 50〜100ms と明記。エージェント向けのガイド付きセットアップ: <a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up">guided-set-up</a></p>
+<p><strong>1. エージェント/デプロイ単位の適用と継承ルール</strong> 1つのガードレールを複数のモデルデプロイ・複数のエージェントに割当て可能。エージェントに明示割当てがない場合は基盤モデルデプロイのガードレールを継承し、明示割当てがあればモデル側設定を<strong>完全に上書き</strong>(Tool call / Tool response にコントロールがなければその経路は未スキャンになる点に注意)。Spotlighting と Groundedness はエージェント未対応で、割当てても無効化される。ガードレール処理のレイテンシは介入ポイントあたり約 50〜100ms と明記。エージェント向けのガイド付きセットアップ: <a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/guided-set-up">guided-set-up</a> <strong>(2026-09-07 追記)</strong> Tool call / Tool response 介入点は<strong>ツール側のモデレーション対応が必要</strong>で、対応ツールは Azure AI Search / Azure Functions / OpenAPI / SharePoint Grounding / Fabric Data Agent / Bing Grounding / Bing Custom Search / Browser Automation の 8 種。<strong>一覧外のツールにはコントロールが効かない</strong>と明記(MCP・Code Interpreter・File Search は一覧に載っていない。 <a href="https://learn.microsoft.com/en-us/azure/foundry/guardrails/intervention-points" title="https://learn.microsoft.com/en-us/azure/foundry/guardrails/intervention-points">intervention-points</a> 2026-03-02 版)。また <strong>hosted agent は継承ルールが異なる</strong>: 定義の <code>rai_config</code> を省略すると「コンテンツセーフティガードレールなしで動作」、<code>rai_config</code> を付けて <code>rai_policy_name</code> を省略すると Microsoft.DefaultV2 が適用( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/add-hosted-agent-guardrails" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/add-hosted-agent-guardrails">add-hosted-agent-guardrails</a> 2026-06-29 版)。閉域・本番の hosted agent では割当ての明示を設計チェック項目にする。</p>
 <p><strong>1-2. GA 一覧表の 3 分割(2026-07-30 追記)</strong> <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">GA 一覧表</a>はガードレールを <strong>Guardrails — Models = GA / Guardrails — Agents = Preview / Guardrails — Controls and intervention = Preview</strong> の 3 行に分けている。初版は「モデル向けは GA 相当(プレビュー表記なし)」と控えめに書いていたが、<strong>モデル向けは明示的に GA</strong>。一方で「コントロールと介入」という枠組み全体がプレビュー行として別立てされているため、<strong>Tool call / Tool response の介入点だけでなく、コントロールの構成・介入の仕組みそのものをプレビューとして扱う</strong>のが安全。</p>
 <p><strong>2. サードパーティモデルへの適用(SI 判断上の重要点)</strong></p>
 <ul>
 <li>ガードレールが自動適用されるのは「<strong>Foundry Models sold by Azure</strong>」(Azure OpenAI、DeepSeek、Grok 等の Azure 直販モデル。Whisper 等音声モデル除く)。</li>
-<li>serverless API のパートナーモデルは Content Safety の既定フィルター(テキスト Medium)が適用され、デプロイ単位でオン/オフ可・Content Safety 料金が別課金( <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/model-catalog-content-safety" title="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/model-catalog-content-safety">model-catalog-content-safety</a> )。</li>
+<li>serverless API のパートナーモデルは Content Safety の既定フィルター(テキスト Medium)が適用され、デプロイ単位でオン/オフ可・Content Safety 料金が別課金( <a href="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/model-catalog-content-safety" title="https://learn.microsoft.com/en-us/azure/foundry-classic/concepts/model-catalog-content-safety">model-catalog-content-safety</a> )。<strong>(2026-09-07 確認)</strong> 同ページ(last updated 2026-03-02)は serverless の<strong>画像モデルは既定 Low 閾値</strong>と引き続き記載。Azure OpenAI 画像生成モデルの既定 Medium(default-safety-policies)とはスコープが異なるため両方併記する。</li>
 <li><strong>Managed compute(パブリックプレビュー)は例外</strong>: 「<strong>Built-in Azure AI Content Safety filters aren't part of the managed compute data path in public preview.</strong> If you need request-level or response-level filtering, call the Azure AI Content Safety APIs directly from your application.」と明記。OSS モデルを専用 GPU で動かす構成では、ガードレールは自前で噛ませる( <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/managed-compute-overview">managed-compute-overview</a> )。</li>
-<li><strong>Claude は例外</strong>: Claude モデルのページに「<strong>Foundry doesn't provide built-in content filtering for Claude models at deployment time</strong>」と明記(推論時に AI Content Safety を自分で構成する)。Claude は Anthropic 自身の安全システムに依存( <a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models">claude-models</a> )。</li>
+<li><strong>Claude は例外</strong>: Claude モデルのページに「<strong>Foundry doesn't provide built-in content filtering for Claude models at deployment time</strong>」と明記(推論時に AI Content Safety を自分で構成する)。Claude は Anthropic 自身の安全システムに依存( <a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models" title="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models">claude-models</a> 2026-09-01 版で文言変化なし)。Claude のデータ・プライバシーページにも「Claude models in Microsoft Foundry use Anthropic safety systems and safeguards, supported by Microsoft」( <a href="https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/claude-models/data-privacy" title="https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/claude-models/data-privacy">data-privacy</a> 2026-06-23 版)。</li>
 </ul>
-<p><strong>3. サーフェスの全体傾向</strong> 構成サーフェスは「新 Foundry ポータル(Build &gt; Guardrails)」と「REST(ARM の RAI policy / raiBlocklists)」の2本柱。<strong>Azure CLI・Python SDK 専用の管理コマンド/クラスは現行ドキュメントに記載なし</strong>(Python は注釈の読取・Content Safety データプレーン呼出しの例のみ)。Risks &amp; safety モニタリングだけは classic ポータル専用のまま新ポータル未移植という非対称がある。</p>
-<p><strong>4. ステータス表記の注意</strong> 「モデル向けガードレール枠組み」自体はプレビュー表記がなく既定で全顧客に適用されているため実質 GA 扱いだが、ページに「GA」の文言があるわけではない。Risks &amp; safety モニタリングも現行ページにライフサイクル表記がなく「要確認」とした。</p>
+<p><strong>3. サーフェスの全体傾向</strong> 構成サーフェスは「新 Foundry ポータル(Build &gt; Guardrails)」と「REST(ARM の RAI policy / raiBlocklists)」の2本柱。<strong>Azure CLI・Python SDK 専用の管理コマンド/クラスは現行ドキュメントに記載なし</strong>(Python は注釈の読取・Content Safety データプレーン呼出しの例のみ)。Risks &amp; safety モニタリングだけは classic ポータル専用のまま新ポータル未移植という非対称がある。 <strong>(2026-09-07 追記)</strong> ガードレール(RAI policy)の<strong>作成・編集</strong>は引き続きポータル / ARM REST のみだが、<strong>hosted agent への割当て</strong>は azd(<code>azure.yaml</code> の <code>policies</code>)/ Python SDK(<code>azure-ai-projects&gt;=2.2.0</code> の <code>RaiConfig</code>)/ JS・TS SDK / REST(<code>definition.rai_config.rai_policy_name</code>)で可能になった(add-hosted-agent-guardrails 2026-06-29 版)。Responses API 利用時の結果読取は top-level <code>content_filters</code> 配列(Foundry 拡張)を生フィールドとして読む(responses 2026-08-18 版)。</p>
+<p><strong>4. ステータス表記の注意</strong> 「モデル向けガードレール枠組み」自体はプレビュー表記がなく既定で全顧客に適用されているため実質 GA 扱いだが、ページに「GA」の文言があるわけではない(→ 1-2 のとおり GA 一覧表では明示 GA)。Risks &amp; safety モニタリングは初版時点でライフサイクル表記がなく「要確認」としていたが、<strong>2026-01-30 版で見出しに「(preview)」が付いた</strong>ため「パブリックプレビュー」に訂正(2026-09-07)。</p>
+<p><strong>5. 2026-09-07 再検証で確認した期限・リージョン制約</strong></p>
+<ul>
+<li><strong>Custom categories (standard) は 2026-09-01 廃止予定日を経過</strong>。concepts / quickstart ページ(updated_at 2026-07-30)は「is retiring on September 1, 2026」のままで「retired」表記は未確認。移行先の Custom text classification(Azure Language)も 2029-03-31 廃止予定のため、独自カテゴリ検出を提案に含めるなら <strong>rapid API か、Foundry モデルによる自前分類</strong>を第一候補にする。</li>
+<li><strong>Third-party guardrail integrations の対応リージョンに日本なし</strong>(2026-05-15 版)。Prisma AIRS / Zenity を要件に持つ国内案件は、プロジェクトを US / EU リージョンに置くか、パートナー側を直接呼ぶ構成になる。</li>
+<li><strong>Network egress controls は hosted agent 限定のプレビュー</strong>(RAI policy api-version 2026-05-15-preview)。閉域要件で「エージェントの送信先を許可リスト化」したい場合の第一候補だが、ヘッダーへの MI トークン注入(<code>valueRef</code>)は未実装。</li>
+<li>GA 一覧表(2026-08-14 版)の Guardrails 3 行(Models = GA / Agents = Preview / Controls and intervention = Preview)は前回から変化なし。</li>
+</ul>
 </main>
 <footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>
