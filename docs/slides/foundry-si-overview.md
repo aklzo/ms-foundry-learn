@@ -115,7 +115,7 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 
 <div class="cards c2">
 <div class="card"><div class="t">① GA / プレビューは機能単位で混在</div>新ポータル自体は GA でも中身はバラバラ。体系的な一覧は公式 <b>Feature readiness at GA</b> が唯一 — 提案前に必ず引く</div>
-<div class="card"><div class="t">② GA でも足元の基盤が動いている</div>hosted エージェントは 2026-08-20 に初期基盤終了(再デプロイ必須)、ビジュアル Workflows は 2026-12-01 廃止</div>
+<div class="card"><div class="t">② GA でも足元の基盤が動いている</div>hosted エージェントは 2026-07 に GA、ただし初期基盤は 2026-08-20 で終了済み(未移行は再デプロイ)。ビジュアル Workflows は 2026-12-01 廃止</div>
 <div class="card"><div class="t">③ CLI は一級市民ではない</div>専用の <code>az foundry</code> は存在しない。多くの機能が「ポータル+SDK / REST のみ」— 自動化の見積もりに直接効く</div>
 <div class="card"><div class="t">④ Claude(Anthropic)は独自制約つき</div>モデルとしては GA。ただし Anthropic SDK+Marketplace 課金+<b>Foundry 組み込みコンテンツフィルター非適用</b></div>
 </div>
@@ -176,8 +176,8 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 
 <div class="cards c2">
 <div class="card warn"><div class="t">閉域構成は作成後に変更できない</div>BYO VNet 注入(自前の仮想ネットワークへの組み込み)は<b>リソース作成時のみ</b>。後から閉域要件が出ると作り直し</div>
-<div class="card warn"><div class="t">閉域では使えない機能が多い</div>File Search / トレース / Memory / 画像生成など。<b>「閉域で使えない機能の一覧」から設計を始める</b></div>
-<div class="card warn"><div class="t">「国内処理の完結」は選択肢が 1 つ</div>Regional Standard(Japan East)のみ。<b>APAC Data Zone は日豪韓星印で処理されうるため不可</b></div>
+<div class="card warn"><div class="t">閉域では使えない機能が多い</div>トレース(VNet はプレビュー)/ Memory / 画像生成 / ブラウザ自動化など。File Search は公式表が 2026-08 に「対応」へ変わったが実測で失敗。<b>「閉域で使えない機能の一覧」から設計を始める</b></div>
+<div class="card warn"><div class="t">「国内処理の完結」は選択肢が 1 系統</div>geography 型(Standard / Regional Provisioned を Japan East / West に配置)のみ。<b>APAC Data Zone は APAC 域内(現行は日豪韓星印)のどこでも処理されうるため不可</b></div>
 <div class="card warn"><div class="t">Web 検索はコンプライアンス境界の外</div>Grounding with Bing は DPA(Microsoft のデータ保護補遺)対象外・別課金。<b>規制業種では原則不可</b>として扱う</div>
 </div>
 
@@ -309,13 +309,13 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 
 図: **B5 業務フローエンジン主導**(Logic Apps / Copilot Studio)
 
-- 廃止は**ビジュアル Workflows のみ** — エージェント作成・公開・Connected Agents は残る
-- 移行先は **MAF(推奨)/ Logic Apps / A2A**(エージェント間連携プロトコル)
+- 作成・公開は残る。**Connected Agents は新 Agent Service に無い**
+- 移行先は **MAF(推奨)/ Logic Apps / A2A**(v1.0 は GA)
 - ビジュアル保守を続けたいなら **B5** に倒す(境界線は付録 A4)
 
 <div class="refs">詳細: <a href="../survey/architecture/html/05-usecase-agent-automation.html">architecture/05-usecase-agent-automation</a> — <span class="path">docs/survey/architecture/05-usecase-agent-automation.md</span></div>
 
-<!-- 長期案件でビジュアル Workflows を提案すると納品前に廃止が来る。「ポータルで全部作れます」と言わないためのスライド。 -->
+<!-- 長期案件でビジュアル Workflows を提案すると納品前に廃止が来る。「ポータルで全部作れます」と言わないためのスライド。Connected Agents は classic 側のプレビュー機能で、新 Agent Service では提供されない(移行ガイド 2026-09-11 版「No — Recommendation: A2A tool」)。A2A は v1.0(a2a 型)が GA、v0.3 はプレビュー。 -->
 
 ---
 
@@ -347,7 +347,7 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 </div>
 
 - **固定費を先に積む**(Firewall / Private Endpoint / APIM)— トークン代より固定費が支配的
-- D2(政府クラウド)は hosted エージェント・MCP(ツール接続規格)・A2A が非対応
+- D2(政府クラウド)は hosted エージェント・A2A が非対応(MCP〈ツール接続規格〉は対応に変わった)
 
 <div class="refs">詳細: <a href="../survey/architecture/html/07-usecase-regulated-edge.html">architecture/07-usecase-regulated-edge</a> — <span class="path">docs/survey/architecture/07-usecase-regulated-edge.md</span></div>
 
@@ -509,20 +509,20 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 <div class="msg">提案書には賞味期限がある — 直近 4 つの廃止日は暗記する</div>
 
 <div class="timeline">
-<div class="tl hot"><span class="d">2026-08-20</span><br><b>Hosted エージェント旧基盤</b><br>自動移行なし。再デプロイ必須</div>
-<div class="tl hot"><span class="d">2026-08-26</span><br><b>Assistants API</b><br>Threads / Runs 前提のアプリは全面改修</div>
-<div class="tl hot"><span class="d">2026-10-14</span><br><b>On Your Data</b><br>RAG の既存提案書は要更新</div>
+<div class="tl hot"><span class="d">2026-10-14</span><br><b>On Your Data</b><br>RAG の既存提案書は要更新(同日 gpt-4.1-nano もリタイア)</div>
+<div class="tl hot"><span class="d">2026-11-19</span><br><b>o1 / o3 / o3-mini / o4-mini</b><br>推論モデル旧世代。gpt-5.6 系へ</div>
 <div class="tl hot"><span class="d">2026-12-01</span><br><b>ビジュアル Workflows</b><br>ポータルでのマルチエージェント構成が消える</div>
+<div class="tl hot"><span class="d">2026-12-09</span><br><b>gpt-4o(2024-05-13)</b><br>後継 gpt-5.6-sol。他の版は 2027-04-14</div>
 <div class="tl"><span class="d">2027-03-31</span><br>Agents (classic)<br>状態データは移行されない</div>
 <div class="tl"><span class="d">2027-04-20</span><br>prompt flow<br>新規開発に非推奨・MAF へ</div>
 </div>
 
 - PoC → 本番のスケジュールと**期限の衝突チェック**を提案フローに組み込む(期間内に廃止が来るなら最初から後継 API で作る)
-- モデル自体のリタイア(gpt-4o 等 2026-10 前後)も含めた**全体表は付録 A3**
+- 2026-08 の Hosted エージェント旧基盤(08-20)・Assistants API(08-26)は**期限到来済み**。Claude 4.5 世代(10-19)等のモデルリタイアも含めた**全体表は付録 A3**
 
 <div class="refs">詳細: <a href="../survey/architecture/html/10-migration-antipatterns.html">architecture/10-migration-antipatterns</a> / <a href="../survey/features/html/index.html">features/index(期限表)</a></div>
 
-<!-- 「GA だから安心」ではなく「いつ消えるか」で見る。赤の 4 つは直近数か月なので暗記推奨。 -->
+<!-- 「GA だから安心」ではなく「いつ消えるか」で見る。赤の 4 つは直近数か月なので暗記推奨。モデルのリタイア日は改定で前後する(2026-09 に gpt-4.1-nano が 2027-04 延長から 2026-10-14 へ再前倒し、o シリーズ・gpt-4o は後ろ倒し)ので、提案前にリタイア表の版を必ず確認する。 -->
 
 ---
 
@@ -728,7 +728,7 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 | C2 | マルチテナント SaaS | Hosted agent(プロトコル 2.0.0) | テナント別索引 | 複数顧客に販売(APIM 必須) |
 | C3 | 大規模・複数部門への払い出し | 任意 | 任意 | 部門別按分・キャパシティ(APIM 必須) |
 | D1 | 規制業種・閉域 | Hosted agent or 自前 | AI Search 自前索引一択 | BYO VNet。閉域・監査・データ主権 |
-| D2 | ソブリン(Azure Government) | Prompt agent 対応 | File Search / AI Search | hosted agent・MCP・A2A 非対応 |
+| D2 | ソブリン(Azure Government) | Prompt agent 対応 | File Search / AI Search | hosted agent・A2A 非対応(MCP は対応) |
 | D3 | エッジ・オンプレ | Foundry 非依存 | 自前 | Foundry Local / Azure Local 版 / 切断コンテナ |
 | E1 | 音声エージェント | Voice Live API | 任意 | リアルタイム音声対話(SIP 非対応) |
 | E2 | 文書処理・IDP | 非同期パイプライン | DI / Content Understanding | 帳票・契約書の構造化抽出 |
@@ -756,7 +756,7 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 | 9 | 閉域での Traces / Memory / File Search / Work IQ / 画像生成 等 | 自前実装または機能除外 |
 | 10 | Claude モデルへのコンテンツフィルター | APIM `llm-content-safety` かアプリ層で Content Safety |
 | 11 | 音声モデルへのガードレール | テキスト化後の経路で Content Safety |
-| 12 | capabilityHost の更新(変更は削除・再作成) | IaC を「作り直し前提」で設計 |
+| 12 | capabilityHost の更新(変更は削除・再作成) | IaC を「作り直し前提」で設計(後継の capability settings〈プレビュー〉へ置換中。こちらも既存プロジェクトへの追加・変更は不可) |
 
 - 加えて**コンテンツフィルターはフェイルオープン** — 規制業種は `finish_reason` / `content_filter_results` の検証を必須実装に
 
@@ -776,14 +776,19 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 | ~~2026-08-26~~ 廃止済 | Assistants API(Azure OpenAI) | 「The Assistants API is retired」。Responses API(Agents v2)へ |
 | ~~2026-08-26~~ 廃止済 | `azure-ai-inference` SDK | 「retired on August 26, 2026」(beta のまま GA せず終了)。OpenAI SDK + v1 API へ |
 | ~~2026-08-31~~ 到来 | NTT Data `tsuzumi-7b`(Legacy) | リタイア日到来。後継 `tsuzumi2` へ。**日本語特化モデル案件で効く** |
-| 2026-10-01 〜 10-21 | gpt-4o(2024-05-13)/ o3-mini / o4-mini / Claude 4.5 世代 / o1 / o3 | リタイア集中期間(版を確認。gpt-4o 08-06 / 11-20 版は 2027-04-14 まで) |
+| ~~2026-09-13~~ 到来 | Foundry IQ Serverless(Developer tier、プレビュー) | 課金開始済。PoC で無料前提にしない |
+| ~~2026-09-25~~ 到来 | Global Standard の flex → standard 自動フォールバック | 廃止済。Flex 非対応モデルへの `service_tier: flex` は HTTP 400 |
 | 2026-10-14 | Azure OpenAI On Your Data | 廃止。Foundry Agent Service + Foundry IQ へ |
+| 2026-10-14 | `gpt-4.1-nano` | リタイア(2027-04-14 延長は撤回され**再前倒し**。リタイア表 2026-09-21 版) |
+| 2026-10-19 | Claude 4.5 世代(sonnet / opus / haiku-4-5) | リタイア |
+| 2026-11-19 | o1 / o1-pro / o3 / o3-pro / o3-deep-research / o3-mini / o4-mini | リタイア(日付を 11-19 に統一。o1・o1-pro・o3・o3-mini・o4-mini は後ろ倒し、o3-pro・o3-deep-research は前倒し。後継 gpt-5.6-sol / terra) |
 | 2026-12-01 | ビジュアル Workflows | 廃止。MAF / Logic Apps / A2A へ |
+| 2026-12-09 | gpt-4o(2024-05-13) | リタイア(10-01 から延長。08-06 / 11-20 版は 2027-04-14) |
 | 2027-03-31 | Agents (classic)(v1、Threads / Runs) | 廃止。Agents v2 へ(状態データは自動移行されない) |
-| 2027-04-14 | `gpt-4.1` / `gpt-4.1-mini` / `gpt-4.1-nano` | リタイア(nano は 2026-10-14 → **2027-04-14 に延長**、3 モデル同日。2026-09-02 版で確認) |
+| 2027-04-14 | `gpt-4.1` / `gpt-4.1-mini` | リタイア(nano は 2026-10-14 に戻った — 上の行。2026-09-21 版で確認) |
 | 2027-04-20 | prompt flow | 廃止。新規開発に非推奨。MAF へ |
 | 2028-09-25 | Azure AI Vision Image Analysis 4.0 / 3.2 | 廃止。DI / Content Understanding / Foundry Models へ |
-| 日付未公表 | Agent Applications / コンテナプロトコル 1.0.0 | 廃止予告済み(1.0.0 は 2026-07-31 からブロック開始と公表) |
+| 日付未公表 | Agent Applications / コンテナプロトコル 1.0.0 | 廃止予告済み(1.0.0 は非サポート・ブロック中。旧記載の「2026-07-31 から」の日付は出典から消えた) |
 | 予告 15 日のみ | Fireworks 系モデル(`FW-*`) | 標準 60 日でなく **15 日前通知**。本番の必須経路に置かない |
 
 ---
@@ -795,7 +800,7 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
   - **多段のエージェント階層が組めない**(connected agents を持つエージェントは他の connected agent になれない)
   - **決定的ワークフローが業務クリティカル** — CAF が「Foundry / MAF の workflows を使え」と実装先を名指し
 - 選定の決め手は機能でなく「**誰が作り・誰が保守し・どこまで制御が要るか**」(CAF デシジョンツリー)
-- **両者は排他ではない** — 入口・M365 チャネル・業務部門の保守は Copilot Studio、複雑な処理は Foundry hosted agent(connected agent として呼ぶ)が公式推奨の分業構成。**SI の受託範囲を「Copilot Studio で簡単に作れないエージェントの開発」とする契約の切り方が公式構成と一致**(ただし接続はプレビュー)
+- **両者は排他ではない** — 入口・M365 チャネル・業務部門の保守は Copilot Studio、複雑な処理は Foundry hosted agent(connected agent として呼ぶ)が公式推奨の分業構成。**SI の受託範囲を「Copilot Studio で簡単に作れないエージェントの開発」とする契約の切り方が公式構成と一致**(接続はプレビュー。A2A 経由は GA だが要検証)
 
 <div class="refs">詳細: <a href="../survey/architecture/html/11-decision-frameworks.html">architecture/11-decision-frameworks</a> — <span class="path">docs/survey/architecture/11-decision-frameworks.md</span></div>
 
@@ -841,7 +846,7 @@ footer: "Microsoft Foundry SI - 機能、アーキ選定 SI 観点の共有 — 
 | 「顧客向けに公開する」 | **C1**。WAF チューニングと BOLA 対策を工数に |
 | 「複数のお客様に SaaS として提供」 | **C2**。APIM が事実上必須 |
 | 「閉域で運用する」 | **D1**。「閉域で使えない機能一覧」から設計 |
-| 「日本国内でデータ処理を完結」 | Regional Standard(Japan East)。APAC Data Zone は不可 |
+| 「日本国内でデータ処理を完結」 | geography 型(Standard / Regional Provisioned、Japan East / West)。APAC Data Zone は不可。Global 比の価格プレミアムあり |
 | 「音声で対話したい」 | **E1**(Voice Live)。SIP 非対応に注意 |
 | 「請求書を読み取って」 | **E2**。定型は DI、非定型は Content Understanding |
 | 「月間 N 万件を処理」 | **E3**(Batch 50% 引き)+ PTU サイジング |
