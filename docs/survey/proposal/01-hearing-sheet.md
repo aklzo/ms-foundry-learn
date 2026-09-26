@@ -2,7 +2,7 @@
 
 [← 提案実務ガイド TOP](./README.md)
 
-> **最終更新:** 2026-07-31 / 2026-09-04(casebook への導線・閉域 Lv 定義を追加)
+> **最終更新:** 2026-07-31 / 2026-09-04(casebook への導線・閉域 Lv 定義を追加)/ 2026-09-26(Routines GA・同時セッション上限・閉域ツール表・Data Zone APAC・廃止到来を一次情報で同期)
 > 初回〜2回目のヒアリング(60〜90分)を想定。各質問に「なぜ聞くか」と「回答が構成に与える影響」を付けてある。**回答をこのシートに沿って埋めると、[architecture のユースケース型](../architecture/README.md)のどれかに落ちる**ように設計している。
 
 ## 使い方
@@ -16,7 +16,7 @@
 | # | 質問 | なぜ聞くか | 回答 → 構成への影響 |
 | --- | --- | --- | --- |
 | 0-1 | **既存の Azure 利用はあるか。あるならサブスクリプション/Landing Zone の管理体制は?** | Foundry リソースを既存ガバナンス(Policy / RBAC / ネットワーク)に載せるか、新規に作るかが変わる | 既存 LZ あり → CAF 準拠で application landing zone へ配置([architecture 01](../architecture/01-official-baselines.md))。なし → 基盤構築から見積もりに含める |
-| 0-2 | **Microsoft 365 / M365 Copilot の利用状況は?**(ライセンス種別まで) | SharePoint ツール・Work IQ は Copilot ライセンス or 従量課金が必要。Teams/M365 公開の可否も決まる | Copilot あり → SharePoint/Work IQ 経路が最短。なし → Retrieval API 従量課金の費用を見込むか、AI Search 経由の RAG に倒す |
+| 0-2 | **Microsoft 365 / M365 Copilot の利用状況は?**(ライセンス種別まで) | SharePoint ツールは M365 Copilot ライセンス or Retrieval API 従量課金が必要。Work IQ API は Copilot Credits 従量(コネクタ経由の M365 ツールのみユーザーごとのライセンスが要る場合あり)。Teams/M365 公開の可否も決まる | Copilot あり → SharePoint/Work IQ 経路が最短。なし → Retrieval API 従量課金の費用を見込むか、AI Search 経由の RAG に倒す |
 | 0-3 | 既存の AI 利用(Azure OpenAI 直、他社 LLM、Copilot Studio 等)はあるか | 移行・共存の設計が要る。AOAI リソースは Foundry リソースへ非破壊アップグレード可 | AOAI あり → アップグレードパス([features 01](../features/01-platform-projects.md))。Copilot Studio あり → 接続はプレビュー |
 
 ## Phase 1: 業務・目的(10分)
@@ -25,7 +25,7 @@
 | --- | --- | --- | --- |
 | 1-1 | **解決したい業務課題は何か。「誰が・何を・どれくらいの頻度で」やる業務か** | ユースケース型の判定が全ての起点 | 下の型判定表へ |
 | 1-2 | 人間が最終確認するか、AI の出力がそのまま業務に流れるか(HITL の有無) | ガードレール・Task adherence・評価の要件レベルが変わる | 自動実行 → エージェント向けガードレール(プレビュー)依存のリスク説明が必須 |
-| 1-3 | 失敗時の業務影響は?(誤答が金銭・法的リスクになるか) | 評価・観測性・段階リリースへの投資水準を決める | 高リスク → 評価 CI/CD ゲート + 継続的評価 + カナリア(prompt agent の FixedRatio 分割) |
+| 1-3 | 失敗時の業務影響は?(誤答が金銭・法的リスクになるか) | 評価・観測性・段階リリースへの投資水準を決める | 高リスク → 評価 CI/CD ゲート + 継続的評価(プレビュー)+ 段階リリース。**エージェントのバージョン間トラフィック分割は prompt / hosted とも非対応**(FixedRatio は 1 バージョン 100% のみ。configure-agent 2026-09-11 版)→ カナリアは別エージェント名で検証 → 切替、または前段(APIM 等)で振り分け |
 | 1-4 | 成功指標は何か(工数削減率、応答時間、解決率など) | PoC の合否基準と評価器の選定に直結 | 指標 → [評価器マッピング](../features/05-observability-evaluation.md) |
 
 **ユースケース型判定**(1-1 の回答から):
@@ -46,13 +46,13 @@
 | 2-2 | **データ量と更新頻度は?**(GB・件数、日次/週次/リアルタイム) | File Search(手軽・制御弱)か AI Search(制御強)か Foundry IQ かの分岐。インデックス更新設計の工数 | 小規模・静的 → File Search。大規模・要チューニング → AI Search。マルチソース・複数エージェント共有 → Foundry IQ(一部 GA、ポータルはプレビュー) |
 | 2-3 | **データの機密区分は?(社外秘 / 個人情報 / 要配慮個人情報の有無)** | 閉域要否・ガードレール PII(プレビュー)・Purview 連携・[03 規制メモ](./03-japan-compliance.md)の適用範囲 | 個人情報あり → 個情法整理(委託構成)+ abuse monitoring の説明を準備 |
 | 2-4 | ユーザーごとに見せてよいデータが違うか(アクセス制御の粒度) | セキュリティトリミングは RAG 設計の難所 | ユーザー別 → OBO 系ツール(SharePoint/Fabric、サービスプリンシパル不可)か、AI Search のセキュリティフィルタ自前実装。**全員同じ → 大幅に簡単になる**ので必ず確認 |
-| 2-5 | データを国外に出せるか(処理・保存それぞれ) | デプロイタイプと機能制約が決まる | 国内限定 → **Regional Standard (Japan East) のみ**(Data Zone APAC は豪日韓星印で処理されうる)。安全性評価・Red Teaming・Task adherence は国外処理あり → 除外 or 合意 |
+| 2-5 | データを国外に出せるか(処理・保存それぞれ) | デプロイタイプと機能制約が決まる | 国内限定 → **Standard / Regional Provisioned(geography 型。Japan East / Japan West)のみ**(Data Zone APAC は「APAC 域内のいずれかの国」で処理 — 現行の対象リージョンは豪・日・韓・星・印で、予告なく追加されうる)。Data Zone / Regional は Global 比の価格プレミアムあり([02 コスト手順](./02-cost-estimation.md))。安全性評価・Red Teaming・Task adherence は国外処理あり → 除外 or 合意 |
 
 ## Phase 3: ユーザー・規模・SLA(10分)
 
 | # | 質問 | なぜ聞くか | 回答 → 構成への影響 |
 | --- | --- | --- | --- |
-| 3-1 | **利用者は誰で何人か。ピーク同時利用は?** | クォータ・PTU 判断・hosted agent のセッション上限に直結 | hosted agent は同時セッション既定最大約50(/26 サブネット、申請で拡大可)。大規模 → prompt agent 中心 or サブスクリプション分割 |
+| 3-1 | **利用者は誰で何人か。ピーク同時利用は?** | クォータ・PTU 判断・hosted agent のセッション上限に直結 | hosted agent の同時セッションは 2 段の上限: ①**サブスクリプション×リージョンの既定クォータ 2,000(Japan East 等 7 リージョン)/ 1,000(その他)**(申請で引き上げ可)、② VNet 注入時は**委任サブネットの使用可能 IP**(既定 1 セッション = 1 IP。/26 で約 50・/27 で約 17、申請で 1 IP あたり 10 セッションまで)。本番は /24 起点。大規模 → prompt agent 中心(IP を消費しない)or クォータ引き上げ / サブスクリプション分割 |
 | 3-2 | 応答時間の要求は?(対話的 / 数秒待てる / バッチで良い) | モデル選定・デプロイタイプ・キャッシュ設計 | バッチ可 → Batch(50%引き・24h ターゲット・SLA なし)。対話 + 安定 → PTU 検討 |
 | 3-3 | **可用性・SLA の要求水準は?** | プレビュー機能は SLA なし。マルチリージョン DR は「再構築」戦略が基本 | 高 SLA → プレビュー機能を構成から排除([features の GA 一覧](../features/README.md))+ spillover / model router でフェイルオーバー |
 | 3-4 | 利用の波は?(営業時間集中 / 平準 / 月次ピーク) | PTU の損益分岐と spillover 構成 | ピーク型 → PTU + Standard spillover のハイブリッド([02 コスト手順](./02-cost-estimation.md)) |
@@ -61,7 +61,7 @@
 
 | # | 質問 | なぜ聞くか | 回答 → 構成への影響 |
 | --- | --- | --- | --- |
-| 4-1 | **閉域(インターネット非経由)が必須か。それは要件か希望か** | BYO VNet 注入は**作成後の変更不可**。最初に決めないと作り直しになる | 必須 → [architecture 07](../architecture/07-usecase-regulated-edge.md) の「使えない機能一覧」から設計を始める(File Search / Browser Automation / Computer Use / Image Generation / Logic Apps 等が非対応)。**「閉鎖」の Lv 定義(Lv3 = インバウンド遮断のみ / Lv4 = egress 統制・外部 SaaS・PyPI 禁止)も同時に確定**する — CI/CD・搬入・監視の設計と見積もりが別物になる([casebook S-12](../casebook/01-scenario-playbook.md#s-12-顧客閉域環境への納品-ci-cd・構築・搬入・プロンプト運用)) |
+| 4-1 | **閉域(インターネット非経由)が必須か。それは要件か希望か** | BYO VNet 注入は**作成後の変更不可**。最初に決めないと作り直しになる | 必須 → [architecture 07](../architecture/07-usecase-regulated-edge.md) の「使えない機能一覧」から設計を始める(Browser Automation / Computer Use / Image Generation / Logic Apps / Fabric data agent 等が非対応。File Search は公式表で 2026-08-14 版から「Supported(private endpoint 経由)」に変わったが閉域での実測失敗あり — [casebook P-N13](../casebook/02-pitfalls-index.md))。**「閉鎖」の Lv 定義(Lv3 = インバウンド遮断のみ / Lv4 = egress 統制・外部 SaaS・PyPI 禁止)も同時に確定**する — CI/CD・搬入・監視の設計と見積もりが別物になる([casebook S-12](../casebook/01-scenario-playbook.md#s-12-顧客閉域環境への納品-ci-cd・構築・搬入・プロンプト運用)) |
 | 4-2 | 業種の規制・ガイドラインは?(FISC / 3省2 / ISMAP / 社内基準) | [03 規制メモ](./03-japan-compliance.md)の該当節を適用 | 政府 → ISMAP 登録状況の確認が先決。金融 → FISC 対応整理 + 閉域 |
 | 4-3 | **Web 検索・外部サービス呼び出しを許容するか** | Web search / Bing 系は **DPA 対象外・地理境界外送信・別課金** | 不許容 → Web グラウンディング機能を全て外す(サブスクリプション単位で無効化も可) |
 | 4-4 | 認証は?(Entra ID / 外部 IdP / 匿名) | Agents は Entra ID 必須(API キー不可)。顧客向けは別途 IdP 統合 | 外部 IdP → フロント側で変換。B2C 相当の設計を工数に |
@@ -73,7 +73,7 @@
 | # | 質問 | なぜ聞くか | 回答 → 構成への影響 |
 | --- | --- | --- | --- |
 | 5-1 | 出力先はどこか(Teams / 既存 Web / 新規 UI / API / M365 Copilot) | チャネル構成が決まる | Teams/M365 → 公開フロー GA(Bot Service 必要)。既存 Web → フロント実装 + WAF([architecture 06](../architecture/06-usecase-customer-facing.md)) |
-| 5-2 | 呼び出したい既存システム・API はあるか(認証方式も) | ツール選定: OpenAPI ツール(GA)/ Functions(GA・standard のみ)/ MCP(GA)/ Logic Apps コネクタ(プレビュー) | OAuth2 必須の SaaS → Logic Apps コネクタは OAuth2 非対応(プレビュー)に注意 |
+| 5-2 | 呼び出したい既存システム・API はあるか(認証方式も) | ツール選定: OpenAPI ツール(GA)/ Functions(standard のみ。新 Agent Service での可否は公式間で記載が矛盾 → 要確認、[features 04](../features/04-tools-knowledge.md))/ MCP(GA)/ A2A(`a2a` 型は 2026-09 GA)/ Logic Apps コネクタ(プレビュー) | OAuth2 必須の SaaS → Logic Apps コネクタは OAuth2 非対応(プレビュー)に注意 |
 | 5-3 | RPA・既存自動化(Power Automate 等)との棲み分けは? | エージェント化する範囲の合意 | 画面操作が必要 → Browser Automation / Computer Use は**プレビュー+リスク警告あり**。本番は避けるか限定 |
 
 ## Phase 6: 運用体制・スキル(10分)
@@ -90,8 +90,8 @@
 | # | 質問 | なぜ聞くか | 回答 → 構成への影響 |
 | --- | --- | --- | --- |
 | 7-1 | 予算レンジ(初期 / 月額ランニング) | 構成の足切り。閉域は固定費(Firewall / PE / APIM)が支配的になる | [02 コスト手順](./02-cost-estimation.md)で概算 |
-| 7-2 | **プレビュー機能の利用を許容するか(SLA なし・仕様変更あり)** | Foundry は有用機能の多く(Memory / Routines / Foundry IQ ポータル / エージェント向けガードレール等)がプレビュー | 不許容 → GA のみ構成([features README の Feature readiness](../features/README.md))+ プレビュー UI 無効化(`AZML_DISABLE_PREVIEW_FEATURE` タグ)を提案に含める |
-| 7-3 | PoC → 本番のスケジュール感 | 廃止日程(Assistants 2026-08-26、Workflows 2026-12-01 等)との衝突確認 | 期間内に廃止到来 → 最初から後継 API で作る |
+| 7-2 | **プレビュー機能の利用を許容するか(SLA なし・仕様変更あり)** | Foundry は有用機能の多く(Memory / Foundry IQ ポータル / エージェント向けガードレール / Monitoring 等)がプレビュー(Routines は 2026-09-24 に GA。GA 一覧表で最新を確認) | 不許容 → GA のみ構成([features README の Feature readiness](../features/README.md))+ プレビュー UI 無効化(`AZML_DISABLE_PREVIEW_FEATURE` タグ)を提案に含める |
+| 7-3 | PoC → 本番のスケジュール感 | 廃止日程(On Your Data 2026-10-14、Workflows 2026-12-01、Agents classic 2027-03-31 等。Assistants API は 2026-08-26 に廃止済)との衝突確認 | 期間内に廃止到来 → 最初から後継 API で作る |
 
 ## 回答 → 構成クイックマップ
 
@@ -102,7 +102,7 @@
 | 業務自動化 + 多段オーケストレーション | MAF(コードファースト)+ hosted agents | ビジュアル Workflows は 2026-12-01 廃止のため使わない |
 | 顧客向け公開 + 大規模 | App Gateway/WAF + APIM + prompt agents + ガードレール | WAF 誤検知チューニング / 同時セッション・クォータ設計 / BOLA 対策自前 |
 | 閉域必須(金融等) | BYO VNet 注入 + standard setup(BYO 3点)+ PE | **ネットワーク構成は作成時のみ**・使えないツール多数・Firewall 等の固定費 |
-| 国内データ処理必須 | Regional Standard (Japan East) + 評価は国外の扱いを合意 | Japan East のモデル提供状況・クォータを個別確認 |
+| 国内データ処理必須 | Standard / Regional Provisioned(Japan East / West)+ 評価は国外の扱いを合意 | Japan リージョンのモデル提供状況・クォータを個別確認(geography 型は新モデルの提供が最後)/ Regional 価格プレミアム |
 | 文書処理中心 | Content Understanding(+ DI)+ Batch | CU は BYO モデル接続必須 / ページ・サイズ上限 |
 
 **シナリオ別の判断根拠と詰まりどころ:** 上表の構成候補ごとに、ゲート判定・却下案とその理由・詰まりどころ(P-ID)・見積もりで効く点を [casebook 01 要件シナリオ別プレイブック](../casebook/01-scenario-playbook.md) に整理してある(社内 RAG = S-01、ヘルプデスク × ITSM = S-02、承認付き自動化 = S-03、閉域 = S-04、顧客向け = S-05、SaaS = S-06、既存組込み = S-07、Copilot Studio 引き継ぎ = S-08、文書・動画処理 = S-09、音声 = S-10、廃止期限駆動の移行 = S-11、顧客環境納品 = S-12)。

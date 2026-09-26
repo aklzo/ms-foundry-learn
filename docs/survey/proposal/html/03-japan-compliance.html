@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="03-日本規制対応メモ-ismap-fisc-個情法-医療">03. 日本規制対応メモ(ISMAP / FISC / 個情法 / 医療)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#0-前提-データフローの4層整理">0. 前提: データフローの4層整理</a></li><li><a href="#1-ismap-政府情報システム">1. ISMAP(政府情報システム)</a></li><li><a href="#2-データ所在-全規制共通の土台">2. データ所在(全規制共通の土台)</a></li><li><a href="#3-個人情報保護法">3. 個人情報保護法</a></li><li><a href="#4-金融-fisc-安全対策基準">4. 金融(FISC 安全対策基準)</a></li><li><a href="#5-医療-3省2ガイドライン">5. 医療(3省2ガイドライン)</a></li><li><a href="#6-契約・知財まわり-業種横断">6. 契約・知財まわり(業種横断)</a></li><li><a href="#7-顧客からの定番質問と回答の型">7. 顧客からの定番質問と回答の型</a></li><li><a href="#出典-主要">出典(主要)</a></li></ul></div>
 <p><a href="index.html">← 提案実務ガイド TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-31<br><strong>免責: 本メモは SI の技術側が論点を整理するためのもの。法解釈・規制適合の最終判断は必ず顧客の法務・コンプライアンス部門と行うこと。</strong>「検証済み」と記した項目は 2026-07 時点の learn.microsoft.com 現行ページで確認済みの事実(<a href="../../features/html/index.html">features</a> / <a href="../../architecture/html/index.html">architecture</a> の調査に基づく)。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31 / 2026-09-26(Data Zone APAC・閉域ツール表・トレース VNet の現行表記、個情法 令和 8 年改正・AI 法関連の最新版、ISMAP の learn 掲載ページ、Work IQ の境界外処理を反映)<br><strong>免責: 本メモは SI の技術側が論点を整理するためのもの。法解釈・規制適合の最終判断は必ず顧客の法務・コンプライアンス部門と行うこと。</strong>「検証済み」と記した項目は 2026-07 時点の learn.microsoft.com 現行ページで確認済みの事実(<a href="../../features/html/index.html">features</a> / <a href="../../architecture/html/index.html">architecture</a> の調査に基づく)。</p></blockquote>
 <h2 id="0-前提-データフローの4層整理">0. 前提: データフローの4層整理</h2>
 <p>規制の議論はまず「どのデータがどこへ行くか」を4層に分けると噛み合う:</p>
 <div class="tablewrap"><table><thead><tr>
@@ -116,15 +116,16 @@ footer {
 </tr>
 <tr>
 <td>④ ツールの外部送信</td>
-<td>Web search / Bing 系はコンプライアンス境界外へ送信・<strong>DPA 対象外</strong>(検証済み)</td>
+<td>Web search / Bing 系はコンプライアンス境界外へ送信・<strong>DPA 対象外</strong>(検証済み)。<strong>Work IQ(プレビュー)も「Foundry のサービス境界を越え、Azure コンプライアンス境界外で処理されうる」と明記</strong>(work-iq ページ 2026-09 更新)</td>
 <td>機能を使わない(サブスクリプション単位無効化可)or 顧客合意</td>
 </tr>
 </tbody></table></div>
 <h2 id="1-ismap-政府情報システム">1. ISMAP(政府情報システム)</h2>
 <ul>
-<li><strong>learn.microsoft.com 上に Foundry と ISMAP を結びつける記述は見当たらない</strong>(2026-07 調査時点。検証済み)。</li>
+<li><strong>learn.microsoft.com 上に Foundry と ISMAP を結びつける記述は見当たらない</strong>(2026-07 調査時点。検証済み)。learn の ISMAP オファリングページ( <a href="https://learn.microsoft.com/en-us/compliance/regulatory/offering-ismap" title="https://learn.microsoft.com/en-us/compliance/regulatory/offering-ismap">offering-ismap</a> 、2026-06-02 更新)は対象を「Azure, Microsoft Dynamics 365, and other Microsoft online services」/ Japan East・Japan West ほか 40 リージョンと<strong>包括的に</strong>記すのみで、個別サービス名の列挙はない(2026-09-26 確認)。</li>
 <li>政府案件では <strong>ISMAP クラウドサービスリスト( <a href="https://www.ismap.go.jp/" title="https://www.ismap.go.jp/">www.ismap.go.jp</a> )で対象サービスの登録状況を案件ごとに確認する</strong>のが先決。Azure 全体が登録されていても、<strong>個別サービス(Foundry / Agent Service / 各ツール)が対象範囲に含まれるかは別問題</strong>。</li>
 <li>確認手順: ① ISMAP ポータルで Microsoft の登録サービス一覧を取得 → ② 構成で使う Azure サービスを列挙(<a href="01-hearing-sheet.html">01 ヒアリング</a>の構成候補から)→ ③ 差分(未登録サービス)を特定し、代替構成か所管との調整かを判断。</li>
+<li>政府(府省庁)案件では、デジタル庁の <strong>DS-920「行政の進化と革新のための生成AIの調達・利活用に係るガイドライン」</strong>(Normative、最終改定 2026-06-12)が生成 AI 調達・利活用のルールになる。調達仕様・リスク評価の要求事項を先に確認する( <a href="https://www.digital.go.jp/resources/standard_guidelines" title="https://www.digital.go.jp/resources/standard_guidelines">standard_guidelines</a> )。</li>
 <li><strong>プレビュー機能は避ける</strong>: Azure Government 向けページには「Preview 機能は GA と同等のコンプライアンス保証(FedRAMP 等)を持たない場合がある」と明記されている(検証済み)。日本の認証でも同じ前提で扱うのが安全。</li>
 </ul>
 <h2 id="2-データ所在-全規制共通の土台">2. データ所在(全規制共通の土台)</h2>
@@ -135,8 +136,8 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>推論の国内処理</td>
-<td><strong>Regional Standard (Japan East) のみが日本国内処理を保証</strong>。Data Zone (APAC) は豪・日・韓・星・印のいずれかで処理されうる</td>
-<td>「国内必須」なら Regional Standard。モデル提供状況・クォータは Japan East で個別確認</td>
+<td><strong>geography 型(Standard / Regional Provisioned)を Japan East / Japan West に置いた場合のみ日本国内処理</strong>(「customer-specified Azure geography 内で処理、運用目的で geography 内のリージョン間処理あり」)。Data Zone (APAC) は「APAC 域内のいずれかの国」で処理 — 現行の対象リージョンは豪・日・韓・星・印で、<strong>Microsoft が予告なくリージョンを追加しうる</strong>と明記(deployment-types 2026-08-06 版 / region-availability 2026-09-03 版)</td>
+<td>「国内必須」なら geography 型。geography 型は新モデルの提供が最後で日付保証なし → モデル提供状況・クォータは Japan East / West で個別確認。Data Zone / Regional は Global 比の価格プレミアムあり(2026-09-01 改定、<a href="02-cost-estimation.html">02 コスト手順</a>)</td>
 </tr>
 <tr>
 <td>保存データ</td>
@@ -160,7 +161,7 @@ footer {
 </tr>
 <tr>
 <td>Claude 等パートナーモデル</td>
-<td>Hosted on Azure 版は US 系(Data Zone US)。<strong>日本国内処理の選択肢はない</strong>(2026-07 時点)</td>
+<td>Hosted on Azure 版は US 系(Data Zone US)。<strong>日本国内処理の選択肢はない</strong>(2026-07 時点。models-from-partners 2026-09-21 版でも Claude の Data Zone は US のみ・APAC なし)</td>
 <td>国内要件がある案件では Azure OpenAI 系を選ぶ</td>
 </tr>
 </tbody></table></div>
@@ -173,6 +174,8 @@ footer {
 </ul>
 <li><strong>要配慮個人情報</strong>(病歴等)を扱う場合は、悪用監視オプトアウト+閉域+保存層 BYO を揃えるのが説明しやすい構成。</li>
 <li>ガードレールの <strong>PII 検出/リダクションはプレビュー</strong>(検証済み)。「PII を自動でマスクします」を確約に使わない。個人情報保護委員会の生成 AI に関する注意喚起(利用目的・本人通知まわり)も法務確認の際に参照。</li>
+<li><strong>令和 8 年改正個人情報保護法(2026-07-10 成立・07-17 公布)</strong>: 統計作成等を行う第三者への提供の同意不要化(AI 開発等の統計処理目的)、顔特徴データ等の利用停止請求、課徴金制度の新設、子どもの個人データの規律強化など。<strong>施行は一部を除き公布から 2 年以内の政令で定める日</strong>で、政令・規則・ガイドラインは個人情報保護委員会が整備中(2026-09 時点)。長期案件では施行日と改正ガイドラインを法務確認の論点に入れる( <a href="https://www.ppc.go.jp/personalinfo/legal/r8kaiseihogohou/" title="https://www.ppc.go.jp/personalinfo/legal/r8kaiseihogohou/">r8kaiseihogohou</a> )。</li>
+<li><strong>AI 固有の国内ルール(法的拘束力の強さが異なる)</strong>: AI 法(人工知能関連技術の研究開発及び活用の推進に関する法律。2025-06-04 公布・09-01 全面施行)/ 同法に基づく「適正性確保に関する指針」(AI 戦略本部 2025-12-19 決定)/ <strong>AI 事業者ガイドライン 第 1.2 版</strong>(総務省・経産省 2026-03-31。AI エージェントの定義を本編に追加)。SI は「AI 提供者」側の整理を求められうるため、顧客の AI ガバナンス規程とあわせて確認する( <a href="https://www8.cao.go.jp/cstp/ai/ai_act/ai_act.html" title="https://www8.cao.go.jp/cstp/ai/ai_act/ai_act.html">ai_act.html</a> ・ <a href="https://www.meti.go.jp/shingikai/mono_info_service/ai_shakai_jisso/20260331_report.html" title="https://www.meti.go.jp/shingikai/mono_info_service/ai_shakai_jisso/20260331_report.html">20260331_report.html</a> )。</li>
 </ul>
 <h2 id="4-金融-fisc-安全対策基準">4. 金融(FISC 安全対策基準)</h2>
 <ul>
@@ -180,9 +183,9 @@ footer {
 <li>技術構成の定石は <a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07(規制業種)</a> の閉域構成: BYO VNet 注入(<strong>作成後変更不可</strong>)+ Private Endpoint + standard setup(BYO 3点)+ CMK(一部リージョンのみ)。</li>
 <li>金融で刺さりやすい注意点(検証済み):</li>
 <ul>
-<li><strong>Risks &amp; safety モニタリング(悪用状況ダッシュボード)は classic ポータル専用</strong>で新ポータル未移植</li>
-<li>閉域では File Search / Logic Apps / Browser Automation / Computer Use / Image Generation 等が使えない</li>
-<li>トレースの VNet 対応は公式間で表記揺れ(非対応 vs プレビュー)— 安全側は「監査ログは閉域外に出る前提で設計」</li>
+<li><strong>Risks &amp; safety モニタリング(悪用状況ダッシュボード)は classic ポータル専用</strong>で新ポータル未移植(ステータスもプレビュー)</li>
+<li>閉域では Logic Apps / Browser Automation / Computer Use / Image Generation / Fabric data agent 等が使えない(configure-private-link 2026-08-14 版のツール表)。File Search は同表で「Supported(private endpoint 経由)」に変わったが、閉域での実測では vector store 作成が失敗しており提案しない(<a href="../../casebook/html/02-pitfalls-index.html">casebook P-N13</a>)。Bing / Web search / SharePoint は閉域でも動くが公開エンドポイント経由</li>
+<li>トレースの VNet 対応: configure-private-link 2026-08-14 版の制限表から Traces 行は消えたが、GA 一覧表は「Tracing VNet = Preview」かつ「Traces は network isolation に完全には対応していない」と記載 — 安全側は「監査ログは閉域外に出る前提で設計」</li>
 <li>Customer Lockbox は<strong>非サポート</strong>(セキュリティベースラインに明記)</li>
 </ul>
 </ul>
@@ -190,7 +193,7 @@ footer {
 <ul>
 <li>論点は「医療情報システムの安全管理」への対応: データ所在(§2)+ アクセス制御 + 監査証跡。</li>
 <li>技術側の対応部品: Entra ID 必須認証(Agents は API キー不可)/ RBAC(Foundry 5ロール)/ トレース・App Insights の監査ログ設計(保持年限は Log Analytics 側で)/ Purview 監査(従量課金有効化が前提。検証済み)。</li>
-<li>診療情報を含む RAG は、悪用監視オプトアウト+閉域+国内処理(Regional Standard)の3点セットを基本形として提示。</li>
+<li>診療情報を含む RAG は、悪用監視オプトアウト+閉域+国内処理(geography 型 = Standard / Regional Provisioned を Japan East / West に配置)の3点セットを基本形として提示。</li>
 </ul>
 <h2 id="6-契約・知財まわり-業種横断">6. 契約・知財まわり(業種横断)</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -235,7 +238,7 @@ footer {
 </tr>
 <tr>
 <td>「データは国内に留まりますか」</td>
-<td>4層に分けて回答: 保存=構成で国内固定可 / 推論=Regional Standard なら国内 / 悪用監視=同一ジオ / ツール=機能による(Web 系は境界外)</td>
+<td>4層に分けて回答: 保存=構成で国内固定可 / 推論=geography 型(Standard / Regional Provisioned、Japan East / West)なら国内 / 悪用監視=同一ジオ / ツール=機能による(Web 系は境界外)</td>
 </tr>
 <tr>
 <td>「誰が会話ログを見られますか」</td>

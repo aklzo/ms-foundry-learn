@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="04-前提-azure-知識マップ-foundry-提案・設計に必要なサブセット">04. 前提 Azure 知識マップ(Foundry 提案・設計に必要なサブセット)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#結論サマリー">結論サマリー</a></li><li><a href="#領域別マップ">領域別マップ</a></li><li><a href="#資格との対応">資格との対応</a></li><li><a href="#読む順序の推奨-オンボーディング">読む順序の推奨(オンボーディング)</a></li></ul></div>
 <p><a href="index.html">← 提案実務ガイド TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-31<br>本リポジトリの調査ドキュメントは、いくつかの Azure 基礎知識を「知っている前提」で書かれている。<strong>AZ-104(管理者)の全範囲は不要</strong>で、必要なのは特定のサブセット+設計寄り(AZ-305)の観点。このマップは「どの知識が・どの設計判断で・なぜ要るか」を整理し、チームのオンボーディングとスキルギャップ確認に使う。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31 / 2026-09-26(資格表を更新: AI-102 退役 → AI-103。hosted agent の同時セッション上限、capability settings への移行中を注記)<br>本リポジトリの調査ドキュメントは、いくつかの Azure 基礎知識を「知っている前提」で書かれている。<strong>AZ-104(管理者)の全範囲は不要</strong>で、必要なのは特定のサブセット+設計寄り(AZ-305)の観点。このマップは「どの知識が・どの設計判断で・なぜ要るか」を整理し、チームのオンボーディングとスキルギャップ確認に使う。</p></blockquote>
 <h2 id="結論サマリー">結論サマリー</h2>
 <ul>
 <li><strong>最優先はネットワークと Entra ID。</strong>閉域案件・ツール認証(OBO)はこの2つが分からないと設計も顧客説明もできない。</li>
@@ -108,7 +108,7 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>VNet / サブネット / サブネット委任</td>
-<td>BYO VNet 注入(<code>Microsoft.App/environments</code> 委任、/27 以上、<strong>作成後変更不可</strong>)のサイジングと IP 設計</td>
+<td>BYO VNet 注入(<code>Microsoft.App/environments</code> 委任、/27 以上・本番は /24 起点〈/27 は本番非推奨と明記〉、<strong>作成後変更不可</strong>)のサイジングと IP 設計。hosted agent は既定 1 セッション = 1 IP なので同時セッション数から逆算。アドレス空間は RFC1918 を推奨(RFC 6598 の可否は公式ページ間で揺れ)</td>
 <td><a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07</a></td>
 </tr>
 <tr>
@@ -201,7 +201,7 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>サブスクリプション設計 / 管理グループ</td>
-<td>同時セッション上限・クォータは<strong>サブスクリプション×リージョン単位</strong> → 大規模はサブスクリプション分割</td>
+<td>hosted agent の同時セッション上限・モデルクォータは<strong>サブスクリプション×リージョン単位</strong>(同時セッション既定 2,000〈Japan East 等〉/ 1,000、申請で引き上げ可。limits-quotas-regions 2026-09-07 版)→ 引き上げで足りなければサブスクリプション分割</td>
 <td><a href="../../architecture/html/06-usecase-customer-facing.html">architecture 06</a></td>
 </tr>
 <tr>
@@ -221,7 +221,7 @@ footer {
 </tr>
 <tr>
 <td>IaC(Bicep / Terraform)</td>
-<td>Foundry は <code>Microsoft.CognitiveServices/accounts</code>。<strong>capability host / ネットワーク注入は冪等更新が効かない</strong>という Foundry 固有の癖</td>
+<td>Foundry は <code>Microsoft.CognitiveServices/accounts</code>。<strong>capability host / ネットワーク注入は冪等更新が効かない</strong>という Foundry 固有の癖。capability host は後継の <strong>capability settings</strong>(プレビュー、API <code>2026-07-15-preview</code>、UK South / Canada Central のみ、既存プロジェクトへの追加・変更不可)へ移行中( <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-capability-settings" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-capability-settings">configure-capability-settings</a> 、2026-09-22 版)</td>
 <td><a href="../../architecture/html/09-operations.html">architecture 09</a></td>
 </tr>
 </tbody></table></div>
@@ -284,8 +284,8 @@ footer {
 <td>本リポジトリの用途(構成の設計判断)に最も近い。非機能要件 → 構成のマッピング訓練として有効。 <a href="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-solutions-architect/" title="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-solutions-architect/">azure-solutions-architect</a></td>
 </tr>
 <tr>
-<td>AI-102(AI Engineer)</td>
-<td>Foundry 固有部分は本リポジトリの方が新しい・深い。Speech / Vision / Language 系の基礎補完として。 <a href="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-ai-engineer/" title="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-ai-engineer/">azure-ai-engineer</a></td>
+<td>AI-103(Azure AI Apps and Agents Developer Associate)</td>
+<td><strong>AI-102(Azure AI Engineer Associate)は 2026-06-30 に退役</strong>し、後継はこの AI-103(Python + Microsoft Foundry でのエージェント / 生成 AI 開発が中心)。Foundry 固有部分は本リポジトリの方が新しい・深いが、Speech / Vision / Language 系の基礎補完に使える。 <a href="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-ai-apps-and-agents-developer-associate/" title="https://learn.microsoft.com/ja-jp/credentials/certifications/azure-ai-apps-and-agents-developer-associate/">azure-ai-apps-and-agents-developer-associate</a> (退役一覧: <a href="https://learn.microsoft.com/en-us/credentials/support/retired-certification-exams" title="https://learn.microsoft.com/en-us/credentials/support/retired-certification-exams">retired-certification-exams</a> 。AI-900 試験も同日退役し、Azure AI Fundamentals は AI-901 に置換)</td>
 </tr>
 </tbody></table></div>
 <h2 id="読む順序の推奨-オンボーディング">読む順序の推奨(オンボーディング)</h2>

@@ -2,7 +2,7 @@
 
 [← 提案実務ガイド TOP](./README.md)
 
-> **最終更新:** 2026-08-02(初版)/ **更新頻度:** 四半期(下記「探し方」の巡回先を確認)
+> **最終更新:** 2026-08-02(初版)/ 2026-09-26(Foundry 名指しの日本事例 3 件追加・巡回先 URL 更新)/ **更新頻度:** 四半期(下記「探し方」の巡回先を確認)
 > **収録基準:** **Microsoft 公式(customers.microsoft.com / news.microsoft.com / 公式ブログ)が公開している事例のみ。**ベンダーや媒体の二次記事は含めない。効果数値は出典の表現のまま引用する(「約」「目標」を落とさない)。
 
 ## 使い方と注意(先に読む)
@@ -21,6 +21,9 @@
 | **富士通** | IT サービス | 営業提案の作成・ナレッジ検索を自動化する営業支援エージェント | **Azure AI Foundry / Azure AI Agent Service** | **営業チームの生産性 67% 向上** | [Customer Story](https://www.microsoft.com/en/customers/story/21885-fujitsu-azure-ai-foundry) / [ja-jp 記事](https://news.microsoft.com/ja-jp/2025/05/07/250507-how-agentic-ai-is-driving-ai-first-business-transformation-for-customers-to-achieve-more/) |
 | **NTT データ** | IT サービス | 従業員がリアルタイムデータを取得・操作する会話型 AI 基盤 | **Microsoft Fabric + Foundry Agent Service + Foundry** | 新ソリューションの **market 投入期間 50% 短縮**、マルチエージェント展開の基盤化 | [FY26 公式ブログ](https://blogs.microsoft.com/blog/2026/07/28/looking-back-on-microsofts-fy26-from-ai-experimentation-to-frontier-transformation/) |
 | **Sky 株式会社** | ソフトウェア | Fabric + Foundry でアンケート分析・要約を自動化、AI エージェントによる「デジタルワーカー」を推進 | **Microsoft Fabric + Microsoft Foundry** | データ基盤確立(定量値は記事参照) | [Customer Story(日本語)](https://www.microsoft.com/ja-jp/customers/story/26026-sky-microsoft-fabric) |
+| **マネーフォワード** | FinTech / SaaS | Microsoft Foundry を基盤に **10 以上の AI エージェント**を自社 SaaS に組み込み提供(AI 確定申告、経費申請サポート、消費税区分チェック等) | **Microsoft Foundry + Azure OpenAI in Foundry Models**(+ AI Search / Document Intelligence) | 確定申告に費やす時間 **6 日間 → 3 時間**、初期プロトタイプ 2〜3 日、**最新 LLM への切り替え 1 週間程度** | [Customer Story(日本語、2026-08-03)](https://www.microsoft.com/ja-jp/customers/story/26971-money-forward-inc-microsoft-foundry) |
+| **日立システムズ** | IT サービス(SIer) | 製造業の現場業務を支援する「製造業向けアシスタントAI」を Foundry で開発しパッケージ提供 | **Microsoft Foundry**(+ Defender for Cloud) | Playground で事前に精度確認し開発工数を大幅削減(定量値なし) | [Customer Story(日本語、2026-01-20)](https://www.microsoft.com/ja-jp/customers/story/25948-hitachi-systems-microsoft-foundry) |
+| **ソフトバンク** | 通信 | AI 駆動型コールセンター(RAG・マルチエージェント協調・独自の音声コントローラー) | **Microsoft Foundry + Azure OpenAI in Foundry Models + Azure AI Speech**(App Service / SQL Database) | 初期応答時間の短縮(定量値なし) | [Customer Story(日本語、2025-11-18)](https://www.microsoft.com/ja-jp/customers/story/25684-softbank-corp-azure-ai-foundry) |
 
 **エージェント型だが名義は Azure OpenAI Service(2024 年の公式まとめより):**
 
@@ -63,14 +66,15 @@
 
 ## 探し方(四半期更新の巡回先)
 
-1. [AI ケーススタディ検索ポータル(日本語)](https://www.microsoft.com/ja-jp/ai/ai-customer-stories) — 業種・製品で絞り込み
-2. [Microsoft Customer Stories](https://www.microsoft.com/ja-jp/customers) — 「Azure AI Foundry」「Copilot Studio」でフィルタ
-3. [News Center Japan](https://news.microsoft.com/ja-jp/) — 日本企業のまとめ記事が定期的に出る(本ページの主要出典)
+1. [Microsoft Customer Stories 検索(日本語、Microsoft Foundry で絞り込み済み)](https://www.microsoft.com/ja-jp/customers/search?filters=product%3Amicrosoft-foundry) — 業種・製品で絞り込み(旧「AI ケーススタディ検索ポータル」 `/ja-jp/ai/ai-customer-stories` は Copilot 絞り込みの検索ページへリダイレクトされるようになった)
+2. [Microsoft Customer Stories](https://www.microsoft.com/ja-jp/customers) — 「Microsoft Foundry」「Copilot Studio」でフィルタ
+3. [News Center Japan](https://news.microsoft.com/source/asia/region/japan-ja/?lang=ja) — 日本企業のまとめ記事が定期的に出る(本ページの主要出典。旧 `news.microsoft.com/ja-jp/` はここへリダイレクト、過去記事の URL は存続)
 4. [Microsoft Cloud Blog の集約記事(1,000+ stories)](https://www.microsoft.com/en-us/microsoft-cloud/blog/2025/07/24/ai-powered-success-with-1000-stories-of-customer-transformation-and-innovation/) と [FY 総括ブログ(毎年 7 月末)](https://blogs.microsoft.com/blog/2026/07/28/looking-back-on-microsofts-fy26-from-ai-experimentation-to-frontier-transformation/)
-5. [adoption.microsoft.com — Agent transformation stories](https://adoption.microsoft.com/en-us/ai-agents/transformation-stories/) — エージェント特化の事例集
+5. [adoption.microsoft.com — Agent transformation stories](https://adoption.microsoft.com/en-us/agent-transformation-stories/) — エージェント特化の事例集
 
 ## 更新履歴
 
 | 日付 | 内容 |
 | --- | --- |
 | 2026-08-02 | 初版。日本のエージェント型 8 件+生成 AI 10 件+グローバル主要事例を公式出典つきで収録 |
+| 2026-09-26 | Foundry 名指しの日本事例を 3 件追加(マネーフォワード〈2026-08-03 公開〉・日立システムズ・ソフトバンク〈初版で未収録だった既存記事〉)。巡回先の URL 変更 3 件(AI ケーススタディ検索 → Customer Stories 検索、News Center Japan、adoption)を反映。既存出典 URL はすべて生存確認済み |

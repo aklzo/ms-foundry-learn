@@ -2,7 +2,7 @@
 
 [← 提案実務ガイド TOP](./README.md)
 
-> **最終更新:** 2026-07-31
+> **最終更新:** 2026-07-31 / 2026-09-26(資格表を更新: AI-102 退役 → AI-103。hosted agent の同時セッション上限、capability settings への移行中を注記)
 > 本リポジトリの調査ドキュメントは、いくつかの Azure 基礎知識を「知っている前提」で書かれている。**AZ-104(管理者)の全範囲は不要**で、必要なのは特定のサブセット+設計寄り(AZ-305)の観点。このマップは「どの知識が・どの設計判断で・なぜ要るか」を整理し、チームのオンボーディングとスキルギャップ確認に使う。
 
 ## 結論サマリー
@@ -19,7 +19,7 @@
 
 | トピック | どの設計判断で使うか | 本リポジトリの該当箇所 |
 | --- | --- | --- |
-| VNet / サブネット / サブネット委任 | BYO VNet 注入(`Microsoft.App/environments` 委任、/27 以上、**作成後変更不可**)のサイジングと IP 設計 | [architecture 07](../architecture/07-usecase-regulated-edge.md) |
+| VNet / サブネット / サブネット委任 | BYO VNet 注入(`Microsoft.App/environments` 委任、/27 以上・本番は /24 起点〈/27 は本番非推奨と明記〉、**作成後変更不可**)のサイジングと IP 設計。hosted agent は既定 1 セッション = 1 IP なので同時セッション数から逆算。アドレス空間は RFC1918 を推奨(RFC 6598 の可否は公式ページ間で揺れ) | [architecture 07](../architecture/07-usecase-regulated-edge.md) |
 | Private Endpoint / Private DNS ゾーン | 閉域のインバウンド設計(Foundry は DNS ゾーン3種)。PE は自動作成されない | 同上 |
 | Azure Firewall / UDR / 強制トンネリング | アウトバウンド制御。Managed VNet の FQDN ルールで Firewall が自動作成・SKU 変更不可 | 同上 |
 | Application Gateway / WAF | 顧客向け公開の入口。WAF のチャット誤検知チューニングは頻出論点 | [architecture 06](../architecture/06-usecase-customer-facing.md) |
@@ -52,11 +52,11 @@
 
 | トピック | どの設計判断で使うか | 本リポジトリの該当箇所 |
 | --- | --- | --- |
-| サブスクリプション設計 / 管理グループ | 同時セッション上限・クォータは**サブスクリプション×リージョン単位** → 大規模はサブスクリプション分割 | [architecture 06](../architecture/06-usecase-customer-facing.md) |
+| サブスクリプション設計 / 管理グループ | hosted agent の同時セッション上限・モデルクォータは**サブスクリプション×リージョン単位**(同時セッション既定 2,000〈Japan East 等〉/ 1,000、申請で引き上げ可。limits-quotas-regions 2026-09-07 版)→ 引き上げで足りなければサブスクリプション分割 | [architecture 06](../architecture/06-usecase-customer-facing.md) |
 | Azure Policy | 承認済みモデル限定(GA)・プレビューモデル禁止(プレビュー)・プレビュー UI 無効化タグ | [features 01](../features/01-platform-projects.md) |
 | Landing Zone(CAF) | AI は通常ワークロードとして application landing zone へ。共有 vs 専用の5条件 | [architecture 01](../architecture/01-official-baselines.md) |
 | タグ / Cost Management | チャージバック(project タグはプレビュー)・部門按分 | [02 コスト手順](./02-cost-estimation.md) |
-| IaC(Bicep / Terraform) | Foundry は `Microsoft.CognitiveServices/accounts`。**capability host / ネットワーク注入は冪等更新が効かない**という Foundry 固有の癖 | [architecture 09](../architecture/09-operations.md) |
+| IaC(Bicep / Terraform) | Foundry は `Microsoft.CognitiveServices/accounts`。**capability host / ネットワーク注入は冪等更新が効かない**という Foundry 固有の癖。capability host は後継の **capability settings**(プレビュー、API `2026-07-15-preview`、UK South / Canada Central のみ、既存プロジェクトへの追加・変更不可)へ移行中( https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-capability-settings 、2026-09-22 版) | [architecture 09](../architecture/09-operations.md) |
 
 学習リンク: https://learn.microsoft.com/ja-jp/azure/cloud-adoption-framework/ ・ https://learn.microsoft.com/ja-jp/azure/well-architected/
 
@@ -83,7 +83,7 @@
 | --- | --- |
 | AZ-104(Azure Administrator) | ネットワーク・ID・ガバナンスのモジュールは有効。**VM / ストレージ運用の章はスキップ可**。 https://learn.microsoft.com/ja-jp/credentials/certifications/azure-administrator/ |
 | AZ-305(Solutions Architect) | 本リポジトリの用途(構成の設計判断)に最も近い。非機能要件 → 構成のマッピング訓練として有効。 https://learn.microsoft.com/ja-jp/credentials/certifications/azure-solutions-architect/ |
-| AI-102(AI Engineer) | Foundry 固有部分は本リポジトリの方が新しい・深い。Speech / Vision / Language 系の基礎補完として。 https://learn.microsoft.com/ja-jp/credentials/certifications/azure-ai-engineer/ |
+| AI-103(Azure AI Apps and Agents Developer Associate) | **AI-102(Azure AI Engineer Associate)は 2026-06-30 に退役**し、後継はこの AI-103(Python + Microsoft Foundry でのエージェント / 生成 AI 開発が中心)。Foundry 固有部分は本リポジトリの方が新しい・深いが、Speech / Vision / Language 系の基礎補完に使える。 https://learn.microsoft.com/ja-jp/credentials/certifications/azure-ai-apps-and-agents-developer-associate/ (退役一覧: https://learn.microsoft.com/en-us/credentials/support/retired-certification-exams 。AI-900 試験も同日退役し、Azure AI Fundamentals は AI-901 に置換) |
 
 ## 読む順序の推奨(オンボーディング)
 

@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="05-公開事例集-提案書で引用できる-microsoft-公式事例">05. 公開事例集 — 提案書で引用できる Microsoft 公式事例</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#使い方と注意-先に読む">使い方と注意(先に読む)</a></li><li><a href="#日本企業-エージェント型の事例">日本企業 — エージェント型の事例</a></li><li><a href="#日本企業-生成-ai-活用-rag・チャット・m365-copilot">日本企業 — 生成 AI 活用(RAG・チャット・M365 Copilot)</a></li><li><a href="#グローバル-エージェント型で数値が引用しやすいもの">グローバル — エージェント型で数値が引用しやすいもの</a></li><li><a href="#探し方-四半期更新の巡回先">探し方(四半期更新の巡回先)</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
 <p><a href="index.html">← 提案実務ガイド TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-08-02(初版)/ <strong>更新頻度:</strong> 四半期(下記「探し方」の巡回先を確認)<br><strong>収録基準:</strong> <strong>Microsoft 公式(customers.microsoft.com / news.microsoft.com / 公式ブログ)が公開している事例のみ。</strong>ベンダーや媒体の二次記事は含めない。効果数値は出典の表現のまま引用する(「約」「目標」を落とさない)。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-08-02(初版)/ 2026-09-26(Foundry 名指しの日本事例 3 件追加・巡回先 URL 更新)/ <strong>更新頻度:</strong> 四半期(下記「探し方」の巡回先を確認)<br><strong>収録基準:</strong> <strong>Microsoft 公式(customers.microsoft.com / news.microsoft.com / 公式ブログ)が公開している事例のみ。</strong>ベンダーや媒体の二次記事は含めない。効果数値は出典の表現のまま引用する(「約」「目標」を落とさない)。</p></blockquote>
 <h2 id="使い方と注意-先に読む">使い方と注意(先に読む)</h2>
 <ul>
 <li>引用は「<strong>社名+用途+効果数値+出典 URL</strong>」の 1 行形式で提案書の類似事例欄に載せる。</li>
@@ -132,6 +132,30 @@ footer {
 <td><strong>Microsoft Fabric + Microsoft Foundry</strong></td>
 <td>データ基盤確立(定量値は記事参照)</td>
 <td><a href="https://www.microsoft.com/ja-jp/customers/story/26026-sky-microsoft-fabric">Customer Story(日本語)</a></td>
+</tr>
+<tr>
+<td><strong>マネーフォワード</strong></td>
+<td>FinTech / SaaS</td>
+<td>Microsoft Foundry を基盤に <strong>10 以上の AI エージェント</strong>を自社 SaaS に組み込み提供(AI 確定申告、経費申請サポート、消費税区分チェック等)</td>
+<td><strong>Microsoft Foundry + Azure OpenAI in Foundry Models</strong>(+ AI Search / Document Intelligence)</td>
+<td>確定申告に費やす時間 <strong>6 日間 → 3 時間</strong>、初期プロトタイプ 2〜3 日、<strong>最新 LLM への切り替え 1 週間程度</strong></td>
+<td><a href="https://www.microsoft.com/ja-jp/customers/story/26971-money-forward-inc-microsoft-foundry">Customer Story(日本語、2026-08-03)</a></td>
+</tr>
+<tr>
+<td><strong>日立システムズ</strong></td>
+<td>IT サービス(SIer)</td>
+<td>製造業の現場業務を支援する「製造業向けアシスタントAI」を Foundry で開発しパッケージ提供</td>
+<td><strong>Microsoft Foundry</strong>(+ Defender for Cloud)</td>
+<td>Playground で事前に精度確認し開発工数を大幅削減(定量値なし)</td>
+<td><a href="https://www.microsoft.com/ja-jp/customers/story/25948-hitachi-systems-microsoft-foundry">Customer Story(日本語、2026-01-20)</a></td>
+</tr>
+<tr>
+<td><strong>ソフトバンク</strong></td>
+<td>通信</td>
+<td>AI 駆動型コールセンター(RAG・マルチエージェント協調・独自の音声コントローラー)</td>
+<td><strong>Microsoft Foundry + Azure OpenAI in Foundry Models + Azure AI Speech</strong>(App Service / SQL Database)</td>
+<td>初期応答時間の短縮(定量値なし)</td>
+<td><a href="https://www.microsoft.com/ja-jp/customers/story/25684-softbank-corp-azure-ai-foundry">Customer Story(日本語、2025-11-18)</a></td>
 </tr>
 </tbody></table></div>
 <p><strong>エージェント型だが名義は Azure OpenAI Service(2024 年の公式まとめより):</strong></p>
@@ -275,11 +299,11 @@ footer {
 <p><strong>Copilot Studio 側の事例</strong>(課の分業モデルで「入口は Copilot Studio」を説明する材料): Dow(輸送費の隠れ損失を数分で特定・年数億ドル削減見込み)/ Eneco(月 24,000 チャット、70% をオペレーター無しで解決)/ Virgin Money(100 万+ 対話)/ T-Mobile(83,000 ユーザー)/ BDO Colombia(業務負荷 50% 減)— 出典は同上 ja-jp 記事。</p>
 <h2 id="探し方-四半期更新の巡回先">探し方(四半期更新の巡回先)</h2>
 <ol>
-<li><a href="https://www.microsoft.com/ja-jp/ai/ai-customer-stories">AI ケーススタディ検索ポータル(日本語)</a> — 業種・製品で絞り込み</li>
-<li><a href="https://www.microsoft.com/ja-jp/customers">Microsoft Customer Stories</a> — 「Azure AI Foundry」「Copilot Studio」でフィルタ</li>
-<li><a href="https://news.microsoft.com/ja-jp/">News Center Japan</a> — 日本企業のまとめ記事が定期的に出る(本ページの主要出典)</li>
+<li><a href="https://www.microsoft.com/ja-jp/customers/search?filters=product%3Amicrosoft-foundry">Microsoft Customer Stories 検索(日本語、Microsoft Foundry で絞り込み済み)</a> — 業種・製品で絞り込み(旧「AI ケーススタディ検索ポータル」 <code>/ja-jp/ai/ai-customer-stories</code> は Copilot 絞り込みの検索ページへリダイレクトされるようになった)</li>
+<li><a href="https://www.microsoft.com/ja-jp/customers">Microsoft Customer Stories</a> — 「Microsoft Foundry」「Copilot Studio」でフィルタ</li>
+<li><a href="https://news.microsoft.com/source/asia/region/japan-ja/?lang=ja">News Center Japan</a> — 日本企業のまとめ記事が定期的に出る(本ページの主要出典。旧 <code>news.microsoft.com/ja-jp/</code> はここへリダイレクト、過去記事の URL は存続)</li>
 <li><a href="https://www.microsoft.com/en-us/microsoft-cloud/blog/2025/07/24/ai-powered-success-with-1000-stories-of-customer-transformation-and-innovation/">Microsoft Cloud Blog の集約記事(1,000+ stories)</a> と <a href="https://blogs.microsoft.com/blog/2026/07/28/looking-back-on-microsofts-fy26-from-ai-experimentation-to-frontier-transformation/">FY 総括ブログ(毎年 7 月末)</a></li>
-<li><a href="https://adoption.microsoft.com/en-us/ai-agents/transformation-stories/">adoption.microsoft.com — Agent transformation stories</a> — エージェント特化の事例集</li>
+<li><a href="https://adoption.microsoft.com/en-us/agent-transformation-stories/">adoption.microsoft.com — Agent transformation stories</a> — エージェント特化の事例集</li>
 </ol>
 <h2 id="更新履歴">更新履歴</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -289,6 +313,10 @@ footer {
 <tr>
 <td>2026-08-02</td>
 <td>初版。日本のエージェント型 8 件+生成 AI 10 件+グローバル主要事例を公式出典つきで収録</td>
+</tr>
+<tr>
+<td>2026-09-26</td>
+<td>Foundry 名指しの日本事例を 3 件追加(マネーフォワード〈2026-08-03 公開〉・日立システムズ・ソフトバンク〈初版で未収録だった既存記事〉)。巡回先の URL 変更 3 件(AI ケーススタディ検索 → Customer Stories 検索、News Center Japan、adoption)を反映。既存出典 URL はすべて生存確認済み</td>
 </tr>
 </tbody></table></div>
 </main>

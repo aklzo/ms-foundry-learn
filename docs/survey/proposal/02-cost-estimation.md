@@ -2,7 +2,7 @@
 
 [← 提案実務ガイド TOP](./README.md)
 
-> **最終更新:** 2026-07-31
+> **最終更新:** 2026-07-31 / 2026-09-26(課金単位を pricing ページ・learn で再確認: hosted agent・Foundry IQ Serverless・Voice Live・CU・Data Zone / Regional プレミアム・flex を追記、URL 1 件差し替え)
 > **方針: このドキュメントに単価を書かない。**モデル単価は改定・リタイア・新モデル投入で頻繁に変わるため、ここには「変わらないもの」= 見積もりの手順・式・コスト構成要素のチェックリスト・単価の取得先だけを置く。試算例も単価は記号のまま示す。
 
 ## Step 1: ワークロードのプロファイリング(トークン量の推計)
@@ -45,10 +45,12 @@
 | モデル | 推論(入力/出力/キャッシュ) | トークン従量 or PTU 時間 | reasoning モデルの思考トークンは出力課金 |
 | モデル | 埋め込み(初期 + 増分 + クエリ時) | トークン従量 | 初期インデックス構築は一時コストとして別掲 |
 | ナレッジ | Azure AI Search | **SKU 時間課金**(+セマンティックランカー) | 使わなくても月額固定で発生。SKU とレプリカ数が支配項 |
-| ナレッジ | File Search / ベクトルストア | ストレージ課金(モデル料と別) | standard setup では自前 Blob + AI Search 側に載る |
+| ナレッジ | File Search / ベクトルストア | ストレージ課金(GB・日、1 GB 無料。モデル料と別) | standard setup では自前 Blob + AI Search 側に載る |
+| ナレッジ | Foundry IQ(ナレッジベース / agentic retrieval) | **AI Search 側で課金**(agentic retrieval のトークン課金〈月 5,000 万トークン無料枠〉+ クエリ計画等のモデル従量)。SharePoint(remote)/ Web ナレッジソースは別課金 | **Serverless(Developer tier、プレビュー)は 2026-09-13 に課金開始**(Compute Unit 時間 + ストレージ)。PoC で無料前提にしない |
 | ツール | Web search / Grounding with Bing | 呼び出し従量(**別課金**) | DPA 対象外の説明とセット([03](./03-japan-compliance.md)) |
 | ツール | Code Interpreter | **セッション課金**(アクティブ1h/アイドル30分) | 会話ごとにセッションが立つ設計だと嵩む |
-| エージェント | hosted agent セッション | **CPU/メモリ従量**(アイドル15分でゼロ) | サンドボックスのオーバーサイズ × 同時実行数で倍増 |
+| エージェント | hosted agent セッション | **vCPU 時間 + メモリ GiB 時間の従量**(アクティブなセッション分。アイドルタイムアウト〈既定 15 分・2〜60 分で設定可〉経過でコンピュート解放) | cpu / memory 指定は 1 セッションあたり → サンドボックスのオーバーサイズ × 同時実行数で倍増 |
+| エージェント | Routines(スケジュール / イベント起動) | ルーチン自体の料金は pricing ページに記載なし(2026-09-26 確認) | 起動されたエージェント実行のモデル・ツール・hosted コンピュートは通常どおり課金。定期実行の回数 × 1 回あたりのコストで積む |
 | エージェント | Bot Service(Teams/M365 公開時) | SKU | 公開チャネル追加時のみ |
 | 観測性 | Application Insights / Log Analytics | **取り込み GB 課金 + 保持** | トレース全量記録は高額になりがち。サンプリング設計必須。監査要件の長期保持は別途 |
 | 観測性 | 評価(クラウド評価・継続的評価・Red Teaming) | 評価器の LLM 従量 | playground 評価は**既定で有効**(全プロジェクト・従量) |
@@ -60,6 +62,8 @@
 | BYO | Cosmos DB(standard setup) | RU/s プロビジョン | **最低 3,000 RU/s/プロジェクト**(Responses 利用で実質 5,000)。プロジェクト数分乗算 |
 | BYO | Storage / AI Search(standard setup) | 各 SKU | basic setup なら不要(Microsoft 管理) |
 | フロント | App Service / Static Web Apps 等 | SKU | Foundry 外だが提案総額には必ず入る |
+| 特化 | Voice Live(音声エージェント) | **100 万トークン単位**(テキスト / 音声の入力・キャッシュ・出力別)。ティアは選んだモデルで決まる(Pro / Standard / Lite / BYO) | アバターは TTS Avatar の分課金、カスタム音声・カスタム STT は学習・ホスティングが別課金 |
+| 特化 | Content Understanding | **コンテンツ抽出**(文書 = 1,000 ページ単位〈Minimal / Basic / Standard〉、音声・動画 = 時間単位〈分課金〉)+ **コンテキスト処理トークン** + **フィールド抽出の BYO モデル(生成 + 埋め込み)従量** | 3 層を合算しないと過小見積もりになる |
 
 **閉域構成の経験則**: Firewall + PE + APIM + App Gateway の**固定費だけで月額の下限が決まる**。小規模利用の閉域案件は「トークン代よりインフラ固定費」になるので、先にインフラ固定費を積んでから変動費を載せる。
 
@@ -68,15 +72,17 @@
 | 対象 | 参照先 |
 | --- | --- |
 | 総合(構成全体の試算) | https://azure.microsoft.com/pricing/calculator/ |
-| モデル単価(Azure OpenAI / Foundry Models) | https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/ |
+| モデル単価(Azure OpenAI / Foundry Models) | https://azure.microsoft.com/pricing/details/azure-openai/ (旧 URL `.../cognitive-services/openai-service/` はリダイレクト) |
 | Agent Service(セッション課金等) | https://azure.microsoft.com/pricing/details/foundry-agent-service/ |
-| AI Search | https://azure.microsoft.com/pricing/details/search/ |
+| AI Search(Foundry IQ・Serverless 含む) | https://azure.microsoft.com/pricing/details/search/ |
+| Voice Live / Speech | https://azure.microsoft.com/pricing/details/speech/ |
+| Content Understanding | https://azure.microsoft.com/pricing/details/content-understanding/ |
 | Application Insights / Log Analytics | https://azure.microsoft.com/pricing/details/monitor/ |
 | APIM | https://azure.microsoft.com/pricing/details/api-management/ |
 | Azure Firewall / Private Link / App Gateway | pricing/details 配下の各ページ |
 | Claude(パートナーモデル) | Azure Marketplace の該当オファー(**CCU 課金・クレジット/CSP 制約あり** → [features 02](../features/02-models.md)) |
 
-注意: **日本円建てはレート改定タイミングで USD 建てとズレる**。EA/CSP の割引率は営業経由でしか分からないため、提案書は「リスト価格ベース」と明記する。
+注意: **デプロイタイプで単価が変わる**。2026-09-01 から Data Zone / Regional は Global 比のプレミアムが改定・新設(EU Data Zone 引き上げ、**APAC Data Zone 新設**、**米国外 Regional〈日本を含む〉引き上げ**)。Standard(従量)は 2026-09-01 以降に投入されたモデルのみ新プレミアム対象、**PTU は既存契約も対象**。率は出典で確認し、国内処理要件のある見積もりでは Global 単価を流用しない(出典: [Microsoft Foundry Model Deployment Pricing Update](https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/microsoft-foundry-model-deployment-pricing-update/4535385)、2026-07-09 公開 / 07-27 更新)。**日本円建てはレート改定タイミングで USD 建てとズレる**。EA/CSP の割引率は営業経由でしか分からないため、提案書は「リスト価格ベース」と明記する。
 
 ## Step 4: PTU(プロビジョン)判断
 
@@ -93,8 +99,9 @@
 | レバー | 効果 | 制約 |
 | --- | --- | --- |
 | Batch デプロイ | **50% 引き** | 24h ターゲット・SLA なし。夜間バッチ処理向け |
+| Flex 処理(`service_tier: flex`) | 対応モデルでの低優先度処理 | **2026-09-25 に flex→standard の自動フォールバックが廃止**され、非対応モデルへの flex 要求は HTTP 400。対応モデル・単価は要確認(learn に Flex 専用ページが見当たらず、告知は [priority-processing](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/priority-processing) 2026-09-22 版)。逆方向の Priority processing(低遅延・割増)も同ページ |
 | プロンプトキャッシュ | キャッシュ入力単価が大幅減 | システムプロンプト・ツール定義を先頭に固定する設計が前提 |
-| Model router | 簡単な質問を安いモデルへ自動ルーティング | 非 OpenAI モデルのルーティングはプレビュー |
+| Model router | 簡単な質問を安いモデルへ自動ルーティング | Global / Data Zone Standard のみ。Claude をプールに入れるなら事前デプロイ必須(Claude 分は Marketplace 課金)。ルーティングプールはバージョン更新で入れ替わるため評価をやり直す(model-router 2026-09-01 版。非 OpenAI ルーティングのプレビュー表記は現行ページにない) |
 | セマンティックキャッシュ(APIM) | FAQ 的トラフィックの LLM 呼び出し自体を削減 | RediSearch 有効の Azure Managed Redis が別途必要(作成時のみ有効化可) |
 | モデルの右サイズ化(mini/nano 系) | 単価 1/10 以下も | 評価で品質確認してから。リーダーボードはプレビュー |
 | 出力トークン制御 | 出力単価は入力の数倍 | 構造化出力・max tokens・簡潔指示 |
@@ -129,7 +136,7 @@
 ### 例 C: 文書処理バッチ(月 10 万ページ)
 
 ```
-前処理 = 10万ページ × Content Understanding 単価(ページ課金・モデル倍率あり)
+前処理 = 10万ページ × CU コンテンツ抽出単価(1,000 ページ単位)+ コンテキスト処理トークン + フィールド抽出の BYO モデル従量
 推論   = 抽出後の要約・分類を Batch デプロイ(50%引き)で
 固定費 = ほぼなし(Storage + 監視のみ)
 ```
