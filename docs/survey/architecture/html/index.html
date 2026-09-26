@@ -90,7 +90,7 @@ footer {
 <body><nav class="site"><a href="index.html" class="current">Microsoft Foundry アーキテクチャ…</a><a href="01-official-baselines.html">01. 公式ベストプラクティス</a><a href="02-building-blocks.html">02. 構成要素カタログ</a><a href="03-decision-guide.html">03. 選定ガイド</a><a href="04-usecase-chat-rag.html">04. ユースケース編 A</a><a href="05-usecase-agent-automation.html">05. ユースケース編 B</a><a href="06-usecase-customer-facing.html">06. ユースケース編 C</a><a href="07-usecase-regulated-edge.html">07. ユースケース編 D</a><a href="08-usecase-specialized.html">08. ユースケース編 E</a><a href="09-operations.html">09. 運用アーキテクチャ</a><a href="10-migration-antipatterns.html">10. 移行アーキテクチャとアンチパターン集</a><a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a><a class="xset" href="../../casebook/html/index.html">→ casebook</a></nav>
 <main>
 <h1 id="microsoft-foundry-アーキテクチャ設計ガイド">Microsoft Foundry アーキテクチャ設計ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント一覧">ドキュメント一覧</a></li><li><a href="#アーキテクチャ一覧">アーキテクチャ一覧</a></li><li><a href="#選定早見表-3-分で当たりをつける">選定早見表 — 3 分で当たりをつける</a></li><li><a href="#全案件に共通する前提-foundry-が-やってくれないこと">全案件に共通する前提 — Foundry が「やってくれないこと」</a></li><li><a href="#重要な期限-アーキテクチャ判断に直結するもの">重要な期限(アーキテクチャ判断に直結するもの)</a></li><li><a href="#本ドキュメント群について">本ドキュメント群について</a></li></ul></div>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)/ <strong>版:</strong> 初版<br>SI の技術選定・アーキテクチャ選定基準の構築を目的に、<strong>Microsoft Foundry を使ったシステムアーキテクチャ</strong>を、インフラを含めた広い視点で整理したもの。機能単位の GA / プレビュー調査は <a href="../../features/html/index.html">features/</a> を参照。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)/ 2026-09-26(四半期定期更新: AAC・WAF・CAF・Copilot Studio と期限・ステータスを一次情報で再突合)/ <strong>版:</strong> 初版<br>SI の技術選定・アーキテクチャ選定基準の構築を目的に、<strong>Microsoft Foundry を使ったシステムアーキテクチャ</strong>を、インフラを含めた広い視点で整理したもの。機能単位の GA / プレビュー調査は <a href="../../features/html/index.html">features/</a> を参照。</p></blockquote>
 <h2 id="ドキュメント一覧">ドキュメント一覧</h2>
 <div class="tablewrap"><table><thead><tr>
 <th>#</th>
@@ -344,10 +344,10 @@ footer {
 <tr>
 <td><strong>D2</strong></td>
 <td>ソブリン(Azure Government)</td>
-<td><strong>Prompt agent 対応</strong>(Workflows はプレビュー、Hosted agents 非対応)</td>
+<td><strong>Prompt agent 対応</strong>(Workflows はプレビュー、Hosted agents・音声 prompt agent 非対応)</td>
 <td>File Search / AI Search</td>
 <td>Gov クラウド</td>
-<td><strong>hosted agent・MCP・A2A が非対応</strong>( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government">azure-government</a> 2026-07-13 更新)</td>
+<td><strong>hosted agent・A2A・Web search / Bing・SharePoint 等が非対応</strong>。MCP サーバーは 2026-08-19 版で <strong>Yes</strong> に変化(2026-07-13 版では非対応)( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government">azure-government</a> 2026-08-19 版、2026-09-26 確認)</td>
 <td><a href="07-usecase-regulated-edge.html#8-ソブリンクラウド-azure-government">07</a></td>
 </tr>
 <tr>
@@ -677,7 +677,7 @@ footer {
 </tr>
 <tr>
 <td>9</td>
-<td><strong>閉域での Traces / Memory / File Search / Work IQ / Logic Apps / Browser Automation / Computer Use / Image Generation</strong>(Memory は what-is-memory ページ、Work IQ は work-iq ページに VNet 非対応と明記)</td>
+<td><strong>閉域での Traces / Memory / File Search / Work IQ / Logic Apps / Browser Automation / Computer Use / Image Generation</strong>(Memory は what-is-memory ページ、Work IQ は work-iq ページに VNet 非対応と明記。<strong>File Search は公式ツール表 2026-08-14 版で「PE 経由で Supported」に変化したが、外部案件実測では閉域作成アカウントで vector store 作成が 500</strong> → <a href="03-decision-guide.html#g2-ネットワークゲート">03 章 G2</a>)</td>
 <td>自前実装または機能除外(<a href="07-usecase-regulated-edge.html#3-閉域で使えない機能の一覧-設計の出発点">07</a>)</td>
 </tr>
 <tr>
@@ -692,7 +692,7 @@ footer {
 </tr>
 <tr>
 <td>12</td>
-<td><strong>capabilityHost の更新。</strong>作成後は変更不可で、変更は <strong>capabilityHost 自体の削除・再作成</strong>で行う(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。委任サブネット等アウトバウンド網の変更は Foundry リソースの再デプロイが必要( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts">capability-hosts</a> )</td>
+<td><strong>capabilityHost の更新。</strong>作成後は変更不可で、変更は <strong>capabilityHost 自体の削除・再作成</strong>で行う(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。委任サブネット等アウトバウンド網の変更は Foundry リソースの再デプロイが必要( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts">capability-hosts</a> )。<strong>2026-09-26 追記:</strong> 後継として <strong>capability settings(プレビュー、API <code>2026-07-15-preview</code>。段階展開中で現時点は UK South / Canada Central のみ)</strong> が登場し capability hosts ページは「参照用に保持」扱いになった。<strong>capability settings は既存プロジェクトに追加・変更できず、変更は「プロジェクトの削除・再作成」</strong>(生成される接続も使用中は変更・削除不可)( <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-capability-settings" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-capability-settings">configure-capability-settings</a> 2026-09-22 版)</td>
 <td>IaC を「作り直し前提」で設計</td>
 </tr>
 </tbody></table></div>
@@ -705,19 +705,19 @@ footer {
 <th>設計への効き方</th>
 </tr></thead><tbody>
 <tr>
-<td><strong>2026-07-31</strong></td>
+<td><del>2026-07-31</del> <strong>期限到来</strong></td>
 <td>コンテナプロトコル 1.0.0</td>
-<td><strong>猶予期間後、この日からブロック開始と公表済み</strong>( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user">isolate-sessions-per-user</a> )</td>
+<td><strong>非サポート・ブロック中</strong>(2026-09-26 確認。出典は現在「Protocol 1.0.0 is no longer supported, and the platform blocks requests」とだけ書き、ブロック開始日の記載は消えた)。2.0.0 へ更新( <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user" title="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user">isolate-sessions-per-user</a> )</td>
 </tr>
 <tr>
-<td><strong>2026-08-20</strong></td>
+<td><del>2026-08-20</del> <strong>期限到来</strong></td>
 <td>Hosted agents 初期プレビュー基盤</td>
-<td><strong>自動移行されない。</strong>パッケージ・API・エンドポイント・ID・ライフサイクル管理がまとめて変わる(<a href="10-migration-antipatterns.html#2-0-最優先-hosted-agent-初期プレビュー基盤-新基盤-期限-2026-08-20">10 章 2.0</a>)</td>
+<td><strong>サポート終了済み</strong>(未移行なら新基盤へ再デプロイ)。<strong>自動移行されない。</strong>パッケージ・API・エンドポイント・ID・ライフサイクル管理がまとめて変わる(<a href="10-migration-antipatterns.html#2-0-最優先-hosted-agent-初期プレビュー基盤-新基盤-期限-2026-08-20">10 章 2.0</a>)</td>
 </tr>
 <tr>
-<td><strong>2026-08-26</strong></td>
+<td><del>2026-08-26</del> <strong>廃止済</strong></td>
 <td>Assistants API / <code>azure-ai-inference</code> SDK</td>
-<td>Threads / Runs 前提のアプリは全面改修。<strong>状態データは移行されない</strong></td>
+<td><span class="badge retired">廃止済み</span>(features 側で出典の過去形表記を確認)。Threads / Runs 前提のアプリは全面改修。<strong>状態データは移行されない</strong></td>
 </tr>
 <tr>
 <td><strong>2026-10-14</strong></td>
@@ -742,7 +742,7 @@ footer {
 <tr>
 <td><strong>2028-09-25</strong></td>
 <td>Azure AI Vision Image Analysis</td>
-<td>「2026-09-25 までに移行計画を」と記載</td>
+<td>「2026-09-25 までに移行計画を」と記載(<strong>計画策定の目安日は到来済み</strong>)</td>
 </tr>
 <tr>
 <td>2027-10 前後</td>
@@ -779,6 +779,7 @@ footer {
 <li><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a> — GA / プレビューの一次情報</li>
 <li><a href="https://github.com/Azure/AI-Landing-Zones"><code>Azure/AI-Landing-Zones</code></a> — Preview から GA への昇格を追う</li>
 <li><a href="https://github.com/microsoft-foundry/foundry-samples"><code>microsoft-foundry/foundry-samples</code></a> — Bicep テンプレートの追加</li>
+<li><a href="https://github.com/MicrosoftDocs/architecture-center/commits/main/docs/ai-ml/architecture"><code>MicrosoftDocs/architecture-center</code> のコミット履歴</a> — <strong>AAC は <code>ms.date</code> を据え置いたまま本文を加筆する</strong>(2026-07〜09 の Baseline 加筆がその例)。ms.date だけで「変化なし」と判定しない</li>
 </ol>
 <p><strong>HTML の再生成:</strong> リポジトリルートで <code>python3 docs/survey/tools/md2html.py</code>(引数なしで features と architecture の両方をビルド)。</p>
 <h3 id="更新履歴">更新履歴</h3>
@@ -817,6 +818,10 @@ footer {
 <tr>
 <td>2026-07-30</td>
 <td><strong>全 11 ファイルのファクトチェック(公式ドキュメント突合)と訂正を適用。</strong>確定日の反映: On Your Data 廃止 <strong>2026-10-14</strong>、コンテナプロトコル 1.0.0 ブロック開始 <strong>2026-07-31</strong>。古い記述の更新: <strong>Foundry Local GA(2026-04-09 公式ブログ)</strong>、Toolbox GA、FLUX.2 GA、tsuzumi-7b Legacy(2026-08-31 リタイア)、Groundedness detection 6→4 リージョン、SharePoint「ライセンス必須」→ pay-as-you-go 併記、全遮断 PE のポータル対応。誤りの訂正: capabilityHost 変更は「プロジェクト再作成」でなく「capability host の削除・再作成」、MACAE の org(microsoft)、FT デプロイ上限 10/リソース、Cosmos DB コンテナー 3〜5 個(追加関係)、agent identity とマネージド ID の混同、ガードレール既定閾値「画像 Low」→ テキスト・画像とも Medium、File Search「固定」→ 既定値。ミスリードの限定: 「国内処理必須 → Data Zone(APAC)」を Regional Standard(Japan East)に分離、A2A「ポータル未対応」を incoming 有効化に限定、Front Door パターンのベースライン記事への帰属を Front Door 一般ドキュメントに修正、Cost Analysis「約5時間遅延」を時間非特定に。公式間不整合の両論併記: AI Red Teaming リージョン(2 vs 5)、Traces VNet(非対応 vs プレビュー)、azd コマンド列挙</td>
+</tr>
+<tr>
+<td>2026-09-26</td>
+<td><strong>四半期定期更新(README・01・02・03・11)。</strong>AAC 3 本は ms.date 2026-06-17 のままだが本文加筆を GitHub 履歴で確認し反映(Baseline: private MCP サブネット <code>snet-mcpServers</code>・hosted agent の egress / per-user 分離の適用条件・モデル×ツール選定の注意・ID 分離〈Assignment restrictions プレビュー〉、ALZ 版: spoke 要求 <code>/22</code>→<code>/21</code>)。<strong>ステータス更新:</strong> Routines GA(2026-09-24)、A2A ツール v1.0 GA、Copilot Studio の A2A 接続 GA(2026-04、11 章の「いずれもプレビュー」は誤り)、Toolbox 内 Tool search GA、Model router のリージョン拡大(GS 32 / DZ 23)、継続的評価=プレビュー、Azure Government で MCP が Yes。<strong>期限:</strong> プロトコル 1.0.0・初期プレビュー基盤・Assistants API を到来済みに。<strong>訂正:</strong> Japan West の Class A 非対応(解消)、Regional Standard の「単一リージョン処理」(正: geography 内)、RBAC「SDK 非対応と明記」(正: 記載なし)、Azure Functions ツール GA(正: 公式間不整合)、prompt agent の <code>FixedRatio</code> による % 分割(正: No traffic splitting)。<strong>追記:</strong> capability settings(プレビュー)による BYO 構成の変更=プロジェクト再作成、hosted agent ガードレールのフェイルオープン、2026-09-01 の Data Zone / Regional 価格プレミアム、Dynamic AI agents at scale の URL 特定、Copilot Studio の GitHub Copilot harness と Foundry 接続の前提(Activity エンドポイント)</td>
 </tr>
 </tbody></table></div>
 </main>

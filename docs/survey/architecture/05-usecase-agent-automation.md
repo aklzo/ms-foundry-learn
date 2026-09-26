@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(B2 に外部案件の現場知見を追記)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(B2 に外部案件の現場知見を追記) / 2026-09-26(定期更新: Routines GA・A2A v1.0 GA・hosted agent の idle timeout 可変化と長時間実行〈プレビュー〉・新エージェントオブジェクトモデルの identity・Connected Agents 非対応の明記・connector namespace 型 MCP を反映)
 
 「検索して答える」で終わらず、**エージェントが業務システムに対して実際にアクションを起こす**類型。RAG チャットとの決定的な違いは、**誤動作が実世界に不可逆な影響を与えうる**ことで、そのため承認・監査・冪等性・権限の設計が主題になる。
 
@@ -60,10 +60,11 @@ WAF が明示している通り:
 | MCP ツール(GA) | キー / Entra(agent MI・project MI)/ **OAuth ID パススルー(OBO)** | 長時間実行はプレビュー |
 | Azure Functions(GA) | キュー経由 | **standard セットアップのみ(basic 不可)** |
 | Logic Apps コネクタ → MCP 変換(プレビュー) | コネクタ依存 | 1 コネクタ / ツール、**OAuth 2.0 コネクタ非対応**、マネージドコネクタのみ |
+| connector namespace の managed MCP サーバー(プレビュー、2026-09-26 追記) | **OAuth2 のみ**(エンドユーザーごとに初回同意) | Foundry Tools Catalog の 1,000+ コネクタを Foundry 管理の MCP サーバーとして公開。ポータルは検証済みコネクタのみ、コード(REST/SDK/azd)は制限なし。OAuth2 以外は上の Logic Apps 経路([connectors](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/connectors) 2026-08-19 版) |
 
 **公式の推奨:** 「迷ったら Microsoft Entra 認証から始めよ。」
 
-**Toolbox を挟む理由:** ツール束を一度定義して単一の MCP 互換エンドポイントとして公開でき、バージョニング(バージョン別エンドポイントでテストしてから default に昇格)と集中認証(資格情報の注入・トークン更新・ポリシー適用)を担う。**任意の MCP 対応ランタイム(MAF / LangGraph / GitHub Copilot SDK / 自作)から同じツール群を消費できる**ため、後でオーケストレーションを載せ替えてもツール層が生き残る。
+**Toolbox を挟む理由(Toolbox は GA — GA 一覧表・devblogs 7・8 月合併号 2026-09-09 で明言。ただし Azure ブログ 2026-09-24 は「**hosted agent 向けは GA、prompt agent への拡大はパブリックプレビュー**」と書き分けており、prompt agent から使う B1 構成は GA 一覧表とブログで表記が割れる〈要確認〉。tool search は同ブログで GA〈toolbox-overview 2026-07-28 版はまだ preview 表記〉、skills はプレビュー):** ツール束を一度定義して単一の MCP 互換エンドポイントとして公開でき、バージョニング(バージョン別エンドポイントでテストしてから default に昇格)と集中認証(資格情報の注入・トークン更新・ポリシー適用)を担う。**任意の MCP 対応ランタイム(MAF / LangGraph / GitHub Copilot SDK / 自作)から同じツール群を消費できる**ため、後でオーケストレーションを載せ替えてもツール層が生き残る。
 
 > **⚠ Hosted agent はツールを直付けできない。**「Adding tools directly to hosted agent's definition is not supported. We recommend using toolboxes in Foundry」と明記され、`create_version` の `tools` パラメータは削除済み。**コードファーストに進む予定があるなら、最初から Toolbox 前提で組む。**
 
@@ -80,8 +81,10 @@ WAF が明示している通り:
 
 **Entra Agent ID**(公式ページに GA / プレビューのステータス表記なし)により、プロジェクトで最初のエージェントを作った時点で既定の blueprint と agent identity がプロビジョニングされる。
 
+> **⚠ 2026-09-26 更新 — identity モデルは「旧 Agent Application モデル」と「新エージェントオブジェクトモデル」で違う。**agent-identity(2026-08-21 版)は下記 1. の「共有 ID → publish で専用 ID」挙動を**旧 Agent Application モデルの説明**と明記し、[migrate-agent-applications](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-agent-applications) は「**新モデルで作成したエージェントは作成時点で固有の blueprint と agent identity を持つ**(`agent.identity` が null ならレガシー)」とする。レガシーエージェントをその場で固有 ID に上げる手段は無く、同じ定義で作り直す。publish-copilot(2026-09-23 版)では旧形式エージェントは Teams / M365 への新規 publish 不可。**新規案件は新モデル前提で、RBAC はエージェント作成直後の固有 identity に割り当てる。**
+
 **⚠ 実装で詰まりやすい 3 点:**
-1. **未公開エージェントはプロジェクト内で共通の ID を共有し、publish すると専用の agent identity が作られる。**このとき `agentIdentityId` が変わるため、**RBAC を再割り当てする必要がある**(共有 ID のロールは引き継がれない)。
+1. **(旧 Agent Application モデル / レガシーエージェントの場合)未公開エージェントはプロジェクト内で共通の ID を共有し、publish すると専用の agent identity が作られる。**このとき `agentIdentityId` が変わるため、**RBAC を再割り当てする必要がある**(共有 ID のロールは引き継がれない)。
 2. **RBAC を割り当てるべきプリンシパルは agent identity であって、プロジェクトのマネージド ID ではない。**プロジェクト MI はインフラ操作用(ACR pull 等)であってランタイム ID ではない。
 3. **audience は「MCP サーバーの URL」ではなく「ダウンストリームサービスのリソース識別子」**(例: Storage なら `https://storage.azure.com`)。**間違えると RBAC が正しくても認証に失敗する。**
 
@@ -134,19 +137,21 @@ WAF が明示している通り:
 
 **API は 2 種類ある。**Graph API(`WorkflowBuilder`)が「完全サポート」で、Functional API(`@workflow`、Python)は **experimental** と明記されている。**本番は Graph API。**
 
-**ホスティングの選択:** Hosted agent(Foundry が実行)か Container Apps / AKS(自分で実行)か。**Hosted agent はセッション単位のスケールで、アイドル 15 分で計算をデプロビジョンし状態は保持、30 日無活動で恒久削除。**課金はアクティブな全セッションの CPU + メモリ合計で、サイズは 0.5vCPU/1GiB・1vCPU/2GiB・2vCPU/4GiB の 3 種のみ。**オーバーサイジングは同時実行数の倍率でコストに効く。**
+**ホスティングの選択:** Hosted agent(Foundry が実行 — GA、2026-07-09 発表)か Container Apps / AKS(自分で実行)か。**Hosted agent はセッション単位のスケールで、アイドル timeout(既定 15 分、エージェントバージョンごとに 2〜60 分で構成可)で計算をデプロビジョンし状態は保持、30 日無活動で恒久削除。**課金はアクティブな全セッションの CPU + メモリ合計で、サイズは 0.5vCPU/1GiB・1vCPU/2GiB・2vCPU/4GiB の 3 種のみ。**オーバーサイジングは同時実行数の倍率でコストに効く。**
 
 **⚠ Hosted agent を選んだ場合の可観測性の利点:** App Insights の接続文字列が自動注入され、プロトコルライブラリが **OpenTelemetry トレースを既定で出力する。**逆に自前オーケストレーション(App Service / ACA)にすると、**エージェントのメトリクスは Foundry のダッシュボードに出ない**(Foundry はマネージドエージェントしか見えない)。
 
 > **⚠ 現場知見(外部案件 2026-08-30 実測。索引は [casebook 02 §A](../casebook/02-pitfalls-index.md#a-hosted-agent)):** ①**project → App Insights 接続がないと接続文字列は注入されず、コンテナ内部ログがどこにも届かない**(P-H02)②agent identity の既定アクセスに Conversations の読み取りは含まれず、Azure AI User + Cognitive Services OpenAI User の明示付与が要る(P-H04)③エージェント面エンドポイントは `?api-version=v1` 必須(P-H03)④閉域では VNet 注入(作成時のみ)なしだと「デプロイ成功・実行失敗」(P-H01)⑤cold start は +数秒(12.4 秒 vs warm 8.1 秒)で keep-warm 不要(P-H13)⑥公式ホスティングライブラリはプレリリース版のみで、プレビュー不使用ポリシーの顧客では Responses protocol を自前実装する選択肢がある(P-H20)。「決定的シェル(自前)+ LLM コア(hosted agent)」のハイブリッドに至った判断の変遷は [casebook 03](../casebook/03-case-helpdesk.md)。
 
-**承認の「待ち時間」が問題になる場合:** Hosted agent のアイドル 15 分は**計算のデプロビジョンであって状態の消失ではない**が、承認が数日にわたるなら B3(Durable)に上げる。
+**承認の「待ち時間」が問題になる場合:** Hosted agent のアイドル timeout は**計算のデプロビジョンであって状態の消失ではない**が、承認が数日にわたるなら B3(Durable)に上げる。
+
+> **2026-09-26 追記 — hosted agent 内で完結する長時間 HITL(プレビュー):** 2026-08 に「long-running hosted agents」の一連の how-to が追加された。AgentServer SDK の `@multi_turn_task` チェーンは承認待ちで suspend し、同じ `task_id` の次の入力で再開する(**数分〜数日の待機・コンテナ再起動をまたいで継続**)。クラッシュ時はリースベースで同じ入力から handler を再入(決定的リプレイではないので、**副作用の重複防止と進捗チェックポイントはアプリ責務**)。フレームワークのチェックポイント保存先として **durable state store(プレビュー、hosted agent 専用の KV ストア、ユーザー単位パーティション可)** も用意された。**いずれもプレビュー**なので、プレビュー不可の案件では引き続き B3(Durable)を選ぶ(出典: [add-human-in-the-loop](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/add-human-in-the-loop) 2026-08-05 版 / [long-running-agent-resilience](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/long-running-agent-resilience) / [agent-state-store](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-state-store) 2026-08-24 版)。
 
 ### 監査ログの設計
 
 Foundry の Tracing だけに依存しない。理由は 3 つ。
 
-1. **Tracing はネットワーク分離に未対応**(プライベート App Insights での VNet サポートが未提供)。
+1. **Tracing のネットワーク分離はプレビュー**(GA 一覧表で「Tracing VNet = Preview」。configure-private-link 2026-08-14 版の制限表からは Traces 行が消えたが、GA 一覧表の rollout pitfalls は「Traces は完全にはネットワーク分離に対応していない」と記載。2026-09-26 確認)。
 2. ポータルで見られるのは**直近 90 日**。それ以上は App Insights / Log Analytics の保持設定に従う。
 3. トレースは**プロンプト・出力・ツール引数を含みうる**ため、そのまま法定監査ログにすると機微情報の扱いが問題になる(公式も「テレメトリ到達前にマスクせよ」と推奨している)。
 
@@ -175,7 +180,7 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 
 **ステートフルなエージェントスレッド:** thread ID ごとに会話履歴全体を耐久ストレージに保持し、プロセス再起動や別インスタンスでの再開でも保持される。
 
-**注意:** 分散ホストで**信頼性のあるストリーミング**を行うには Redis 等の reliable stream broker が別途必要。また、**Hosted agent の中から DTS を使う公式パターンは本調査では確認できなかった** — Durable を使うなら Functions か自前コンピュートにホストする構成が確実。
+**注意:** 分散ホストで**信頼性のあるストリーミング**を行うには Redis 等の reliable stream broker が別途必要。また、**Hosted agent の中から DTS を使う公式パターンは本調査では確認できなかった**(2026-09-26 再確認でも同じ) — Durable を使うなら Functions か自前コンピュートにホストする構成が確実。hosted agent 内で完結させたい場合の公式手段は、B2 に追記した **long-running hosted agents(resilient execution・stream replay・state store。いずれもプレビュー)** で、DTS とは別系統。
 
 **代替案としての Logic Apps / Durable Functions 単体:** 「AI は業務フローの 1 ステップにすぎず、承認・長時間待機・既存業務フロー統合が主役」ならこちら(→ B5)。
 
@@ -201,7 +206,7 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 
 **廃止前にやるべきこと:** **YAML ビューに切り替えて定義をエクスポートする**(デザイナーが消える前に)。
 
-**Connected agents について:** 新 Foundry 側のドキュメントが見当たらず classic 側にのみ存在するため、**新ポータルでの GA / プレビュー位置づけが不明瞭。**移行ガイドは A2A ツールを推奨している。**新規設計では A2A か MAF に寄せるのが安全。**
+**Connected agents について:** 移行ガイド([migrate](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate) 2026-09-11 版)の機能対応表で **classic = Public Preview / 新 Agent Service = 非対応(推奨: A2A ツール)** と明記された(2026-09-26 更新。旧記載は「位置づけが不明瞭」)。**新規設計では A2A か MAF に寄せる。**
 
 ### 5 つのオーケストレーションパターン
 
@@ -223,15 +228,18 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 
 **1 プロジェクト内の全 prompt agent はプロジェクト共通の agent identity(サービスプリンシパル)を共有する**(プロジェクトのマネージド ID とは別物)。アクセスパターンが異なるならプロジェクトを分ける。**hosted agent は個別の Entra Agent ID を持つ**ので、プロジェクトを分けずに per-agent の権限と監査ができる — **マルチエージェントで権限を分けたいなら hosted agent が有利。**
 
-### A2A を使う場合の制約(プレビュー)
+> ※2026-09-26 注記: 上の「prompt agent は共有 ID」はベースライン記事(2026-06-17 版)と旧 Agent Application モデルの記述。**新エージェントオブジェクトモデルでは prompt agent も作成時に固有の agent identity を持つ**(B1 の注記参照)。自案件のエージェントが新旧どちらか(`agent.identity` が null か)を確認してから権限設計する。
 
+### A2A を使う場合の制約(**v1.0 は GA / v0.3 はプレビュー** — 2026-09-26 更新)
+
+- **ステータス:** incoming A2A と A2A ツールは **A2A プロトコル v1.0 が GA**(ツール型は GA の `a2a`。旧 `a2a_preview` 型と v0.3 はプレビューで本番非推奨。Azure ブログ [2026-09-24](https://azure.microsoft.com/en-us/blog/ship-agents-faster-with-expanded-model-choice-voice-agents-and-continuous-optimization/) でも A2A の GA を発表)。出典: [enable-agent-to-agent-endpoint](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/enable-agent-to-agent-endpoint) / [tools/agent-to-agent](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/agent-to-agent)(いずれも 2026-09-11 版)。azd の toolbox フローは現状 `a2a_preview`(v0.3)しか作らないので、GA 型は SDK / REST で作る。
 - **Prompt agent は既定で A2A エンドポイントを公開できる。Hosted agent は Responses プロトコルを実装している場合のみ。**
-- プロトコル v1.0 と v0.3 の両方をサポートし、**バージョン未指定時は既定で v0.3。**
+- プロトコル v1.0 と v0.3 の両方をサポートし、**バージョン未指定時は既定で v0.3(プレビュー)。本番は `A2A-Version: 1.0` ヘッダー / `?a2a-version=1.0` / v1.0 agent card(`…/agentCard/v1.0`)で明示的に v1.0 を選ぶ。**両方指定して値が食い違うと 400。A2A のタスク・コンテキストは最終書き込みから 60 日保持。
 - **incoming A2A エンドポイントの有効化はポータル未対応**(REST または Python SDK のみ)。A2A ツール接続の作成はポータルで可能。agent card 設定は Python SDK `agents.update_details()` / JS `patchAgentObject()` でも可(2026-08-26 版で REST 限定が解消。バージョン未指定時の既定は v0.3)。
 - **Entra ID 認証必須**(キー認証・匿名アクセス不可)。呼び出し側に `Foundry Agent Consumer` ロール以上が必要。
-- **制限が厳しい:** テキストモダリティのみ(ファイル等不可)、**ストリーミング(SSE)非対応**、v1.0 は JSONRPC のみ、gRPC 非対応、本番非推奨。
+- **制限が厳しい:** テキストモダリティのみ(ファイル等不可)、**ストリーミング(SSE)非対応**、v1.0 は JSONRPC のみ(HTTP+JSON が要るなら v0.3)、gRPC 非対応。**本番非推奨なのは v0.3**(v1.0 は GA)。
 
-**→ A2A は「組織をまたぐ疎結合な委譲」には筋が良いが、リッチな入出力やストリーミングが要るなら現時点では使えない。**
+**→ A2A は「組織をまたぐ疎結合な委譲」には筋が良い(v1.0 GA で本番採用も可能になった)が、リッチな入出力やストリーミングが要るなら現時点では使えない。**
 
 ### エージェント数が多い場合
 
@@ -251,7 +259,7 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 
 **Foundry Agent Service をモデルソースとして選択でき**(マネージド ID 認証)、逆に **Foundry エージェントから Logic Apps のワークフローをアクションとして呼ぶ**こともできる。**1,400+ のコネクタ**をそのまま使えるのが最大の価値。
 
-**Copilot Studio との棲み分け:** CAF は SaaS(Copilot Studio)vs PaaS(Foundry)として整理し、ハイブリッド運用も推奨している。ただし **Copilot Studio から Foundry エージェントへの接続はプレビュー**(新 Foundry ポータルで作成されたエージェントのみ接続可)。逆方向の **Foundry エージェントを M365 Copilot / Teams に publish するフローは GA。**
+**Copilot Studio との棲み分け:** CAF は SaaS(Copilot Studio)vs PaaS(Foundry)として整理し、ハイブリッド運用も推奨している。ただし **Copilot Studio から Foundry エージェントへの接続はプレビュー**(新 Foundry ポータルで作成されたエージェントのみ接続可。2026-09-26 追記: **Foundry エージェント側で Activity プロトコルエンドポイントを REST / Python SDK で有効化しておく前提**が追加 — 新規エージェントは既定で Responses と A2A のみ公開で、未有効だと実行時 400。ポータルの Endpoints 表示には有効化後も出ない。[add-agent-foundry-agent](https://learn.microsoft.com/en-us/microsoft-copilot-studio/add-agent-foundry-agent) 2026-08-26 版)。逆方向の **Foundry エージェントを M365 Copilot / Teams に publish するフローは GA。**
 
 **採用モデルとしての位置づけ(CAF):** 「Low-code SaaS 開発は業務部門に開発を開放できるが、**重いカスタマイズは限界に達しマネージドプラットフォームへの移行が必要になる**」。**最初から複雑さが見えているなら Logic Apps / Copilot Studio で始めない。**
 
@@ -261,13 +269,13 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 
 | 軸 | Prompt agent | Hosted agent + MAF | MAF + Durable | Logic Apps | 自アプリ + Responses API |
 |---|---|---|---|---|---|
-| ステータス | GA | GA(**旧基盤は 2026-08-20 EOS**) | GA(拡張単体の GA 表記は未確認) | GA | GA |
+| ステータス | GA | GA(**旧プレビュー基盤は 2026-08-20 でサポート終了済み**) | GA(拡張単体の GA 表記は未確認) | GA | GA |
 | 状態管理 | サービスが完全管理 | Responses ならプラットフォーム管理 | **thread ID 単位で耐久ストレージに全履歴** | ワークフロー実行状態を保持 | **完全に自前** |
 | HITL | ツール承認中心 | `RequestInfoExecutor` を自コードで | **HITL が組込みパターン** | 承認アクション多数 | 自前実装 |
-| 長時間実行 | `background: true` + ポーリング | セッション最大 30 日。**アイドル 15 分で計算停止**(状態は保持) | **チェックポイント・障害回復・分散スケール** | Logic Apps ランタイム | 自前 |
-| テスト容易性 | Playground 中心 | **azd の Foundry 拡張でローカル実行・呼び出し可**(コマンド列挙は公式ページ間で揺れあり: init/run/invoke/doctor と init/show/monitor/invoke/files) | **DTS エミュレータでローカル完結** | デザイナー / テストキャンバス | 容易 |
+| 長時間実行 | `background: true` + ポーリング | セッション最大 30 日。**アイドル timeout(既定 15 分、2〜60 分)で計算停止**(状態は保持)。resilient execution / HITL 再開はプレビュー | **チェックポイント・障害回復・分散スケール** | Logic Apps ランタイム | 自前 |
+| テスト容易性 | Playground 中心 | **azd の Foundry 拡張でローカル実行・呼び出し可**(コマンド列挙は公式ページ間で揺れあり: init/run/invoke/doctor と init/show/monitor/invoke/files。devblogs 7・8 月号〈2026-09-09〉の基準は azd 1.32.0+・`azure.ai.agents` 1.0.0-beta.13 で init/run/invoke/deploy/delete) | **DTS エミュレータでローカル完結** | デザイナー / テストキャンバス | 容易 |
 | 可搬性 | Foundry 固有 | **コードは可搬**(ホスティングブリッジのみ Foundry 固有) | Durable Task 依存 | Logic Apps 固有 | 最も高い |
-| ネットワーク分離 | private networking 対応 | **BYO VNet。ただしエンドポイント自体は公開のまま** | 自前 VNet で完全制御 | ISE / VNet 統合 | 自アプリ側で制御 |
+| ネットワーク分離 | private networking 対応 | **BYO VNet(アカウント作成時のみ注入可)。ただしエンドポイント自体は公開のまま**。宛先 FQDN 単位の egress controls はプレビュー(2026-09-26 追記) | 自前 VNet で完全制御 | ISE / VNet 統合 | 自アプリ側で制御 |
 | 可観測性 | Foundry Tracing(GA) | App Insights 自動注入 + OTel 既定出力 | **DTS ダッシュボード** | Logic Apps 実行履歴 | **Foundry には出ない** |
 | コスト構造 | 推論 + ツールのみ(**コンピュート課金なし**) | + セッション単位の CPU/メモリ | Functions / DTS 課金 | Logic Apps 実行課金 | インフラ課金 |
 
@@ -284,7 +292,7 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 | LLM 生成コード / 顧客提供コードを実行 | **ACA Dynamic Sessions**(Hyper-V 分離)。Foundry 内で完結させるなら Custom Code Interpreter(プレビュー) |
 | マルチクラウド / ロックイン回避が要件 | **自アプリ + Responses API**、または MAF を Container Apps で自己ホスト |
 
-**現時点で最も安全な既定解**は「**Foundry には GA 済みの土台(ホスティング・ID・ツールゲートウェイ・可観測性)だけを任せ、オーケストレーションは GA 済みの MAF コードで持つ**」構成。Foundry 側でプレビューのまま動いている機能(Workflows / Memory / Routines)に業務ロジックの中核を預けずに済む。
+**現時点で最も安全な既定解**は「**Foundry には GA 済みの土台(ホスティング・ID・ツールゲートウェイ・可観測性)だけを任せ、オーケストレーションは GA 済みの MAF コードで持つ**」構成。Foundry 側でプレビューのまま動いている機能(Workflows / Memory)に業務ロジックの中核を預けずに済む(2026-09-26 更新: Routines は 2026-09-24 に GA。ただし reminder ツールはプレビュー)。
 
 ```
  [クライアント / Teams / M365 Copilot]
@@ -305,11 +313,19 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 
 | 選択肢 | 適する場面 | 制約 |
 |---|---|---|
-| **Routines**(プレビュー) | 「いつこのエージェントを走らせるか」だけを解きたい | **1 トリガー + 1 アクション。**トリガーは timer / recurring(cron 風)/ event(プレビューでは `github_issue` のみ)。**マルチエージェント非対応。**リージョン限定 |
+| **Routines**(**GA**、2026-09-24) | 「いつこのエージェントを走らせるか」だけを解きたい | **1 トリガー + 1 アクション。**トリガーは timer / recurring(cron 風、**最小間隔 5 分**)/ event(`github_issue` と **Teams チャネルの新規メッセージ**)。対象は prompt / hosted agent(**workflow agent 非対応、マルチエージェント非対応**)。**UK West / Switzerland West / Japan West / UAE North / Norway East では利用不可**(Japan East は可)。VNet 保護プロジェクト対応、**CMK 非対応**。下流呼び出しは 1 試行 30 秒タイムアウト・既定 3 回配信 |
 | Logic Apps | 既存の業務トリガーと統合したい | Logic Apps の課金と運用 |
 | Azure Functions / Durable | 独自のトリガーロジックが要る | 自前実装 |
 
-Routines の位置づけは公式に明快で、「**Routines がなければ、チームはスケジューラ・Logic Apps・Azure Functions・キュー・カスタムストレージ・認証コードを組み合わせてこのトリガー層を自作することになる**」。実行履歴(入力・出力・ステータス・トレースへのリンク)を Foundry プロジェクト内に保持する点も運用上の利点。**ただしプレビューなので、本番の必須経路に置くなら代替を用意しておく。**
+Routines の位置づけは公式に明快で、「**Routines がなければ、チームはスケジューラ・Logic Apps・Azure Functions・キュー・カスタムストレージ・認証コードを組み合わせてこのトリガー層を自作することになる**」。実行履歴(入力・出力・ステータス・トレースへのリンク)を Foundry プロジェクト内に保持する点も運用上の利点。
+
+**2026-09-26 更新(GA 化):** Routines は 2026-09-24 に GA([devblogs](https://devblogs.microsoft.com/foundry/from-chatbots-to-automated-assistants-routines-in-microsoft-foundry-are-now-generally-available/)、GA 一覧表「Build > Routines = GA」)。GA 版の設計上の論点は次の 3 つ:
+
+- **呼び出し ID:** 既定は agent identity。委任アクセスが要るツール(OAuth 等)を使うなら作成時に **creator identity**(= ルーティンを作成したプリンシパル本人。任意のエンドユーザーは指定不可)を明示選択。**作成後は切替不可**(削除・再作成)。
+- **CMK 必須のワークロードでは使えない。**その場合は Logic Apps / Functions で代替する。
+- **SDK の成熟度差:** Python は `azure-ai-projects>=2.4.0` だがサンプルは `project.beta.routines`、.NET は 2.1.0-beta.4 系のプレビューパッケージが必要(stable 2.0.1 に routines なし)、azd は `azure.ai.routines` 拡張。REST は `api-version=v1`(旧 `Routines=V1Preview` ヘッダーの記載は現行 use-routines に無い)。
+
+出典: [concepts/routines](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/routines)(2026-08-27 版、2026-09-09 更新)/ [use-routines](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-routines)(2026-08-27 版、2026-09-24 更新)。hosted agent が自分で再起動を予約する **reminder ツール(`reminder_preview`)はプレビューのまま**。
 
 ---
 
@@ -320,11 +336,11 @@ Routines の位置づけは公式に明快で、「**Routines がなければ、
 - [ ] 高リスク操作に**人間の承認ステップ**を入れたか
 - [ ] app-only と OBO のどちらで基幹を叩くか決め、監査要件と整合するか確認したか
 - [ ] **agent identity に RBAC を割り当てたか**(プロジェクト MI ではなく)
-- [ ] publish 時に `agentIdentityId` が変わることを運用手順に入れたか
+- [ ] publish 時に `agentIdentityId` が変わることを運用手順に入れたか(旧 Agent Application モデル / レガシーエージェントの場合。新モデルは作成時から固有 identity)
 - [ ] **ガードレールの Tool call / Tool response 介入点**を設定したか(未設定だとその経路が未スキャン)
 - [ ] Hosted agent の**セッションサイズをオーバーサイジングしていないか**(同時実行数の倍率でコストに効く)
-- [ ] **2026-08-20 の hosted agent 旧基盤 EOS** への対応が済んでいるか([10 章](./10-migration-antipatterns.md))
+- [ ] **2026-08-20 の hosted agent 旧基盤 EOS**(期限到来済み)への対応が済んでいるか — 旧基盤のデプロイは自動移行されないので、未移行なら新モデルで再デプロイ([10 章](./10-migration-antipatterns.md))
 - [ ] **2026-12-01 の Workflows 廃止**を前提にした構成か
 - [ ] 業務監査ログを Foundry の Tracing とは別にアプリ側で持ったか
 - [ ] マルチエージェントなら**すべてのエージェント**にセキュリティトリミングを実装したか
-- [ ] AI Red Teaming で **Prohibited actions / Sensitive data leakage / Task adherence** を検証したか(**Function tool 呼び出し・Connected Agent・Computer Use は Red Teaming 非対応**な点も認識)
+- [ ] AI Red Teaming で **Prohibited actions / Sensitive data leakage / Task adherence** を検証したか(**Function tool 呼び出し・Connected Agent・Computer Use・Browser Automation・workflow agent は Red Teaming 非対応**な点も認識。prompt / hosted〈container〉agent は対応 — ai-red-teaming-agent 2026-08-19 版)

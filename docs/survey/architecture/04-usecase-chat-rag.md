@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(定期更新: File Search 閉域表記・S3 HD の Foundry IQ 対応・agentic retrieval 最新 preview API〈2026-08-01-preview〉・Foundry IQ のリクエスト単位ヘッダー・Work IQ の VNet/経路を一次情報で再確認)
 
 Foundry 案件で最も数が多い類型。**同じ「社内文書に答えるチャット」でも、権限要件・文書の性質・鮮度要件によって取るべきアーキテクチャが 5 通りに分かれる。**本ページはその 5 パターンを、選択理由と地雷つきで整理する。
 
@@ -24,7 +24,7 @@ Foundry 案件で最も数が多い類型。**同じ「社内文書に答える�
 
 ただし後述のとおり **Foundry IQ / agentic retrieval は「ポータル経由だと全部プレビュー」**という重大な条件が付く。SLA 条項を書く案件ではここが分岐点になる。
 
-> **⚠ 前提が 1 つ変わった:** **Azure OpenAI On Your Data は非推奨で、2026-10-14 にリタイアされる。**公式は「On Your Data のワークロードは **Foundry Agent Service + Foundry IQ** へ移行することを推奨する」と明記している。**「オーケストレーターを挟まず、モデルが直接データストアを読む」構成は新規設計で選べない。**本ページの 5 パターンはいずれもオーケストレーター型(エージェントまたは自アプリ)を前提にしている。
+> **⚠ 前提が 1 つ変わった:** **Azure OpenAI On Your Data は非推奨で、2026-10-14 にリタイアされる**(use-your-data 2026-09-10 版で日付不変を確認、2026-09-26)。公式は「On Your Data のワークロードは **Foundry Agent Service + Foundry IQ** へ移行することを推奨する」と明記している。**「オーケストレーターを挟まず、モデルが直接データストアを読む」構成は新規設計で選べない。**本ページの 5 パターンはいずれもオーケストレーター型(エージェントまたは自アプリ)を前提にしている。
 
 ---
 
@@ -60,14 +60,14 @@ Foundry 案件で最も数が多い類型。**同じ「社内文書に答える�
 
 > text-embedding-3-large の完全次元は 3,072 なので、**256 次元は 1/12 に圧縮された構成。**Matryoshka 表現で精度低下は限定的とはいえ、**専門用語が密な日本語技術文書では検索精度に効く可能性がある。**この次元数を変更する API パラメータは公式ドキュメントに存在しない。
 
-**上限:** 10,000 ファイル / ストア、**エージェントに 1 ストアのみ**、最大ファイルサイズ 512MB、全アップロード合計 300GB、バッチ追加は 1 回 500 ファイルまで(要確認: 公式 limits ページに記載なし)。
+**上限:** 10,000 ファイル / ストア、**エージェントに 1 ストアのみ**(会話にも 1 ストアのみ)、最大ファイルサイズ 512MB、全アップロード合計 300GB、バッチ追加は 1 回 500 ファイルまで(2026-09-26 確認: limits ページには無いが [vector-stores 概念ページ](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/vector-stores) 2026-08-21 版に「batches of up to 500 files」と明記)。1 ファイルあたりのトークン上限は file-search ページ(2026-08-05 版)が 5,000,000、limits ページ(2026-09-07 版)が 2,000,000 と食い違う(要確認)。
 
 **このパターンが成立しない条件(先に潰す):**
 
 - **xlsx / csv が非対応。**対応形式はテキスト系と `.docx` `.pdf` `.pptx` などで、**表形式データが主体なら A2 以上に上げる。**
 - **ドキュメントレベルのアクセス制御が原理的に不可能。**vector store に ACL の概念がない。「部署によって見える文書が違う」が要件に入った瞬間に A2 へ。
 - **メタデータによるフィルタができない。**年度別・機密区分別の絞り込みが要るなら A2/A3。
-- **閉域(ネットワーク分離)では File Search が使えない。**公式の互換性表で「Not supported / 開発中」と明記されている。閉域案件では A2/A3 に倒す。
+- **閉域(ネットワーク分離)では File Search を提案しない。**公式のツール互換性表は configure-private-link 2026-08-14 版で「✅ Supported / Through private endpoint」に変わった(2026-07 時点は「Not supported / 開発中」)が、**外部案件の実測(2026-08-30)では閉域作成アカウントで vector store 作成自体が 500 で継続失敗**しており、Blob Storage のファイルを File Search で使う構成は virtual-networks ページで引き続き「非対応」。閉域案件では A2/A3 に倒す(→ [casebook P-N13](../casebook/02-pitfalls-index.md#d-ネットワークと閉域)、[07 章](./07-usecase-regulated-edge.md))。
 - **Italy North と Brazil South では利用不可。**
 - **会話ヘルパーで作った vector store は「最終利用から 7 日」で自動失効する。**失効すると当該会話の応答生成が**失敗する。**長期に同じ会話を続ける想定なら、エージェント側の vector store を使う。
 
@@ -174,7 +174,7 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 
 ### 閉域構成での隠れた地雷
 
-**インデクサの `executionEnvironment` を `"Private"` にしないと、マルチテナント実行にフォールバックして Private Endpoint を越えられず、「サイレントに失敗して空インデックス」になる。**「Import data」ウィザードが生成するインデクサが該当する。ただし **indexed knowledge source とその自動生成インデクサは private execution environment に非対応**なので、Foundry IQ の自動生成パイプラインと閉域は相性が悪い。
+**インデクサの `executionEnvironment` を `"Private"` にしないと、マルチテナント実行にフォールバックして Private Endpoint を越えられず、「サイレントに失敗して空インデックス」になる。**「Import data」ウィザードが生成するインデクサが該当する。**indexed knowledge source の自動生成インデクサ**は、configure-private-link(2026-08-14 版)では「private execution environment 非対応」のままだが、AI Search 側は **2026-08-01-preview で blob / indexed SharePoint / indexed Azure SQL(migrate ページは indexed OneLake も列挙)の private ingestion を追加**した(プレビュー。knowledge source 概要 2026-09-01 版は「indexed OneLake は private sync 非対応」と記載し食い違い)。**GA API(2026-04-01)では閉域取り込みは使えない**ので、Foundry IQ の自動生成パイプラインと閉域の相性が悪い点は変わらない(2026-09-26 確認: [knowledge source 概要](https://learn.microsoft.com/en-us/azure/search/agentic-knowledge-source-overview) / [migrate](https://learn.microsoft.com/en-us/azure/search/agentic-retrieval-how-to-migrate))。
 
 インデクサの最大実行時間はパブリック実行環境で **2 時間**、プライベート実行環境で **24 時間**。
 
@@ -207,7 +207,7 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 
 ## A4. M365 / SharePoint が主データソース
 
-構成は A1 と同型(ナレッジが SharePoint ツールに変わるだけ)— [A1 の統合図](./images/a1-prompt-rag-variants.png)を参照。**成立条件が厳しいので、まずここを確認する:**
+構成は A1 と同型(ナレッジが SharePoint ツールに変わるだけ)— [A1 の統合図](./images/a1-prompt-rag-variants.png)を参照。**SharePoint ツール自体がプレビュー**(`sharepoint_grounding_preview`。sharepoint ページ 2026-08-21 版)。**成立条件が厳しいので、まずここを確認する:**
 
 - **Microsoft 365 Copilot ライセンスが開発者・エンドユーザー双方に必須**(または Copilot Retrieval API の従量課金を有効化)。**ライセンス費が案件コストに乗る。**
 - **ユーザー ID 認証(OBO)のみ。アプリ専用(サービスプリンシパル)認証は不可。**→ **バッチ処理・非対話型エージェントでは使えない。**
@@ -215,10 +215,11 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 - **1 エージェントに SharePoint ツールは 1 つのみ。**
 - **Teams に発行したエージェントでは動作しない。**
 - 画像・チャートなど非テキストコンテンツからの取得は非対応。
+- 下層の Retrieval API の上限: **1 回最大 25 件・ユーザーあたり 200 リクエスト/時・クエリ 1,500 文字**。セマンティック / ハイブリッド取得の対象形式は .doc / .docx / .pptx / .pdf / .aspx / .one(2026-09-26 追記: sharepoint ページ 2026-08-21 版)。
 
 実体は **Microsoft 365 Copilot Retrieval API** で、SharePoint 側のセマンティックインデックスと権限をそのまま使う。**「ユーザーが見える文書しか答えない」を自前で作らなくてよい**のが最大の価値。
 
-**Work IQ(M365 のメール・会議・チャットまで含める)を足す場合の追加条件:** 接続は A2A プロトコル。**Entra Global Administrator によるテナント同意が必須。BYO Entra アプリ(OBO)のみ。VNet 統合非対応。**データレジデンシは Foundry プロジェクトのリージョンではなく **M365 テナントの構成に従う。**
+**Work IQ(M365 のメール・会議・チャットまで含める)を足す場合の追加条件(プレビュー):** 接続は Work IQ Chat が A2A、Copilot Chat / Teams / Word / Outlook / SharePoint / OneDrive 等の個別オプションは MCP(toolbox 経由推奨)。**Entra Global Administrator によるテナント同意(一度だけ、PIM で一時昇格推奨)が必須。BYO Entra アプリ(OBO)のみ。**A2A を直接呼ぶ場合、`A2A-Version` 未指定だと v0.3 になる。**VNet:** BYO VNet アウトバウンド構成ではプロジェクト専用のデータプロキシ経由でルーティングされる(Work IQ 自体は公開 HTTPS エンドポイント `workiq.svc.cloud.microsoft`)。**データレジデンシ:** M365 側の取得はテナントの権限・レジデンシ構成に従うが、**エンドツーエンドの処理は Copilot の課金構成と Foundry プロジェクトのリージョンにも依存する**と明記された(2026-09-26 更新: [work-iq](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/work-iq) 2026-09-04 版。旧記載「VNet 統合非対応」「M365 テナントの構成に従う」から変化)。
 
 **代替案:** ライセンスや OBO 制約が飲めない場合は、**SharePoint の文書を AI Search に取り込み(indexed SharePoint / SharePoint ACL 方式)、A2 の構成にする。**ただし SharePoint ACL 方式はプレビューで、**親スコープ(サイト / ライブラリ / フォルダ)からの継承変更は明示的な `/resync` または `/resetdocs` が必要**という運用上の罠がある。
 
@@ -238,6 +239,8 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 
 > 一部の agentic retrieval 機能は **2026-04-01 REST API のプログラム的アクセスで一般提供されている。Azure portal と Microsoft Foundry portal は、すべての agentic retrieval 機能に対してプレビュー限定のアクセスを提供し続ける。**
 
+(2026-09-26 確認: agentic-retrieval-overview 2026-09-16 版は「**2026-04-01 は GA ナレッジソース種別 + minimal・extractive 取得の本番ワークロード向け**。LLM クエリ計画・回答合成・minimal 以外の reasoning effort・マルチターン messages は **2026-08-01-preview**」と整理。最新プレビュー API は 2026-05-01-preview から **2026-08-01-preview** に進んだ)
+
 つまり **ポータルで作った Foundry IQ 構成は全部プレビュー扱い。**GA 構成が要るなら REST/SDK で `2026-04-01` を直接叩く必要がある。**SLA 条項を書く案件ではここが最大の分岐点。**
 
 **ナレッジソース別の GA / プレビュー:**
@@ -246,7 +249,7 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 |---|---|
 | `searchIndex`(既存インデックスをラップ)、`azureBlob`、`indexedOneLake`、`web`(Bing 経由) | `azureSql`、`file`、`indexedSharePoint`、`remoteSharePoint`、`fabricDataAgent`、`fabricOntology`、`mcpServer`、`workIQ` |
 
-**GA 版で失われる機能:** `ingestionPermissionOptions` が非サポート = **ドキュメントレベル権限を使うなら 2026-05-01-preview が必須。「GA 構成 かつ ACL 連携」は現時点で両立しない。**さらに GA では `outputMode` / `answerInstructions` / `retrievalInstructions` / retrieval reasoning effort も削除される。
+**GA 版で失われる機能:** `ingestionPermissionOptions` が非サポート = **ドキュメントレベル権限を使うならプレビュー API(2026-05-01-preview 以降。2026-09-26 時点の最新は 2026-08-01-preview)が必須。「GA 構成 かつ ACL 連携」は現時点で両立しない。**さらに GA では `outputMode` / `answerInstructions` / `retrievalInstructions` / retrieval reasoning effort も削除される。
 
 ### Retrieval reasoning effort(コスト・レイテンシ・精度のダイヤル)
 
@@ -255,6 +258,9 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 | `minimal` | なし | 不可 | `outputMode` は `extractiveData` 必須。web ソース不可 |
 | `low`(既定) | 1 パス計画 | 5,000 | セマンティック再ランク最大 50 件 |
 | `medium` | 計画 + 反復検索 | 10,000 | L3 分類器で 1 回だけ再試行。**対応リージョン限定(Japan East は対応)** |
+| `auto`(2026-09-26 追記) | 軽量パスで足りなければ medium まで拡張 | — | **2026-08-01-preview 必須**(旧 API は 400)、knowledge base にモデル必須、agentic retrieval 対応全リージョンで利用可 |
+
+`low` / `medium` / `auto` はいずれもプレビュー(GA の 2026-04-01 は minimal 相当の抽出型のみ)。`minimal` は 1 knowledge base あたり knowledge source 最大 10(reasoning effort ページ 2026-08-17 版)。
 
 **クエリ時の既定値:** `maxRuntimeInSeconds` = 90 秒、`maxOutputSizeInTokens` = 5,000 トークン。**⚠ この上限を超えた文書はサイレントに応答から落ちる**(activity ログに警告が出るだけ)。
 
@@ -262,17 +268,19 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 
 ### ティアと課金
 
-- **S3 HD はナレッジソース / ナレッジベースの上限が 0** = **agentic retrieval が使えない。**マルチテナント設計で S3 HD を選ぶと Foundry IQ が使えなくなる。
+- **S3 HD の扱いが変わった(2026-09-26 更新):** search-limits 2026-08-04 版では S3 HD のナレッジソース / ナレッジベース上限が 0(= agentic retrieval 不可)だったが、**2026-09-16 版で「1 パーティションあたり 1,000 またはサービスあたり 3,000」に変更**(1 KB あたり knowledge source 10)。ただし「**一部の古い S3 HD サービスは非対応**」の脚注があり、S3 HD のインデクサ対応はプレビュー(マルチテナント実行のみ・shared private link 非対応・約 1GB 規模向け)。**既存 S3 HD で Foundry IQ を使う前に、そのサービスで knowledge base を作成できるか実機確認する**([search-limits-quotas-capacity](https://learn.microsoft.com/en-us/azure/search/search-limits-quotas-capacity))。
 - 課金は AI Search 側の**トークン課金**(`knowledgeRetrieval` プロパティ。**無料枠は月 5,000 万トークン**)+ Azure OpenAI 側のクエリ計画・回答合成トークン。公式試算例(2,000 リクエスト・3 サブクエリ・50 チャンク再ランク)で **約 $4.32**。
 - **⚠ 移行時の落とし穴:** 2026-04-01 以降 `semanticSearch` と `knowledgeRetrieval` は分離され、**旧 `semanticSearch=standard` の同意は `knowledgeRetrieval` に引き継がれない。**
 
 ### エージェントからの接続と、その制約
 
-Foundry Agent Service との接続は **MCP 経由**(`knowledge_base_retrieve` ツールのみ)。MCP エンドポイントは `2026-05-01-preview` 必須(2026-09-07 追記: Foundry 側の接続手順 foundry-iq-connect〈2026-08-07 版〉は `2026-08-01-preview` を使用。詳細は [features 04](../features/04-tools-knowledge.md))。
+Foundry Agent Service との接続は **MCP 経由**(`knowledge_base_retrieve` ツールのみ)。MCP エンドポイントはプレビュー API 必須 — foundry-iq-connect(2026-08-07 版、2026-09-17 更新)は Python / REST サンプルで `2026-08-01-preview`、C# サンプルのみ `2026-05-01-preview` のまま(2026-09-26 確認。詳細は [features 04](../features/04-tools-knowledge.md))。
 
-> このプレビューでは、**Foundry Agent Service は MCP ツールのリクエスト単位ヘッダーをサポートしない。**エージェント定義で設定したヘッダーは全呼び出しに適用され、ユーザーやリクエストごとに変えられない。
+**ユーザー単位の権限透過(2026-09-26 更新):** 以前の版は「Foundry Agent Service は MCP ツールのリクエスト単位ヘッダーをサポートしない → remote SharePoint でユーザー単位の権限透過をやるなら Azure OpenAI Responses API を使え」と明記していたが、**foundry-iq-connect の現行版(2026-09-17 更新)ではこの制約の記述が消え、代わりに「エージェント定義で structured input を宣言し、MCP ツールのヘッダーに `{{placeholder}}` として参照すれば呼び出しごとに値を差し替えられる」手順が載った**(project connection に紐づく MCP ツールで有効)。ユーザーのトークンを `x-ms-query-source-authorization` ヘッダーで渡すと、ACL 付き indexed ソース・remote SharePoint がユーザー単位でフィルタされる。
 
-→ 公式は「**remote SharePoint ナレッジソースでユーザー単位の権限透過をやるなら、Foundry Agent Service ではなく Azure OpenAI Responses API を使え**」と明記している。**エンドユーザー ID ベースの認可が要件なら、この一文が構成を決める。**
+> **⚠ 静かに漏れる罠:** 「**トークンを渡さないと、権限が有効なソースもフィルタされずに結果を返す**」と明記されている。ヘッダー未設定は「失敗」ではなく「全件返却」になるので、**呼び出し側でトークン必須チェックを入れる。**
+>
+> 出典: [foundry-iq-connect「Enforce permissions with per-request headers」](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/foundry-iq-connect)(query-time ACL 自体はプレビュー)
 
 **逆に価値になる点:** knowledge base は **MCP 経由なので Foundry Agent Service 以外(Microsoft Agent Framework / LangGraph / 自作アプリ)からも同じナレッジを使える。**「ナレッジ層だけ Foundry IQ、オーケストレーションは自前」という組合せが成立する。
 
@@ -287,7 +295,7 @@ Foundry Agent Service との接続は **MCP 経由**(`knowledge_base_retrieve` �
 | メタデータフィルタ | **不可** | 可 | 可(1 インデックス) | `filterAddOn`(searchIndex のみ) |
 | ドキュメントレベル ACL | **不可** | 可(GA: セキュリティフィルタ) | 可 | **GA 版では不可**(preview 必須) |
 | 複数ソース横断 | 不可 | 自前実装 | 1 インデックスのみ | **可** |
-| 閉域(VNet) | **不可** | 可 | 可(Standard セットアップ) | MCP 経由で可 |
+| 閉域(VNet) | **非推奨**(公式表は PE 経由で対応、実測は不成立) | 可 | 可(Standard セットアップ) | MCP 経由で可 |
 | エージェント評価器 | **完全サポート** | — | **限定サポート** | **完全サポート(MCP)** |
 | ポータブル性 | Foundry 固有 | 高い | 高い | AI Search 依存 |
 | レイテンシ | 速い | 速い | 速い | **単一ショット検索より有意に遅い**(クエリ分解・並列実行・再ランクを行うため。公式は秒数非公表) |
@@ -295,7 +303,7 @@ Foundry Agent Service との接続は **MCP 経由**(`knowledge_base_retrieve` �
 **「マネージドを選んで失うもの」を一覧化しておくと提案時に説明しやすい:**
 
 - **File Search で失うもの:** チャンク制御、埋め込みモデル・次元選択、メタデータ / フィルタ、**ドキュメントレベルアクセス制御(原理的に不可)**、ハイブリッド重み・RRF・リランク閾値、コーパスの分離、コスト可視性、ポータビリティ、表形式データ対応。
-- **Foundry IQ で失うもの:** **GA 構成の自由度**(ポータル経由は全プレビュー)、インデックススキーマ制御(自動生成物は名前変更不可・直接編集非推奨)、**ユーザー単位認可**(Agent Service 経由の場合)、応答の完全性(`maxOutputSizeInTokens` 超過分がサイレントに落ちる)、既存 scoring profile。
+- **Foundry IQ で失うもの:** **GA 構成の自由度**(ポータル経由は全プレビュー)、インデックススキーマ制御(自動生成物は名前変更不可・直接編集非推奨)、**ユーザー単位認可の簡便さ**(Agent Service 経由は structured input でトークンを毎回注入する実装が要り、渡し忘れると未フィルタ。2026-09-26 更新)、応答の完全性(`maxOutputSizeInTokens` 超過分がサイレントに落ちる)、既存 scoring profile。
 - **自前で失うもの:** 引用の配管、クエリ計画・分解(公称 36% の品質差)、クエリ書き換え、ACL 同期実装、リトライ / スロットリング制御、リランキング。**ただし「自前 = 全部自前」ではない** — インデクサ + 統合ベクトル化を使えば取り込み運用の大半はマネージドのまま残る。
 
 ---
@@ -305,7 +313,7 @@ Foundry Agent Service との接続は **MCP 経由**(`knowledge_base_retrieve` �
 | 要件 | 推奨 | 根拠 |
 |---|---|---|
 | PoC を最速で / 数百ファイル / 権限制御不要 | **A1 File Search(Basic セットアップ)** | 設定ゼロ、引用自動 |
-| データレジデンシ / CMK / 閉域が必須 | **A2**(Standard セットアップ + 自前索引)。Web グラウンディングは排除 | File Search は閉域非対応、Web は DPA 対象外 |
+| データレジデンシ / CMK / 閉域が必須 | **A2**(Standard セットアップ + 自前索引)。Web グラウンディングは排除 | File Search は閉域で実測不成立(公式表記は対応に変更済み、P-N13)、Web は DPA 対象外 |
 | ユーザーごとに見える文書が違う | **A2 + セキュリティフィルタ(GA)** | GA 要件を満たす唯一の方式 |
 | チャンク戦略を業務文書構造に合わせたい | **A2** | File Search は 800/400 が既定(変更用パラメータは公式ドキュメントに記載がない) |
 | 表・帳票が主体 | **A2**(DI プリビルト or CU で前処理) | File Search は xlsx/csv 非対応 |

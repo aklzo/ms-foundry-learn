@@ -91,13 +91,13 @@ footer {
 <main>
 <h1 id="07-ユースケース編-d-規制業種・閉域・データ主権・エッジ">07. ユースケース編 D — 規制業種・閉域・データ主権・エッジ</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この章で最初に伝えるべき-3-つの事実">この章で最初に伝えるべき 3 つの事実</a></li><li><a href="#1-最上位の分岐-3-つの-egress-モデル">1. 最上位の分岐 — 3 つの egress モデル</a></li><li><a href="#2-byo-vnet-standard-agent-setup-の設計">2. BYO VNet(Standard agent setup)の設計</a></li><li><a href="#3-閉域で使えない機能の一覧-設計の出発点">3. 閉域で使えない機能の一覧(設計の出発点)</a></li><li><a href="#4-network-security-perimeter-という代替-private-link-とは排他">4. Network Security Perimeter という代替(Private Link とは排他)</a></li><li><a href="#5-データ主権とデータ所在">5. データ主権とデータ所在</a></li><li><a href="#6-コンプライアンス統制">6. コンプライアンス統制</a></li><li><a href="#7-評価とレッドチーミングのリージョン制約-日本案件で必ず効く">7. 評価とレッドチーミングのリージョン制約(日本案件で必ず効く)</a></li><li><a href="#8-ソブリンクラウド-azure-government">8. ソブリンクラウド(Azure Government)</a></li><li><a href="#9-エッジ・オンプレ・ハイブリッド">9. エッジ・オンプレ・ハイブリッド</a></li><li><a href="#規制案件で早期に潰すべき論点-チェックリスト">規制案件で早期に潰すべき論点(チェックリスト)</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(§3 のツール表を configure-private-link 2026-08-14 版と外部案件実測で改訂)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(§3 のツール表を configure-private-link 2026-08-14 版と外部案件実測で改訂)/ 2026-09-26(四半期更新: 委任サブネットのアドレス範囲・Class A・同時セッション既定値、hosted agent の egress controls〈preview〉、データ処理範囲の定義変更、Azure Policy 適格性 GA、CMK の対象範囲、評価リージョン、Azure Government、Foundry Local on Azure Local 2607/2609 を一次情報で更新)</p></blockquote>
 <p>金融・公共・医療など、<strong>ネットワーク分離とデータ所在を先に決めなければ設計が始まらない</strong>類型。このページの内容は <a href="03-decision-guide.html">03. 選定ガイド</a> の G1(データ・規制ゲート)と G2(ネットワークゲート)の詳細版にあたる。</p>
 <h2 id="この章で最初に伝えるべき-3-つの事実">この章で最初に伝えるべき 3 つの事実</h2>
 <ol>
 <li><strong>ネットワーク構成は Foundry アカウント作成時にしか決められない。</strong>後付け不可、委任サブネットの変更も不可。変更したければ<strong>再デプロイ</strong>。「PoC は basic で始めて本番で standard + VNet に切り替える」という計画は<strong>アカウント再作成を必須とする。</strong></li>
-<li><strong>閉域を選ぶと使えなくなる Foundry 機能がかなりある。</strong>特に <strong>File Search・Traces・Memory・Logic Apps・Browser Automation・Computer Use・Image Generation</strong> は非対応。設計は「使える機能の一覧」から始める。</li>
-<li><strong>「日本国内処理」を保証できるのは <code>Standard</code>(リージョナル)または <code>ProvisionedManaged</code> だけ。</strong><strong>APAC Data Zone は日本以外(豪・韓・星・印)も含むため、多くの日本の規制要件では不十分。</strong></li>
+<li><strong>閉域を選ぶと使えなくなる Foundry 機能がかなりある。</strong>特に <strong>Memory・Logic Apps・Browser Automation・Computer Use・Image Generation・Fabric Data Agent</strong> は非対応、<strong>Tracing VNet と Workflow Agents の outbound は未対応 / プレビュー</strong>。File Search は公式表記が「対応」に変わったが実測では不成立(§3)。設計は「使える機能の一覧」から始める。</li>
+<li><strong>「日本国内処理」を保証できるのは <code>Standard</code> または <code>ProvisionedManaged</code>(Regional Provisioned)だけ。</strong><strong>APAC Data Zone は日本以外(豪・韓・星・印)も含むため、多くの日本の規制要件では不十分。</strong>(2026-09-26 注: deployment-types 2026-08-06 版は両者の処理範囲を「顧客指定の Azure ジオグラフィ内」に書き換えた。日本ジオ内=東日本/西日本間の処理はありうる → §5)</li>
 </ol>
 <hr>
 <h2 id="1-最上位の分岐-3-つの-egress-モデル">1. 最上位の分岐 — 3 つの egress モデル</h2>
@@ -143,7 +143,7 @@ footer {
 <p><strong>Managed VNet を規制案件で選びにくい理由:</strong></p>
 <ul>
 <li><strong>Azure Portal UI での作成が未対応</strong>(Bicep / Terraform / <code>az rest</code> のみ)。</li>
-<li><strong>自前 Azure Firewall を持ち込めない。</strong><code>AllowOnlyApprovedOutbound</code> + FQDN ルールで<strong>マネージド Firewall が自動作成され課金される</strong>(既定 SKU = Standard、<strong>デプロイ後に SKU 変更不可</strong>)。</li>
+<li><strong>自前 Azure Firewall を持ち込めない。</strong><code>AllowOnlyApprovedOutbound</code> + FQDN ルールで<strong>マネージド Firewall が自動作成され課金される</strong>(既定 SKU = Standard。高度な機能が不要なら Basic も選択可。<strong>デプロイ後に SKU 変更不可</strong>。<strong>マネージド Firewall は Foundry アカウントごとに 1 つ作られ、複数アカウントで共有できない</strong>。FQDN ルールはポート 80 / 443 のみ — managed-virtual-network 2026-08-18 版、2026-09-26 確認)。</li>
 <li><strong>outbound トラフィックのログ機能が未対応</strong>と比較表に明記。</li>
 <li>マネージド Private Endpoint は<strong>顧客サブスクリプションに NIC として現れない</strong>(可視性なし)。</li>
 <li>モードは一方向。<code>AllowInternetOutbound</code> → <code>Disabled</code> 不可、<code>AllowOnlyApprovedOutbound</code> → <code>AllowInternetOutbound</code> 不可。<strong>有効化後の無効化も不可。BYO VNet からの移行パスもない。</strong></li>
@@ -168,31 +168,32 @@ footer {
 </tr>
 <tr>
 <td>推奨サイズ</td>
-<td><strong><code>/24</code></strong>(hosted agent がある本番)</td>
+<td><strong><code>/24</code></strong>(hosted agent がある本番)。deep dive は「本番で <code>/27</code> を使うな」、networking-options は「prompt agent 中心なら <code>/27</code> でも本番可」と書き分けが揺れる</td>
 </tr>
 <tr>
-<td>50 同時セッションに必要</td>
-<td><strong><code>/26</code> 以上</strong>(<code>/27</code> は約 17 セッションが上限)</td>
+<td>サブネットと同時セッション</td>
+<td>既定は <strong>usable IP : セッション = 1:1</strong>。<code>/27</code> ≈ 20、<code>/26</code> ≈ 50、<code>/25</code> ≈ 100、<code>/24</code> ≈ 250、<code>/22</code> ≈ 1,000 セッション(ピークは usable IP の 80% 未満で計画)。<strong>サポート申請で最大 1:10 まで引き上げ可</strong>。prompt agent はバージョンごとに IP を消費せず、プロジェクトあたり最大約 10 IP の固定プール</td>
 </tr>
 <tr>
 <td>共有可否</td>
-<td><strong>Foundry リソースごとに専用サブネット必須</strong>(VNet は共有可)</td>
+<td><strong>Foundry リソースごとに専用サブネット必須</strong>(VNet は共有可)。アカウント内の全プロジェクトが同じサブネットを共有</td>
 </tr>
 <tr>
 <td>アドレス範囲</td>
-<td><strong>RFC1918 のみ。</strong>パブリック IP レンジ・CGNAT・<code>44.x.x.x</code> は不可</td>
+<td><strong>RFC1918(<code>10/8</code>・<code>172.16/12</code>・<code>192.168/16</code>)。</strong>パブリック IP レンジ(<code>44.x.x.x</code> 等)は不可。<strong>CGNAT(RFC 6598 <code>100.64.0.0/10</code>、<code>100.100.0.0/17</code> 等を除く)は公式間で揺れ</strong>: virtual-networks(2026-08-27 更新)・networking-options(2026-09-09 更新)は「使用可」、agents-networking-deep-dive(2026-09-07 版)は「非対応・ルーティング障害」 → <strong>RFC1918 に留めるのが安全</strong></td>
 </tr>
 <tr>
 <td>Class A(<code>10.x</code>)</td>
-<td><strong>特定リージョンのみサポート</strong></td>
+<td><strong>Agent Service の全提供リージョンで対応</strong>(virtual-networks 2026-08-27 更新版。limits-quotas-regions の「Private VNet」列も全リージョン Yes)</td>
 </tr>
 <tr>
 <td>リージョン</td>
-<td><strong>Foundry リソースと VNet は同一リージョン必須</strong></td>
+<td><strong>Foundry リソースと VNet は同一リージョン必須</strong>(Cosmos DB / AI Search / Storage は別リージョン可。越境コストに注意)</td>
 </tr>
 </tbody></table></div>
-<blockquote><p><strong>⚠ 日本リージョンの非対称:</strong> <strong>Japan East は Class A(10.x)対応、Japan West は非対応。</strong>国内 DR で West を使う場合、委任サブネットは 172.16-31.x または 192.168.x を割り当てる必要がある。</p></blockquote>
-<p><strong>ピアリング先 VNet も含めて、予約レンジ(<code>169.254.0.0/16</code>、<code>172.30.0.0/16</code>、<code>172.31.0.0/16</code>、<code>100.64.0.0/11</code> 等)と重複してはならない。</strong>ピアリング VNet は一意で重複しない IP レンジが必須で、重複が避けられない場合は Managed VNet を使えと明記されている。</p>
+<blockquote><p><strong>日本リージョン(2026-09-26 更新):</strong> 前版の「Japan East は Class A 対応、Japan West は非対応」は解消。limits-quotas-regions(ms.date 2026-09-07、2026-09-25 更新)で <strong>Japan West も Private VNet = Yes</strong>、virtual-networks も「Agent Service の全リージョンで Class A 対応」に変わった。国内 DR で West を使う場合も <code>10.x</code> を割り当てられる。</p></blockquote>
+<p><strong>ピアリング先 VNet も含めて、予約レンジ(<code>169.254.0.0/16</code>、<code>172.30.0.0/16</code>、<code>172.31.0.0/16</code>、<code>192.0.2.0/24</code>、<code>0.0.0.0/8</code>、<code>127.0.0.0/8</code>、<code>100.100.0.0/17</code>、<code>100.100.192.0/19</code>、<code>100.100.224.0/19</code>)と重複してはならない</strong>(virtual-networks 2026-08-27 更新版。前版の「<code>100.64.0.0/11</code>」は現行の列挙に無い)。ピアリング VNet は一意で重複しない IP レンジが必須で、重複が避けられない場合は Managed VNet を使えと明記されている。</p>
+<p><strong>同時セッションのクォータ(サブネットとは別枠):</strong> hosted agent の同時セッションは<strong>サブスクリプション × リージョン単位</strong>(全アカウント・プロジェクト合算。idle / stopped は数えない)で、既定は <strong>Japan East を含む 7 リージョンが 2,000、その他(Japan West を含む)が 1,000</strong>(limits-quotas-regions 2026-09-07 版)。超過は <code>429 session_quota_exceeded</code>、リージョン容量不足は <code>429 regional_session_quota_exceeded</code>、サブネット IP 枯渇は <code>429 subnet_exhausted</code>。サブネットを大きくしてもこのクォータは増えない。</p>
 <h3 id="byo-必須リソースと-cosmos-db-の-ru-s">BYO 必須リソースと Cosmos DB の RU/s</h3>
 <p>Standard setup は <strong>Storage / AI Search / Cosmos DB の 3 つすべて</strong>を渡さないと capability host 作成が失敗する。</p>
 <p><strong>Cosmos DB はアカウント合計 3,000 RU/s 以上が必須</strong>(コンテナーは 3〜5 個 × 各 1,000 RU/s。基本 3 個+Responses API 利用エージェントの初回起動で 2 個が追加作成される。排他ではなく追加関係で、Responses 利用時はプロジェクトあたり実質 5,000 RU/s)。<strong>複数プロジェクトならプロジェクト数分を乗算する。</strong>RU/s 不足は capability host プロビジョニング失敗の直接原因。</p>
@@ -227,7 +228,7 @@ footer {
 <td><strong>New</strong></td>
 </tr>
 </tbody></table></div>
-<blockquote><p><strong>⚠ capability host は作成後に更新できない。</strong>構成変更には capability host の削除・再作成が必要(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。<strong>IaC の冪等更新が効かない最大のポイント。</strong></p></blockquote>
+<blockquote><p><strong>⚠ capability host は作成後に更新できない。</strong>構成変更には capability host の削除・再作成が必要(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。<strong>IaC の冪等更新が効かない最大のポイント。</strong><br><br><strong>2026-09-26 追記 — 後継の「capability settings」(プレビュー):</strong> アカウント / プロジェクトの <code>capabilitySettings</code>(<code>documentStore</code> = Cosmos DB、<code>vectorStore</code> = Cosmos DB または AI Search、<code>blobStore</code> = Storage)でデータストアを宣言する方式が追加され、capability-hosts ページは「参考として保持」扱いになった(configure-capability-settings ms.date 2026-09-22 / capability-hosts 2026-09-25 更新)。ただし <strong>API <code>2026-07-15-preview</code>、提供は UK South / Canada Central のみの段階展開</strong>で、日本リージョンの案件は当面 capability host(後方互換フロー)のまま。capability settings でも<strong>既存プロジェクトへの追加・更新は不可(プロジェクトの削除・再作成)</strong>、ネットワーク注入と同時に作成時設定が前提なので、「作り直し前提」の性質は変わらない。プロビジョニング ID が呼び出し元(CI/CD の SP 等。Storage Blob Data Contributor / Cosmos DB Operator が必要)に変わる点は権限設計に効く。</p></blockquote>
 <p><strong>なお BYO VNet でもデータリソースは「platform-managed」を選べる</strong>(テンプレート <code>11-private-network-basic-vnet</code>)。<strong>「閉域にしたいがデータストアの運用は持ちたくない」場合の選択肢</strong>として覚えておく。BYO データリソースが要るなら <code>15-private-network-standard-agent-setup</code>。</p>
 <h3 id="private-link-のサブリソースと-dns-ゾーン">Private Link のサブリソースと DNS ゾーン</h3>
 <div class="tablewrap"><table><thead><tr>
@@ -294,11 +295,19 @@ footer {
 <td><code>raw.githubusercontent.com</code>(ポータルでキュレート済みサンプルデータセットを選ぶ場合)</td>
 </tr>
 <tr>
+<td>Hosted agents → Agent 365</td>
+<td><strong><code>AzureFrontDoor.Frontend</code> サービスタグ(TCP 443)</strong>。hosted agent から A365 の可観測性 / トレースエンドポイントへ(configure-private-link 2026-08-14 版)</td>
+</tr>
+<tr>
+<td>hosted agent のソースコード(ZIP)デプロイ</td>
+<td><code>mcr.microsoft.com</code>、<code>*.login.microsoft.com</code>(deploy-hosted-agent-code、2026-09-21 更新)</td>
+</tr>
+<tr>
 <td>Managed VNet 追加分</td>
-<td><code>mcr.microsoft.com</code></td>
+<td><code>mcr.microsoft.com</code>(managed-virtual-network では Agents 行に含まれる)</td>
 </tr>
 </tbody></table></div>
-<p>加えて <strong>Azure Container Apps 側の Managed Identity 系 FQDN</strong> も許可が必要。</p>
+<p>加えて <strong>Azure Container Apps 側の Managed Identity 系 FQDN</strong> も許可が必要。評価については <code>AzureMachineLearning</code> タグの代わりに <code>*.dataproxy.{region}.api.azureml.ms</code> と <code>{region}.api.azureml.ms</code>(評価実行リージョン)を許可する方式も案内されている。</p>
 <blockquote><p><strong>⚠ TLS インスペクション禁止(最重要):</strong> 「Firewall で TLS インスペクションが行われ自己署名証明書が付加されないことを確認せよ」と明記され、Architecture Center 側でも「<strong>このトラフィックに Azure Firewall の TLS インスペクションを適用するな。検査時の証明書がエージェントの接続を壊す。</strong>」と明言されている。<br><br><strong>多くの日本の金融機関で標準になっている「出口 Firewall での SSL 可視化」ポリシーと正面衝突する。</strong>設計初期に例外承認を取る必要がある。</p></blockquote>
 <p><strong>サブネット別の統制</strong>は <a href="01-official-baselines.html#b-baseline-本番の出発点-waf-が-ai-ワークロードの推奨アーキテクチャ-と名指し">01 章の Baseline アーキテクチャ</a>の表を参照。公式の追加推奨として、<strong>強制トンネリングをサポートする全サブネットに適用する</strong>(egress を想定しないサブネットにも多層防御として)、<strong>Azure Firewall はリージョン内の全可用性ゾーンにデプロイする</strong>(egress の単一障害点であるため)、<strong>高い同時 outbound 接続数がある場合は複数パブリック IP を構成して SNAT ポート枯渇を回避する</strong>、が挙げられている。</p>
 <hr>
@@ -396,12 +405,12 @@ footer {
 <td><strong>VNet 非対応</strong></td>
 </tr>
 <tr>
-<td><strong>Work IQ</strong></td>
-<td><strong>VNet 統合非対応</strong></td>
+<td><strong>Work IQ</strong>(preview)</td>
+<td>前版の「VNet 統合非対応」は更新: BYO VNet outbound 構成では<strong>プロジェクトの single-tenant data proxy 経由</strong>でルーティングされ顧客のネットワーク制御が効くが、<strong>宛先は公開 HTTPS(<code>workiq.svc.cloud.microsoft</code>)のまま</strong>で、リクエストは Azure コンプライアンス境界の外で処理されうると明記(work-iq 2026-09-04 版、2026-09-26 確認)。Bing / SharePoint と同じ「動くがプライベートではない」扱い</td>
 </tr>
 <tr>
 <td>Evaluations の Synthetic Data Generation</td>
-<td><strong>非対応</strong>(自前データを持ち込んで評価する)</td>
+<td><strong>非対応</strong>(自前データを持ち込んで評価する)。※出典の evaluation-regions-limits-virtual-network は <code>concepts/</code> 配下へ移動し(2026-08-18 更新)、VNet 節が見当たらなくなった → <strong>現行の可否は要確認</strong></td>
 </tr>
 <tr>
 <td><strong>Workflow Agents</strong></td>
@@ -421,9 +430,46 @@ footer {
 </tr>
 <tr>
 <td><strong>hosted agents</strong></td>
-<td><span class="badge ga">GA</span>(2026-06〜07)。「network-isolated Foundry で動作」と記載されるが、<strong>PNA Disabled では VNet 注入(作成時のみ設定可)が実質必須</strong>(注入なしは実行だけ失敗)。private ACR は 2026-06-25 以降作成プロジェクトのみ。virtual-networks ページには azd プレビュー期の「エンドポイントは公開のまま」の記述が残存</td>
+<td><span class="badge ga">GA</span>(2026-07-09 GA 告知。devblogs 7・8 月号 2026-09-09 で再明言)。「network-isolated Foundry で動作」と記載されるが、<strong>PNA Disabled では VNet 注入(作成時のみ設定可)が実質必須</strong>(注入なしは実行だけ失敗)。private ACR は 2026-06-25 以降作成プロジェクトのみ(configure-private-link / virtual-networks とも 2026-09-26 時点で同文)。virtual-networks ページ(2026-08-27 更新)には azd 経路の「The agent endpoint stays public in this preview」が残存。<strong>アウトバウンド先の制御は network egress controls(preview)で追加可</strong> → 下記</td>
 </tr>
 </tbody></table></div>
+<h3 id="hosted-agent-の-network-egress-controls-プレビュー-2026-09-追加">hosted agent の network egress controls(プレビュー、2026-09 追加)</h3>
+<p>hosted agent の<strong>送信先を FQDN ルールで制御する</strong>機能が 2026-09-24 に紹介された(devblogs「Control where your hosted agent connects with network egress」、Learn は add-hosted-agent-guardrails 2026-09-24 版の「Network egress controls (preview)」節)。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>ステータス</td>
+<td><strong>プレビュー</strong>(SLA なし・本番利用非推奨と明記)。<strong>hosted agent 専用</strong>(prompt agent・モデルデプロイには効かない)</td>
+</tr>
+<tr>
+<td>設定場所</td>
+<td>ガードレール(RAI policy)の <code>egressPolicy</code>。API は <code>2026-05-15-preview</code>。ポータルはガードレールの Network control、azd(Bicep)/ REST / Python SDK(<code>RaiConfig</code>)で agent version に付与</td>
+</tr>
+<tr>
+<td>ルール</td>
+<td>順序付き・先勝ち。Allow / Deny / <strong>Transform</strong>(ヘッダー付与・置換)/ <strong>Rewrite</strong>(宛先書き換え)。既定アクション Deny / Allow。<strong>モードは Audit(拒否相当をログのみ)→ Enforced</strong> の順に移行。1 ポリシー最大 480 ルール</td>
+</tr>
+<tr>
+<td>強制点</td>
+<td><strong>Foundry 管理のエージェント sandbox 内のプロキシ</strong>。拒否時はプロキシが HTTP 403 を返す。判定は App Insights / トレースの「Network egress decision」スパンで確認</td>
+</tr>
+<tr>
+<td>TLS</td>
+<td>HTTPS を検査するため<strong>ランタイムがプロキシの CA を sandbox の信頼ストアに注入</strong>(約 30 日でローテーション。ピン留め・イメージへのコピー禁止)</td>
+</tr>
+<tr>
+<td>ヘッダー注入</td>
+<td>Transform の値ソースは Static とマネージド ID 値参照(デプロイ済みエージェントの ID に宛先側 RBAC が必要)。Secret 参照は不可</td>
+</tr>
+<tr>
+<td>プレビュー期の制限</td>
+<td>ホスト名マッチのみ(サービスタグ・IP レンジは今後)、Secret 参照ヘッダーは不可、<strong>顧客 Firewall への委譲や Azure Policy による集中強制はしない</strong>、MCP ツールポリシー・PII / DLP 検査は今後</td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>同ページのガードレール側の落とし穴(規制案件で必ず確認):</strong> hosted agent に付けた RAI policy は、<strong>invocations プロトコルでは <code>invocations_moderation</code>(<code>azure-ai-projects</code> 2.7.0 以降)でテキストの位置を宣言しないと無効(素通り)</strong>で、デプロイも HTTP 200 も成功するため気づきにくい。また<strong>存在しないポリシー ID を参照するとエラーなく fail-open</strong>(フィルタなしで active になる)。デプロイ後にポリシー存在確認と遮断テストを必須にする。</p></blockquote>
+<blockquote><p><strong>位置づけ:</strong> 公式は「Azure Firewall 等の自社ネットワーク制御を<strong>置き換えるものではなく補完</strong>」と明記している。規制案件では<strong>主統制は BYO VNet + 自前 Firewall(ログ保全)</strong>のまま、egress controls は「エージェント単位の宛先ホワイトリストを定義として版管理できる」追加層として扱う。Firewall 側の TLS インスペクション禁止(§2)とは別の話で、こちらはプラットフォーム内部で完結する検査である点に注意。</p></blockquote>
 <blockquote><p><strong>Tracing VNet が Preview のままなのは監査要件に直撃する。</strong>可観測性が要る規制ワークロードで、トレースだけパブリック Application Insights になる構成をどう説明するかが課題になる。<strong>監査ログ設計を Purview Audit / Defender アラート / APIM ログ / アプリ独自の監査ログの組み合わせで再設計する</strong>必要がある。</p></blockquote>
 <h3 id="その他の運用上の制約">その他の運用上の制約</h3>
 <ul>
@@ -486,11 +532,16 @@ footer {
 </tr>
 <tr>
 <td><strong>Asia Pacific (APAC)</strong></td>
-<td><strong>オーストラリア、日本、韓国、シンガポール、インド。</strong>事前通知なくリージョンが追加されうる</td>
+<td><strong>オーストラリア、日本、韓国、シンガポール、インド。</strong>事前通知なくリージョンが追加されうる(現行 deployment-types は構成国を列挙せず「複数の APAC リージョン」とのみ記載。region-availability 2026-09-03 版の Data Zone Standard 表で australiaeast / japaneast / koreacentral / southeastasia / southindia を確認)</td>
+</tr>
+<tr>
+<td>(参考)<strong>Standard / Regional Provisioned</strong></td>
+<td>deployment-types 2026-08-06 版: 「<strong>顧客指定の Azure ジオグラフィ内</strong>で処理し、運用目的で<strong>ジオ内のリージョン間</strong>で処理されうる」。一方 region-availability 2026-09-03 版は「デプロイのリージョンで処理」のままで<strong>公式間で表現が揺れる</strong></td>
 </tr>
 </tbody></table></div>
-<blockquote><p><strong>日本の金融 / 公共における決定的論点:</strong> <strong>「日本国内のみで処理」を保証できるのは <code>Standard</code>(リージョナル)または <code>ProvisionedManaged</code>(Regional Provisioned)だけ。</strong><strong>APAC Data Zone は日本を含むが豪・韓・星・印も含む</strong>ため「国内処理」にはならない。<br><br>ただし Standard / Regional は「モデル可用性とスループットが限定されうる」「高い継続的ボリュームでは遅延のばらつきが大きくなりうる」と明記されており、<strong>モデル選択肢とスループットを犠牲にする</strong>トレードオフになる。</p></blockquote>
-<p><strong>⚠ 公式ドキュメント間の不整合:</strong> <code>foundry/concepts/architecture</code> は「data zone は US または EU 内に留まる」と書いており <strong>APAC に触れていない。</strong><code>deployment-types</code> 側(US/EU/APAC を明記)が正。<strong>この記述だけを読むと誤った提案になる。</strong></p>
+<blockquote><p><strong>日本の金融 / 公共における決定的論点:</strong> <strong>「日本国内のみで処理」を保証できるのは <code>Standard</code> または <code>ProvisionedManaged</code>(Regional Provisioned)だけ。</strong>ただし deployment-types の現行定義は「Azure ジオグラフィ内(ジオ内リージョン間の処理あり)」なので、<strong>「Japan East の単一リージョンでしか処理しない」までは保証されない</strong>(日本ジオ=東日本・西日本)。「国内」要件なら満たすが、「特定リージョン限定」要件がある場合は Microsoft に確認する。<strong>APAC Data Zone は日本を含むが豪・韓・星・印も含む</strong>ため「国内処理」にはならない。<br><br>ただし Standard / Regional は「モデル可用性とスループットが限定されうる」「高い継続的ボリュームでは遅延のばらつきが大きくなりうる」と明記されており、<strong>モデル選択肢とスループットを犠牲にする</strong>トレードオフになる。</p></blockquote>
+<p><strong>⚠ 公式ドキュメント間の不整合:</strong> <code>foundry/concepts/architecture</code> は「data zone は US または EU 内に留まる」と書いており <strong>APAC に触れていない</strong>(2026-09-24 更新版でも同じ。2026-09-26 確認)。<code>deployment-types</code> 側(US/EU/APAC を明記)が正。<strong>この記述だけを読むと誤った提案になる。</strong></p>
+<p><strong>価格面の追加論点(2026-09-26 追記):</strong> Microsoft Community Hub の「Microsoft Foundry Model Deployment Pricing Update」( <a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/microsoft-foundry-model-deployment-pricing-update/4535385" title="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/microsoft-foundry-model-deployment-pricing-update/4535385">4535385</a> )で、<strong>2026-09-01 以降に投入されたモデルから Data Zone / 米国外 Regional に Global 比のプレミアム</strong>が付く改定が告知された(2026-07-09 公開、2026-09-26 に生 HTML で確認)。Global 比で <strong>APAC Data Zone +20%(新設)</strong>・EU Data Zone +20%(9% 引き上げ)・US Data Zone / Regional US +10%(据え置き)・<strong>日本 Regional +35%</strong>(米国外 Regional は国により +25〜50%、引き上げ幅 7〜16%)。従量課金は 2026-09-01 以降に投入されたモデルのみ、PTU は既存も対象。「国内処理=Standard」を選ぶ場合、新モデルほど単価差が広がる前提で見積もる。</p>
 <p><strong>Azure Policy でデプロイ種別を制限できる</strong>(<code>Microsoft.CognitiveServices/accounts/deployments</code> の <code>sku.name</code> を対象にしたポリシールール)。「Global Standard を作らせない」を組織的に強制できる。</p>
 <p><strong>Claude のデプロイ種別:</strong> Global Standard(全 Claude モデル)と <strong>Data Zone Standard (US) のみ</strong>(Azure ホスト版の一部モデル)。<strong>EU / APAC の Data Zone デプロイは提供されていない。</strong></p>
 <h3 id="foundry-が保存するもの・保持">Foundry が保存するもの・保持</h3>
@@ -505,6 +556,39 @@ footer {
 <p><strong>プレビュー機能の例外:</strong> 「Azure Preview 機能(プレビュー中の Models sold by Azure を含む)は、<strong>abuse monitoring を含めて異なるプライバシー慣行を採用する場合がある。</strong>」</p>
 <h3 id="cmk-顧客管理キー">CMK(顧客管理キー)</h3>
 <p><strong>適用範囲:</strong> Foundry リソースに関連付けられたストレージに保存される保存時データ(<strong>プロジェクト成果物・アップロードファイル・評価データを含む</strong>)。</p>
+<p><strong>機能別の対象範囲(2026-08 に新設された概念ページ customer-managed-keys、ms.date 2026-08-24 で確認):</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>機能</th>
+<th>Foundry 管理ストレージで CMK</th>
+<th>顧客管理ストレージ(BYO)で CMK</th>
+</tr></thead><tbody>
+<tr>
+<td>Prompt agents</td>
+<td><strong>非対応</strong>(basic setup は Microsoft 管理キー)</td>
+<td><span class="badge ok">対応</span>(Cosmos DB / Storage / AI Search 側で個別に CMK 設定)</td>
+</tr>
+<tr>
+<td><strong>Hosted agents</strong></td>
+<td><strong>非対応</strong></td>
+<td><strong>部分対応</strong>: 各セッションの永続 <code>$HOME</code> は<strong>プラットフォーム管理ストレージで CMK 非対応・無効化不可</strong>。アイドル後も<strong>セッション削除まで 30 日保持</strong></td>
+</tr>
+<tr>
+<td>Fine-tuning / Batch / Evaluations / Language</td>
+<td><span class="badge ok">対応</span></td>
+<td>Batch・Evaluations・Language は対応(FT は BYO ストレージなし)</td>
+</tr>
+<tr>
+<td>Speech</td>
+<td>非対応</td>
+<td><span class="badge ok">対応</span></td>
+</tr>
+<tr>
+<td>Content Understanding</td>
+<td>—</td>
+<td><span class="badge ok">対応</span>(<strong>BYO ストレージ必須</strong>)</td>
+</tr>
+</tbody></table></div>
+<blockquote><p><strong>規制案件での含意:</strong> 「エージェントの会話も含め全データを CMK で」という要件は <strong>standard setup(BYO Cosmos DB / Storage / AI Search)が前提</strong>で、<strong>hosted agent は <code>$HOME</code> が CMK の対象外</strong>になる。hosted agent を使うなら、機微データを <code>$HOME</code> に書かない実装規約と、不要セッションの明示削除を運用に入れる。</p></blockquote>
 <div class="tablewrap"><table><thead><tr>
 <th>項目</th>
 <th>要件</th>
@@ -558,7 +642,7 @@ footer {
 <tr>
 <td><strong>Foundry model deployments should meet eligibility requirements</strong></td>
 <td><code>onlyAllowDirectFromAzure</code> / <strong><code>denyPreviewModels</code></strong> で属性ベース制御</td>
-<td><span class="badge preview">プレビュー</span></td>
+<td><strong>GA</strong>(model-deployment-policy 2026-08-18 版で「Generally available」。前版のプレビューから昇格)</td>
 </tr>
 <tr>
 <td>Foundry Tools resources should have key access disabled</td>
@@ -568,7 +652,7 @@ footer {
 </tbody></table></div>
 <p><strong><code>denyPreviewModels=true</code> は「プレビューモデルを本番に持ち込まない」統制をプラットフォームレベルで実装できる。</strong>本番サブスクリプションには入れておく。</p>
 <p><strong>⚠ asset ID はプレフィックスマッチ。</strong>末尾スラッシュなしの <code>azureml://registries/azure-openai/models/gpt-5</code> は <strong>GPT-5.2 や GPT-5.4 にもマッチしてしまう。</strong>特定モデルに限定するには<strong>末尾にスラッシュ</strong>を付ける。</p>
-<p><strong>⚠ model router を使う場合:</strong> パブリッシャー許可リストに <code>Microsoft</code> を含める必要がある(Microsoft が model router のパブリッシャー)。<strong>Claude にルーティングするなら <code>Anthropic</code> も追加。</strong>ポリシーは model router が選択する配下モデルにも適用される。</p>
+<p><strong>⚠ model router を使う場合:</strong> パブリッシャー許可リストに <code>Microsoft</code> を含める必要がある(Microsoft が model router のパブリッシャー)。<strong>Claude にルーティングするなら <code>Anthropic</code> も追加。</strong>ポリシーは model router が選択する配下モデルにも適用され、ARM / CLI では非準拠モデルが 1 つでも含まれるとデプロイ全体が失敗する(ポータルは準拠サブセットだけをデプロイ可)。加えて <strong>model router 専用の組み込みポリシー(デプロイリージョン・必須ルーティングルール・ログ構成)がパブリックプレビュー</strong>で追加されている(2026-08-18 版)。</p>
 <p><strong>適用タイミング:</strong> ポリシー割当は即時反映されない。<strong>最低 15 分待つ。</strong>コンプライアンスダッシュボードへの反映は評価サイクル(通常最大 24 時間)。Foundry ポータルへの反映は最大 30 分。</p>
 <p><strong>その他:</strong> プレビュー機能の抑止はタグ <code>AZML_DISABLE_PREVIEW_FEATURE=true</code>(サブスク / RG / リソース単位)でポータルのプレビュー UI を非表示化でき、カスタム RBAC(<code>notDataActions</code> / <code>notActions</code>)で API レベルのブロックもできる。</p>
 <h3 id="api-キーの無効化-disablelocalauth">API キーの無効化(<code>disableLocalAuth</code>)</h3>
@@ -579,11 +663,11 @@ footer {
 <p><strong>⚠ 決定的な制約が 4 つある:</strong></p>
 <ol>
 <li><strong>Data Security Policies は、Entra ID の「ユーザーコンテキストトークン」を使う API 呼び出しにしか適用されない。</strong>それ以外の認証シナリオでは、ユーザー相互作用は Purview Audit と Activity Explorer の分類にしか現れず、<strong>ポリシーによる強制は行われない。</strong></li>
-<li><strong>Purview 統合には Foundry エージェントのデータやコンテキストは含まれない。</strong>「Foundry エージェント統合のサポートは現時点で提供されていない」と Defender ドキュメントに明記。</li>
+<li><strong>Purview 統合に Foundry エージェントのデータが含まれるかは公式間で記載が揺れる。</strong>Defender ドキュメントは「Foundry エージェント統合のサポートは現時点で提供されていない」、一方 Foundry 側の how-to-manage-compliance-security(2026-08-04 更新)は「サブスクリプション内の<strong>全アプリケーションとエージェント</strong>の AI インタラクションデータが Purview に流れる」と書く(2026-09-26 確認)。エージェント案件では要確認として扱う。</li>
 <li><strong>Purview 統合は現時点でネットワーク分離をサポートしない。</strong></li>
-<li><strong>課金:</strong> データセキュリティポリシーは pay-as-you-go メーター。<strong>PAYG 課金が Purview 側で設定されていないと Purview Audit 統合しかサポートされない。</strong></li>
+<li><strong>課金:</strong> データセキュリティポリシーは pay-as-you-go メーター<strong>または Agent 365 サブスクリプション</strong>。<strong>どちらも無いと Purview Audit 統合しかサポートされない</strong>(how-to-manage-compliance-security 2026-08-04 更新版。Audit は Purview ライセンスに含まれる)。</li>
 </ol>
-<blockquote><p><strong>2 と 3 の組合せが致命的:</strong> 「ネットワーク分離した Foundry でエージェントを動かす」という規制業界の標準構成では、<strong>Purview による DLP / 分類は現時点でほぼ機能しない。DSPM for AI を前提としたコンプライアンス説明はできない。</strong></p></blockquote>
+<blockquote><p><strong>3(と 2 の揺れ)の組合せが致命的:</strong> 「ネットワーク分離した Foundry でエージェントを動かす」という規制業界の標準構成では、<strong>Purview による DLP / 分類は現時点でほぼ機能しない。DSPM for AI を前提としたコンプライアンス説明はできない。</strong></p></blockquote>
 <h3 id="microsoft-defender-for-cloud-ai-services-プラン">Microsoft Defender for Cloud(AI services プラン)</h3>
 <p>3 コンポーネント: <strong>Suspicious prompt evidence</strong>(疑わしいプロンプト / 応答をアラートエビデンスとして受信。機密データは自動リダクト)/ <strong>Data security for AI interactions</strong>(Purview 側の有償機能で、Defender プランには含まれない)/ <strong>AI model security</strong>(Azure ML Registries のモデルをスキャン)。</p>
 <p>検出対象は「Foundry のマネージド推論エンドポイント上に構築された AI ワークロード」で、<strong>jailbreak およびユーザー入力攻撃を検出</strong>する。<strong>Azure Government / 21Vianet は非対応。</strong></p>
@@ -601,7 +685,7 @@ footer {
 </tr>
 <tr>
 <td><strong>リスク・安全性評価器</strong></td>
-<td><strong>East US 2 / North Central US / France Central / Sweden Central / Switzerland West / Australia East のみ</strong></td>
+<td><strong>22 リージョンに拡大</strong>(米州 11: Brazil South / Canada Central / Canada East / Central US / East US / East US 2 / North Central US / South Central US / West Central US / West US / West US 3、欧州 10: France Central / Germany West Central / Italy North / Norway East / Poland Central / Spain Central / Sweden Central / Switzerland North / Switzerland West / West Europe、APAC は <strong>Australia East のみ</strong>)。<strong>日本は依然非対応</strong>(旧記載の 6 リージョンから拡大)</td>
 </tr>
 <tr>
 <td>Groundedness Pro</td>
@@ -613,9 +697,14 @@ footer {
 </tr>
 <tr>
 <td><strong>AI Red Teaming</strong></td>
-<td><strong>公式2ページ間で記載が揺れる(evaluation-regions ページは East US 2 / North Central US の2つ、ai-red-teaming-agent ページは +France Central / Sweden Central / Switzerland West の5つ)。いずれにせよ日本・APAC 非対応</strong></td>
+<td><strong>公式2ページ間で記載が揺れる(evaluation-regions ページは East US 2 / North Central US の2つ、ai-red-teaming-agent ページ〈2026-08-19 版〉は +France Central / Sweden Central / Switzerland West の5つ)。いずれにせよ日本・APAC 非対応</strong></td>
+</tr>
+<tr>
+<td>合成データ生成 / トレース→データセット生成</td>
+<td>広範(<strong>Japan East を含む</strong>。Japan West は含まない)</td>
 </tr>
 </tbody></table></div>
+<p>出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network">evaluation-regions-limits-virtual-network</a> (ms.date 2026-04-03 / 2026-08-18 更新、2026-09-26 確認。<code>how-to/</code> 配下の同名パスは 404)</p>
 <blockquote><p><strong>本番推論は Japan East、安全性評価と Red Teaming は別リージョンの評価専用プロジェクト</strong>という分離構成になる。<strong>プロンプト・応答が評価のために国外に渡る</strong>ため、法務確認が必須。評価だけなら Agent 用のフル構成(Cosmos DB / AI Search / capability host)は不要で、<strong>評価専用の Bicep テンプレート</strong>が用意されている。<br><br>加えて <strong>Guardrails の Task adherence は「データが指定 Geo 外(US/EU)で処理される可能性」が明記されている。</strong></p></blockquote>
 <hr>
 <h2 id="8-ソブリンクラウド-azure-government">8. ソブリンクラウド(Azure Government)</h2>
@@ -625,7 +714,7 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>ポータル</td>
-<td><a href="https://ai.azure.us/" title="https://ai.azure.us/">ai.azure.us</a></td>
+<td><strong><a href="https://ai.azure.us/nextgen</strong>(foundry-azure-government" title="https://ai.azure.us/nextgen<strong>(foundry-azure-government">nextgen</strong>(foundry-azure-government</a> 2026-09-02 版)</td>
 </tr>
 <tr>
 <td>リージョン</td>
@@ -633,30 +722,35 @@ footer {
 </tr>
 <tr>
 <td>エージェント種別</td>
-<td>Prompt agents = 対応 / Workflows = プレビュー / <strong>Hosted agents = 非対応</strong></td>
+<td>Prompt agents = 対応 / <strong>Voice-based prompt agents = 非対応</strong> / Workflows = プレビュー / <strong>Hosted agents = 非対応</strong></td>
 </tr>
 <tr>
 <td>利用可能ツール</td>
-<td>Code Interpreter / File Search / Azure AI Search / Azure Functions / Function calling</td>
+<td>Code Interpreter / File Search / Azure AI Search / Azure Functions / Function calling / <strong>MCP servers / OpenAPI tool</strong>(2026-09-26 確認で「対応」に変化)/ Custom Code Interpreter(プレビュー)</td>
 </tr>
 <tr>
 <td><strong>非対応ツール</strong></td>
-<td><strong>Web search / Grounding with Bing / Image Generation / Browser Automation / Computer Use / Microsoft Fabric / SharePoint / MCP servers / A2A / OpenAPI tool</strong></td>
+<td><strong>Web search / Grounding with Bing / Image Generation / Browser Automation / Computer Use / Microsoft Fabric / SharePoint / A2A</strong></td>
 </tr>
 <tr>
-<td>非対応機能</td>
-<td>Serverless endpoints / Content Understanding / Agents playground / <strong>Fine-tuning</strong> / <strong>Batch jobs</strong> / Azure OpenAI Evaluation / VS Code 拡張</td>
+<td>プラットフォーム機能</td>
+<td>Responses API / Agent identity / <strong>Private networking(VNet)/ NSP</strong> / RBAC / Content safety・guardrails(Block lists・Jailbreak・Protected material)/ Tracing(prompt agents)= 対応。<strong>Model router / Evaluations / Optimization = 非対応</strong></td>
+</tr>
+<tr>
+<td>(旧版との差)</td>
+<td>前版にあった「Serverless endpoints / Content Understanding / Agents playground / Fine-tuning / Batch jobs / VS Code 拡張 = 非対応」の列挙は、ページ再編(プラットフォーム版 foundry-azure-government とエージェント版 agents/concepts/azure-government に分割)後の現行ページに無い → <strong>個別に要確認</strong></td>
 </tr>
 <tr>
 <td>公開</td>
-<td>Entra Agent Registry への登録は可。<strong>Teams / M365 Copilot への公開は非対応</strong></td>
+<td>公開(安定エンドポイント+Entra ID)と Entra Agent Registry への登録は可。<strong>Teams / M365 Copilot への公開は現行ページに記載なし</strong>(前版は「非対応」明記。<strong>要確認</strong>)</td>
 </tr>
 <tr>
 <td>SDK</td>
-<td><code>azure-ai-projects</code> 2.0.0 以降。スコープは <code>https://ai.azure.us/.default</code></td>
+<td><code>azure-ai-projects</code> 2.0.0 以降。スコープは <code>https://ai.azure.us/.default</code>、プロジェクトエンドポイントは <code>https://{resource}.services.ai.azure.us/api/projects/{project}</code></td>
 </tr>
 </tbody></table></div>
-<blockquote><p><strong>プレビュー機能とコンプライアンス認定の関係を明文化しているのはこのページだけ:</strong> 「<strong>Preview 表記の機能は、GA 機能と同じコンプライアンスコミットメント(FedRAMP, DoD IL5, CJIS 等)を伴わない場合がある。</strong>規制ワークロードで使う前にセキュリティ・コンプライアンスチームで確認せよ。」<br><br><strong>日本の政府調達(ISMAP 等)でも同種の論理が使えるが、ISMAP への言及はドキュメント上に見つからなかった。</strong>日本固有の認証状況は Microsoft Trust Center / Service Trust Portal 側で個別確認が必要。</p></blockquote>
+<p>出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government" title="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government">azure-government</a> (ms.date 2026-08-19 / 2026-09-24 更新)・ <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-azure-government" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-azure-government">foundry-azure-government</a> (ms.date 2026-09-02)。いずれも 2026-09-26 確認。</p>
+<blockquote><p><strong>プレビュー機能とコンプライアンス認定の関係を明文化しているのはこのページだけ</strong>(agents/concepts/azure-government の「Preview features in Azure Government」節。2026-09-26 時点でも同文): 「<strong>Preview 表記の機能は、GA 機能と同じコンプライアンスコミットメント(FedRAMP, DoD IL5, CJIS 等)を伴わない場合がある。</strong>規制ワークロードで使う前にセキュリティ・コンプライアンスチームで確認せよ。」<br><br><strong>日本の政府調達(ISMAP 等)でも同種の論理が使えるが、ISMAP への言及はドキュメント上に見つからなかった。</strong>日本固有の認証状況は Microsoft Trust Center / Service Trust Portal 側で個別確認が必要。</p></blockquote>
 <hr>
 <h2 id="9-エッジ・オンプレ・ハイブリッド">9. エッジ・オンプレ・ハイブリッド</h2>
 <p><strong>「オンプレで Foundry を動かす」には 3 つの別物がある。</strong>名前が似ているので最初に切り分ける。</p>
@@ -673,7 +767,7 @@ footer {
 <tr>
 <td><strong>Foundry Local on Azure Local</strong></td>
 <td><strong>オンプレ K8s 上のエンタープライズ推論基盤</strong>(Arc 拡張)</td>
-<td><strong>プレビュー、かつ申請制</strong></td>
+<td><strong>プレビュー、かつ申請制</strong>(拡張 2607〈2026-08〉/ 2609〈2026-09〉時点でも同じ)</td>
 </tr>
 <tr>
 <td><strong>Foundry Tools の切断コンテナ</strong></td>
@@ -696,7 +790,7 @@ footer {
 <p>推論はローカル完結で、ネットワークを使うのはモデル / 実行プロバイダーの初回ダウンロードと、任意の診断ログ共有のみ。</p>
 <h3 id="9-2-foundry-local-on-azure-local-オンプレ-k8s">9.2 Foundry Local on Azure Local(オンプレ K8s)</h3>
 <p><strong>別 SKU で、ドキュメントも <code>azure-sovereign-clouds</code> 配下の別セット。</strong>「Arc 対応 Kubernetes クラスター上に AI モデルをデプロイして実行し、Kubernetes ネイティブな運用を行う」もの。</p>
-<p><strong>⚠ プレビューかつ申請制。</strong>「Foundry Local on Azure Local のデプロイは<strong>プレビュー期間中はリクエストベースでのみ利用可能</strong>」と明記され、専用の申請フォームが用意されている。<strong>GA 時期の記載は見つからなかった。</strong></p>
+<p><strong>⚠ プレビューかつ申請制。</strong>「Foundry Local on Azure Local のデプロイは<strong>プレビュー期間中はリクエストベースでのみ利用可能</strong>」と明記され、専用の申請フォームが用意されている。<strong>GA 時期の記載は見つからなかった</strong>(overview / whats-new とも ms.date 2026-09-13 で再確認)。</p>
 <div class="tablewrap"><table><thead><tr>
 <th>項目</th>
 <th>内容</th>
@@ -715,7 +809,7 @@ footer {
 </tr>
 <tr>
 <td>エンドポイント公開</td>
-<td>内部 Service または <strong>Kubernetes Gateway API</strong>。API キー / Entra ID トークン検証 / TLS で保護</td>
+<td>内部 Service または <strong>Kubernetes Gateway API</strong>(拡張 2606 で NGINX ingress から移行)。API キー / Entra ID トークン検証 / <strong>Kubernetes サービスアカウントトークン(SAT、拡張 2609 で追加・既定有効。クラスター内の推論呼び出し向け)</strong> / TLS で保護</td>
 </tr>
 <tr>
 <td>リージョン</td>
@@ -727,7 +821,30 @@ footer {
 </tr>
 </tbody></table></div>
 <p><strong>Azure Local の具体バージョン、GPU SKU、最小ノード数は概要ページに記載がなかった。</strong></p>
-<p><strong>切断(disconnected)運用時の差分:</strong> 拡張機能を <strong>expansion pack</strong> として事前にダウンロード・インポートし、モデルはローカルのコンテナレジストリから取得する。Istio・Gateway API CRD・Endpoint Picker イメージが同梱されるので<strong>デプロイ時のアウトバウンド接続が不要。</strong>証明書は <code>azure-cert-manager</code> が使えず <code>cert-manager</code> + <code>trust-manager</code> を導入する。<strong>テレメトリは Microsoft へ送信されない。</strong>認証はパブリックな Entra ID エンドポイントではなく<strong>環境内の Active Directory</strong> と統合する。認可は Azure RBAC で、<strong><code>Contributor</code> がコントロールプレーン書き込みに加えてデータプレーンの推論操作(<code>predict</code> / <code>chat/completions</code>)まで含む</strong>点が接続環境と異なる。</p>
+<p><strong>拡張バージョンの推移(whats-new、ms.date 2026-09-13):</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>拡張</th>
+<th>時期</th>
+<th>主な追加</th>
+</tr></thead><tbody>
+<tr>
+<td>2606</td>
+<td>2026-07</td>
+<td>推論トラフィックを Kubernetes Gateway API(Istio)へ、マルチレプリカ vLLM に Endpoint Picker(EPP)</td>
+</tr>
+<tr>
+<td><strong>2607</strong></td>
+<td>2026-08</td>
+<td><strong>クラスター上でのモデル評価</strong>(NLP 系 F1 / BLEU / ROUGE と、別デプロイモデルを judge にする品質評価。<strong>切断環境でも実行可・データはクラスター外に出ない</strong>)、vLLM の<strong>マルチ GPU モデル並列</strong>(tensor / pipeline parallel)、GPU 推論設定の自動チューニング強化</td>
+</tr>
+<tr>
+<td>2609</td>
+<td>2026-09</td>
+<td>SAT 認証(上記)。<strong>拡張のマネージド ID に Arc 対応 K8s クラスタースコープの Reader ロールが必須に</strong></td>
+</tr>
+</tbody></table></div>
+<p>devblogs 7・8 月号(2026-09-09)も「2607 は Azure Local 拡張の更新でデスクトップ版 Foundry Local SDK ではない。Azure Local 環境とプレビューアクセスが必要」と明記している。</p>
+<p><strong>切断(disconnected)運用時の差分:</strong> 拡張機能を <strong>expansion pack</strong> として事前にダウンロード・インポートし、モデルはローカルのコンテナレジストリから取得する。Istio・Gateway API CRD・Endpoint Picker イメージが同梱されるので<strong>デプロイ時のアウトバウンド接続が不要。</strong>証明書は <code>azure-cert-manager</code> が使えず <code>cert-manager</code> + <code>trust-manager</code> を導入する。<strong>テレメトリは Microsoft へ送信されない。</strong>認証はパブリックな Entra ID エンドポイントではなく<strong>環境内の Active Directory</strong> と統合する(クラスター内の pod 間推論は SAT 認証も可)。認可は Azure RBAC で、<strong><code>Contributor</code> がコントロールプレーン書き込みに加えてデータプレーンの推論操作(<code>predict</code> / <code>chat/completions</code>)まで含む</strong>点が接続環境と異なる。</p>
 <p><strong>サイジングの注意:</strong> マルチレプリカ vLLM は <code>ModelDeployment</code> あたり Endpoint Picker Pod を 1 つ追加し、既定でメモリ request 約 512MiB / limit 2GiB。<strong><code>az aksarc create</code> の既定ワーカーサイズ <code>Standard_A4_v2</code> は「通常小さすぎる」</strong>と明記されている。</p>
 <h3 id="9-3-切断コンテナ-エアギャップでの-foundry-tools">9.3 切断コンテナ(エアギャップでの Foundry Tools)</h3>
 <blockquote><p><strong>⚠ 本ドキュメント初版の記述を訂正:</strong> 初版では「オンプレ / エアギャップの文書処理は Document Intelligence コンテナが唯一の選択肢」と書いたが、<strong>これは不正確だった。</strong><strong>Vision の Read OCR コンテナも GA かつ切断対応</strong>で、印刷 / 手書きテキストを JPEG・PNG・BMP・<strong>PDF・TIFF</strong> から抽出できる。<br><br><strong>正確には:</strong> 「<strong>構造化文書抽出(Layout / 請求書・領収書・ID の Prebuilt / Custom Template)をエアギャップで行える唯一の選択肢が Document Intelligence コンテナ</strong>。単純な OCR だけなら Vision Read コンテナも選べる」。なお <strong>Content Understanding にはコンテナが存在しない</strong>ため、<strong>マルチモーダル文書処理をオンプレで、は不可。</strong></p></blockquote>
@@ -748,13 +865,19 @@ footer {
 <td>Vision</td>
 <td><strong>Read OCR</strong></td>
 <td><strong>GA</strong></td>
-<td><strong>対応</strong></td>
+<td><strong>対応</strong>。※Image Analysis API の 2028-09-25 廃止は「接続・切断コンテナにも適用」と migration-options に明記。廃止対象は <code>/imageanalysis</code> エンドポイント(v3.2 / v4.0)と定義され、Read コンテナ(Read API)が含まれるかは明記なし → <strong>長期案件は要確認</strong>(同ページは OCR の移行先に Document Intelligence Read を挙げる)</td>
 </tr>
 <tr>
 <td>Speech</td>
 <td>Speech to text / Custom Speech to text / Neural TTS</td>
 <td><span class="badge ga">GA</span></td>
 <td><span class="badge ok">対応</span></td>
+</tr>
+<tr>
+<td>Speech</td>
+<td><strong>Fast transcription</strong>(話者分離・マルチチャネル対応のバッチ高速書き起こし)</td>
+<td><span class="badge preview">プレビュー</span></td>
+<td>container-support では「切断環境でも実行可」、disconnected-containers の一覧には無い(Content Safety と同種の不整合)</td>
 </tr>
 <tr>
 <td>Speech</td>
@@ -799,7 +922,7 @@ footer {
 <td><strong>非対応</strong></td>
 </tr>
 </tbody></table></div>
-<blockquote><p><strong>⚠ ドキュメント間の不整合:</strong> Content Safety の 3 コンテナは container-support ページで「切断環境でも実行できる」と明記されているが、<strong>disconnected-containers ページの対応一覧には Content Safety が含まれていない。</strong>エアギャップ案件で Content Safety を前提にするなら事前に確認する。</p></blockquote>
+<blockquote><p><strong>⚠ ドキュメント間の不整合:</strong> Content Safety の 3 コンテナ(と Speech の Fast transcription)は container-support ページ(2026-08-07 更新)で「切断環境でも実行できる」と明記されているが、<strong>disconnected-containers ページ(2026-06-11 更新)の対応一覧には含まれていない</strong>(2026-09-26 再確認でも解消せず)。エアギャップ案件でこれらを前提にするなら事前に確認する。</p></blockquote>
 <p><strong>承認プロセスとライセンス(見積もりに直結):</strong></p>
 <ul>
 <li><strong>申請フォーム提出後、10 営業日以内</strong>に可否がメールで返る。<strong>承認されたサブスクリプション ID で作成したリソースでのみ動作する。</strong></li>
@@ -887,15 +1010,17 @@ footer {
 <li>[ ] <strong>CMK の日本リージョン可否</strong> — AI Search 側のリージョン表で個別確認</li>
 <li>[ ] <strong>WAF ルール除外</strong> — チャットで OWASP anomaly score が累積し突然 403。除外設計の承認を先に取る</li>
 <li>[ ] <strong>Purview による DLP</strong> — <strong>ネットワーク分離下では非対応、エージェントデータは対象外。</strong>DSPM for AI 前提の説明は成立しない</li>
-<li>[ ] <strong>Traces</strong> — プライベート App Insights 非対応。監査ログ設計を Purview Audit / Defender アラート / APIM ログ / アプリ独自ログの組合せで再設計</li>
+<li>[ ] <strong>Traces</strong> — Tracing VNet はプレビュー(GA 一覧 2026-08-14 版、2026-09-23 更新でも同じ)。監査ログ設計を Purview Audit / Defender アラート / APIM ログ / アプリ独自ログの組合せで再設計</li>
 <li>[ ] <strong>会話 ID の認可</strong> — Foundry はユーザー単位の会話認可を強制しない。アプリ側で BOLA 対策必須</li>
 <li>[ ] <strong>Customer Lockbox</strong> — Security Baseline 上「非対応」。最新状況を Microsoft に個別確認</li>
 <li>[ ] <strong>ネットワーク構成の後戻り不能性</strong> — アカウント作成時に確定。<strong>PoC と本番でサブスクリプション / リソースグループを分ける</strong></li>
 <li>[ ] <strong>Claude を使うなら</strong> — Foundry ガードレールが効かない。APIM の <code>llm-content-safety</code> かアプリ層で Content Safety を呼ぶ</li>
-<li>[ ] <strong>同時セッション 50 / サブスクリプション / リージョン</strong> — 大規模利用ではサブスクリプション分割が必要になりうる</li>
+<li>[ ] <strong>hosted agent の同時セッション</strong>(既定 2,000〈Japan East 等 7 リージョン〉/ 1,000〈Japan West 等その他〉/ サブスクリプション / リージョン)と<strong>委任サブネットの IP 数</strong>(既定 1 IP = 1 セッション)の両方でピークを見積もる。超過はサポート申請(クォータ増 / 1:10 マッピング)</li>
 <li>[ ] <strong>評価の越境</strong> — 安全性評価と Red Teaming が日本で動かない。国外へのデータ移送について法務確認</li>
 <li>[ ] <strong>プレビュー機能とコンプライアンス認定</strong> — プレビューは GA と同じ認定コミットメントを伴わない可能性。使用機能を棚卸し</li>
 <li>[ ] <strong>abuse monitoring</strong> — Modified abuse monitoring を申請したなら <code>ContentLogging=false</code> で実際に確認</li>
+<li>[ ] <strong>hosted agent の <code>$HOME</code></strong> — CMK 対象外・無効化不可・セッション削除まで 30 日保持。機微データを書かない規約とセッション削除運用を入れる(2026-09-26 追加)</li>
+<li>[ ] <strong>hosted agent の送信先統制</strong> — network egress controls はプレビュー(本番非推奨)。主統制は BYO VNet + 自前 Firewall のまま設計する(2026-09-26 追加)</li>
 </ol>
 </main>
 <footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

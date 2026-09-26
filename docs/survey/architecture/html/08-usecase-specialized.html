@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="08-ユースケース編-e-音声・文書処理-idp-・大量バッチ・マルチモーダル・m365-連携">08. ユースケース編 E — 音声・文書処理(IDP)・大量バッチ・マルチモーダル・M365 連携</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</a></li><li><a href="#e2-文書処理・idp-intelligent-document-processing">E2. 文書処理・IDP(Intelligent Document Processing)</a></li><li><a href="#e3-大量バッチ処理">E3. 大量バッチ処理</a></li><li><a href="#e4-マルチモーダル生成-画像・動画">E4. マルチモーダル生成(画像・動画)</a></li><li><a href="#e5-m365-teams-連携">E5. M365 / Teams 連携</a></li><li><a href="#e6-ファインチューニング-モデルカスタマイズの運用">E6. ファインチューニング / モデルカスタマイズの運用</a></li><li><a href="#この章で-公式に確認できなかった-もの">この章で「公式に確認できなかった」もの</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(Voice Live のステータス・モデル・クォータ、voice-based agents(preview)の電話チャネル、CU 上限値、画像/動画モデルのリタイア日と gpt-image-2.5 系、Content provenance 新記事、Work IQ、FT 対応モデルを一次情報で再検証)</p></blockquote>
 <p>チャット / RAG / 業務自動化に収まらない類型をまとめる。共通するのは、<strong>Foundry Agent Service の外側にある Foundry Tools(旧 Azure AI Services)やモデル固有の API が主役になる</strong>点で、エージェント中心の設計論がそのままは当てはまらない。</p>
 <h2 id="パターン一覧">パターン一覧</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -148,11 +148,11 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>STT</td>
-<td>Azure speech to text(既定)/ <code>mai-transcribe</code>(プレビュー)/ <code>whisper-1</code> / <code>gpt-4o-transcribe</code> 系</td>
+<td>Azure speech to text(既定)/ <code>mai-transcribe</code>(プレビュー。現在は <code>mai-transcribe-2</code> のエイリアス)/ <code>whisper-1</code> / <code>gpt-4o-transcribe</code> / <code>gpt-4o-mini-transcribe</code> / <code>gpt-4o-transcribe-diarize</code></td>
 </tr>
 <tr>
 <td>LLM</td>
-<td><code>gpt-realtime</code> 系 / <code>gpt-4o</code> 系 / <code>gpt-4.1</code> 系 / <code>gpt-5</code>〜<code>gpt-5.4</code> 系 / <code>phi4-*</code>(プレビュー)/ <code>azure-realtime</code></td>
+<td><code>gpt-realtime-2.1</code> / <code>-2.1-mini</code> / <code>-2.1-datazone</code>(Voice Live 上はプレビュー)/ <code>gpt-realtime-1.5</code> / <code>gpt-realtime</code> / <code>gpt-realtime-mini</code>(各 <code>-datazone</code> 版あり)/ <code>gpt-4o</code> 系 / <code>gpt-4.1</code> 系 / <code>gpt-5</code>〜<code>gpt-5.4</code> 系 / <code>gpt-5.6-terra</code> / <code>gpt-5.6-luna</code> / <code>phi4-mm-realtime</code>(プレビュー)/ <code>azure-realtime</code>(2026-07-25 GA)。<code>gpt-5.5</code> / <code>gpt-5.4-mini</code> / <code>gpt-5.4-nano</code> は事前デプロイされず BYOM 経由(overview 2026-09-06 版)</td>
 </tr>
 <tr>
 <td>TTS</td>
@@ -171,13 +171,45 @@ footer {
 <td>function calling(同期 / 非同期)、<strong>MCP</strong>、VoiceRAG パターン</td>
 </tr>
 </tbody></table></div>
-<h3 id="ライフサイクル-プレビュー-ga-一覧表で決着-ただし表記の不一致あり">⚠ ライフサイクル: プレビュー(GA 一覧表で決着。ただし表記の不一致あり)</h3>
-<p><strong><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">GA 一覧表</a>に「Build &gt; Agents — Voice Live = Preview」と明記されている</strong>(2026-07-30 確認)。<strong>提案では Preview として扱う。</strong></p>
-<p>一方で Voice Live 自身のページには preview バナーも GA 宣言も無く、安定版 API(<code>2025-10-01</code> / <code>2026-04-10</code>)が存在し、課金は 2025-07-01 に開始されている — <strong>ドキュメント間で表記が一致していない。</strong>SLA を論点にする案件では Microsoft への個別確認が必要。</p>
+<h3 id="ライフサイクル-サーフェスごとに-ga-preview-が分かれる-2026-09-26-再検証">⚠ ライフサイクル: サーフェスごとに GA / Preview が分かれる(2026-09-26 再検証)</h3>
+<p><strong>2026-07-30 時点では GA 一覧表だけを根拠に「プレビュー」と整理したが、これは不正確だった。</strong>一次情報はサーフェスごとに次のように書いている:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>サーフェス</th>
+<th>ステータス</th>
+<th>出典</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Voice Live API 本体</strong>(WebSocket・SDK 直叩き)</td>
+<td><strong>GA(2025-11)</strong>。API <code>2026-07-15</code> が GA で SDK の既定(<code>2025-10-01</code> / <code>2026-04-10</code> も安定版)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/releasenotes?pivots=voice-live">Speech What's new(Voice Live タブ)</a>(2026-05-22 版、July 2026 節まで記載)</td>
+</tr>
+<tr>
+<td>Foundry Agent Service 統合・MCP 統合・auto-truncation・proactive messages・テレメトリ</td>
+<td><strong>GA(2026-04、API <code>2026-04-10</code>)</strong></td>
+<td>同上</td>
+</tr>
+<tr>
+<td><strong>Hosted agents × Voice Live</strong></td>
+<td><strong>GA</strong>(ブログ 2026-09-09「Hosted Agents with Voice Live are also generally available」)</td>
+<td><a href="https://devblogs.microsoft.com/foundry/whats-new-in-microsoft-foundry-july-august-2026/">What's new in Microsoft Foundry: July and August 2026</a></td>
+</tr>
+<tr>
+<td>Foundry ポータルの「Build &gt; Agents — Voice Live」</td>
+<td><strong>Preview</strong></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">GA 一覧表</a>(ms.date 2026-08-14、2026-09-26 確認)</td>
+</tr>
+<tr>
+<td><strong>voice-based agents</strong>(agent kind = <code>voice</code>、<code>VoiceAgents=V1Preview</code> ヘッダー、電話チャネル)</td>
+<td><strong>Preview</strong></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/limits-quotas-regions">limits-quotas-regions</a>(2026-09-07 版)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/configure-voice-agent">configure-voice-agent</a>(2026-09-25 版)</td>
+</tr>
+</tbody></table></div>
+<p><strong>提案での扱い:</strong> 「Voice Live API を自社ミドル層から WebSocket で呼ぶ」構成は GA として扱える。<strong>Foundry ポータル上のエージェント体験・voice-based agents・電話チャネルに依存する構成は Preview。</strong>GA 一覧表(Foundry 側の最終権威)と Speech 側・ブログの表記が食い違ったままなので、SLA を論点にする案件では Microsoft への個別確認が引き続き必要。</p>
 <p>個別機能で明示的にプレビューなのは:</p>
 <ul>
-<li><strong>WebRTC 接続</strong>(SLA なし・本番非推奨の標準免責文つき)</li>
-<li><code>phi4-mm-realtime</code> / <code>phi4-mini</code>、<code>mai-transcribe</code>、<code>MAI-Voice-2-Flash</code>、BYOM の Anthropic プロファイル、auto-truncation、評価機能</li>
+<li><strong>WebRTC 接続</strong>(SLA なし・本番非推奨の標準免責文つき。webrtc ページ 2026-04-30 版)</li>
+<li><code>gpt-realtime-2.1</code> 系(Voice Live の対応表上。リタイア表 2026-09-21 版では gpt-realtime-2.1 / -mini は GA)、<code>phi4-mm-realtime</code>、<code>mai-transcribe</code>(<code>mai-transcribe-2</code>)、<code>MAI-Voice-2-Flash</code>、BYOM の Anthropic プロファイル、評価ハーネス(2026-05)</li>
+<li><del>auto-truncation</del>(2026-04 に GA。2026-07-30 版の記載は誤り)</li>
 </ul>
 <blockquote><p>本番設計では <strong>WebRTC を外し WebSocket に寄せる</strong>のが安全。</p></blockquote>
 <h3 id="接続モデル">接続モデル</h3>
@@ -207,26 +239,26 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>新規接続 / 分(NCPM)</td>
-<td><strong>30</strong></td>
+<td><strong>100</strong>(2026-07-30 時点は 30。quotas-and-limits 2026-09-09 版の表で変更)</td>
 </tr>
 <tr>
 <td><strong>最大セッション長</strong></td>
-<td><strong>60 分</strong></td>
+<td><strong>60 分</strong>(voice-based agents も最大 60 分。limits-quotas-regions 2026-09-07 版)</td>
 </tr>
 <tr>
 <td>トークン / 分(TPM)</td>
-<td><strong>120,000</strong></td>
+<td><strong>≤ 120,000</strong></td>
 </tr>
 <tr>
 <td>換算式</td>
-<td><strong>TPM = NCPM × 4,000</strong>(NCPM を上げると TPM も自動追随)</td>
+<td><strong>TPM = NCPM × 4,000</strong>(NCPM を上げると TPM も自動追随。同ページの例は「30 NCPM × 4,000 = 120,000」のまま)</td>
 </tr>
 <tr>
 <td>アバター併用時</td>
-<td>別途 <strong>2 接続/分</strong>、発話中最大 30 分、アイドル 5 分</td>
+<td>別途 <strong>2 接続/分</strong>、発話中最大 30 分(auto-reconnect で延長可)、アイドル 5 分</td>
 </tr>
 </tbody></table></div>
-<p><strong>⚠ ドキュメント間の不整合:</strong> FAQ は「100,000 tokens per minute」、クォータページは 120,000。<strong>設計時にサポート確認する。</strong></p>
+<p><strong>⚠ ドキュメント間・ページ内の不整合(2026-09-26 確認):</strong> FAQ(2026-03-31 版)は「100,000 tokens per minute」、<a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-services-quotas-and-limits">クォータページ</a>(2026-09-09 版)は 120,000。さらにクォータページ内でも<strong>表の NCPM = 100 と換算式(100 × 4,000 = 400,000)が TPM ≤ 120,000 と整合しない。</strong><strong>設計時にサポート確認する。</strong></p>
 <p><strong>コンタクトセンター規模(同時数百コール)では必ず増枠申請が必要。</strong>増枠は専用フォームから「Voice Live API tokens per minute」を選ぶ。<strong>429 はクォータ超過だけでなくオートスケール追随中にも発生する</strong>ため、指数バックオフは必須。公式の推奨負荷パターンは「20 接続から 90〜120 秒ごとに +20、失敗時は 1-2-4-4 分間隔でリトライ」。</p>
 <h3 id="レイテンシ">レイテンシ</h3>
 <p><strong>Voice Live 固有の SLO / 目標値は公式に見つからなかった。</strong>参照できる数値は以下:</p>
@@ -256,8 +288,9 @@ footer {
 <ol>
 <li><strong>ACS Call Automation(第一推奨)</strong> — ACS の提供番号を使うか、既存の PSTN キャリア / PBX と <strong>Direct Routing(SIP)</strong> でつなぐ。リファレンス実装として <strong>Call Center Voice Agent Accelerator</strong> が公開されている。</li>
 <li><strong>サードパーティ音声コネクタ</strong> — <strong>Twilio Media Streams / Infobip Calls / Genesys AudioHook</strong> が公式に列挙されている。既存コンタクトセンター資産がある場合の現実解。</li>
-<li><strong>Voice Live を使わず Azure OpenAI GPT Realtime API の SIP を直接使う</strong> — こちらは <strong>SIP をネイティブサポート</strong>する。着信は Webhook イベントで受け、REST で accept / reject / refer / hangup を制御する。<strong>ただし SIP 対応リージョンは <code>swedencentral</code> と <code>eastus2</code> のみ。</strong></li>
+<li><strong>Voice Live を使わず Azure OpenAI GPT Realtime API の SIP を直接使う</strong> — こちらは <strong>SIP をネイティブサポート</strong>する。着信は Webhook イベントで受け、REST で accept / reject / refer / hangup を制御する。<strong>ただし SIP 対応リージョンは <code>swedencentral</code> と <code>eastus2</code> のみ</strong>(realtime-audio-sip 2026-09-21 版で再確認)。</li>
 </ol>
+<p><strong>追記(2026-09-26): Foundry の voice-based agents(プレビュー)に電話チャネルが付いた。</strong>agent kind = <code>voice</code> のエージェント(<code>VoiceAgents=V1Preview</code>、<code>azure-ai-projects</code> 2.7.0 以降)は、Foundry ポータルの Channels タブまたは azd の <code>telephony</code> バインディングで <strong>Teams Phone extensibility(ACS 経由)または Twilio</strong> の電話番号を紐づけて着信を受けられ、発信は call-job API で行う。ミドル層を自前で書かない 4 つ目の経路だが、<strong>プレビュー</strong>で、バインディングは作成のみ(更新不可)、Teams Phone 経路はプロジェクトと ACS リソースが同一 Entra テナント必須、Twilio 経路は「サポートされるパブリッククラウド環境のみ」。SIP を直接受けるものではない点は変わらない。出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/voice-agent-telephony-channels">Integrate telephony channels with a voice agent</a>(2026-09-25 版)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/voice-agent-channels-publish">Publish and share a voice-based agent</a>(2026-09-25 版)。なお hosted agent は <code>invocations_ws</code>(全二重 WebSocket、フレーム上限 1 MB)で Twilio 等の音声ストリームを自前でブリッジする構成も取れる(<a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/build-voice-agent">build-voice-agent</a> 2026-08-17 版)。</p>
 <blockquote><p><strong>日本案件での判断:</strong> 国内 PSTN 接続なら ACS Direct Routing か Twilio / Genesys 経由が現実的。<strong>AOAI Realtime の SIP は対応リージョンが北欧・米国のみ</strong>で、音声往復レイテンシとデータ所在の両面で不利になる。Voice Live + ACS なら Voice Live 側を Japan East に置ける(ただし次項のモデル制約あり)。</p></blockquote>
 <h3 id="日本リージョンの制約が構成を決める">⚠ 日本リージョンの制約が構成を決める</h3>
 <div class="tablewrap"><table><thead><tr>
@@ -266,14 +299,24 @@ footer {
 <th>Japan West</th>
 </tr></thead><tbody>
 <tr>
-<td><code>gpt-realtime</code> 系ネイティブ speech-to-speech</td>
+<td><code>gpt-realtime</code> 系(2.1 / 1.5 / mini 含む)・<code>azure-realtime</code> のネイティブ speech-to-speech</td>
 <td><strong>✗(提供なし)</strong></td>
 <td>✗</td>
 </tr>
 <tr>
-<td><code>gpt-4.1</code> / <code>gpt-5</code> 系(テキスト LLM)</td>
+<td><code>gpt-4o</code>(テキスト LLM)</td>
+<td><strong>Standard(リージョナル)</strong></td>
+<td><strong>Standard(リージョナル)</strong></td>
+</tr>
+<tr>
+<td><code>gpt-4.1</code> / <code>gpt-5</code> / <code>gpt-5.6-terra</code>・<code>-luna</code> 系(テキスト LLM)</td>
 <td>Global standard</td>
-<td>Global standard</td>
+<td>Global standard(<code>gpt-5.4</code> は ✗)</td>
+</tr>
+<tr>
+<td><code>phi4-mm-realtime</code>(プレビュー)</td>
+<td>Regional</td>
+<td>✗</td>
 </tr>
 <tr>
 <td>HD voices</td>
@@ -288,10 +331,11 @@ footer {
 <tr>
 <td><strong>Foundry エージェント連携</strong></td>
 <td><strong>✅</strong></td>
-<td><strong>✗</strong></td>
+<td><strong>✗</strong>(Voice Live 側の表)/ <strong>✅</strong>(Agent Service 側の voice-based agents 表)— 下記</td>
 </tr>
 </tbody></table></div>
-<blockquote><p><strong>Japan East ではネイティブ speech-to-speech が使えない。</strong>日本リージョン内で完結させるなら「<strong>非マルチモーダルモデル(<code>gpt-4.1</code> / <code>gpt-5</code> 等)+ Azure STT/TTS</strong>」構成になり、レイテンシ特性が変わる(モデル内で音声を直接扱う構成に比べて往復が増える)。<br><br>さらに <strong>Global standard はデータが任意の Azure リージョンで処理される</strong>ため、データ所在要件がある案件では Japan East の Standard デプロイか Data Zone の検討が必要。なお Speech サービス自体は「リソースのリージョン外でデータを保存・処理しない」と明記されている。</p></blockquote>
+<p>出典: <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions?tabs=voice-live">Speech regions(Voice Live タブ)</a>(2026-09-09 版、2026-09-26 確認)。<strong>⚠ Japan West のエージェント連携は公式 2 ページで食い違う:</strong> Voice Live 側の表は Agent support「-」、Agent Service の <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/limits-quotas-regions">limits-quotas-regions</a>(2026-09-07 版)は「Voice-based agents (preview) = Yes」(同ページは「リージョンが Agent Service と選択モデル・チャネルに必要な Voice Live 機能の両方をサポートすること」を条件にしている)。国内 DR で West を使う設計は実測で確認する。</p>
+<blockquote><p><strong>Japan East ではネイティブ speech-to-speech が使えない。</strong>日本リージョン内で完結させるなら「<strong>非マルチモーダルモデル(<code>gpt-4.1</code> / <code>gpt-5</code> 等)+ Azure STT/TTS</strong>」構成になり、レイテンシ特性が変わる(モデル内で音声を直接扱う構成に比べて往復が増える)。<br><br>さらに <strong>Global standard はデータが任意の Azure リージョンで処理される</strong>ため、データ所在要件がある案件では Japan East の Standard デプロイか Data Zone の検討が必要。<strong>Voice Live のマネージドモデルで日本リージョンが Standard(リージョナル)表記なのは <code>gpt-4o</code> のみ</strong>(2026-09-26 確認。ただし gpt-4o はリタイア表 2026-09-21 版で版により 2026-12-09〜2027-04-14 リタイア)で、それ以外の LLM で国内処理を求めるなら BYOM で自分の Standard デプロイを持ち込む構成になる(BYOM は Foundry リソース必須)。なお Speech サービス自体は「リソースのリージョン外でデータを保存・処理しない」と明記されている。</p></blockquote>
 <h3 id="foundry-エージェントとの連携">Foundry エージェントとの連携</h3>
 <div class="tablewrap"><table><thead><tr>
 <th>方式</th>
@@ -307,7 +351,11 @@ footer {
 </tr>
 <tr>
 <td>Hosted agents</td>
-<td>同じく <code>AgentSessionConfig</code>(Responses プロトコル)/ Invocations プロトコル</td>
+<td>同じく <code>AgentSessionConfig</code>(Responses プロトコル)/ Invocations プロトコル。<strong>Hosted agents × Voice Live はブログ(2026-09-09)で GA 明言</strong></td>
+</tr>
+<tr>
+<td><strong>voice-based agents(プレビュー、2026-09 追記)</strong></td>
+<td>エージェント定義自体を kind = <code>voice</code> にする(<code>VoiceAgentDefinition</code>。<code>model_type</code> = <code>managed</code>〈例: <code>gpt-realtime-2.1</code>〉/ <code>self_deployed</code>〈BYOM〉、greeting・音声入出力・ツール・<code>store</code> を定義に持つ)。<code>azure-ai-projects</code> 2.7.0 以降+<code>VoiceAgents=V1Preview</code>。会話保存時の音声保持は 60 日(<a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/configure-voice-agent">configure-voice-agent</a> 2026-09-25 版 / limits-quotas-regions)</td>
 </tr>
 </tbody></table></div>
 <p><strong>制約(設計に効くもの):</strong></p>
@@ -326,12 +374,12 @@ footer {
 <p><strong>→ 金融・医療など独自ポリシーが必要な案件は BYOM が前提</strong>(= Foundry リソース必須。Azure Speech リソースでは不可)。BYOM は 3 プロファイル(Azure OpenAI realtime / Azure OpenAI chat completion / Anthropic messages〈プレビュー〉)があり、公式のユースケースとして「<strong>自分の LLM にカスタマイズしたコンテンツセーフティ構成を適用する</strong>」「PTU を使う」「ファインチューン済みモデルを使う」が挙げられている。<strong>BYOM ページは「レイテンシ削減のためフィルタを非同期モードにせよ」と推奨している。</strong></p>
 <h3 id="e1-のチェックリスト">E1 のチェックリスト</h3>
 <ul>
-<li>[ ] Voice Live を<strong>プレビュー前提</strong>で扱っているか(GA 一覧表の表記。SLA を論点にするなら表記不一致について Microsoft に確認)</li>
+<li>[ ] 使うサーフェスのステータスを切り分けたか(<strong>Voice Live API 本体・hosted agents 連携 = GA / ポータルの Agents — Voice Live・voice-based agents・電話チャネル = Preview</strong>。SLA を論点にするなら表記不一致について Microsoft に確認)</li>
 <li>[ ] WebRTC(プレビュー)を本番設計から外したか</li>
 <li>[ ] <strong>Japan East でネイティブ speech-to-speech が使えない</strong>前提で構成を組んだか</li>
-<li>[ ] 同時コール数から必要 NCPM を逆算し(TPM = NCPM × 4,000)、増枠申請の要否を判断したか</li>
+<li>[ ] 同時コール数から必要 NCPM を逆算し(TPM = NCPM × 4,000。既定値の表記はページ内で不整合)、増枠申請の要否を判断したか</li>
 <li>[ ] <strong>最大セッション 60 分</strong>を超える通話の扱いを決めたか</li>
-<li>[ ] テレフォニー接続方式(ACS / サードパーティ / AOAI SIP)を選び、リージョンとデータ所在を確認したか</li>
+<li>[ ] テレフォニー接続方式(ACS / サードパーティ / AOAI SIP / voice-based agents の電話チャネル〈プレビュー〉)を選び、リージョンとデータ所在を確認したか</li>
 <li>[ ] コンテンツフィルタの調整が必要なら <strong>BYOM 前提</strong>の構成にしたか</li>
 <li>[ ] 429 に対する指数バックオフと段階的な負荷投入を実装したか</li>
 </ul>
@@ -391,22 +439,27 @@ footer {
 <tr>
 <td>最大文書サイズ</td>
 <td><strong>500 MB</strong></td>
-<td>200 MB(PDF/TIFF/画像)</td>
+<td>200 MB(PDF/TIFF/画像。非同期)</td>
 </tr>
 <tr>
 <td><strong>最大ページ数</strong></td>
 <td><strong>2,000</strong></td>
-<td><strong>300</strong></td>
+<td><strong>300</strong>(非同期)</td>
 </tr>
 <tr>
 <td>Office ファイル</td>
 <td>800 万文字</td>
-<td>100 万文字</td>
+<td><strong>1,000 万文字 / 200 MB</strong>(2026-07-30 時点の「100 万文字」から変更)</td>
 </tr>
 <tr>
-<td>TXT/HTML/MD 等</td>
+<td>TXT/HTML/MD/EML 等</td>
 <td>—</td>
-<td><strong>1 MB</strong></td>
+<td><strong>1,000 万文字 / 200 MB</strong>(同「1 MB」から変更。課金は 3,000 文字 = 1 ページ換算)</td>
+</tr>
+<tr>
+<td>同期実行(<code>2026-06-01-preview</code>)</td>
+<td>—</td>
+<td>10 MB / 5 ページ(超過分は先頭 5 ページのみ処理)、Office・テキストは 3 万文字</td>
 </tr>
 <tr>
 <td>音声</td>
@@ -421,13 +474,14 @@ footer {
 <tr>
 <td>スループット</td>
 <td>15 TPS(申請で調整可)</td>
-<td>1,000 ページ・画像/分</td>
+<td>1,000 ページ・画像/分(音声・動画は各 4 時間/分)、操作 3,000/分</td>
 </tr>
 </tbody></table></div>
+<p>出典: <a href="https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/service-limits">DI service-limits</a>(2026-09-08 版)/ <a href="https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/service-limits">CU service-limits</a>(2026-09-11 版。API 版ごとの区別はページに無い)。</p>
 <blockquote><p><strong>⚠ ページ上限の逆転:</strong> <strong>Content Understanding は 300 ページ、Document Intelligence Layout は 2,000 ページ。</strong>超長尺 PDF は上流で分割するか DI Layout を選ぶ。Content Understanding スキルのトラブルシュートでも「インデックス前にソース文書を小さいファイルに分割せよ」と推奨されている。</p></blockquote>
 <p><strong>ページ単位課金の換算(DI):</strong> PDF = 1 ページ、<strong>DOCX / HTML = 3,000 文字で 1 ページ単位</strong>、XLSX = 1 ワークシート、PPTX = 1 スライド。</p>
 <h3 id="content-understanding-の-ga-での破壊的変更-見落とすと詰まる">Content Understanding の GA での破壊的変更(見落とすと詰まる)</h3>
-<p>API <code>2025-11-01</code> で GA(2025 年 11 月)。プレビュー版 API は 2026-07-15 までに廃止済み。</p>
+<p>API <code>2025-11-01</code> で GA(2025 年 11 月)。旧プレビュー版 API(<code>2024-12-01-preview</code> / <code>2025-05-01-preview</code>)は 2026-07-15 までに廃止済み。<strong>2026-09-26 時点で新しい <code>2026-06-01-preview</code>(agentic mode・同期 Read/Layout・署名検出・文書メタデータ等)がパブリックプレビュー</strong>で、GA は引き続き <code>2025-11-01</code>(What's new 2026-09-08 版)。</p>
 <ul>
 <li><strong>Pro モード(クロスファイル推論)と Face API はプレビュー限りで GA に持ち越されなかった。</strong></li>
 <li><strong>プレビュー期のマネージド生成モデルキャパシティが廃止された</strong> → <strong>自分の Foundry の LLM デプロイと埋め込みデプロイを持ち込む必要がある</strong>(モデル不要の例外は <strong><code>prebuilt-read</code> / <code>prebuilt-layout</code> の 2 つのみ</strong>〈公式 whats-new に明記〉)。</li>
@@ -465,7 +519,7 @@ footer {
 <tr>
 <td>ステータス</td>
 <td>既存パイプライン向け</td>
-<td><strong>GA(2026-04-01)。</strong>セマンティックチャンキングはプレビュー</td>
+<td><strong>GA(2026-04-01)。</strong>セマンティックチャンキングと埋め込み画像・図の AI 説明生成は <code>2026-05-01-preview</code> でプレビュー</td>
 </tr>
 <tr>
 <td>表・図の出力</td>
@@ -491,7 +545,7 @@ footer {
 <p><strong>両スキル共通の罠:</strong> <strong>レイアウト処理に 5 分以上かかる文書はタイムアウトし、しかも課金される。</strong></p>
 <p><strong>Markdown 出力の挙動変更(DI v4.0 GA):</strong> <strong>表は HTML テーブルとして出力される</strong>(パイプ表ではない。結合セル・複数行ヘッダー対応のため)。選択マークは Unicode <code>☒</code> / <code>☐</code>(旧 <code>:selected:</code>)。<strong>後段のパーサを書くときにここを間違えやすい。</strong></p>
 <h3 id="vision-の世代交代に注意">Vision の世代交代に注意</h3>
-<p><strong>Azure AI Vision Image Analysis 4.0/3.2 は 2028-09-25 廃止</strong>で、「2026-09-25 までに移行計画を」と記載されている。公式の移行先は OCR → Document Intelligence、顔 → Face API、埋め込み → Cohere Embed、汎用 → GPT 系 Foundry Models / Content Understanding。<strong>既存の画像解析パイプラインを持つ顧客には、この期限を提示する。</strong></p>
+<p><strong>Azure AI Vision Image Analysis 4.0/3.2 は 2028-09-25 廃止</strong>で、「2026-09-25 までに移行計画を」と記載されている(<strong>この移行計画の目安日は 2026-09-26 時点で経過済み</strong>。廃止はクラウド API に加え接続コンテナ・切断コンテナにも適用と明記 — <a href="https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/migration-options">migration-options</a> 最終更新 2026-06-11)。公式の移行先は OCR → Document Intelligence、顔 → Face API、埋め込み → Cohere Embed、汎用 → GPT 系 Foundry Models / Content Understanding。<strong>既存の画像解析パイプラインを持つ顧客には、この期限を提示する。</strong></p>
 <hr>
 <h2 id="e3-大量バッチ処理">E3. 大量バッチ処理</h2>
 <p><strong>「リアルタイムでなくてよい処理」を切り出すだけでモデルコストが半減する。</strong>PoC 段階でこの切り分けを設計に入れる。</p>
@@ -544,12 +598,16 @@ footer {
 <th>ステータス</th>
 </tr></thead><tbody>
 <tr>
+<td><strong><code>gpt-image-2.5-sunburst</code> / <code>gpt-image-2.5-flare</code>(2026-09-09 公開、追記)</strong></td>
+<td><strong>GA</strong>(リタイア 2027-09-09)。image how-to の表で「Generally Available」(限定アクセスの記載なし)。sunburst = 編集精度重視の最上位、flare = 速度・コスト重視。品質は <code>low</code>〜<code>xhigh</code> / <code>max</code> / <code>auto</code>、サイズ仕様は gpt-image-2 と同等(2560x1440 超は experimental)。<strong>GlobalStandard のみで全 Tier 5 RPM 固定</strong></td>
+</tr>
+<tr>
 <td><strong><code>gpt-image-2</code></strong></td>
-<td><strong>GA。申請不要</strong></td>
+<td><strong>GA。申請不要</strong>(リタイア 2027-10-21)</td>
 </tr>
 <tr>
 <td><code>gpt-image-1.5</code> / <code>gpt-image-1</code> / <code>gpt-image-1-mini</code></td>
-<td><strong>限定アクセス(要申請)。</strong>ライフサイクルは <strong><code>gpt-image-1</code> のみ Preview</strong>(2026-10-23 リタイア)。<code>gpt-image-1.5</code>(2026-12-16 リタイア)と <code>gpt-image-1-mini</code> は <strong>GA</strong></td>
+<td><strong>限定アクセス(要申請)。</strong>ライフサイクルは <strong><code>gpt-image-1</code> のみ Preview</strong>(<strong>2026-10-23 リタイア</strong>)。<code>gpt-image-1.5</code>(<strong>2026-12-16 リタイア</strong>)と <code>gpt-image-1-mini</code>(2027-04-07)は <strong>GA</strong>(リタイア表)。ただし image how-to の比較表は 3 モデルとも「Limited access preview」表記で食い違う</td>
 </tr>
 <tr>
 <td><code>dall-e-3</code></td>
@@ -560,14 +618,19 @@ footer {
 <td><strong>GA</strong>(model-retirement-schedule の Black Forest Labs 表で Lifecycle = GA)。multi-reference は API のみ(Playground 不可)</td>
 </tr>
 <tr>
-<td><code>MAI-Image-2.5</code> 系(Microsoft)</td>
-<td><span class="badge preview">プレビュー</span></td>
+<td><code>MAI-Image-2.5</code> / <code>-2.5-Flash</code> / <code>-2.5-Pro</code>(Microsoft)</td>
+<td><span class="badge preview">プレビュー</span>。<strong>2026-10-01 リタイア</strong>(後継未記載)。後続の <strong><code>MAI-Image-2.6</code> / <code>-2.6-Flash</code>(プレビュー、2026-07-31 公開)</strong>が MAI image ページ(2026-09-21 版)に追加</td>
 </tr>
 <tr>
-<td><strong><code>sora</code> / <code>sora-2</code>(動画)</strong></td>
-<td><strong>プレビュー</strong></td>
+<td><strong><code>sora-2</code>(動画)</strong></td>
+<td><strong>プレビュー。2025-12-08 版が 2026-10-15 リタイアで、リタイア表に後継の記載なし</strong>(2025-10-06 版は 2026-07-15 リタイア済み)。<strong>動画生成を長期案件の前提に置けない</strong></td>
+</tr>
+<tr>
+<td><code>sora</code>(初代、動画)</td>
+<td>リタイア表(2026-09-21 版)・retired-models(2026-07-27 版)のいずれにも掲載が無く、video-generation ページも Sora 2 のみ記載(要確認)</td>
 </tr>
 </tbody></table></div>
+<p>出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule">Model retirement schedule</a>(2026-09-21 版)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/dall-e">image generation how-to</a>(ms.date 2026-04-17、2026-09-26 取得時点で gpt-image-2.5 系を掲載)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits">quotas-limits</a>(2026-08-20 版)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/use-foundry-models-mai-image">MAI image models</a>(2026-09-21 版)。</p>
 <h3 id="画像生成-api-は同期-制約はレート制限">画像生成 — API は同期。制約はレート制限</h3>
 <p><strong>画像生成は同期 API</strong>(<code>/images/generations</code>、<code>/images/edits</code>)で、非同期ジョブではない。FLUX は Image API に加えてプロバイダ固有 API(<code>seed</code> / <code>safety_tolerance</code> 等が使える)も利用できる。</p>
 <div class="tablewrap"><table><thead><tr>
@@ -626,6 +689,12 @@ footer {
 <td><strong>12</strong></td>
 </tr>
 <tr>
+<td><code>gpt-image-2.5-sunburst</code> / <code>-flare</code> GlobalStandard</td>
+<td><strong>5</strong></td>
+<td><strong>5</strong></td>
+<td><strong>5</strong></td>
+</tr>
+<tr>
 <td><code>gpt-image-1.5</code> GlobalStandard</td>
 <td>9</td>
 <td>30</td>
@@ -638,8 +707,10 @@ footer {
 <td>180</td>
 </tr>
 </tbody></table></div>
+<p>(quotas-limits 2026-08-20 版、2026-09-26 確認。gpt-image-2.5 系は Tier を上げても 5 RPM のままで、DataZoneStandard の行は無い)</p>
 <p><strong>TPM は設定されず RPM のみ。</strong>しかも <strong>Data Zone デプロイは Global の 1/3 程度</strong>まで落ちる。<strong>データ所在要件と画像生成スループットは正面から衝突する。</strong></p>
 <h3 id="動画生成-sora-sora-2-非同期ジョブ-24-時間の失効">動画生成(Sora / Sora 2)— 非同期ジョブ + 24 時間の失効</h3>
+<blockquote><p><strong>⚠ 2026-09-26 時点の前提:</strong> <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/video-generation">video-generation ページ</a>は「Video generation with Sora 2 (preview)」として Sora 2 のみを記載し、<strong><code>sora-2</code>(2025-12-08)は 2026-10-15 リタイアで後継未掲載</strong>(リタイア表 2026-09-21 版)。以下の制約は同ページの記載で変わっていないが、<strong>新規案件で動画生成を組み込むならリタイア後の代替(後継モデルの有無)を先に確認する。</strong></p></blockquote>
 <p><strong>API は 2 系統が併記されている</strong>(Azure 独自の jobs API と、OpenAI v1 互換の videos API)。いずれも「ジョブ作成 → ポーリング → コンテンツ取得」の流れ。</p>
 <pre><code> POST  .../video/generations/jobs        → {&quot;id&quot;:&quot;task_...&quot;,&quot;status&quot;:&quot;queued&quot;}
  GET   .../video/generations/jobs/{id}   → queued → preprocessing → running
@@ -674,12 +745,13 @@ footer {
 <p><strong>画像には Content Credentials(C2PA)が自動付与される。</strong></p>
 <blockquote><p>Azure OpenAI が生成したすべての AI 生成画像には <strong>Content Credentials</strong> が含まれる。これは C2PA のオープン仕様に基づく、改ざん検知可能なコンテンツの来歴開示手段である。</p></blockquote>
 <p>マニフェストには <code>description: &quot;AI Generated Image&quot;</code>、<code>softwareAgent</code>(<code>Azure OpenAI DALL-E</code> または <code>Azure OpenAI ImageGen</code>)、生成タイムスタンプが入り、Azure OpenAI に遡る証明書で署名される。追加設定は不要で、検証は contentcredentials.org などで行える。</p>
-<p><strong>ただし重大な留保が 3 つある:</strong></p>
+<p><strong>2026-07-30 時点の留保 3 つのうち 2 つは、新 Foundry の <a href="https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/content-safety/provenance-disclosure">Content provenance for Foundry models</a>(2026-09-17 版、What's new 2026-08 号で新規記事)で解消した:</strong></p>
 <ol>
-<li>この記事は <strong>「Foundry (classic) ポータル専用。新 Foundry ポータル向けには提供されない」</strong>と明記されており、<strong>新 Foundry ドキュメントに対応記事が存在しない</strong>(該当 URL は 404)。</li>
-<li><strong><code>gpt-image-2</code> が明示的に列挙されていない</strong>(記載は「DALL·E and GPT-image-1 series」)。同系統として付与される可能性は高いが<strong>確認できず。</strong></li>
-<li><strong>動画(Sora / Sora 2)への C2PA・電子透かし・プロベナンス付与の記載は一切見つからなかった。</strong>生成動画の来歴表示が要件なら、<strong>自前で C2PA を付与する検討が必要。</strong></li>
+<li><del>新 Foundry ドキュメントに対応記事が存在しない</del> → <strong>新記事ができた。</strong>手段は <strong>Content Credentials(C2PA)と不可視の電子透かし</strong>の 2 つで、検証用に Content Provenance Detection のサイトと API が提供される。</li>
+<li><del><code>gpt-image-2</code> が明示的に列挙されていない</del> → <strong>対応表に <code>gpt-image-1-mini</code> / <code>gpt-image-1.5</code> / <code>gpt-image-2</code> が列挙</strong>された(MAI-Image-2.5 系・FLUX 系・gpt-audio 系・MAI-Voice・Azure AI Speech の TTS も対象)。<strong>ただし <code>gpt-image-1</code> と新しい <code>gpt-image-2.5</code> 系は表に無く</strong>、モデルごとに C2PA と透かしのどちらが付くかも表からは読めない。</li>
+<li><strong>動画は依然として対応表に無い</strong>(記事は「image, audio, video, and text」を対象にすると書くが、表は Image / Audio / Text のみで Sora 系の記載なし)。生成動画の来歴表示が要件なら、<strong>自前で C2PA を付与する検討が必要</strong>な状況は変わらない。</li>
 </ol>
+<p>加えて同記事は「来歴情報は編集・再保存・トリミング・フォーマット変換で失われうる」「来歴は信頼性や著作者を証明しない」と限界を明記している。</p>
 <p><strong>コンテンツフィルタリングは入力プロンプトと出力画像の両方に適用される。</strong>「全モデルで入出力フィルタリング」「<strong>未成年のフォトリアリスティック画像を既定でブロック</strong>」と明記され、ブロック時は <code>error.code: &quot;contentFilter&quot;</code> が返る。解除は限定アクセス申請経由。</p>
 <p><strong>⚠ 画像入力シナリオではリクエスト単位のガードレール指定が効かない。</strong>「画像入力(chat with images)のシナリオではリクエスト時のガードレール指定が利用できず、既定のガードレールが使われる」と明記されている。</p>
 <p><strong>Sora 2 の RAI 制限は商用ユースケースの大半を排除しうる。</strong>公式に列挙されているのは:</p>
@@ -730,7 +802,7 @@ footer {
 </tr>
 <tr>
 <td><strong>閉域での制約</strong></td>
-<td><strong>パブリックネットワーク無効プロジェクトはポータルからの公開が不可・REST のみ</strong></td>
+<td><strong>パブリックネットワーク無効プロジェクトはポータルからの公開が不可・REST のみ。</strong>REST では送信元 IP でフィルタされた公開 Activity Protocol ルート(<code>enable_m365_public_endpoint</code>)を有効化する必要がある(<a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot">publish-copilot</a> 2026-09-23 版)</td>
 </tr>
 <tr>
 <td>Azure Government</td>
@@ -746,7 +818,7 @@ footer {
 <p><strong>課金は publisher-pays</strong>(発行者がインフラ費用を負担し、エンドユーザーは既定で課金されない)。<strong>社内展開のコスト設計で見落としやすい。</strong></p>
 <h3 id="copilot-studio-との棲み分け">Copilot Studio との棲み分け</h3>
 <ul>
-<li><strong>Copilot Studio から Foundry エージェントへの接続はプレビュー</strong>(新 Foundry ポータルで作成されたエージェントのみ)。</li>
+<li><strong>Copilot Studio から Foundry エージェントへの接続はプレビュー</strong>(新 Foundry ポータルで作成されたエージェントのみ。Foundry エージェント側で <strong>Activity プロトコルのエンドポイントを有効化</strong>しておく必要がある — 新規エージェントの既定は Responses と A2A のみで、<strong>有効化は REST / Python SDK からのみ・ポータル不可</strong>。<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/add-agent-foundry-agent">add-agent-foundry-agent</a> 2026-08-26 版)。</li>
 <li>逆方向(<strong>Foundry → M365 Copilot / Teams の publish)は GA。</strong></li>
 <li>CAF は SaaS(Copilot Studio)vs PaaS(Foundry)として整理し、ハイブリッド運用も推奨している。ただし「<strong>Low-code SaaS 開発は重いカスタマイズで限界に達し、マネージドプラットフォームへの移行が必要になる</strong>」とも明記。</li>
 <li><strong>Copilot Studio / Foundry のエージェントセキュリティ機能は Microsoft Agent 365 へ移行中。</strong></li>
@@ -754,11 +826,12 @@ footer {
 <h3 id="work-iq-m365-のコラボレーション文脈を使う">Work IQ(M365 のコラボレーション文脈を使う)</h3>
 <p><strong>成立条件が厳しいので先に確認する:</strong></p>
 <ul>
-<li><strong>M365 Copilot ライセンスが必須</strong>(開発者・エンドユーザー双方)</li>
-<li><strong>Entra Global Administrator による <code>WorkIQAgent.Ask</code> のテナント同意が必須</strong></li>
+<li><strong>ステータスはパブリックプレビュー</strong>(ツール型 <code>work_iq_preview</code>。<a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/work-iq">work-iq</a> 2026-09-04 版)</li>
+<li><strong>ライセンス(2026-09-26 に更新):</strong> Work IQ API(A2A / REST / MCP 経由)は <strong>Copilot Credits による従量課金</strong>でコネクタライセンス不要。<strong>コネクタ経由の M365 ツールは、コネクタによって呼び出しユーザーごとに M365 Copilot ライセンスが必要</strong>(2026-07-30 版の「開発者・エンドユーザー双方に M365 Copilot ライセンス必須」から公式記述が変わった)</li>
+<li><strong>Entra Global Administrator による Work IQ サービスプリンシパルのプロビジョニングと <code>WorkIQAgent.Ask</code> のテナント同意が必須</strong>(1 回限り。PIM での JIT 付与を推奨)</li>
 <li><strong>BYO Entra アプリ(OBO)のみ</strong>サポート</li>
-<li><strong>VNet 統合非対応</strong></li>
-<li>データレジデンシは Foundry プロジェクトのリージョンではなく <strong>M365 テナントの構成に従う</strong></li>
+<li><strong>ネットワーク:</strong> BYO VNet のアウトバウンド統合を構成したプロジェクトでは、Work IQ ツール呼び出しはプロジェクト専用の data proxy を経由する(顧客のネットワーク制御が効く)が、<strong>宛先は公開 HTTPS エンドポイント <code>https://workiq.svc.cloud.microsoft</code> のまま</strong>で、Private Endpoint(インバウンド)だけでは送信側はプライベートにならない。一方 toolbox-network-isolation の表は Work IQ を「非対応」とする — <strong>「閉域に閉じる」要件は満たさない</strong>と扱う</li>
+<li><strong>データ所在・コンプライアンス:</strong> M365 からの取得はテナントの権限・レジデンシ構成に従うが、<strong>エンドツーエンドの処理は Copilot の課金構成と Foundry プロジェクトのリージョンにも依存し、Azure のコンプライアンス境界の外で処理されうる</strong>と明記(2026-07-30 版の「M365 テナントの構成に従う」だけでは不十分)</li>
 <li>接続は A2A プロトコル。Java SDK 非対応</li>
 </ul>
 <p>M365 の権限・秘密度ラベル・情報バリアを自動適用し、顧客コンテンツはモデル学習に使われない。</p>
@@ -809,7 +882,7 @@ footer {
 </tr>
 </tbody></table></div>
 <p><strong>公式のスタッキング推奨:</strong> 「まず <strong>SFT</strong> でユースケースに最適化したモデルを作り、<strong>次に DPO</strong> で応答を自分の選好にアラインさせる。SFT の段階ではデータ品質とタスクの代表性に集中し、DPO の段階で具体的な比較によって応答を調整する。」</p>
-<p><strong>対応モデル(抜粋):</strong> GPT-4.1 系 / GPT-4o は SFT + DPO(4.1 と 4o は<strong>ビジョンも対応</strong>)、GPT-4o-mini は SFT のみ、<strong>o4-mini は RFT のみ。</strong>Phi 4 / Ministral 3B / Mistral 系は SFT。NTT の tsuzumi-7b も SFT 対応として列挙されているが、<strong>Legacy 扱いで 2026-08-31 にリタイア予定</strong>(後継は tsuzumi2)のため、<strong>新規案件で選ぶべきではない。</strong>なお <code>gpt-5</code> の RFT はゲート制・招待制。</p>
+<p><strong>対応モデル(抜粋。新 Foundry の <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/fine-tuning">fine-tuning how-to</a> 2026-07-30 版の表):</strong> GPT-4.1 / 4.1-mini / 4.1-nano / GPT-4o は SFT + DPO(4.1 と 4o は<strong>ビジョンも対応</strong>)、GPT-4o-mini は SFT のみ、<strong>o4-mini は RFT のみ</strong>、<code>gpt-5</code> は RFT(GA だがゲート制・招待制)。OSS は <strong>Ministral-3B / Qwen-32B / Llama-3.3-70B-Instruct / gpt-oss-20b が SFT(GA)</strong>で、Foundry リソースと新ポータルのみ・Global / Data Zone(US)のみ(Standard リージョンと Developer は非対応)。Phi 4 / Mistral Nemo / Mistral Large / NTT tsuzumi-7b は <strong>classic の fine-tuning-overview(2025-12-03 版)にだけ列挙</strong>されている。tsuzumi-7b は <strong>Legacy 扱いで 2026-08-31 がリタイア日(2026-09-26 時点で経過。リタイア表 2026-09-21 版は Legacy 表記のまま)</strong>、後継は tsuzumi2 のため、<strong>新規案件で選ぶべきではない。</strong><strong>ベースモデル側のリタイアにも注意:</strong> gpt-4.1-nano は 2026-10-14、gpt-4o(2024-08-06)・gpt-4o-mini・gpt-4.1 / -mini は 2027-04-14、o4-mini は 2026-11-19 にリタイア(リタイア表 2026-09-21 版。FT 済みモデルのデプロイは下記の別日程)。</p>
 <p><strong>Serverless か Managed compute か:</strong> Serverless は Microsoft 側キャパシティで従量課金、GPU クォータ不要、<strong>OpenAI モデルへの独占的アクセス</strong>。Managed compute はモデル種別が広く高度なカスタマイズが可能だが、<strong>学習・ホスティング両方に自前 VM が必要で、多くの顧客が持っていない高いクォータを要求し、OpenAI モデルを含まない。</strong>公式の結論は「<strong>大半の顧客には serverless が最良のバランス</strong>」。</p>
 <h3 id="コスト構造-使わなくても課金され-放置すると消える">⚠ コスト構造 — 使わなくても課金され、放置すると消える</h3>
 <p><strong>2 つのルールが同時に効くので、両方を運用設計に入れる。</strong></p>
@@ -847,7 +920,7 @@ footer {
 <p><strong>クロスリージョン / クロスサブスクリプション / クロステナントのデプロイに対応している</strong>(学習したリージョンと別のリージョンへデプロイ可能)。ただし<strong>ポータルはクロスリージョン非対応で SDK / REST が必要。</strong></p>
 <h3 id="2-段階リタイアと-api-のステータス表記のズレ">⚠ 2 段階リタイアと、API のステータス表記のズレ</h3>
 <blockquote><p><strong>ファインチューン済みモデルは 2 段階でリタイアする: training と deployment。</strong>明示的な記載がない限り、<strong>training のリタイアはベースモデルのリタイア日より早くはならない。</strong>training がリタイアするとファインチューニングには使えなくなるが、<strong>それ以前に学習済みのモデルはデプロイ可能なまま残る。</strong><strong>deployment のリタイア時点で、推論とデプロイはエラーを返す。</strong></p></blockquote>
-<p>主要モデルの日程は「training は 2027-04 前後(既存顧客のみ延長)、<strong>deployment は約 6 か月後の 2027-10</strong>」という形で並んでいる。<strong>学習停止から推論停止まで約半年のバッファ</strong>がある設計。</p>
+<p>主要モデルの日程は「training は 2027-04〜05 前後(既存顧客のみ延長)、<strong>deployment は約 6 か月後の 2027-10〜11</strong>」という形で並んでいる(リタイア表 2026-09-21 版: gpt-4.1 / -mini / -nano = training 2027-04-14 以降・deployment <strong>2027-10-14</strong>、gpt-4o(2024-08-06)/ gpt-4o-mini = 2027-04-01 以降・<strong>2027-10-01</strong>、o4-mini = 2027-05-19 以降・<strong>2027-11-19</strong>)。<strong>学習停止から推論停止まで約半年のバッファ</strong>がある設計。</p>
 <p><strong>⚠ 自動化を書くときの落とし穴:</strong> Models API のフィールド値がドキュメント / ポータルの用語とズレている。</p>
 <div class="tablewrap"><table><thead><tr>
 <th>ドキュメント上の段階</th>
@@ -904,8 +977,8 @@ footer {
 <th>状況</th>
 </tr></thead><tbody>
 <tr>
-<td>~~Voice Live の GA 明文~~ <strong>解決(2026-07-30)</strong></td>
-<td><span class="badge ga">GA</span> 一覧表に「Agents — Voice Live = <strong>Preview</strong>」と明記。ただし Voice Live 自身のページには preview バナーが無く、表記の不一致は残る</td>
+<td><del>Voice Live の GA 明文</del> <strong>解決(2026-07-30)→ 再整理(2026-09-26)</strong></td>
+<td>2026-07-30 は GA 一覧表の「Agents — Voice Live = <strong>Preview</strong>」だけで判断したが、Speech What's new は <strong>Voice Live API 本体を 2025-11 GA、Agent Service 統合を 2026-04 GA</strong> と明記、ブログ(2026-09-09)は <strong>hosted agents × Voice Live を GA</strong> と明言。<strong>サーフェス別の表記不一致(GA 一覧表のみ Preview)は残る</strong>(<a href="#ライフサイクル-サーフェスごとに-ga-preview-が分かれる-2026-09-26-再検証">E1 のライフサイクル節</a>)</td>
 </tr>
 <tr>
 <td><strong>Voice Live 固有のレイテンシ SLO</strong></td>
@@ -916,24 +989,24 @@ footer {
 <td>「含まれる」「変更・無効化不可」は明記。<strong>カテゴリ・しきい値・音声への適用範囲・注釈の返却有無は不明</strong></td>
 </tr>
 <tr>
-<td><strong>Voice Live の TPM</strong></td>
-<td>FAQ が 100,000、クォータページが 120,000 で不一致</td>
+<td><strong>Voice Live の TPM / NCPM</strong></td>
+<td>FAQ(2026-03-31 版)が 100,000、クォータページ(2026-09-09 版)が ≤120,000 で不一致のまま。さらにクォータページの NCPM が 30 → <strong>100</strong> に変わり、換算式(TPM = NCPM × 4,000)と表の TPM が整合しなくなった(2026-09-26 確認)</td>
 </tr>
 <tr>
 <td><strong>Sora 2 の解像度・尺</strong></td>
-<td>同一ページ内の 3 箇所で記述が食い違う。実測確認が必要</td>
+<td>同一ページ内の 3 箇所で記述が食い違う(2026-09-26 再確認でも同じ)。実測確認が必要。<strong>加えて <code>sora-2</code> は 2026-10-15 リタイアで後継未掲載</strong></td>
 </tr>
 <tr>
-<td><strong><code>gpt-image-2</code> への C2PA 付与</strong></td>
-<td>明示的な列挙がない。同系統として付与される可能性は高いが未確認</td>
+<td><del><code>gpt-image-2</code> への C2PA 付与</del> <strong>解決(2026-09-26)</strong></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/content-safety/provenance-disclosure">Content provenance for Foundry models</a>(2026-09-17 版)の対応表に <code>gpt-image-2</code> を列挙。<strong>ただし <code>gpt-image-1</code> と <code>gpt-image-2.5</code> 系は表に無く</strong>、モデルごとに C2PA / 透かしのどちらが付くかは表から読めない</td>
 </tr>
 <tr>
 <td><strong>動画のプロベナンス</strong></td>
-<td>C2PA・透かし・来歴メタデータの記載が一切ない</td>
+<td>新記事(2026-09-17 版)も対応表は Image / Audio / Text のみで、Sora 系の記載なし(2026-09-26 確認)</td>
 </tr>
 <tr>
-<td><strong>新 Foundry での Content Credentials</strong></td>
-<td>記事が classic 専用で、新ポータル向けページが存在しない(404)</td>
+<td><del>新 Foundry での Content Credentials</del> <strong>解決(2026-09-26)</strong></td>
+<td>新 Foundry に <a href="https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/content-safety/provenance-disclosure">Content provenance for Foundry models</a>(2026-09-17 版)が新設。C2PA と不可視透かしの 2 方式、検出サイト / API あり。classic の旧記事 URL(<code>/azure/foundry/openai/concepts/content-credentials</code>)は引き続き 404</td>
 </tr>
 <tr>
 <td><strong>メディア生成パイプラインの公式アーキテクチャ</strong></td>
@@ -944,12 +1017,20 @@ footer {
 <td>存在しない。公式の答えは「<strong>既存の MLOps 投資をそのまま使え</strong>」</td>
 </tr>
 <tr>
-<td>~~リソースあたりの FT デプロイ数上限~~ <strong>解決(2026-07-30)</strong></td>
+<td><del>リソースあたりの FT デプロイ数上限</del> <strong>解決(2026-07-30)</strong></td>
 <td><strong>10 デプロイ/リソース</strong>(<a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits">quotas-limits</a> に明記)。training jobs は 100/リソース、同時実行 3(Developer tier は 5)</td>
 </tr>
 <tr>
 <td>新ポータルの fine-tuning 総覧ページ</td>
-<td><code>/azure/foundry/concepts/fine-tuning-overview</code> は <strong>404</strong>。総覧は classic 配下にのみ存在し、新ポータル側は複数ページに分散している</td>
+<td><code>/azure/foundry/concepts/fine-tuning-overview</code> は <strong>404</strong>(2026-09-26 再確認)。総覧は classic 配下にのみ存在し、新ポータル側は複数ページに分散している</td>
+</tr>
+<tr>
+<td><strong>Japan West の音声エージェント連携</strong></td>
+<td>Voice Live 側のリージョン表(2026-09-09 版)は Agent support「-」、Agent Service の limits-quotas-regions(2026-09-07 版)は voice-based agents (preview) = Yes で食い違う(2026-09-26 追加)。要確認: <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions?tabs=voice-live" title="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions?tabs=voice-live">regions</a></td>
+</tr>
+<tr>
+<td><strong><code>sora</code>(初代)の現状</strong></td>
+<td>リタイア表・retired-models のどちらにも掲載なし、video-generation ページは Sora 2 のみ(2026-09-26 追加)。要確認: <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/retired-models" title="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/retired-models">retired-models</a></td>
 </tr>
 </tbody></table></div>
 </main>

@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="06-ユースケース編-c-顧客向け公開・マルチテナント-saas・大規模トラフィック">06. ユースケース編 C — 顧客向け公開・マルチテナント SaaS・大規模トラフィック</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#c1-一般顧客向けチャット-単一テナント">C1. 一般顧客向けチャット(単一テナント)</a></li><li><a href="#c2-マルチテナント-saas">C2. マルチテナント SaaS</a></li><li><a href="#c3-大規模トラフィック・複数部門への払い出し">C3. 大規模トラフィック・複数部門への払い出し</a></li><li><a href="#このパターン特有のチェックリスト">このパターン特有のチェックリスト</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(定期更新: hosted agent の同時セッション既定上限とサブネット換算表・ユーザー単位分離〈<code>x-ms-user-identity</code>〉・S3 HD の Foundry IQ 対応・Secure Multitenant RAG 記事の改訂・AI Gateway の閉域要件を反映)</p></blockquote>
 <p>社内利用と外部公開の間には、<strong>アーキテクチャ上の断絶</strong>がある。社内なら「Entra ID で認証すれば概ね安全」が成り立つが、外部公開では (1) 不特定多数からの攻撃、(2) テナント間のデータ分離、(3) 一部利用者による資源の占有、(4) 利用量に応じた課金按分 — の 4 つが同時に効いてくる。</p>
 <h2 id="パターン一覧">パターン一覧</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -154,7 +154,8 @@ footer {
 <p><strong>これは Foundry が守ってくれない領域で、外部公開では致命的になる。</strong></p>
 <blockquote><p><strong>Foundry Agent Service は会話に対するユーザー単位の認可を強制しない。</strong>アプリケーションサーバーの ID はプロジェクトレベルの資格情報を持ち、<strong>ID さえ渡せば任意の会話を読み書きできる。</strong>チャット UI がクライアント提供の conversation ID を検証せずに Agent Service に渡すと、<strong>Broken Object Level Authorization (BOLA) 脆弱性</strong>になる。</p></blockquote>
 <p><strong>必須の実装:</strong> BFF 層で「この conversation ID はこのログインユーザーのものか」を<strong>リクエストごとに検証する。</strong>会話 ID とユーザー ID の対応表を自分で持つ。</p>
-<p><strong>関連する制約として、旧 Agent Application モデルが <code>/conversations</code> にアクセスできないのも同じ理由</strong>である(「Foundry Agent Service はマネージドな会話履歴をサポートするが、同一プロジェクト内の会話についてエンドユーザー間の分離をまだ強制していない」)。恒久仕様ではなく修正作業中と明記されているが、<strong>現時点では設計で埋める。</strong></p>
+<blockquote><p><strong>2026-09-26 追記 — hosted agent のユーザー単位分離と、その適用条件:</strong> ベースライン記事(2026-08-18 更新)に「hosted agent はユーザー単位のセッション分離モデルを持つが、<strong>適用されるかはトポロジー次第</strong>」という節が追加された。Web アプリが自分のワークロード ID で全ユーザー分を呼ぶ構成では、プラットフォームから見て呼び出し元は 1 つなので<strong>上の BOLA 対策は依然として必須</strong>。分離が効くのは、(a) エンドユーザーが自分の Entra トークンで直接呼ぶ場合、または (b) アプリサーバーが <strong><code>x-ms-user-identity</code> ヘッダーでエンドユーザーの安定 ID を渡す</strong>場合(呼び出し側に <code>.../agents/endpoints/UserIdentityImpersonation/action</code> を含む<strong>カスタムロール</strong>が必要。組み込みロールには無い。無ければ 403)。ただし (b) の委任では「<strong>委任ユーザー同士はプラットフォームが隔離しない</strong>」と明記されており、ユーザーごとにセッション ID を分けるのはアプリ責務のまま(出典: <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/architecture/baseline-microsoft-foundry-chat">baseline-microsoft-foundry-chat</a>「Conversation isolation」/ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user">isolate-sessions-per-user</a> 2026-07-21 版・2026-09-21 更新)。</p></blockquote>
+<p><strong>関連する制約として、旧 Agent Application モデルが <code>/conversations</code> にアクセスできないのも同じ理由</strong>である(「Foundry Agent Service はマネージドな会話履歴をサポートするが、同一プロジェクト内の会話についてエンドユーザー間の分離をまだ強制していない」)。恒久仕様ではなく修正作業中と明記されているが、<strong>現時点では設計で埋める。</strong>(※2026-09-26 注記: Agent Application 自体がレガシーモデル扱いになり、新エージェントオブジェクトモデルへの移行が案内されている — <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate-agent-applications">migrate-agent-applications</a>)</p>
 <h3 id="プロンプトインジェクションと安全性">プロンプトインジェクションと安全性</h3>
 <p>外部公開では入力が完全に非信頼になる。</p>
 <ul>
@@ -263,12 +264,13 @@ footer {
 </ul>
 <p><strong>Batch デプロイのマルチテナント:</strong> クォータは TPM ではなく <strong>enqueued tokens</strong> を制限する。テナント別にバッチデプロイを分ければトークン割当で独占を防ぎコスト按分もできる。共有する場合は、<strong>バッチはジョブ単位でしか管理できず「バッチ内の個別リクエストをキャンセルまたは削除できない」</strong>ため、<strong>テナントごとにジョブを分ける</strong>のが公式の推奨。</p>
 <h3 id="rag-のマルチテナント分離-secure-multitenant-rag">RAG のマルチテナント分離(Secure Multitenant RAG)</h3>
-<p><strong>⚠ 前提が変わった:</strong> この記事は冒頭で「<strong>Azure OpenAI On Your Data は非推奨で、リタイアが近づいている。</strong>On Your Data のワークロードは <strong>Foundry Agent Service + Foundry IQ</strong> へ移行することを推奨する」と明記している。<strong>「オーケストレーターを挟まずモデルが直接データを読む」構成は事実上終わっている。</strong></p>
+<p><strong>⚠ 前提が変わった:</strong> この記事は以前、冒頭で「<strong>Azure OpenAI On Your Data は非推奨で、リタイアが近づいている。</strong>On Your Data のワークロードは <strong>Foundry Agent Service + Foundry IQ</strong> へ移行することを推奨する」と明記していた。<strong>「オーケストレーターを挟まずモデルが直接データを読む」構成は事実上終わっている</strong>(On Your Data は 2026-10-14 リタイア — use-your-data 2026-09-10 版)。</p>
+<blockquote><p><strong>2026-09-26 更新:</strong> <a href="https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/secure-multitenant-rag">Secure Multitenant RAG</a>(2026-08-19 版、2026-09-21 更新)は On Your Data への言及を削除し、単一テナント構成の変種として「<strong>Responses API の file search ツール</strong>」版を追加した。アプリが認証済みリクエストからテナント文脈と認可ルールを導出し、<strong>許可された vector store と file-attribute フィルタを file search ツールに設定</strong>してから Responses API を呼ぶ形。ただし記事自身が「アプリ制御の取得(AI Search を直接クエリ)より、索引・取得・テナントルーティング・認可強制の制御が弱い」と明記しているので、マルチテナントでは下記の API 層パターンが本筋のまま。</p></blockquote>
 <p>ストア分離は 3 モデル(組み合わせ可): <strong>テナント専用ストア / マルチテナントストア(テナント判別子付きクエリ)/ 全テナント共有ストア</strong>。</p>
 <ul>
 <li><strong>テナント専用ストア:</strong> データ分離と性能分離が得られ、「<strong>ストア 1 つ分のコストを単一テナントに帰属できるのでコスト配賦が単純になる</strong>」。ただし「<strong>多数の小規模テナントがいる場合、例えば B2C シナリオでは、このアプローチを使うべきではない。</strong>」サービス上限にも到達しうる。</li>
 <li><strong>マルチテナントストア:</strong> コスト最適で多数テナントを収容できるが、<strong>データ分離が最重要課題</strong>になり、ノイジーネイバーとコスト按分が難しい。テナントごとのインデックス再構築スケジュールの差が運用を複雑にする。</li>
-<li><strong>プラットフォーム機能への注意(2 箇所で繰り返されている):</strong> Cosmos DB のパーティションキー、Azure SQL / PostgreSQL の行レベルセキュリティは使えるが、「<strong>これらの機能を使う前提でソリューション全体を設計しなければならないため、マルチテナントソリューションでは通常使われない。</strong>」</li>
+<li><strong>プラットフォーム機能への注意:</strong>(2026-08-19 版では同趣旨の記述は 1 箇所に整理された)Cosmos DB のパーティションキー、Azure SQL / PostgreSQL の行レベルセキュリティは使えるが、「<strong>これらの機能を使う前提でソリューション全体を設計しなければならないため、マルチテナントソリューションでは通常使われない。</strong>」</li>
 </ul>
 <p><strong>中核の推奨は「データアクセスを API 層にカプセル化せよ」:</strong></p>
 <blockquote><p><strong>使用するストレージ機構の前に API を置くことを推奨する。API はゲートキーパーとして機能する。</strong><br><strong>テナントデータにアクセスする必要があるコードが、バックエンドのストアを直接クエリできてはならない。データへのすべての要求は API 層を通るべきである。</strong>この API 層が、テナントデータの上に<strong>単一のガバナンス / セキュリティのポイント</strong>を提供する。このアプローチにより、テナントとユーザーのデータアクセス認可ロジックがアプリケーションの他の領域に漏れ出すのを防ぐ。……このカプセル化により、ソリューションの検証とテストが容易になる。</p></blockquote>
@@ -283,52 +285,61 @@ footer {
 </ul>
 <h3 id="分離設計で必ず潰す点">分離設計で必ず潰す点</h3>
 <p><strong>① 会話・スレッドの分離</strong> — 前述の BOLA 対策に加え、<strong>basic セットアップでは会話が Microsoft 管理ストレージにあり所在と保持を細かく制御できない。</strong>SaaS なら standard セットアップ(BYO Cosmos DB)か自前セッションストアを選ぶ。</p>
-<p><strong>② ベクトルストア / インデックスの分離</strong> — テナントごとにインデックスを分けるか、単一インデックス + セキュリティフィルタか。<strong>⚠ AI Search の S3 HD ティアは agentic retrieval(Foundry IQ)の上限が 0</strong> なので、「マルチテナントだから S3 HD」と選ぶと Foundry IQ が使えなくなる。</p>
-<p>File Search を使うなら、<strong><code>structured_inputs</code> で <code>vector_store_ids</code> をリクエスト単位に上書きできる</strong>ため、エージェント定義を増やさずにテナント別コーパスを切り替えられる。ただし <strong>Toolbox 経由で Code Interpreter / File Search を使うとユーザー分離がない</strong>点に注意。</p>
-<p><strong>③ hosted agent のセッション多重化</strong> — コンテナプロトコル 2.0.0 では <code>x-agent-user-id</code> により <strong>1 セッション内で複数ユーザーを安全に多重化できる</strong>が、<strong>1.0.0 では不可。</strong>マルチテナントで hosted agent を使うなら 2.0.0 が前提。</p>
+<p><strong>② ベクトルストア / インデックスの分離</strong> — テナントごとにインデックスを分けるか、単一インデックス + セキュリティフィルタか。<strong>⚠ AI Search の S3 HD ティアと agentic retrieval(Foundry IQ):</strong> search-limits 2026-08-04 版では S3 HD のナレッジソース / ナレッジベース上限が 0(= Foundry IQ 不可)だったが、<strong>2026-09-16 版で「1 パーティション 1,000 / サービス 3,000」に変わった</strong>。ただし「一部の古い S3 HD サービスは非対応」の脚注付きで、S3 HD のインデクサはプレビュー(マルチテナント実行のみ・shared private link 非対応)。「マルチテナントだから S3 HD」を選ぶなら、<strong>対象サービスで knowledge base を作れるかを先に実機確認</strong>する(2026-09-26 更新)。</p>
+<p>File Search を使うなら、<strong><code>structured_inputs</code> で <code>vector_store_ids</code> をリクエスト単位に上書きできる</strong>ため、エージェント定義を増やさずにテナント別コーパスを切り替えられる。ただし <strong>hosted agent から Toolbox 経由で Code Interpreter / File Search を使うとユーザー分離がない</strong>点に注意(Code Interpreter は同一プロジェクトの全ユーザーが同じコンテナ文脈を共有、File Search はツール構成・実行時に渡した vector store に全ユーザーがアクセス可能 — code-interpreter / file-search 各ページ 2026-08-05 版で 2026-09-26 再確認)。</p>
+<p><strong>③ hosted agent のセッション多重化</strong> — コンテナプロトコル 2.0.0 では <strong>1 セッション内で複数ユーザーを安全に多重化できる</strong>が、<strong>1.0.0 は非サポートでリクエストがブロックされる。</strong>マルチテナントで hosted agent を使うなら 2.0.0 が前提。<strong>2026-09-26 更新:</strong> 中間層が送るのは <strong><code>x-ms-user-identity</code> ヘッダー</strong>(エンドユーザーの安定 ID、1〜256 文字)で、<code>x-agent-user-id</code> は<strong>送ってはいけない</strong>(プラットフォームがユーザー解決後にコンテナ側のリクエスト文脈として設定する)。中間層 ID には <code>UserIdentityImpersonation/action</code> を含むカスタムロールが必要。コンテナ側 SDK は azure-ai-agentserver-core 2.0.0b7+ / Azure.AI.AgentServer.Core 1.0.0-beta.26+(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/multiplex-session-users">multiplex-session-users</a> 2026-07-21 版)。</p>
 <p><strong>④ セッションプールでのデータ混在</strong> — 同時エージェントセッション上限(後述)を踏まえてセッションをプールする場合、<strong>プラットフォームは会話状態を分離するが、エージェントコンテナー自身が保存するデータ(ファイル・DB 行・キャッシュ)は自動分割されない。</strong>アプリ側で <strong>agent session とエンドユーザー ID の両方でキー付け</strong>しないと、同一プールセッション内のユーザーが互いのデータを読める。</p>
 <p><strong>⑤ プロジェクト RBAC の限界</strong> — 「Foundry プロジェクトに <code>Foundry User</code> ロールを持つプリンシパルは、<strong>そのプロジェクト内のすべてのエージェントと対話できる。</strong>」テナント別のアクセス制御を Foundry の RBAC で表現するのは無理で、<strong>アプリの認証認可層が担う。</strong></p>
 <h3 id="同時エージェントセッションの上限が設計制約になる">⚠ 同時エージェントセッションの上限が設計制約になる</h3>
-<p><strong>同時セッションは既定で約 50 が上限</strong>(リージョンにより変動。既定では同時セッションとサブネットの使用可能 IP が 1:1 で対応し、<code>/26</code> サブネットで約 50 が「maximum supported」。サポート申請で 1 IP あたり 10 セッションまで拡大可 — 出典: agents-networking-deep-dive)。引き上げ余地はあるが、<strong>大規模 SaaS ではサブスクリプション分割が必要になる可能性</strong>を最初から見込む。</p>
-<p>関連する実効上限(閉域構成の場合):</p>
+<p><strong>2026-09-26 更新 — 上限は 2 段で効く:</strong></p>
+<ol>
+<li><strong>サブスクリプション × リージョン単位の同時 hosted agent セッション既定上限:</strong> <strong>2,000</strong>(Canada Central / East US 2 / <strong>Japan East</strong> / North Central US / South Africa North / Southeast Asia / Sweden Central)、<strong>それ以外の hosted agent 対応リージョンは 1,000</strong>。同一サブスクリプション・リージョンの全 Foundry アカウント・プロジェクトの合算で、プロビジョニング中・実行中のセッションだけが数えられる(idle / 停止中は数えないが、再開にはクォータが要る)。超過は 429 <code>session_quota_exceeded</code>、リージョン容量不足は 429 <code>regional_session_quota_exceeded</code>。引き上げはサポート申請(出典: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/limits-quotas-regions">limits-quotas-regions</a> 2026-09-07 版。2026-07-20 版には記載なし)。</li>
+<li><strong>閉域(BYO VNet)ではサブネットの使用可能 IP:</strong> 既定で同時セッションと使用可能 IP が 1:1。サポート申請で <strong>1 IP あたり 10 セッション(1:10)</strong> まで拡大可。IP 枯渇は 429 <code>subnet_exhausted</code>(ポータルでは IP 使用率を監視できず、事前警告もない)。</li>
+</ol>
+<p>旧版の「同時セッションは既定で約 50 が上限(<code>/26</code> が maximum supported)」は、<a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agents-networking-deep-dive">agents-networking-deep-dive</a> 2026-09-07 版で<strong>サブネット換算表(<code>/21</code> で約 2,000 まで)に置き換わった</strong>。<strong>大規模 SaaS でサブスクリプション / リージョン分割が要るか</strong>は、1. のクォータと 2. のサブネットの小さい方で判断する。</p>
+<p>関連する実効上限(閉域構成の場合、agents-networking-deep-dive 2026-09-07 版):</p>
 <div class="tablewrap"><table><thead><tr>
 <th>項目</th>
 <th>値</th>
 </tr></thead><tbody>
 <tr>
-<td>IP 予約比率</td>
-<td>約 1 IP / 10 pod</td>
-</tr>
-<tr>
 <td>Hosted agent</td>
-<td>セッションごとに Micro VM = <strong>1 IP 消費</strong>。新リビジョン展開時は新旧並走で一時的に増加</td>
+<td>セッションごとに Micro VM = <strong>1 IP 消費</strong>。プラットフォーム更新時は新旧並走で一時的に増加</td>
 </tr>
 <tr>
 <td>Prompt agent</td>
-<td>プロジェクトあたり最大約 <strong>10 IP の静的プール</strong>(リビジョンは IP を消費しない)</td>
+<td><strong>バージョンは IP を消費しない</strong>。プロジェクト単位のネットワーク部品(データプロキシ)は IP を消費(旧版の「約 10 IP の静的プール」という数値は現行版に無い)。プロンプトエージェント数のハード上限なし</td>
+</tr>
+<tr>
+<td>IP 計画の単位</td>
+<td><strong>セッション数と使用可能 IP で計画する</strong>(pod 単位で計画しない — 旧版の「約 1 IP / 10 pod」は削除)</td>
 </tr>
 <tr>
 <td><code>/27</code>(32 IP)</td>
-<td>約 <strong>17</strong> 同時セッション</td>
+<td>約 <strong>20</strong> 同時セッション(本番非推奨)</td>
 </tr>
 <tr>
 <td><code>/26</code>(64 IP)</td>
-<td>約 <strong>50</strong>(サポート上限)</td>
+<td>約 <strong>50</strong></td>
+</tr>
+<tr>
+<td><code>/25</code> / <code>/24</code> / <code>/23</code> / <code>/22</code> / <code>/21</code></td>
+<td>約 100 / <strong>250</strong> / 500 / 1,000 / 2,000(あくまで IP 換算。実際は 1. のクォータで頭打ち)</td>
 </tr>
 <tr>
 <td>Foundry インスタンスあたりプロジェクト数</td>
-<td>低負荷時 約 250、<strong>フルスケール時 約 25 まで低下</strong></td>
+<td>低負荷時 約 250、<strong>高負荷時 約 25 まで低下</strong></td>
 </tr>
 <tr>
 <td>Foundry インスタンスあたり hosted agent</td>
-<td>約 200</td>
+<td>旧版の「約 200」は現行版に記載なし(要確認)</td>
 </tr>
 <tr>
 <td>推奨稼働率</td>
 <td><strong>サブネット使用率 80% 未満</strong></td>
 </tr>
 </tbody></table></div>
-<p><strong>→ 閉域マルチテナントで hosted agent を使うなら、委任サブネットは <code>/24</code> を確保する。</strong></p>
+<p><strong>→ 閉域マルチテナントで hosted agent を使うなら、委任サブネットは <code>/24</code> 以上を確保する</strong>(公式は本番の出発点を <code>/24</code>、ピーク同時実行が大きければそれ以上)。</p>
 <h3 id="テナント別の計測と課金按分">テナント別の計測と課金按分</h3>
 <p><strong>Foundry の標準機能だけでは足りない。</strong></p>
 <ul>
@@ -366,7 +377,8 @@ footer {
 <li>既存 APIM を使うには <strong>Foundry と同一 Entra テナント・同一サブスクリプション</strong>、利用者が APIM に API Management Service Contributor 以上、<strong>APIM が v2 ティア</strong>であること。</li>
 <li><strong>Foundry リソースレベルで有効化</strong>され、そのリソース内の全プロジェクトが同じゲートウェイを共有する。<strong>プロジェクトを別ゲートウェイに分けたいなら Foundry リソース自体を分けるしかない。</strong></li>
 <li>「<strong>単一の Foundry リソースへの ingress をサポートする設計で、複数リソースにまたがらない。</strong>」複数バックエンドが要るならスタンドアロン APIM。</li>
-<li><strong>⚠ Foundry がパブリックアクセス無効でも、新ポータルから作った AI Gateway は自動的にパブリックになる。</strong>データプレーン操作を完結させるには Azure portal でゲートウェイのネットワーク分離を別途設定する必要がある。</li>
+<li><strong>⚠ Foundry がパブリックアクセス無効でも、新ポータルから作った AI Gateway は自動的にパブリックになる。</strong>データプレーン操作を完結させるには Azure portal でゲートウェイのネットワーク分離を別途設定する必要がある。<strong>閉域 Foundry と組み合わせる APIM は Standard v2 / Premium v2 + Private Endpoint、または VNet 注入の Premium v2</strong>(ポータルの「Create new」は Basic v2 を作るので本番・閉域には既存 APIM を使う)。</li>
+<li>新規プロジェクトは既定で AI Gateway が有効、既存プロジェクトは手動追加。プロジェクトごとにトークン上限を設定できる(2026-09-26 追記: <a href="https://learn.microsoft.com/en-us/azure/foundry/configuration/enable-ai-api-management-gateway-portal">enable-ai-api-management-gateway-portal</a> 2026-08-03 版。MCP ツールを AI Gateway 経由にする機能は別途プレビュー)。</li>
 </ul>
 <p><strong>APIM をゲートウェイにする場合の設計ルール</strong>(<a href="09-operations.html#2-4-apim-をゲートウェイに置く場合の設計ルール-公式">09 章</a>)を参照。特に「<strong>ラウンドロビン / フェイルオーバー先は必ず同一モデル・同一バージョン</strong>」「<strong>ステートフル API はバックエンドをピン留めし、切替不能なら 429 を返す</strong>」の 2 点は外部公開で効いてくる。</p>
 <h3 id="モデルデプロイの冗長化">モデルデプロイの冗長化</h3>
@@ -391,10 +403,10 @@ footer {
 <p><strong>マルチテナント</strong></p>
 <ul>
 <li>[ ] テナント分離モデルを決め、CAF の同居例外条件と照合したか</li>
-<li>[ ] ベクトルストア / インデックスの分離方式を決めたか(<strong>S3 HD は Foundry IQ 不可</strong>)</li>
-<li>[ ] hosted agent を使うなら<strong>コンテナプロトコル 2.0.0</strong>(<code>x-agent-user-id</code>)か</li>
+<li>[ ] ベクトルストア / インデックスの分離方式を決めたか(<strong>S3 HD で Foundry IQ を使うなら対象サービスで knowledge base を作れるか実機確認</strong> — 2026-09 に上限 0 から変更、古い S3 HD は非対応)</li>
+<li>[ ] hosted agent を使うなら<strong>コンテナプロトコル 2.0.0</strong>か(中間層は <code>x-ms-user-identity</code> を送り、カスタムロールで <code>UserIdentityImpersonation/action</code> を付与)</li>
 <li>[ ] セッションプールでの<strong>エージェント自身の保存データ</strong>をユーザー ID でキー付けしたか</li>
-<li>[ ] <strong>同時セッション 50 / サブスクリプション / リージョン</strong>の上限に対する設計を持っているか</li>
+<li>[ ] <strong>同時 hosted agent セッションのサブスクリプション × リージョン既定上限(1,000、Japan East 等は 2,000)</strong>と、閉域ならサブネット IP(既定 1:1)の両方に対する設計を持っているか</li>
 <li>[ ] 閉域なら委任サブネットを <code>/24</code> 確保したか</li>
 </ul>
 <p><strong>キャパシティとコスト</strong></p>

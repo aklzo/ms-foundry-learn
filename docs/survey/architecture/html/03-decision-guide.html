@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="03-選定ガイド-要件からアーキテクチャを決める">03. 選定ガイド — 要件からアーキテクチャを決める</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#決定順序-5-つのゲート">決定順序 — 5 つのゲート</a></li><li><a href="#要件キーワード-効いてくるレイヤー-逆引き">要件キーワード → 効いてくるレイヤー(逆引き)</a></li><li><a href="#判断軸マトリクス-方式の比較">判断軸マトリクス(方式の比較)</a></li><li><a href="#提案時チェックリスト">提案時チェックリスト</a></li><li><a href="#よくある-決めきれない-論点への回答">よくある「決めきれない」論点への回答</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(G2 表を公式 2026-08-14 更新と外部案件実測で改訂、casebook への導線)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(G2 表を公式 2026-08-14 更新と外部案件実測で改訂、casebook への導線)/ 2026-09-26(A2A の GA 化を G3 に反映、G2 表を公式 2026-08-14 版のまま再確認)</p></blockquote>
 <p><a href="02-building-blocks.html">02. 構成要素カタログ</a> がレイヤーごとの選択肢の一覧なら、本ページは<strong>どの順番で何を決めるか</strong>の手順書である。順番を間違えると手戻りが大きい項目があるため、決定順序そのものが設計判断になる。なお本ページは「Foundry を使うと決めた後」の判断を扱う。その手前(Copilot Studio か Foundry か・単一エージェントかマルチか・オーケストレーションパターンの選択)は <a href="11-decision-frameworks.html">11. エージェント構成の判断フレームワーク</a> を参照。<strong>要件の言葉からシナリオ単位で逆引きしたい場合</strong>(「ヘルプデスク × ITSM」「閉域必須」「Copilot Studio から引き継ぎ」等)は <a href="../../casebook/html/01-scenario-playbook.html">casebook 01 要件シナリオ別プレイブック</a>、現場で詰まった点(公式・実測・公開記事)は <a href="../../casebook/html/02-pitfalls-index.html">casebook 02</a> を併読する。</p>
 <h2 id="決定順序-5-つのゲート">決定順序 — 5 つのゲート</h2>
 <p>後戻りコストの大きい順に並べている。<strong>上から順に閉じていく。</strong></p>
@@ -117,7 +117,7 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>国内処理が必須</td>
-<td>日本国内限定処理が必須なら Regional Standard(Japan East)。域内(APAC: 豪・日・韓・星・印)処理で足りるなら Data Zone も可。Global Standard は不可。使えるモデルが絞られる</td>
+<td>日本国内限定処理が必須なら Standard / Regional Provisioned(geography 型。Japan East / Japan West。処理は geography 内で、geography 内のリージョン間処理はありうる — 2026-09-26 に deployment-types 2026-08-06 版で確認)。域内(APAC: 豪・日・韓・星・印)処理で足りるなら Data Zone も可。Global Standard は不可。使えるモデルが絞られる</td>
 </tr>
 <tr>
 <td>外部インターネットへのデータ送出が不可</td>
@@ -208,6 +208,10 @@ footer {
 <td>H 以上。チェックポイント必須</td>
 </tr>
 <tr>
+<td>「毎朝レポート」「Teams / GitHub のイベントで起動」</td>
+<td><strong>Routines(2026-09-24 GA)で起動側だけマネージドにできる。</strong>1 トリガー + 1 アクションで分岐は持てないため、処理本体の制御要件は上の各行で別途判断(Japan West 非対応・CMK 非対応)</td>
+</tr>
+<tr>
 <td>「各ステップの入出力を監査ログに残す」</td>
 <td>H 以上(ミドルウェアで挟む)、または S</td>
 </tr>
@@ -217,7 +221,7 @@ footer {
 </tr>
 <tr>
 <td>「複数のエージェントが協調する」</td>
-<td><strong>ポータルのビジュアル Workflows は 2026-12-01 廃止のため選ばない。</strong>MAF、または A2A(プレビュー)</td>
+<td><strong>ポータルのビジュアル Workflows は 2026-12-01 廃止のため選ばない。</strong>MAF、または A2A(<code>a2a</code> ツール = v1.0 が GA、旧 <code>a2a_preview</code> = v0.3 はプレビュー。2026-09-11 版で GA 化。v1.0 はテキストのみ・ストリーミング非対応)</td>
 </tr>
 </tbody></table></div>
 <pre><code>       要件に「承認」「再開」「分岐」「監査」があるか？

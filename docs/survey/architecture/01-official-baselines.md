@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)/ 2026-09-26(AAC 3 本・WAF・CAF の ms.date と本文差分を再確認。Baseline / ALZ 版の 2026-07〜09 加筆〈hosted agent・private MCP サブネット・ID 分離〉、Japan West の Class A 制約解消、Dynamic AI agents の URL 特定を反映)
 
 本ページは **Microsoft が公式に出している**ものだけを扱う。想定ユースケース別の設計([04〜08](./README.md#ドキュメント一覧))は、ここを土台にした上での応用と位置づける。
 
@@ -29,6 +29,8 @@
 | C | Baseline Microsoft Foundry Chat in an Azure Landing Zone | ネットワーク分離・hub-spoke | https://learn.microsoft.com/en-us/azure/architecture/ai-ml/architecture/baseline-microsoft-foundry-landing-zone |
 
 > **URL 改称に注意:** 旧 `baseline-openai-e2e-chat` は `baseline-microsoft-foundry-chat` にリネームされた(リダイレクトは生存)。過去資料の URL をそのまま引用すると古い前提で読まれる。
+>
+> **2026-09-26 確認:** A / B / C とも `ms.date` は 2026-06-17 のまま(リファレンスアーキテクチャの本数・名称に変化なし。AAC の AI 索引〈`ai-get-started`、2026-09-25 更新〉に新設されたのは Azure ML 推論の Baseline〈`baseline-azure-machine-learning-inference`、ms.date 2026-09-21〉で Foundry チャット系ではない)。ただし **ms.date を据え置いたまま本文が加筆されている**(B: 2026-07-27 hosted agent 記述の拡充、2026-08-04 private MCP サブネット追加、2026-08-26 モデル・ツール選定の注意、2026-09-03 ID 分離の推奨。C: 2026-08-04 spoke サイズ変更)。差分は GitHub `MicrosoftDocs/architecture-center` のコミット履歴で追える。
 
 ### A. Basic — PoC 専用。本番非推奨と記事自身が明言
 
@@ -80,8 +82,11 @@
 | `snet-privateEndpoints` | VNet | 全拒否 | Yes | 全拒否 |
 | `snet-appGateway` | UI 利用者の送信元 IP + サービス必須 | PE サブネット + サービス必須 | No | — |
 | `snet-appServicePlan` | 全拒否 | PE + Azure Monitor | Yes | Azure Monitor 宛のみ |
-| `snet-agentsEgress` | 全拒否 | PE + インターネット | Yes | **許可した公開 FQDN のみ** |
+| `snet-agentsEgress` | 全拒否 | PE + **MCP サブネット** + インターネット | Yes | **許可した公開 FQDN のみ** |
+| `snet-mcpServers`(2026-08 追加) | Agent Service サブネットからの TCP 443 / **31443** + ホスト必須の送信元 | サービス必須 | Yes | プラットフォーム必須 FQDN + MCP サーバーが要る公開 FQDN のみ |
 | `snet-jumpBoxes` / `snet-buildAgents` | Bastion サブネットのみ | PE + インターネット | Yes | VM の必要範囲 |
+
+> **2026-09-26 追記(記事の加筆):** ワークロード所有の **private MCP サーバー用に `/24` の専用サブネット(`Microsoft.App/environments` 委任、Container Apps の internal workload profiles 環境を想定)**を予約する構成が加わった。agent → MCP は TCP 443 / 31443 で VNet 内に閉じ、Container Apps 環境のドメインをプライベート DNS で静的 IP に解決させる。公開 MCP サーバーは従来どおり Firewall で FQDN 許可。MCP 接続時は `allowed_tools` で絞り、書き込み系ツールは承認必須+ログを推奨。agent サブネットも `/24` 推奨で、**プロジェクトごとに data proxy が 1 つ立ちトラフィックでスケールアウトする**・**hosted agent の新リビジョン展開中は新旧が並走して IP を余分に消費する**・**1 つの agent サブネットを複数 Foundry リソースで共有不可**と明記。
 
 **この記事から拾うべき「明示された地雷」**(そのまま提案レビューのチェック項目になる):
 
@@ -94,12 +99,18 @@
 - **プロジェクト作成は特権操作として扱う。**ポータルで作ったプロジェクトは Private Endpoint / NSG を継承せず、そこに作られたエージェントはセキュリティ境界を迂回する。
 - **接続(Connections)はプロジェクトレベルでのみ作る。**リソースレベル接続は現在と将来の全プロジェクトに波及し、最小権限に反する。
 - **1 プロジェクト内の全 prompt agent は同一マネージド ID を共有する。**アクセスパターンが違うならプロジェクトを分ける。hosted agent は個別の Entra Agent ID を持つのでこの制約を受けない。
+- **(2026-09-26 追記)Agent Service はカタログの全モデルを使えるわけではない。**エージェント対応モデルは部分集合で、ツール可否はモデル × リージョンで決まる。**REST API で prompt agent を作ると、非対応のモデル / ツールの組合せが作成時に弾かれず実行時に失敗しうる**と明記(記事の「Model and tool selection」節)。
+- **(2026-09-26 追記)hosted agent の per-user セッション分離は、この構成では効かない。**Web アプリが自分のワークロード ID で全ユーザー分を呼ぶと、プラットフォームからは呼び出し元が 1 つに見えるため、**会話所有権の検証はアプリサーバーの責任のまま**。分離が効くのはエンドユーザー自身の Entra トークン(またはアプリが渡す安定したユーザー識別子)がエンドポイントに届く場合のみで、委任 ID の場合もユーザー間は分離されない。
+- **(2026-09-26 追記)hosted agent の egress 経路は prompt agent と違う。**prompt agent はプロジェクト単位の single-tenant data proxy から出るが、**hosted agent のセッションは agent サブネット内に専用 NIC を持ち、自身の通信はそこから直接出る(ツール呼び出しは data proxy 経由)**。外部エンドポイントを呼ぶ hosted agent は、その FQDN の Firewall 許可が別途要る。
+- **(2026-09-26 追記)マネージド ID をリソース・機能ごとに分離する**(Foundry リソース / 各プロジェクト / Web アプリ / Application Gateway / カスタムオーケストレーター)。**Assignment restrictions(プレビュー)**で割当先リソース種別を限定し、分離スコープを Regional にしてリージョンごとに別 ID を作る、という推奨が加わった。
 
 **DR に関する最重要の記述(そのまま顧客に開示すべき):**
 
 > Foundry Agent Service には組み込みの DR 機能がない。状態のレプリケーション・バックアップ・ポイントインタイム復元のいずれも持たない。**復旧はレプリカの昇格ではなく再構築で行う。インシデントによってエージェント・会話・ナレッジデータが恒久的に失われうる。**
 
-補償策として記事が挙げるのは、Cosmos DB の継続バックアップ(PITR)、AI Search は復元機能が無いため**別途 source of truth を維持**、Storage は GRS + customer-managed failover、**エージェント定義を as code で管理**(ポータルでの未追跡変更を避ける)、プロジェクトにユーザー割当マネージド ID を使う(誤削除時にロール割当を再利用できる)、依存 3 サービスに削除ロック。
+> **※2026-09-26 注記:** 本記事の standard setup(BYO の Cosmos DB / Storage / AI Search)は capability hosts 前提。後継の **capability settings(プレビュー、現時点 UK South / Canada Central のみ)**では BYO 構成を既存プロジェクトに後付け・変更できず、**プロジェクトの削除・再作成**が必要( https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-capability-settings 2026-09-22 版)。DR の「再構築」手順を組むときはどちらの方式かを確認する。
+
+補償策として記事が挙げるのは、Cosmos DB の継続バックアップ(PITR。`enterprise_memory` DB を対象に**直近 7 日**、同一アカウント・DB へ復元)、AI Search は復元機能が無くインデックス復旧は **Microsoft サポート経由**のため**別途 source of truth を維持**、Storage は GRS + customer-managed failover、**エージェント定義を as code で管理**(ポータルでの未追跡変更を避ける)、プロジェクトにユーザー割当マネージド ID を使う(誤削除時にロール割当を再利用できる)、依存 3 サービスに削除ロック。
 
 **コストについての記述:** 最も高いのは **Cosmos DB / AI Search / DDoS Protection**、次いで UI コンピュートと Application Gateway。ファイルアップロードが不要なら Storage を LRS、AI Search をレプリカ 1 に落とせる。さらに「**エージェントは非決定的にツールを呼ぶため、無関係なクエリでも外部 API を叩いてコストが跳ねる**」「`max_output_tokens` / `truncation` によるトークン制御はセルフホストのオーケストレーションでしか実現できない」「**予測可能なコストが必要ならセルフホストのオーケストレータを検討せよ**」と明記されている。
 
@@ -123,8 +134,8 @@
 
 | 項目 | 要求値 |
 |---|---|
-| spoke VNet | 単一専用 spoke、**`/22` の連続アドレス空間**(side-by-side デプロイに対応するため) |
-| アドレス範囲 | Agent Service は **RFC1918 のみ**。agent サブネットは `/24` プレフィックス内 |
+| spoke VNet | 単一専用 spoke、**少なくとも `/21` の連続アドレス空間**(コアワークロード + private MCP サーバーのホスト分。side-by-side デプロイが要るならさらに追加)。**2026-08-04 の記事改訂で旧 `/22` から拡大**(agent サブネット `/24` に加え MCP 用 `/24` を予約するため) |
+| アドレス範囲 | Agent Service は **RFC1918 を使う**(2026-09-26: networking-options / virtual-networks は RFC 6598〈CGNAT、一部除外〉も可とするが agents-networking-deep-dive は不可と明記 — 公式間で揺れるため RFC1918 に留めるのが安全。詳細は [07 章](./07-usecase-regulated-edge.md))。agent サブネットは `/24` プレフィックス内 |
 | リージョン | hub をワークロードと同一リージョンに。**AZ 対応必須** |
 | Private Endpoint | AI Search / Cosmos DB / Key Vault / Foundry / Storage |
 | ingress | データサイエンティストが社内網から Foundry ポータルへ、運用者が jump box 経由 |
@@ -137,6 +148,7 @@
 | AI Search | **なし(強制不可)** |
 | App Service | Regional VNet integration + `vnetRouteAllEnabled` |
 | Agent Service | `snet-agentsEgress` の UDR |
+| Private MCP サーバー(2026-08 追加) | `snet-mcpServers` の UDR |
 
 強制できない部分は「補償統制」「機能除外による再設計」「正式な例外申請」のいずれかで組織要件に整合させる。
 
@@ -178,7 +190,7 @@ URL: https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-d
 
 **実装手段との対応:**
 - **Microsoft Agent Framework** — **5 パターンすべてを workflow orchestration として組み込みサポート。**HITL 対応。
-- **Foundry Agent Service** — 「マネージドでノーコードなエージェント連鎖を connected agents 機能で提供する。**このサービスのワークフローは主に非決定的で、完全に実装できるパターンの範囲が限られる。**マネージド環境が必要で、オーケストレーション要件が単純な場合に使え」。
+- **Foundry Agent Service** — 「マネージドでノーコードなエージェント連鎖を connected agents 機能で提供する。**このサービスのワークフローは主に非決定的で、完全に実装できるパターンの範囲が限られる。**マネージド環境が必要で、オーケストレーション要件が単純な場合に使え」。(※2026-09-26 時点: 新 Foundry Agent Service に connected agents は無く、移行ガイド〈2026-09-11 版〉は A2A ツール〈v1.0 GA〉を推奨。AAC のこの記述は classic 前提のまま残っている)
 - **LangChain / CrewAI / OpenAI Agents SDK** も名指しで併記され、「本記事のオーケストレーションパターンは Microsoft SDK 固有ではない。**どの SDK を選んでも設計ガイダンスは適用できる**」と中立を明示している。
 
 **セキュリティ上の必須事項:** 「エージェントは全ユーザーの要求を扱うためナレッジストアへの広いアクセスを持たざるを得ないが、ユーザーがアクセスできないデータを返してはならない。**セキュリティトリミングはパターン内のすべてのエージェントで実装しなければならない。**」
@@ -272,13 +284,13 @@ URL: https://learn.microsoft.com/en-us/azure/well-architected/ai/architecture-pa
 | `ai/application-platform`(2024-11) | オーケストレーション節が「**prompt flow のような既製ソリューションを優先せよ**」のまま。**prompt flow は 2027-04-20 廃止決定済み**で、2026-04 更新の `ai/application-design` と矛盾する。この節は引用しないほうが安全 |
 | `ai/mlops-genaiops`(2024-11) | 同様に GenAIOps ツールとして prompt flow を推奨 |
 | `ai/design-principles`(2024-04) | 5 本柱の唯一のページだが agentic な内容がほぼない |
-| `ai/architecture-pattern` 内リンク | baseline 記事へのリンクが**旧名 URL のまま**(リブランドが全ページに未反映) |
+| `ai/architecture-pattern` 内リンク | baseline 記事へのリンクが**旧名 URL のまま**(`baseline-azure-ai-foundry-chat` / `baseline-azure-ai-foundry-landing-zone`。2026-09-23 更新版でも未修正を 2026-09-26 に確認。リダイレクトで到達はする) |
 
 ---
 
 ## 4. CAF(Cloud Adoption Framework)— 組織・配置・リソース粒度
 
-入口: https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai/
+入口: https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai/strategy (旧入口 `/cloud-adoption-framework/ai/` は 2026-09-26 時点で `ai/strategy` へ 301)
 
 構成は **Strategy → Plan → Ready → Govern → Secure → Manage** の 6 ステージ。別体系として **Agent adoption**(`/cloud-adoption-framework/ai-agents/`)が 2025-12 に新設された。
 
@@ -390,9 +402,9 @@ URL: https://learn.microsoft.com/en-us/azure/foundry/concepts/planning
 | **Baseline 実装** | **`Azure-Samples/microsoft-foundry-baseline`** | 稼働中・活発(旧 `openai-end-to-end-baseline`) |
 | ALZ 版実装 | — | **削除済み・後継なし** |
 | Foundry 公式サンプル | **`microsoft-foundry/foundry-samples`** | 極めて活発。`infrastructure/infrastructure-setup-bicep/` に番号付きシナリオ(private network / CMK / RBAC / APIM 併用 / 評価専用など) |
-| **AI ランディングゾーン** | **`Azure/AI-Landing-Zones`** | **Preview。**Bicep / Terraform / ポータルの 3 系統、AVM ベース。standalone と hub-integrated の切替あり。「最新機能を提供するためプレビューのサービスを利用することがある」と明記 |
+| **AI ランディングゾーン** | **`Azure/AI-Landing-Zones`** | **Preview**(README に「currently in preview」、2026-09-26 確認。活発に更新中)。Bicep / Terraform / ポータルの 3 系統、AVM ベース。standalone と hub-integrated の切替あり。「最新機能を提供するためプレビューのサービスを利用することがある」と明記 |
 | IaC モジュール(Bicep) | `avm/ptn/ai-ml/ai-foundry` | Available |
-| IaC モジュール(Terraform) | `avm-ptn-aiml-ai-foundry` / **`avm-ptn-aiml-landing-zone`** | ともに Available(**LZ モジュールは Terraform のみ**。Bicep 側は Proposed のまま) |
+| IaC モジュール(Terraform) | `avm-ptn-aiml-ai-foundry` / **`avm-ptn-aiml-landing-zone`** | ともに Available(**LZ モジュールは Terraform のみ**。Bicep 側 `avm/ptn/ai-ml/landing-zone` は Proposed のまま。AVM モジュール索引で 2026-09-26 確認) |
 | LangChain / LangGraph 併用 | `Azure-Samples/foundry-hosted-langchain-demos` ほか | 公式サンプルとして存在 |
 
 **使うべきでないもの:** `Azure/azure-openai-landing-zone`(2024-10 以降更新なし、Foundry 改称未反映)、`Azure-Samples/ai-landing-zone-in-a-box`(アーカイブ済み)。なお「AI Foundry Jumpstart」という独立プロダクトは**存在しない**(Arc Jumpstart は Arc / エッジ / K8s が主題の別物)。
@@ -406,11 +418,12 @@ URL: https://learn.microsoft.com/en-us/azure/foundry/concepts/planning
 | 論点 | 事実 |
 |---|---|
 | **APAC データゾーンが存在する** | Data Zone デプロイの処理範囲は US / EU / **APAC** の 3 つ。APAC は**オーストラリア・日本・韓国・シンガポール・インド**を含む |
-| **⚠ 公式ドキュメント間の不整合** | `foundry/concepts/architecture` は「data zone は US または EU 内に留まる」と書いており **APAC に触れていない。**`deployment-types` 側(US/EU/APAC を明記)が正 |
-| **「国内処理」の唯一の解** | **APAC Data Zone は日本以外も含むため「日本国内処理」にはならない。**国内限定が要件なら `Standard`(リージョナル)または `ProvisionedManaged` 一択で、その代償としてモデル可用性・クォータ・レイテンシ安定性が劣後する |
+| **⚠ 公式ドキュメント間の不整合** | `foundry/concepts/architecture` は「data zone は US または EU 内に留まる」と書いており **APAC に触れていない**(2026-08-21 版でも未修正、2026-09-26 確認)。`deployment-types` 側(US/EU/APAC を明記)が正 |
+| **「国内処理」の唯一の解** | **APAC Data Zone は日本以外も含むため「日本国内処理」にはならない。**国内限定が要件なら `Standard`(リージョナル)または `ProvisionedManaged`(docs 上の表記は Regional Provisioned)一択で、その代償としてモデル可用性・クォータ・レイテンシ安定性が劣後する。**公式の定義は「指定した Azure geography 内で処理(運用上 geography 内のリージョン間で処理されうる)」**で、単一リージョン固定ではない(日本 geography 内なので国内処理要件は満たす)。新デプロイタイプは Global → Data Zone → geography 系の順で提供され、geography 系は提供日の保証がない( https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types 2026-08-06 版) |
 | **Japan East は Agent Service フル対応** | Responses API / Agents / **Class A プライベート IP(10.x)対応**すべて Yes。ツールも Computer Use 以外すべて Yes |
-| **Japan West は制約あり** | Agents は使えるが **Class A プライベート IP 範囲が非対応。**国内 DR で West を使うなら委任サブネットは 172.16-31.x か 192.168.x を割り当てる |
+| **Japan West の Class A 制約は解消** | 旧記載「Agents は使えるが Class A プライベート IP 範囲(10.x)が非対応」は、limits-quotas-regions の 2026-09-04 改訂で Class A 列が削除され、virtual-networks ページが「**Agent Service が使える全リージョンで Class A(10.0.0.0/8)をサポート**」と明記(2026-09-26 確認)。国内 DR で West を使う場合も RFC1918 の任意範囲でよい。ただし **Japan West は Routines 非対応・Browser Automation 非対応**( https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/virtual-networks ) |
 | ネットワーク分離時のリージョン制約 | **Foundry リソースは VNet と同一リージョン必須。**Cosmos DB / AI Search / Storage は別リージョン可だがクロスリージョン帯域コストがかかる |
+| **国内処理のコスト(2026-09-01〜)** | 日本の Regional は **Global 比 +35%**、APAC Data Zone は **Global 比 +20%**。従量課金は 2026-09-01 以降に投入されたモデルのみに適用(既存モデルに留まれば据え置き)、**PTU は日本を含む米国外 Regional の既存顧客にも適用**。「国内処理必須」はモデル世代・クォータに加えて単価でも不利になる( https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/microsoft-foundry-model-deployment-pricing-update/4535385 2026-07-09 公開) |
 | **評価の日本リージョン非対応** | **リスク・安全性評価器と AI Red Teaming は日本リージョンで実行できない**(East US 2 / Sweden Central / Australia East 等)。本番推論は Japan East、評価は別リージョンのプロジェクトという分離設計になり、**プロンプト・応答が評価のために国外に渡る点の法務確認が要る** |
 
 ---
@@ -424,4 +437,4 @@ URL: https://learn.microsoft.com/en-us/azure/foundry/concepts/planning
 | 本番、ALZ あり(hub-spoke) | **Baseline in ALZ を設計ガイドとして読み、コードは `Azure/AI-Landing-Zones`(Preview)または AVM `avm-ptn-aiml-landing-zone`(Terraform)** | 記事から実装リンクが削除済み |
 | 自社 IaC に組み込む | **AVM `avm/ptn/ai-ml/ai-foundry`(Bicep)/ `avm-ptn-aiml-ai-foundry`(Terraform)** | ともに Available |
 | マルチエージェントで決定的制御が必要 | **Agent Framework + Container Apps**、または hosted agent | AAC のソリューションアイデアと baseline の Alternatives |
-| エージェントが数十〜数百 | Dynamic AI Agents at Scale(AKS + セマンティックキャッシュ) | 「エージェントが 5 未満なら使うな」と明記(要確認: 記事 URL 未特定。learn 検索でもヒットせず) |
+| エージェントが数十〜数百 | Dynamic AI Agents at Scale(アプリケーションクラスター + AI Search をセマンティックキャッシュにしたエージェント選択 + Managed Redis) | 「**エージェントが 5 未満なら使うな**」「決定的なワークフロー / handoff なら不要」と明記。**ソリューションアイデア級**( https://learn.microsoft.com/en-us/azure/architecture/solution-ideas/articles/ai-agents-at-scale ms.date 2026-05-20。2026-09-26 に AAC の AI 索引から URL を特定) |

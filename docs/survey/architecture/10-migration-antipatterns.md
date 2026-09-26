@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(アンチパターン A12〜A15 を外部案件実測から追加)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(アンチパターン A12〜A15 を外部案件実測から追加)/ 2026-09-26(廃止期限表をリタイア表 2026-09-21 版・各出典で再検証し、期限到来分の表記とモデルのリタイア日を更新。Routines の GA 化を A6 に反映)
 
 Foundry は「GA だが足元が動いている」プラットフォームで、**2026 年後半から 2027 年にかけて確定済みの廃止が集中している**。新規設計であっても、廃止スケジュールを知らずに選ぶと 1 年以内に作り直しになる。本ページは (1) 既存資産からの移行アーキテクチャ、(2) 廃止期限の設計への効き方、(3) 提案時に踏みやすいアンチパターン、をまとめる。公式ドキュメント以外の出典(公開記事・実測)による詰まりどころは [casebook 02](../casebook/02-pitfalls-index.md) に分離してある。
 
@@ -10,31 +10,37 @@ Foundry は「GA だが足元が動いている」プラットフォームで、
 
 | 期限 | 対象 | 設計への効き方 | 移行先 |
 |---|---|---|---|
-| **2026-08-20** | Hosted agents 初期プレビュー基盤 | 既にプレビュー期に構築した hosted agent は**再デプロイ必須**。コンテナプロトコル 1.0.0 → 2.0.0 | 新基盤へ再デプロイ |
-| **2026-08-26** | Assistants API(Azure OpenAI) | Threads / Runs 前提のアプリは全面改修。**状態データは自動移行されない** | Responses API(Agents v2) |
-| **2026-08-26** | `azure-ai-inference` SDK | 全言語対象。beta のまま GA せず終了 | OpenAI SDK + v1 API |
-| **2026-12-01** | ビジュアル Workflows | **ポータルでマルチエージェントを組む構成が消える。**長期案件で提案不可 | Microsoft Agent Framework(推奨)/ Logic Apps / A2A |
-| **2027-03-31** | Agents (classic)(v1) | classic プロジェクト上のエージェント資産 | Agents v2 |
-| **2026-10 前後** | gpt-4o / o1 / o3 / o4-mini 等 | モデル固定でチューニングしたプロンプトの再検証が必要 | gpt-5.x 系 |
-| **2028-09-25** | Azure AI Vision Image Analysis 4.0/3.2 | 画像解析パイプラインの作り替え | Document Intelligence / Content Understanding / Foundry Models |
-| **2026-07-31** | コンテナプロトコル 1.0.0 | **2026-07-31 からブロック開始と公表済み。**1.0.0 のエージェントへのリクエストが**ブロックされる**。2.0.0 でないと 1 セッション内の複数ユーザー多重化ができない | プロトコル 2.0.0 |
-| **日付未公表(Planned/TBD)** | Agent Applications(旧 publishing モデル) | 廃止告知と EOS が予告済み。レガシー ID のエージェントは**インプレース昇格不可**(作り直し) | 新オブジェクトモデル(Agent に統合) |
-| **2026-10-14** | **Azure OpenAI On Your Data** | 廃止日が公表済み。「モデルが直接データを読む(オーケストレーター不要)」構成が終わる。RAG の既存提案書は要更新 | **Foundry Agent Service + Foundry IQ** |
+| ~~2026-07-31~~ **ブロック中** | コンテナプロトコル 1.0.0 | 移行ガイド(migrate-hosted-agent-preview、2026-09-25 更新)で「**1.0.0 is no longer supported, and the platform blocks requests**」(現在形)を確認(2026-09-26)。旧記載の「2026-07-31 からブロック」という日付は現行の出典(isolate-sessions-per-user 等)から消えている。2.0.0 でないと 1 セッション内の複数ユーザー多重化ができない | プロトコル 2.0.0 |
+| ~~2026-08-20~~ **期限到来** | Hosted agents 初期プレビュー基盤 | サポート終了済(ガイドは「supported only until August 20, 2026」の表現のまま)。未移行の hosted agent は**再デプロイ必須**。新基盤の SDK 要件は `azure-ai-projects` **2.3.0 以降**(旧 2.0.0) | 新基盤へ再デプロイ |
+| ~~2026-08-26~~ **廃止済** | Assistants API(Azure OpenAI) | 出典冒頭が「**The Assistants API is retired**」(ページは previous-versions 配下へ移動)。Threads / Runs 前提のアプリは全面改修。**状態データは自動移行されない** | Responses API(Agents v2) |
+| ~~2026-08-26~~ **廃止済** | `azure-ai-inference` SDK | 全言語対象。beta のまま GA せず終了(features 第3版で retired 表記を確認) | OpenAI SDK + v1 API |
+| ~~2026-09-25~~ **期限到来** | Azure AI Vision Image Analysis 4.0/3.2 の**移行計画策定目安** | migration-options に「Make a plan to transition away ... by September 25, 2026」。廃止本体は下の 2028-09-25 | (下記) |
+| **2026-10-14** | **Azure OpenAI On Your Data** | 廃止日が公表済み(use-your-data 2026-09-10 版で再確認)。「モデルが直接データを読む(オーケストレーター不要)」構成が終わる。RAG の既存提案書は要更新 | **Foundry Agent Service + Foundry IQ** |
+| **2026-10-14** | `gpt-4.1-nano`(2025-04-14) | リタイア表 2026-09-21 版で 2026-10-14(features 第3版が参照した 2026-09-02 版では 2027-04-14 と記録されている。**表の日付が版ごとに動く**ので直前に再確認) | gpt-5.x 系 |
+| **2026-10-19** | `claude-sonnet-4-5` / `claude-opus-4-5` / `claude-haiku-4-5` | リタイア(リタイア表の Replacement 欄は空欄) | 後継の Claude(4.6 以降 / 5 系)を自社評価で選定 |
+| **2026-11-19** | `o1` / `o1-pro` / `o3` / `o3-pro` / `o3-deep-research` / `o3-mini` / `o4-mini` | リタイア表 2026-09-21 版で **2026-11-19 に一本化**(features 第3版が記録した 2026-09-02 版の 10-01〜10-21 から後ろ倒し)。後継は gpt-5.6-sol(o3-mini / o4-mini は gpt-5.6-terra) | gpt-5.6 系 |
+| **2026-12-01** | ビジュアル Workflows | **ポータルでマルチエージェントを組む構成が消える。**長期案件で提案不可(workflow 2026-09-17 更新・GA 一覧でも同日付) | Microsoft Agent Framework(推奨)/ Logic Apps / A2A |
+| **2026-12-09** | `gpt-4o`(2024-05-13) | リタイア表 2026-09-21 版で 2026-12-09(同 2026-09-02 版の 10-01 から後ろ倒し)。**gpt-4o の 2024-08-06 / 2024-11-20 版と gpt-4o-mini・gpt-4.1・gpt-4.1-mini は 2027-04-14**。モデル固定でチューニングしたプロンプトの再検証が必要 | gpt-5.6-sol / gpt-5.1 |
+| **2027-03-31** | Agents (classic)(v1) | classic プロジェクト上のエージェント資産(classic whats-new 2026-09-10 版で再確認) | Agents v2 |
 | 2027-04-20 | prompt flow | **新規開発に非推奨。**ランタイムコンテナはセキュリティ更新も停止済み | Microsoft Agent Framework |
-| 2027-10 前後 | ファインチューン済みモデル(gpt-4o / 4.1 / o4-mini 系)の **deployment** | 学習停止(2027-04 前後)の約 6 か月後に推論も停止。**FT は作り直しが前提** | 後継ベースモデルで再ファインチューニング |
+| 2027-10-01 〜 11-19 | ファインチューン済みモデルの **deployment** | gpt-4o / gpt-4o-mini = 2027-10-01、gpt-4.1 / 4.1-mini / 4.1-nano = 2027-10-14、o4-mini = 2027-11-19(training は既存顧客のみ各 6 か月前まで)。**FT は作り直しが前提** | 後継ベースモデルで再ファインチューニング |
+| **2028-09-25** | Azure AI Vision Image Analysis 4.0/3.2 | 画像解析パイプラインの作り替え | Document Intelligence / Content Understanding / Foundry Models |
+| **日付未公表(Planned/TBD)** | Agent Applications(旧 publishing モデル) | 廃止告知(Planned)と EOS(TBD)が予告済み。レガシー ID のエージェントは現時点で**インプレース昇格不可**(作り直し)。ただし「Legacy agent identity upgrade gesture」が **Coming soon** と表示(migrate-agent-applications 2026-09-25 更新) | 新オブジェクトモデル(Agent に統合) |
 | 未発表(投資停止) | ハブベースプロジェクト(classic) | 廃止日は未発表だが新規投資は停止。**新規案件で選ぶ理由はほぼない** | Foundry プロジェクト |
 
-出典・詳細は [features/README の重要期限表](../features/README.md)。
+出典・詳細は [features/README の重要期限表](../features/README.md)。モデルのリタイア日は [Model retirement schedule](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule)(ms.date 2026-09-21、2026-09-26 確認)。プレビューモデルの短期リタイア(`gpt-image-1` 2026-10-23、`sora-2` 2026-10-15、`MAI-Image-2.5` 系 2026-10-01 など)は [08 章 E4](./08-usecase-specialized.md) を参照。
 
 ### 設計判断への翻訳
 
 - **「ポータルだけで完結するマルチエージェント」を提案してはいけない。** 2026-12-01 で消える。単一の Prompt agent + ツールは廃止対象外なので、そこまでで足りるかを先に確認する。
 - **PTU を使うなら、モデル更改が手動である前提の運用設計を入れる。** Standard は自動アップグレードされるが Provisioned は手動。リタイア通知は GA モデルで 60 日前。
-- **classic(ハブベース)にしかない機能に依存すると出口がない。** prompt flow、マネージドコンピュートのモデルデプロイ、serverless API デプロイ、Azure Language リソース連携、Risks & safety モニタリングは classic 側にしか無い。これらが要件に入るなら、classic を選ぶ判断ではなく**代替手段で要件を満たす設計**を先に検討する。
+- **classic(ハブベース)にしかない機能に依存すると出口がない。** prompt flow、serverless API デプロイ、Azure Language の一部機能(CLU / CQA / カスタム NER)、Risks & safety モニタリングは classic 側にしか無い(マネージドコンピュートのモデルデプロイは新ポータルに対応済み〈パブリックプレビュー〉なので前版の列挙から外した。GA 一覧表「Models — managed compute is a Preview deployment type」)。これらが要件に入るなら、classic を選ぶ判断ではなく**代替手段で要件を満たす設計**を先に検討する。
 
 ## 2. 移行パターン別アーキテクチャ
 
 ### 2.0 【最優先】Hosted agent 初期プレビュー基盤 → 新基盤(期限 2026-08-20)
+
+> **2026-09-26 注: 期限到来済み。**旧基盤はサポート終了(移行ガイドは 2026-09-25 更新でも「supported only until August 20, 2026」の表現)。以下は未移行資産を棚卸しするときの差分表として残す。
 
 **本ドキュメント作成時点(2026-07-29)で残り約 3 週間。** 2026 年 4 月より前に `azure-ai-agentserver-agentframework` / `azure-ai-agentserver-langgraph` またはプレビュー hosting API で作った hosted agent が対象で、**自動移行されない**。
 
@@ -48,13 +54,13 @@ Foundry は「GA だが足元が動いている」プラットフォームで、
 | 起動 | `from_agent_framework(agent).run()` | `ResponsesHostServer(agent).run()` |
 | ルーティング | 共有プロジェクトエンドポイント + `agent_reference` | **エージェント専用エンドポイント**(`project.get_openai_client(agent_name=...)`) |
 | 実行 ID | プロジェクトのマネージド ID(共有) | **デプロイ時に専用の Entra agent identity を自動発行** |
-| ライフサイクル操作 | `az cognitiveservices agent start/stop`、min/max replicas | **全廃**(自動プロビジョン / アイドル 15 分で停止) |
+| ライフサイクル操作 | `az cognitiveservices agent start/stop`、min/max replicas | **全廃**(自動プロビジョン / アイドルタイムアウトで停止。既定 15 分、バージョンごとに 2〜60 分で設定可 — hosted-agents 2026-09-11 版。停止後もセッション状態〈`$HOME`・`/files`〉は保持され、非アクティブ 30 日で完全削除) |
 | Capability host | 作成が必要 | **不要**(削除) |
 | プロトコルバージョン | `"v1"` | `"1.0.0"`(semver) |
 | CLI | `az cognitiveservices agent` 拡張 | Agent Service ドキュメントは削除済みとして `az rest` / `azd ai agent` を案内(※ Azure CLI リファレンスには Core・Preview として現存しており公式間で表記揺れ) |
 | 必要ロール | Foundry Owner 等 | **Foundry Project Manager**(プロジェクトスコープ) |
 
-**さらにコンテナプロトコル 1.0.0 自体も非推奨**で、**2026-07-31 から 1.0.0 のエージェントへのリクエストがブロックされると公表済み。**2.0.0 では `x-agent-foundry-call-id` の転送が必要になる代わりに、`x-agent-user-id` で **1 セッション内の複数ユーザー多重化**が安全に行える(1.0.0 では不可)。マルチテナントで hosted agent を使うなら 2.0.0 が前提。
+**さらにコンテナプロトコル 1.0.0 自体もサポート終了**で、**1.0.0 のエージェントへのリクエストはプラットフォームがブロックする**(2026-09-26 時点の移行ガイドは現在形。旧記載の「2026-07-31 から」の日付は出典から消えた)。2.0.0 では `x-agent-foundry-call-id` の転送が必要になる代わりに、**1 セッション内の複数ユーザー多重化**が安全に行える(1.0.0 では不可)。**ヘッダーの役割に注意(2026-09-26 訂正):** 中間層(自社サービス)がエンドユーザーを指定するのは **`x-ms-user-identity`** で、送るには組み込みロールに含まれない `.../agents/endpoints/UserIdentityImpersonation/action` を**カスタムロールで明示付与**する必要がある(無いと 403。以前は `Microsoft.CognitiveServices/*` で足りたが、現在は含まれない)。`x-agent-user-id` はプラットフォームがコンテナ側へ注入するヘッダーで、**呼び出し側から送ってはいけない**(isolate-sessions-per-user 2026-09-21 更新・multiplex-session-users 2026-07-30 更新)。値はブラウザ由来ではなくサーバー側で認証済みの ID から導出する。マルチテナントで hosted agent を使うなら 2.0.0 が前提。
 
 **LangGraph を載せている場合の追加作業:** LangGraph 専用アダプタは削除されたため、`ResponsesAgentServerHost` + `@app.response_handler` で `context.get_history()` から履歴を LangChain のメッセージ型に自分で変換する実装が要る。モデル接続も `AzureChatOpenAI` ではなく `ChatOpenAI(base_url=f"{FOUNDRY_PROJECT_ENDPOINT}/openai/v1", use_responses_api=True)` に変える(プロジェクトスコープ権限だけで済むようになる)。Toolbox 接続には `langchain-mcp-adapters` + `mcp` が必要。
 
@@ -101,7 +107,7 @@ Foundry は「GA だが足元が動いている」プラットフォームで、
 ### 2.3 ハブベース(classic)→ Foundry プロジェクト
 
 - **自動移行ツールはない。**新規プロジェクトを作り、接続を作り直す方式(公式ガイドの想定所要は 5〜10 分だが、これはリソース作成部分の話)。
-- 移行対象: モデルデプロイ、データファイル、fine-tuned モデル、Assistants、vector store。
+- 移行対象: モデルデプロイ、データファイル、fine-tuned モデル、vector store(2026-09-26: migrate-project 2026-09-10 版で **Assistants が移行対象リストから削除**。Assistants API 自体が 2026-08-26 に廃止済み)。
 - **移行対象外:** プレビュー期の Agent の state、OSS モデルのデプロイ。
 - classic に残る機能(prompt flow 等)を使っている場合は、移行ではなく**機能の代替設計**が必要。
 
@@ -142,7 +148,7 @@ kind を `OpenAI` → `AIServices` + `allowProjectManagement: true` に変える
 
 ### A2. 閉域要件を後から足す
 
-Standard setup(BYO VNet 注入)は**後付け・変更が不可**で、再デプロイが必要。加えて、ネットワーク分離下では Traces・Memory・Work IQ・File Search・Browser Automation・Computer Use・Image Generation 等が使えない/未対応。
+Standard setup(BYO VNet 注入)は**後付け・変更が不可**で、再デプロイが必要。加えて、ネットワーク分離下では Memory・Logic Apps・Browser Automation・Computer Use・Image Generation・Fabric Data Agent 等が使えず、Tracing VNet と Workflow Agents の outbound は未対応 / プレビュー。File Search は公式表記が「対応」に変わったが実測では不成立、Work IQ は data proxy 経由で呼べるが宛先は公開エンドポイント(→ [07 章 §3](./07-usecase-regulated-edge.md#3-閉域で使えない機能の一覧-設計の出発点))。
 
 **対処:** ネットワーク要件はアーキテクチャ検討の最初のゲートに置く。「閉域で使える機能一覧」から設計を始める。
 
@@ -166,7 +172,7 @@ Claude は Foundry の組み込みコンテンツフィルターが**適用さ�
 
 ### A6. プレビュー機能を本番の必須経路に置く
 
-Memory、Monitoring ダッシュボード、エージェント向けガードレールの Tool call / Tool response 介入、A2A、Routines、Foundry IQ のポータル体験はいずれもプレビュー。プレビューは SLA がなく仕様変更もあり得る。
+Memory、Monitoring ダッシュボード、エージェント向けガードレールの Tool call / Tool response 介入、**A2A の v0.3(既定バージョン。v1.0 は GA)**、Routines の reminder ツール、hosted agent の network egress controls、Voice Live のエージェント連携(GA 一覧表上)、Foundry IQ のポータル体験はいずれもプレビュー。プレビューは SLA がなく仕様変更もあり得る。**2026-09-26 注:** 前版でプレビューに挙げていた **Routines は GA**(GA 一覧表 2026-09-23 更新+devblogs 2026-09-24)、**A2A は v1.0 が GA**(enable-agent-to-agent-endpoint 2026-09-11 版。Azure Blog 2026-09-24「Ship agents faster…」も A2A・Routines・Tool search の GA を告知)に変化。一方、同ブログで **Voice agents(prompt / hosted の新エージェント種別)・長時間実行 hosted agents・Foundry insights・prompt agent への Toolbox 拡大はパブリックプレビュー**、Rubric / trace→dataset 生成 / Agent optimizer は「今月後半 GA 予定」(2026-09-26 時点のドキュメントはプレビュー表記)。ただし A2A はバージョン未指定時の既定が preview の v0.3 なので、本番は `A2A-Version: 1.0` を明示する。
 
 **対処:** Azure Policy の「Foundry model deployments must meet eligibility requirements」(`denyPreviewModels`)や、タグ `AZML_DISABLE_PREVIEW_FEATURE=true` でプレビューを組織的に抑止できる。本番サブスクリプションには入れておく。
 
@@ -184,7 +190,7 @@ basic セットアップの会話は Microsoft 管理ストレージにあり、
 
 ### A9. `az` CLI で自動化できる前提で見積もる
 
-**専用の `az foundry` コマンド群は存在しない。**リソース管理は `az cognitiveservices`(GA)、エージェント開発は azd 拡張(プレビュー)、それ以外の多くは「ポータル + SDK/REST のみ」でドキュメントに CLI 手順がない。
+**専用の `az foundry` コマンド群は存在しない**(Azure CLI リファレンスの `cli/azure/foundry` は 404。2026-09-26 確認)。リソース管理は `az cognitiveservices`(GA)、エージェント開発は azd 拡張 `azure.ai.agents`(プレビュー。7・8 月号ブログの基準は azd 1.32.0+ / 拡張 1.0.0-beta.13)、それ以外の多くは「ポータル + SDK/REST のみ」でドキュメントに CLI 手順がない。2026-09 公開の Foundry Dev Pack(0.1.3、プレビュー。winget / brew / curl)は az・azd・Foundry 用 azd 拡張・Foundry Skill を一括導入するインストーラーで、CLI の機能範囲自体は変えない。
 
 **対処:** 自動化は Bicep/Terraform(基盤)+ SDK/REST(データプレーン)前提で工数を積む。
 
@@ -196,7 +202,7 @@ basic セットアップの会話は Microsoft 管理ストレージにあり、
 
 ### A11. ドキュメントのステータス表記を 1 ページだけ見て判断する
 
-hosted agents(GA と preview の混在表記)、Trace Replay、Toolbox、Claude のライフサイクルなど、**公式ページ間でステータスが食い違っている**箇所が複数ある。
+hosted agents(GA と preview の混在表記)、Trace Replay、Voice Live のエージェント連携(GA 一覧表 = Preview / devblogs 7・8 月号 = 「Hosted Agents with Voice Live は GA」)、Claude のライフサイクルなど、**公式ページ間でステータスが食い違っている**箇所が複数ある(Toolbox は GA 一覧表・7・8 月号ブログとも GA で揺れは解消。2026-09-26 確認)。さらに**リタイア表の日付自体が版ごとに前後する**(例: gpt-4.1-nano は features 第3版が記録した 2026-09-02 版で 2027-04-14、2026-09-21 版で 2026-10-14)。
 
 **対処:** [Feature readiness at GA](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability) を一次情報とし、モデルのリタイア日は [Model retirement schedule](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule) 側を採用する。
 

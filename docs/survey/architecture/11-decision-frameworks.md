@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-08-01(初版)
+> **最終更新:** 2026-08-01(初版)/ 2026-09-26(出典の ms.date 再確認、Copilot Studio の A2A 接続 GA〈2026-04〉の反映と外部接続行の訂正、GitHub Copilot harness・Foundry 接続の前提条件を追記)
 > **経緯:** SI 文脈の問い「ユースケース・要件からアーキテクチャ / エージェント構成を選ぶ指標は事前に構築できるか。それともプロジェクトの中で複数試作して比較するしかないか」への回答として、公式・業界の判断フレームワークを調査した(Web 調査 2026-08-01)。
 > **位置づけ:** [03. 選定ガイド](./03-decision-guide.md)が「Foundry を使うと決めた後」の構成判断(5 ゲート)を扱うのに対し、本章はその**手前と外側** — ①どのプラットフォームで作るか(Copilot Studio / Foundry / 自前)、②単一エージェントか複数か、③どのオーケストレーションパターンか — と、提案の根拠として引用できる公式フレームワークを扱う。実装検証由来の知見は [tech-selection-guide](../../tech-selection-guide.md) にあり、本章は公式ドキュメント・公開ガイダンスのみを出典とする。
 
@@ -23,11 +23,11 @@
 
 | ドキュメント | 内容 | ms.date |
 |---|---|---|
-| [CAF: AI agent adoption(build-secure-process)](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/build-secure-process) | 採用プロセス全体(Plan → Govern/Secure → Build → Manage)。Build の 5 領域(Orchestration / Models / Knowledge & Tools / Observability / Security)を **Foundry / MAF / Copilot Studio 別の実装先つき**で規定 | 2025-12-01(更新 2026-06) |
-| [CAF: Single-Agent vs Multi-Agent](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/single-agent-multiple-agents) | 単一 / マルチの判断基準・デシジョンツリー・判断表 | 2025-12-01(更新 2026-02) |
-| [AAC: AI Agent Orchestration Patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) | 複雑度の階段+ 5 パターン(when to use / avoid / 比較表 / アンチパターン / コスト) | 2026-02-12(更新 2026-05) |
-| [Copilot Studio: Multi-agent orchestration patterns](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/multi-agent-patterns) | ローコード側のマルチエージェント設計基準(child / connected の使い分け・分割判断) | 2026-05-21 |
-| [Copilot Studio: Add other agents](https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents) | connected agents の構成方法と既知の制限(多段連鎖不可など) | 2026-05-15 |
+| [CAF: AI agent adoption(build-secure-process)](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/build-secure-process) | 採用プロセス全体(Plan → Govern/Secure → Build → Manage)。Build の 5 領域(Orchestration / Models / Knowledge & Tools / Observability / Security)を **Foundry / MAF / Copilot Studio 別の実装先つき**で規定 | 2025-12-01(更新 2026-06。2026-09-26 時点で以後の改訂なし) |
+| [CAF: Single-Agent vs Multi-Agent](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/single-agent-multiple-agents) | 単一 / マルチの判断基準・デシジョンツリー・判断表 | 2025-12-01(更新 2026-02。2026-09-26 時点で以後の改訂なし) |
+| [AAC: AI Agent Orchestration Patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) | 複雑度の階段+ 5 パターン(when to use / avoid / 比較表 / アンチパターン / コスト) | 2026-02-12(更新 2026-09-21。ただし差分は画像のライトボックス化のみで本文変化なし) |
+| [Copilot Studio: Multi-agent orchestration patterns](https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/multi-agent-patterns) | ローコード側のマルチエージェント設計基準(child / connected の使い分け・分割判断) | 2026-05-21(更新 2026-09-12。分割基準の本文は同旨) |
+| [Copilot Studio: Add other agents](https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents) | connected agents の構成方法と既知の制限(多段連鎖不可など) | 2026-05-15(更新 2026-08-27) |
 
 [01 章](./01-official-baselines.md)の公式-A/B/C が「**インフラの形**」のリファレンスなのに対し、これらは「**エージェントの形**」の判断基準であり相補的。なお AAC には MAF によるマルチエージェント実装例 [Multiple-agent workflow automation](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/idea/multiple-agent-workflow-automation) もあるが、こちらは**ソリューションアイデア級**(検証レベルは公式-A/B/C より下)。
 
@@ -62,15 +62,17 @@
 | instructions | 8,000 文字まで | [Quotas and limits](https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-quotas) |
 | ナレッジ / トピック | ナレッジソース 500 / トピック 1,000 / スキル 100(いずれもエージェントあたり) | 同上 |
 | **マルチエージェントの多段連鎖不可** | connected agents を持つエージェントは、**他のエージェントの connected agent にはなれない**(多段のエージェント階層は組めない) | [Add other agents – Known limitations](https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents) |
-| 外部エージェント接続はプレビュー | **Foundry エージェント / A2A / Fabric data agents / M365 Agents SDK への接続はいずれも public preview**(本番非推奨の注記つき) | 同上 |
+| 外部エージェント接続(A2A 以外はプレビュー) | **A2A プロトコル経由の外部エージェント接続は GA**(Copilot Studio What's new の 2026-04 項「(General availability) Connect agents to other agents using the agent-to-agent (A2A) protocol」。A2A 接続ページ 2026-08-26 版にもプレビュー表記なし)。**Foundry エージェント / Fabric data agents / M365 Agents SDK への接続は public preview**(本番非推奨の注記つき)。旧記載「A2A を含めいずれもプレビュー」は 2026-04 の GA を見落とした誤り | 同上 / [What's new](https://learn.microsoft.com/en-us/microsoft-copilot-studio/whats-new) / [A2A 接続](https://learn.microsoft.com/en-us/microsoft-copilot-studio/add-agent-agent-to-agent) |
 | 決定的制御の上限 | エージェントフロー・トピックによる決定的制御はあるが、CAF は「**クリティカルな業務ロジックには決定的ワークフローを強制せよ。Foundry / MAF の workflows を使え**」と実装先を名指し | [CAF build-secure-process](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/build-secure-process) |
-| モデル制御 | モデル選択は可([primary model 選択](https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-select-agent-model)・Foundry からの BYO model)だが、推論パラメータの細かい調整やオーケストレーションループ自体の差し替えは不可 | — |
+| モデル制御 | モデル選択は可([primary model 選択](https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-select-agent-model)・Foundry からの BYO model)だが、推論パラメータの細かい調整やオーケストレーションループ自体の差し替えは不可。**2026-09-26 追記:** 2026-06 に **GitHub Copilot harness**(強化版オーケストレーションランタイム、production-ready preview)が standard harness と並ぶ選択肢として登場し、skills・memory・Microsoft IQ・子エージェント接続(プレビュー)はこちら側に追加されている。選べるのは Microsoft 提供の 2 種のランタイムで、自前ループの持ち込みではない点は変わらない | [What's new](https://learn.microsoft.com/en-us/microsoft-copilot-studio/whats-new) |
 
 **本ドキュメントの判断:** 03 章 G3 の「明示的な状態遷移が要るか」に加えて、**「30〜40 アクション超」「多段のエージェント階層」「決定的ワークフローが業務クリティカル」の 3 つが Copilot Studio → Foundry(プロコード)への乗り換えシグナル**として一次情報で裏づけられる。
 
 ### 両者は排他ではない — 分業構成が公式の推奨形
 
-Copilot Studio の connected agents は **Foundry で作ったエージェントを部品として呼べる**(プレビュー)。「対話の入口・M365 チャネル・業務部門の保守は Copilot Studio、業務固有の複雑な処理は Foundry hosted agent」という分業は、公式ブログ([Choosing the Right Starting Point](https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/choosing-the-right-starting-point-for-enterprise-ai-agents-with-copilot-studio-a/4535024))でも推奨される構成であり、03 章 G4 の「業務フローエンジン主導(B5)」の現代版にあたる。**SI の受託範囲が「Copilot Studio で簡単に作れないエージェントの開発」なら、納品物は connected agent として Copilot Studio 側から呼ばれる Foundry hosted agent、という契約の切り方が公式構成と一致する。**ただし接続がプレビューである点は提案時に明示する(G5)。
+Copilot Studio の connected agents は **Foundry で作ったエージェントを部品として呼べる**(プレビュー)。「対話の入口・M365 チャネル・業務部門の保守は Copilot Studio、業務固有の複雑な処理は Foundry hosted agent」という分業は、公式ブログ([Choosing the Right Starting Point](https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/choosing-the-right-starting-point-for-enterprise-ai-agents-with-copilot-studio-a/4535024))でも推奨される構成であり、03 章 G4 の「業務フローエンジン主導(B5)」の現代版にあたる。**SI の受託範囲が「Copilot Studio で簡単に作れないエージェントの開発」なら、納品物は connected agent として Copilot Studio 側から呼ばれる Foundry hosted agent、という契約の切り方が公式構成と一致する。**ただし「Microsoft Foundry agent」接続がプレビューである点は提案時に明示する(G5)。**また接続には Foundry エージェント側で Activity プロトコルのエンドポイントを有効化しておく必要があり、これは REST API / Python SDK でしか設定できない**(ポータルの Endpoints 表示には有効化後も出ない。新ポータルで作ったエージェントのみ接続可)( [Connect to a Microsoft Foundry agent](https://learn.microsoft.com/en-us/microsoft-copilot-studio/add-agent-foundry-agent) 2026-08-26 版)。
+
+**本ドキュメントの判断(2026-09-26 追記):** GA 部品だけで組む代替経路として「Copilot Studio の A2A 接続(GA)→ Foundry エージェントの incoming A2A(v1.0 が GA、prompt agent は Responses プロトコルで公開可)」が候補になる。ただし Copilot Studio 側の A2A 接続が選べる認証は None / API key / OAuth 2.0 で、Foundry 側は Entra トークン(audience `https://ai.azure.com`)と Foundry Agent Consumer 以上のロールを要求し、**バージョン指定が無いと Foundry はプレビューの v0.3 で応答する**。この組合せを公式が検証した記載は見当たらないため、採用前に疎通・認証・プロトコル版を実測する(要検証: https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/enable-agent-to-agent-endpoint )。
 
 ## 3. 層② 単一エージェントか複数か — CAF の判断基準
 
@@ -145,7 +147,7 @@ CAF は「エージェント間のプロトコル設計・エラー処理・状�
 - パターン選択が直接コストに効く: sequential / handoff は逐次で積み上がり、concurrent はスパイクし、**magentic は最も変動が大きく総額を予測しにくい**
 - エージェントごとにタスク複雑度に見合うモデルを割り当てる(分類・抽出・整形は小型モデルで品質が落ちないことが多い)
 - **パターンはフレームワーク非依存**と公式が明言: MAF workflows に 5 パターンすべての 1:1 実装があり、LangChain / CrewAI / OpenAI Agents SDK でも適用可
-- ただし **Foundry Agent Service の connected agents(ポータルのマネージドなエージェント連鎖)は「主として非決定的」でパターン実装範囲に制限がある**、と AAC 自身が注記。決定的パターンが要るならコードファースト(03 章 G3 と同結論)
+- ただし **Foundry Agent Service の connected agents(ポータルのマネージドなエージェント連鎖)は「主として非決定的」でパターン実装範囲に制限がある**、と AAC 自身が注記。決定的パターンが要るならコードファースト(03 章 G3 と同結論)。なお **新 Foundry Agent Service に connected agents は無く、移行ガイドは A2A ツールを推奨**しており(2026-09-11 版)、AAC のこの記述は classic 前提のまま残っている(2026-09-26 確認)
 
 ## 5. 業界の収斂 — Microsoft 外の指標(参考)
 
@@ -222,4 +224,5 @@ Microsoft 固有の話ではなく、主要ベンダーの基準が同方向に�
 |---|---|---|
 | 1 | [CAF ai-agents セクション](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/build-secure-process) | 判断基準の改訂(`ms.date`)。新設セクションのため構成変更が起きやすい |
 | 2 | [AAC ai-agent-design-patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) | パターンの追加・「Choose a pattern」表の変更 |
-| 3 | [Copilot Studio: Add other agents](https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents) | **Foundry / A2A 接続の GA 昇格**(現在プレビュー。GA すると §2 の分業構成が本番提案可能になる) |
+| 3 | [Copilot Studio: Add other agents](https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-add-other-agents) | **Foundry 接続の GA 昇格**(現在プレビュー。GA すると §2 の分業構成が本番提案可能になる。A2A 接続は 2026-04 に GA 済み) |
+| 4 | [Copilot Studio: What's new](https://learn.microsoft.com/en-us/microsoft-copilot-studio/whats-new) | GA / プレビューの月次告知(個別ページのプレビュー表記より早く反映されることがある)。GitHub Copilot harness の GA 化 |

@@ -1,6 +1,6 @@
 # Microsoft Foundry アーキテクチャ設計ガイド
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)/ **版:** 初版
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)/ 2026-09-26(四半期定期更新: AAC・WAF・CAF・Copilot Studio と期限・ステータスを一次情報で再突合)/ **版:** 初版
 > SI の技術選定・アーキテクチャ選定基準の構築を目的に、**Microsoft Foundry を使ったシステムアーキテクチャ**を、インフラを含めた広い視点で整理したもの。機能単位の GA / プレビュー調査は [features/](../features/README.md) を参照。
 
 ## ドキュメント一覧
@@ -54,7 +54,7 @@
 | **C2** | マルチテナント SaaS | Hosted agent(プロトコル 2.0.0) | テナント別索引 | 公開 + APIM | 複数顧客に販売する | [06](./06-usecase-customer-facing.md#c2-マルチテナント-saas) |
 | **C3** | 大規模 / 複数部門への払い出し | 任意 | 任意 | APIM 必須 | 部門別按分・キャパシティ | [06](./06-usecase-customer-facing.md#c3-大規模トラフィック・複数部門への払い出し) |
 | **D1** | 規制業種・閉域 | Hosted agent or 自前 | **AI Search 自前索引一択** | **BYO VNet** | 閉域・監査・データ主権 | [07](./07-usecase-regulated-edge.md) |
-| **D2** | ソブリン(Azure Government) | **Prompt agent 対応**(Workflows はプレビュー、Hosted agents 非対応) | File Search / AI Search | Gov クラウド | **hosted agent・MCP・A2A が非対応**( https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government 2026-07-13 更新) | [07](./07-usecase-regulated-edge.md#8-ソブリンクラウド-azure-government) |
+| **D2** | ソブリン(Azure Government) | **Prompt agent 対応**(Workflows はプレビュー、Hosted agents・音声 prompt agent 非対応) | File Search / AI Search | Gov クラウド | **hosted agent・A2A・Web search / Bing・SharePoint 等が非対応**。MCP サーバーは 2026-08-19 版で **Yes** に変化(2026-07-13 版では非対応)( https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/azure-government 2026-08-19 版、2026-09-26 確認) | [07](./07-usecase-regulated-edge.md#8-ソブリンクラウド-azure-government) |
 | **D3** | エッジ・オンプレ | Foundry 非依存 | 自前 | オフライン | **端末上 = Foundry Local / オンプレ K8s = Azure Local 版(プレビュー・申請制)/ エアギャップ = 切断コンテナ** | [07](./07-usecase-regulated-edge.md#9-エッジ・オンプレ・ハイブリッド) |
 | **E1** | 音声エージェント | Voice Live API | 任意 | 要件次第 | リアルタイム音声対話 | [08](./08-usecase-specialized.md#e1-音声エージェント-コンタクトセンター) |
 | **E2** | 文書処理・IDP | 非同期パイプライン | DI / Content Understanding | 要件次第 | 帳票・契約書の構造化抽出 | [08](./08-usecase-specialized.md#e2-文書処理・idp-intelligent-document-processing) |
@@ -141,10 +141,10 @@
 | 6 | **コストのハードリミット。**「Azure OpenAI には現状その機能がない」 | 予算アラート + 自作の自動化 |
 | 7 | **プロジェクト内のエージェント単位のアクセス制御。**`Foundry User` を持てばプロジェクト内の全エージェントと対話できる | アプリの認証認可層、または hosted agent の Entra Agent ID |
 | 8 | **`max_output_tokens` / `truncation` によるトークン制御。**「self-hosted orchestration でしか実現できない」 | 自前オーケストレーション |
-| 9 | **閉域での Traces / Memory / File Search / Work IQ / Logic Apps / Browser Automation / Computer Use / Image Generation**(Memory は what-is-memory ページ、Work IQ は work-iq ページに VNet 非対応と明記) | 自前実装または機能除外([07](./07-usecase-regulated-edge.md#3-閉域で使えない機能の一覧-設計の出発点)) |
+| 9 | **閉域での Traces / Memory / File Search / Work IQ / Logic Apps / Browser Automation / Computer Use / Image Generation**(Memory は what-is-memory ページ、Work IQ は work-iq ページに VNet 非対応と明記。**File Search は公式ツール表 2026-08-14 版で「PE 経由で Supported」に変化したが、外部案件実測では閉域作成アカウントで vector store 作成が 500** → [03 章 G2](./03-decision-guide.md#g2-ネットワークゲート)) | 自前実装または機能除外([07](./07-usecase-regulated-edge.md#3-閉域で使えない機能の一覧-設計の出発点)) |
 | 10 | **Claude モデルへのコンテンツフィルター**(組込みフィルターが適用されない) | APIM の `llm-content-safety` かアプリ層で Content Safety を呼ぶ |
 | 11 | **音声モデルへのガードレール**(Whisper 等には適用されない) | テキスト化後の経路で Content Safety |
-| 12 | **capabilityHost の更新。**作成後は変更不可で、変更は **capabilityHost 自体の削除・再作成**で行う(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。委任サブネット等アウトバウンド網の変更は Foundry リソースの再デプロイが必要( https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts ) | IaC を「作り直し前提」で設計 |
+| 12 | **capabilityHost の更新。**作成後は変更不可で、変更は **capabilityHost 自体の削除・再作成**で行う(プロジェクト削除は不要。ただし削除で既存エージェントの会話・ファイルへのアクセスは失われる)。委任サブネット等アウトバウンド網の変更は Foundry リソースの再デプロイが必要( https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/capability-hosts )。**2026-09-26 追記:** 後継として **capability settings(プレビュー、API `2026-07-15-preview`。段階展開中で現時点は UK South / Canada Central のみ)** が登場し capability hosts ページは「参照用に保持」扱いになった。**capability settings は既存プロジェクトに追加・変更できず、変更は「プロジェクトの削除・再作成」**(生成される接続も使用中は変更・削除不可)( https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-capability-settings 2026-09-22 版) | IaC を「作り直し前提」で設計 |
 
 **加えて、コンテンツフィルターは「フェイルオープン」する。**フィルタリングシステムが利用不能な場合、リクエストはフィルタリングなしで HTTP 200 で完了する。`content_filter_results` 内のエラーオブジェクトでしか判別できないため、**規制業種では `finish_reason` と `content_filter_results` の検証を必須実装にする。**
 
@@ -154,14 +154,14 @@
 
 | 期限 | 対象 | 設計への効き方 |
 |---|---|---|
-| **2026-07-31** | コンテナプロトコル 1.0.0 | **猶予期間後、この日からブロック開始と公表済み**( https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user ) |
-| **2026-08-20** | Hosted agents 初期プレビュー基盤 | **自動移行されない。**パッケージ・API・エンドポイント・ID・ライフサイクル管理がまとめて変わる([10 章 2.0](./10-migration-antipatterns.md#2-0-最優先-hosted-agent-初期プレビュー基盤-新基盤-期限-2026-08-20)) |
-| **2026-08-26** | Assistants API / `azure-ai-inference` SDK | Threads / Runs 前提のアプリは全面改修。**状態データは移行されない** |
+| ~~2026-07-31~~ **期限到来** | コンテナプロトコル 1.0.0 | **非サポート・ブロック中**(2026-09-26 確認。出典は現在「Protocol 1.0.0 is no longer supported, and the platform blocks requests」とだけ書き、ブロック開始日の記載は消えた)。2.0.0 へ更新( https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/isolate-sessions-per-user ) |
+| ~~2026-08-20~~ **期限到来** | Hosted agents 初期プレビュー基盤 | **サポート終了済み**(未移行なら新基盤へ再デプロイ)。**自動移行されない。**パッケージ・API・エンドポイント・ID・ライフサイクル管理がまとめて変わる([10 章 2.0](./10-migration-antipatterns.md#2-0-最優先-hosted-agent-初期プレビュー基盤-新基盤-期限-2026-08-20)) |
+| ~~2026-08-26~~ **廃止済** | Assistants API / `azure-ai-inference` SDK | 廃止済み(features 側で出典の過去形表記を確認)。Threads / Runs 前提のアプリは全面改修。**状態データは移行されない** |
 | **2026-10-14** | **Azure OpenAI On Your Data** | 「モデルが直接データを読む」構成が終わる。**RAG の既存提案書は要更新**。移行先は Foundry Agent Service + Foundry IQ( https://learn.microsoft.com/en-us/azure/foundry-classic/openai/concepts/use-your-data ) |
 | **2026-12-01** | ビジュアル Workflows | **ポータルでマルチエージェントを組む構成が消える。**長期案件で提案不可 |
 | **2027-03-31** | Agents (classic)(v1) | classic プロジェクト上のエージェント資産 |
 | **2027-04-20** | prompt flow | **新規開発に非推奨。**Microsoft Agent Framework への移行を明示要求 |
-| **2028-09-25** | Azure AI Vision Image Analysis | 「2026-09-25 までに移行計画を」と記載 |
+| **2028-09-25** | Azure AI Vision Image Analysis | 「2026-09-25 までに移行計画を」と記載(**計画策定の目安日は到来済み**) |
 | 2027-10 前後 | ファインチューン済みモデルの deployment | 学習停止の約 6 か月後に推論も停止。**FT は作り直しが前提** |
 | 日付未公表 | Agent Applications | 廃止告知が予告済み |
 
@@ -193,6 +193,7 @@
 7. [Feature readiness at GA](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability) — GA / プレビューの一次情報
 8. [`Azure/AI-Landing-Zones`](https://github.com/Azure/AI-Landing-Zones) — Preview から GA への昇格を追う
 9. [`microsoft-foundry/foundry-samples`](https://github.com/microsoft-foundry/foundry-samples) — Bicep テンプレートの追加
+10. [`MicrosoftDocs/architecture-center` のコミット履歴](https://github.com/MicrosoftDocs/architecture-center/commits/main/docs/ai-ml/architecture) — **AAC は `ms.date` を据え置いたまま本文を加筆する**(2026-07〜09 の Baseline 加筆がその例)。ms.date だけで「変化なし」と判定しない
 
 **HTML の再生成:** リポジトリルートで `python3 docs/survey/tools/md2html.py`(引数なしで features と architecture の両方をビルド)。
 
@@ -208,3 +209,4 @@
 | 2026-08-01 | **11 章(エージェント構成の判断フレームワーク)を新設。**「要件→エージェント構成の指標は事前に構築できるか、複数試作して比較するしかないか」への回答として、CAF ai-agents セクション(2025-12 新設: デシジョンツリー・単一 vs マルチの判断表)、AAC オーケストレーションパターン(複雑度の階段・5 パターン・アンチパターン)、Copilot Studio の公式上限ライン(30〜40 アクションで精度劣化・connected agents の多段連鎖不可・Foundry 接続はプレビュー)、業界指標(Anthropic 3 条件・LangChain 4 型)を整理。03 章・tech-selection-guide との対照表つき |
 | 2026-09-04 | **casebook セット新設に伴う更新。**03 章 G2 表を公式 2026-08-14 版(File Search「PE 経由」表記・Tracing VNet Preview)+外部案件実測(hosted agent は PNA Disabled で VNet 注入必須)で改訂、05 章 B2 に現場知見 6 点、07 章 §3 のツール表・機能表を更新、10 章にアンチパターン A12〜A15(注入なし hosted agent / App Insights 接続なし / プロンプト二重化 / 反証される撤退理由)を追加 |
 | 2026-07-30 | **全 11 ファイルのファクトチェック(公式ドキュメント突合)と訂正を適用。**確定日の反映: On Your Data 廃止 **2026-10-14**、コンテナプロトコル 1.0.0 ブロック開始 **2026-07-31**。古い記述の更新: **Foundry Local GA(2026-04-09 公式ブログ)**、Toolbox GA、FLUX.2 GA、tsuzumi-7b Legacy(2026-08-31 リタイア)、Groundedness detection 6→4 リージョン、SharePoint「ライセンス必須」→ pay-as-you-go 併記、全遮断 PE のポータル対応。誤りの訂正: capabilityHost 変更は「プロジェクト再作成」でなく「capability host の削除・再作成」、MACAE の org(microsoft)、FT デプロイ上限 10/リソース、Cosmos DB コンテナー 3〜5 個(追加関係)、agent identity とマネージド ID の混同、ガードレール既定閾値「画像 Low」→ テキスト・画像とも Medium、File Search「固定」→ 既定値。ミスリードの限定: 「国内処理必須 → Data Zone(APAC)」を Regional Standard(Japan East)に分離、A2A「ポータル未対応」を incoming 有効化に限定、Front Door パターンのベースライン記事への帰属を Front Door 一般ドキュメントに修正、Cost Analysis「約5時間遅延」を時間非特定に。公式間不整合の両論併記: AI Red Teaming リージョン(2 vs 5)、Traces VNet(非対応 vs プレビュー)、azd コマンド列挙 |
+| 2026-09-26 | **四半期定期更新(README・01・02・03・11)。**AAC 3 本は ms.date 2026-06-17 のままだが本文加筆を GitHub 履歴で確認し反映(Baseline: private MCP サブネット `snet-mcpServers`・hosted agent の egress / per-user 分離の適用条件・モデル×ツール選定の注意・ID 分離〈Assignment restrictions プレビュー〉、ALZ 版: spoke 要求 `/22`→`/21`)。**ステータス更新:** Routines GA(2026-09-24)、A2A ツール v1.0 GA、Copilot Studio の A2A 接続 GA(2026-04、11 章の「いずれもプレビュー」は誤り)、Toolbox 内 Tool search GA、Model router のリージョン拡大(GS 32 / DZ 23)、継続的評価=プレビュー、Azure Government で MCP が Yes。**期限:** プロトコル 1.0.0・初期プレビュー基盤・Assistants API を到来済みに。**訂正:** Japan West の Class A 非対応(解消)、Regional Standard の「単一リージョン処理」(正: geography 内)、RBAC「SDK 非対応と明記」(正: 記載なし)、Azure Functions ツール GA(正: 公式間不整合)、prompt agent の `FixedRatio` による % 分割(正: No traffic splitting)。**追記:** capability settings(プレビュー)による BYO 構成の変更=プロジェクト再作成、hosted agent ガードレールのフェイルオープン、2026-09-01 の Data Zone / Regional 価格プレミアム、Dynamic AI agents at scale の URL 特定、Copilot Studio の GitHub Copilot harness と Foundry 接続の前提(Activity エンドポイント) |
