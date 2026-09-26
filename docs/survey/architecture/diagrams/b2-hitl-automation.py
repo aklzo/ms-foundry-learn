@@ -14,7 +14,7 @@ from archdiagram import BLUE, ORANGE, TELEM, Diagram, az, icon, res  # noqa: E40
 d = Diagram(
     "B2: Approval-gated automation (HITL) — MAF hosted agent",
     width=1400,
-    height=900,
+    height=920,
     subtitle="Agent investigates -> proposes action -> human approves -> execute -> audit. "
     "Prompt agents cannot express this: branch / wait / resume => code-first.",
 )
@@ -35,12 +35,12 @@ hosted = d.node(490, 300, icon("containerapp"), "Hosted agent\ncontainer", note=
 triage = d.box(660, 260, 110, 40, "triage")
 research = d.box(800, 260, 110, 40, "research\n(RAG)")
 proposal = d.box(800, 340, 110, 40, "action\nproposal")
-hitl = d.box(660, 340, 120, 44, "RequestInfo\nExecutor (HITL)")
+hitl = d.box(660, 340, 130, 44, "RequestInfo\nExecutor (HITL)")
 execute = d.box(660, 430, 110, 40, "execute\n(tools)")
 audit = d.box(800, 430, 110, 40, "audit\nrecord")
 d.edge(triage, research)
 d.edge(research, proposal)
-d.edge(proposal, hitl, label="approve?", label_t=0.5, label_dy=14)
+d.edge(proposal, hitl, label="approve?", label_t=0.5, label_dy=28)
 d.edge(hitl, execute, label="approved", label_t=0.5, label_dx=-40)
 d.edge(execute, audit)
 
@@ -57,8 +57,8 @@ erp = d.node(1270, 570, icon("browser"), "Core systems /\nLogic Apps connectors"
 
 # --- edges -------------------------------------------------------------------
 d.edge(teams, hosted, label="Responses API", label_t=0.45, label_dy=-14)
-d.edge(hitl.port("left", 0.5), (310, 362), arrow=False, color=BLUE)
-d.edge((310, 362), user, label="approval request /\ndecision", label_color=BLUE, label_t=0.4,
+d.edge(hitl.port("left", 0.5), (310, 405), via=[(580, 340), (580, 405)], arrow=False, color=BLUE)
+d.edge((310, 405), user, label="approval request /\ndecision", label_color=BLUE, label_t=0.4,
        label_dy=-26, color=BLUE)
 d.edge(ha.port("right", 0.25), model, label="chat + tool calls", label_t=0.4, label_dy=-12)
 d.edge(execute, apim, via=[(660, 610), (1230, 610)], label="MCP tool calls",
@@ -69,10 +69,12 @@ d.edge(ha.port("right", 0.75), appi, style="dashed", color=TELEM,
 
 d.footer(
     notes=[
-        "Idle 15 min = compute deprovision (state kept) / 30 days inactive = permanent delete. "
-        "Multi-day approvals -> B3 (Durable Extension + DTS).",
+        "Idle timeout (default 15 min, 2-60 min per agent version) = compute deprovision (state kept) / "
+        "30 days inactive = permanent delete.",
+        "Multi-day approvals -> B3 (Durable Extension + DTS), or in-agent long-running HITL "
+        "(@multi_turn_task + durable state store) = PREVIEW.",
         "Tracing is NOT the business audit log: 90-day portal window, traces may carry prompts/PII, "
-        "no VNet support -> keep who/when/what-approved in your own store (MAF middleware).",
+        "Tracing VNet = preview -> keep who/when/what-approved in your own store (MAF middleware).",
         "$Billing = CPU + memory of all active sessions; oversizing multiplies by concurrency. "
         "MAF Graph API is the supported surface (Functional API is experimental).",
     ],

@@ -14,7 +14,7 @@ from archdiagram import BLUE, ORANGE, Diagram, az, icon, res  # noqa: E402
 d = Diagram(
     "B4: Multi-agent with domain specialization — MAF workflow + hosted agents",
     width=1400,
-    height=880,
+    height=900,
     subtitle="Only when per-domain prompts / knowledge / PERMISSIONS must differ, or parallel "
     "research pays. Single agent + tools is enough for most cases (-> ch.11).",
 )
@@ -36,22 +36,24 @@ model = d.node(920, 410, icon("model"), "Model\ndeployment(s)", note="size per a
 
 ext = d.cluster(1090, 200, 1340, 450, "Partner / other org", kind="external")
 pa = d.node(1215, 300, icon("project"), "External agent",
-            note="A2A: text-only, no SSE (preview)")
+            note="A2A v1.0 GA / v0.3 preview")
 
 d.edge(user, wf)
 d.edge(wf, a1, label="sequential / concurrent /\nhandoff / group chat / magentic",
        label_t=0.45, label_dy=-30)
-d.edge(wf, a2)
-d.edge(wf, a3)
+d.edge(wf.port("right", 0.3), a2)
+d.edge(wf.port("right", 0.3), a3)
 d.edge(a2, model, label="each agent -> model\n(size per task)", label_t=0.5, label_dy=-28)
-d.edge(a1, pa, label="A2A (Entra required)", label_color=BLUE, label_t=0.55, label_dy=-16)
+d.edge(a1, pa, label="A2A v1.0 (Entra required)", label_color=BLUE, label_t=0.55, label_dy=-16)
 
 d.footer(
     notes=[
         "Portal visual Workflows retire 2026-12-01 -> MAF (code, recommended) / Logic Apps (visual) / "
         "A2A (simple delegation). Export the YAML before the designer disappears.",
-        "Prompt agents SHARE one identity per project -> per-agent permissions & audit need hosted "
-        "agents (each gets its own Entra Agent ID) or separate projects.",
+        "A2A: v1.0 (tool type a2a) is GA; v0.3 / a2a_preview = preview AND the default when unversioned "
+        "-> pin A2A-Version: 1.0. Still text-only, no SSE.",
+        "Prompt agents share one project identity (classic model; new object model = per-agent, check "
+        "agent.identity) -> hosted agents or separate projects.",
         "Security trimming must be implemented in EVERY agent (official). Anti-patterns: agents "
         "without real specialization, shared mutable state between parallel agents.",
     ],

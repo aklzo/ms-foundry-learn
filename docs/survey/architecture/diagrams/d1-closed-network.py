@@ -14,7 +14,7 @@ from archdiagram import BLUE, ORANGE, TELEM, Diagram, az, icon, res  # noqa: E40
 d = Diagram(
     "D1: Regulated industry / closed network — BYO VNet (standard agent setup)",
     width=1400,
-    height=960,
+    height=1000,
     subtitle="Design starts from the list of features that do NOT work in a closed network. "
     "This gate cannot be retrofitted (setup is immutable after creation).",
 )
@@ -52,7 +52,7 @@ storage = d.node(1250, 470, az("storage/storage-accounts.png"), "Storage")
 search = d.node(1180, 625, az("appservices/cognitive-search.png"),
                 "AI Search\n(own index = the RAG)")
 
-fw = d.node(470, 600, az("network/firewall.png"), "Azure Firewall",
+fw = d.node(480, 600, az("network/firewall.png"), "Azure Firewall",
             note="FQDN allowlist / NO TLS inspection", note_color=ORANGE)
 
 # --- egress ------------------------------------------------------------------
@@ -73,10 +73,14 @@ d.edge(fw, ms, label="allowlisted FQDN\n/ service tags", label_t=0.5, label_dy=-
 
 d.footer(
     notes=[
-        "NOT available in closed network: File Search / Memory / Work IQ / Logic Apps tool / "
-        "Browser Automation / Computer Use / Image Generation.",
-        "Tracing VNet support is inconsistent across official pages -> assume unsupported. "
+        "NOT available in closed network: Memory / Logic Apps tool / Browser Automation / Computer Use / "
+        "Image Generation / Fabric Data Agent.",
+        "File Search: docs now say 'via PE' but it failed in a field test (vector store 500) -> use the AI Search "
+        "tool. Work IQ works but its endpoint stays public.",
+        "Tracing VNet = PREVIEW (GA table) -> not the audit primary. "
         "Consequence: RAG / memory / observability all self-built ('closed + full managed' does not exist).",
+        "Hosted agent network egress controls (PREVIEW): per-agent FQDN allow/deny in the guardrail, enforced by "
+        "a sandbox proxy - complements the Firewall, not a replacement.",
         "capability host cannot be updated after creation -> config change = delete & recreate "
         "(agents lose conversations/files). IaC must assume rebuild.",
     ],

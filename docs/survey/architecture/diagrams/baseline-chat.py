@@ -45,7 +45,9 @@ storage = d.node(960, 660, az("storage/storage-accounts.png"), "Storage\nuploade
 search = d.node(1180, 660, az("appservices/cognitive-search.png"),
                 "AI Search\nFile Search index", note="keep source of truth elsewhere")
 
-egress_box = d.box(480, 460, 300, 44, "snet-agentsEgress\n(delegated Microsoft.App/environments, /24)")
+egress_box = d.box(480, 480, 300, 44, "snet-agentsEgress\n(delegated Microsoft.App/environments, /24)")
+mcp_box = d.box(480, 392, 320, 44, "snet-mcpServers (/24, added 2026-08)\n"
+                "private MCP servers (ACA internal env)")
 fw = d.node(480, 590, az("network/firewall.png"), "Azure Firewall",
             note="allowed public FQDN only / NO TLS inspection", note_color=ORANGE)
 bastion = d.node(370, 720, az("networking/bastions.png"), "Bastion")
@@ -64,6 +66,8 @@ d.edge(project, cosmos)
 d.edge(project, storage)
 d.edge(project, search)
 d.edge(foundry_c.port("left", 0.5), egress_box, label="external tool calls", label_t=0.5, label_dy=-14)
+d.edge(egress_box, mcp_box, label="TCP 443 / 31443", label_t=0.5,
+       label_dx=-72, label_dy=0)
 d.edge(egress_box, fw)
 d.edge(fw, ext, label="allowed FQDN only", label_t=0.5, label_dy=-14)
 d.edge(bastion, jump)

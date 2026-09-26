@@ -14,7 +14,7 @@ from archdiagram import BLUE, ORANGE, TELEM, Diagram, az, icon, res  # noqa: E40
 d = Diagram(
     "B3: Long-running processes with guaranteed resume — MAF + Durable Extension",
     width=1400,
-    height=800,
+    height=820,
     subtitle="Multi-day approvals, waiting on external batches, resume-from-failed-step. "
     "Check this BEFORE concluding 'MAF can't do long-running, switch to LangGraph'.",
 )
@@ -38,9 +38,9 @@ store = d.node(1030, 490, az("storage/storage-accounts.png"), "Durable state\n(f
 d.edge(user, maf, label="request", label_t=0.5, label_dy=-14)
 d.edge(evt, host.port("left", 0.75), label="resume signal", label_t=0.5, label_dy=16)
 d.edge(maf, hitl, label="request info", label_t=0.5, label_dy=-14)
-d.edge(hitl, user, label="approve / reject", label_color=BLUE, label_t=0.35, label_dy=18)
+d.edge(hitl, user, label="approve / reject", label_color=BLUE, label_t=0.55, label_dy=18)
 d.edge(maf, dur)
-d.edge(dur, dts, label="checkpoint per\nsuperstep", label_t=0.82, label_dx=10, label_dy=0,
+d.edge(dur, dts, label="checkpoint per\nsuperstep", label_t=0.6, label_dx=0, label_dy=-22,
        via=[(1030, 430)])
 d.edge(dts, store)
 d.edge(dts, maf, style="dashed", color=TELEM, label="recover / resume\nafter fault or deploy",
@@ -52,6 +52,8 @@ d.footer(
         "Reliable streaming across distributed hosts needs a separate Redis-class broker.",
         "No official pattern for DTS INSIDE a Foundry hosted agent was found -> host on Functions "
         "or your own compute when Durable is required.",
+        "In-agent alternative: long-running hosted agents (resilient execution / stream replay / state store) "
+        "= PREVIEW, a separate mechanism from DTS (-> B2).",
         "If AI is just one step and approvals/waits dominate, Logic Apps / Durable Functions alone "
         "may be the better main engine (-> B5).",
     ],

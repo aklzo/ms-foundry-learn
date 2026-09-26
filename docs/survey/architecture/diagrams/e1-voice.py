@@ -14,7 +14,7 @@ from archdiagram import BLUE, ORANGE, Diagram, az, icon, res  # noqa: E402
 d = Diagram(
     "E1: Voice agent / contact center — Voice Live via ACS (SIP is not native)",
     width=1400,
-    height=860,
+    height=880,
     subtitle="Voice Live = managed speech-to-speech (STT + LLM + TTS + avatar in one API). "
     "Telephony arrives through Azure Communication Services, never directly.",
 )
@@ -30,13 +30,15 @@ mid = d.node(650, 280, az("appservices/app-services.png"), "Your middle tier\n(s
              note="never client-direct in prod")
 
 vl = d.cluster(790, 160, 1330, 600, "Voice Live API (Speech resource)", kind="sub",
-               sublabel="Preview per GA table (2026-07)")
+               sublabel="API = GA / portal agent UI = preview")
 sess = d.node(890, 300, icon("speech"), "Voice Live\nsession",
               note="WebSocket (prod) / WebRTC (preview)")
 stt = d.box(1130, 230, 170, 40, "STT (azure /\nwhisper / mai)")
 llm = d.box(1130, 310, 170, 44, "LLM (gpt-realtime /\ngpt-5.x / phi4)")
 tts = d.box(1130, 400, 170, 44, "TTS 600+ voices\n/ avatar (WebRTC)")
 tools = d.box(1000, 510, 280, 40, "function calling / MCP / VoiceRAG")
+va = d.box(560, 560, 400, 64, "Alt (preview): voice-based agent (kind: voice)\n"
+           "phone channel: Teams Phone (via ACS) / Twilio\nruns on Voice Live - no middle tier to write")
 
 d.edge(caller, acs, label="audio", label_t=0.5, label_dy=-14)
 d.edge(acs, mid, label="bidirectional stream (WS)\nPCM 16/24kHz, 20ms", label_t=0.5, label_dy=-28)
@@ -44,16 +46,20 @@ d.edge(mid, sess, label="WebSocket\n+ Entra ID", label_color=BLUE, label_t=0.5, 
 d.edge(sess, stt, label="audio in", label_t=0.55, label_dy=-16)
 d.edge(stt, llm)
 d.edge(llm, tts)
-d.edge(tts, sess, label="audio out", label_t=0.45, label_dy=18)
+d.edge((140, 306), va, via=[(140, 560)], label="phone number binding\n(preview)", label_t=0.62,
+       label_dy=-24)
+d.edge(tts, sess, label="audio out", label_t=0.3, label_dy=-16)
 
 d.footer(
     notes=[
-        "Sizing starts from quotas: max session 60 min / 30 new connections per min / "
-        "TPM = NCPM x 4,000 -> contact-center scale ALWAYS needs a quota request.",
+        "Sizing starts from quotas: max session 60 min / NCPM 100 / TPM <= 120,000 (page conflicts with "
+        "TPM = NCPM x 4,000) -> contact-center scale ALWAYS needs a quota request.",
         "429 also fires while autoscale catches up -> exponential backoff mandatory "
         "(official ramp: +20 connections per 90-120s).",
         "Guardrails do NOT apply to voice models -> run Content Safety on the text path "
         "after STT. Semantic VAD supports Japanese; barge-in built in.",
+        "Status by surface: Voice Live API (WebSocket / SDK) + hosted agents x Voice Live = GA / portal "
+        "'Agents - Voice Live', voice-based agents, phone channel = PREVIEW.",
     ],
     auth=[
         "Auth: Entra ID recommended (agent-connect mode REQUIRES Entra) / WebRTC is preview: "
