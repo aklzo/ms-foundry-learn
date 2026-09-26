@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="03-案件事例-社内ヘルプデスク-servicenow-設計判断が-3-回変わった経緯と実測">03. 案件事例: 社内ヘルプデスク × ServiceNow — 設計判断が 3 回変わった経緯と実測</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この事例から持ち帰るもの-先に結論">この事例から持ち帰るもの(先に結論)</a></li><li><a href="#1-案件の骨格">1. 案件の骨格</a></li><li><a href="#2-判断の変遷-タイムライン">2. 判断の変遷(タイムライン)</a></li><li><a href="#3-v4-の設計判断-adr-12-本の要約">3. v4 の設計判断(ADR 12 本の要約)</a></li><li><a href="#4-実測-2026-08-30・japaneast・2-ラウンド">4. 実測(2026-08-30・japaneast・2 ラウンド)</a></li><li><a href="#5-顧客閉域環境への納品で問題になった点-v2-期の洗い出し-2026-08-07">5. 顧客閉域環境への納品で問題になった点(v2 期の洗い出し、2026-08-07)</a></li><li><a href="#6-提案への含意-一般化">6. 提案への含意(一般化)</a></li><li><a href="#参照">参照</a></li></ul></div>
 <p><a href="index.html">← ケースブック TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-09-04(初版)<br><strong>出典:</strong> 外部案件リポジトリ <code>foundry-servicenow-helpdesk</code>(非公開)の docs/v2〜v4(ADR・検証計画・実測記録)。本リポジトリの <a href="../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">tech-selection-guide §5</a> に載せた v2/v3 期の実測に、<strong>v4(2026-08-30、hosted agent + standard setup、公開+閉域の 2 ラウンド)の実測</strong>を加えて、判断の変遷ごと記録する。顧客名・固有情報は含まない。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-09-04(初版)/ 2026-09-26(公式側の状況変化の注記のみ追加。案件当時の事実・判断は書き換えていない。注記は「※2026-09-26」)<br><strong>出典:</strong> 外部案件リポジトリ <code>foundry-servicenow-helpdesk</code>(非公開)の docs/v2〜v4(ADR・検証計画・実測記録)。本リポジトリの <a href="../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">tech-selection-guide §5</a> に載せた v2/v3 期の実測に、<strong>v4(2026-08-30、hosted agent + standard setup、公開+閉域の 2 ラウンド)の実測</strong>を加えて、判断の変遷ごと記録する。顧客名・固有情報は含まない。</p></blockquote>
 <h2 id="この事例から持ち帰るもの-先に結論">この事例から持ち帰るもの(先に結論)</h2>
 <ol>
 <li><strong>「Foundry を使うか」は 1 回で決まらない。</strong>同じ案件で「フル活用(v2)→ 意図的撤退(v3)→ hosted agent で再挑戦(v4)」と 3 回判断が変わった。変わった理由は技術の不足ではなく、<strong>顧客制約(データ所在・プレビュー不使用・閉域)の解像度が上がったこと</strong>と、<strong>公式側の対応(standard setup の BYO、hosted agents GA)が追いついたこと</strong>の 2 つ</li>
@@ -175,7 +175,7 @@ footer {
 <tr>
 <td>コンテナ内サーバー</td>
 <td><strong>FastAPI で Responses protocol 2.0.0 を自前実装</strong>。デプロイは <code>azure-ai-projects</code>(GA)の <code>create_version_from_code</code>(zip + REMOTE_BUILD、ACR 不要)</td>
-<td><code>agent-framework-foundry-hosting</code>: <strong>プレリリース版のみ</strong>で「プレリリース不使用」制約と衝突。MAF ごと採用も同 lib 依存で不可。→ プロトコル改訂への追随義務を負う代わりに契約テストで検知</td>
+<td><code>agent-framework-foundry-hosting</code>: <strong>プレリリース版のみ</strong>で「プレリリース不使用」制約と衝突。MAF ごと採用も同 lib 依存で不可。→ プロトコル改訂への追随義務を負う代わりに契約テストで検知。※2026-09-26 注記: 当時すでにフレームワーク非依存の公式プロトコルライブラリ <code>azure-ai-agentserver-responses</code> 2.0.0(2026-08-11)/ <code>-core</code> 2.0.0(2026-08-06)は PyPI で stable 版が出ており、自前実装以外の GA 側の選択肢があった(検討記録なし)。MAF 用 <code>agent-framework-foundry-hosting</code> は 2026-09-26 時点もプレリリースのみ(<a href="02-pitfalls-index.html#a-hosted-agent">02 P-H20</a>)</td>
 </tr>
 <tr>
 <td>責務分割</td>
@@ -195,7 +195,7 @@ footer {
 <tr>
 <td>API version</td>
 <td>capabilityHosts / connections の ARM API は <strong>2025-04-01-preview のみ</strong>(2026-08-30 時点) → 「コントロールプレーン IaC の版」と「顧客が触るサービス面の GA」を区別し、例外として採用・記録</td>
-<td>—</td>
+<td>※2026-09-26 注記: 公式の ARM テンプレートリファレンスでは <code>capabilityHosts</code>・<code>connections</code> は安定版 API 2025-06-01(以降 2025-09-01 / 2025-12-01 / 2026-03-01 等)にも存在し、当時の「preview のみ」という認識は誤りだった(安定版を pin すれば例外記録は不要だった)。後継の capability settings は 2026-07-15-preview のみ(<a href="02-pitfalls-index.html#j-iac-cli-ci-cd">02 P-C06</a>)</td>
 </tr>
 <tr>
 <td>検索方式</td>
@@ -210,7 +210,7 @@ footer {
 <tr>
 <td>プレビュー不使用</td>
 <td>採用機能ごとに <strong>GA 証跡(URL・確認日)</strong> を記録してから採用。除外: Memory / Routines / Workflows / Foundry IQ(ポータル面 Preview)/ model router(既定で非 OpenAI へ)/ Bing・Web・SharePoint(公開経路+DPA 外)/ <strong>Tracing VNet(Preview)</strong></td>
-<td>—</td>
+<td>※2026-09-26 注記: このうち <strong>Routines は 2026-09-24 に GA</strong>(ただし Python SDK 面は <code>client.beta.routines</code>、CMK 非対応 = <a href="02-pitfalls-index.html#b-agent-service-コア">02 P-A11</a>)。Memory / Workflows / Tracing VNet は Preview、Foundry IQ は Partial GA のまま(GA 一覧表 2026-09-23 取得版)</td>
 </tr>
 <tr>
 <td>プロンプト正本</td>
@@ -288,7 +288,7 @@ footer {
 <tr>
 <td>11</td>
 <td><code>openai</code> SDK 3.x は <code>httpx2</code>(改名フォーク)を使い <code>respx</code> でモック不能 → <code>openai&lt;3</code> にピン</td>
-<td>テスト戦略が SDK メジャーに依存する</td>
+<td>テスト戦略が SDK メジャーに依存する。※2026-09-26 注記: <code>azure-ai-projects</code> は 2.5.0(2026-08-20)から <code>openai&gt;=3.0.0</code> 必須になったため、<code>openai&lt;3</code> ピンとの両立は 2.4.x まで(<a href="02-pitfalls-index.html#i-maf-とフレームワーク">02 P-F12・F14</a>)</td>
 </tr>
 </tbody></table></div>
 <h3 id="4-2-閉域-lv3-ラウンド-2-本トラック最大の発見">4-2. 閉域 Lv3(ラウンド 2)— 本トラック最大の発見</h3>
@@ -394,12 +394,12 @@ footer {
 <li><strong>閉域 hosted agent は「作成時に注入」を提案書に書く。</strong>後付け不可なので、Lv3 要件でも注入前提で VNet・委任サブネット(/27 以上)・PE を最初から積む。注入なしで作ると「デプロイは通るのに実行が失敗」で PoC が破綻する</li>
 <li><strong>評価ハーネスを先に作る。</strong>v3 → v4 の載せ替え判断は、同一データセット比較があったから 1 日で「劣化なし」と言えた。技術選定の A/B は評価基盤がないと感想戦になる</li>
 <li><strong>顧客の「閉鎖環境」は Lv 定義を先に合意する。</strong>Lv3(インバウンド遮断)と Lv4(egress 統制・外部 SaaS 禁止)で CI/CD・搬入・監視の設計と見積もりが別物になる</li>
-<li><strong>プレビュー不使用ポリシーは「サービス面」と「IaC の API version」を分けて運用する。</strong>standard setup は GA 機能だが Bicep の API は preview 版しかない(2026-08-30 時点)。一律「preview 禁止」だと GA 機能が使えなくなる</li>
+<li><strong>プレビュー不使用ポリシーは「サービス面」と「IaC の API version」を分けて運用する。</strong>standard setup は GA 機能だが Bicep の API は preview 版しかない(2026-08-30 時点)。一律「preview 禁止」だと GA 機能が使えなくなる。※2026-09-26 注記: capabilityHosts には安定版 API(2025-06-01 以降)があり、この例は成り立たない(<a href="02-pitfalls-index.html#j-iac-cli-ci-cd">02 P-C06</a>)。原則自体は「サービス GA・SDK 面 beta」(Routines)などで引き続き有効</li>
 </ol>
 <h2 id="参照">参照</h2>
 <ul>
 <li>本リポジトリ側の関連: <a href="../../tech-selection-guide.md">tech-selection-guide §5・§6</a> / <a href="../../architecture/html/05-usecase-agent-automation.html">architecture 05 B1・B2</a> / <a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07 §2〜3</a> / <a href="02-pitfalls-index.html">02 詰まりどころ索引</a>(P-H・P-I・P-N 系)</li>
-<li>公式一次情報(v4 GA 証跡で使用): <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a>(ms.date 2026-08-14)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link">Configure network isolation</a>(2026-08-14)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents">Hosted agents</a>(2026-08-19)</li>
+<li>公式一次情報(v4 GA 証跡で使用): <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a>(ms.date 2026-08-14)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link">Configure network isolation</a>(2026-08-14)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents">Hosted agents</a>(2026-08-19)。※2026-09-26 注記: 3 ページとも現存。GA 一覧表は ms.date 2026-08-14 のまま内容更新(Routines が GA に)、Configure network isolation は 2026-08-14 のまま、Hosted agents は ms.date 2026-09-11 に更新(idle timeout 下限 2 分、durable state store〈preview〉の記載追加)</li>
 </ul>
 </main>
 <footer>このHTMLは docs/survey/casebook/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

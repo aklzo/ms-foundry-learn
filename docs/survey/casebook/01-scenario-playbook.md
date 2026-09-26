@@ -2,7 +2,7 @@
 
 [← ケースブック TOP](./README.md)
 
-> **最終更新:** 2026-09-04(初版)
+> **最終更新:** 2026-09-04(初版)/ 2026-09-26(ステータス変化の反映: Routines GA〈S-03〉、Voice Live の表記〈S-10〉、hosted agent のセッション上限・コンテナプロトコル 1.0.0〈S-06〉、サブネット容量・egress controls〈S-04 / S-12〉、公式プロトコルライブラリの stable 化〈S-02〉。変更箇所は「※2026-09-26」)
 > SI で頻出する 12 の要件セットについて、**ゲート判定 → 推奨構成 → 却下した案と理由 → 詰まりどころ → 見積もり・契約で効く点**を 1 シナリオ 1 節で書く。[architecture 03 の 5 ゲート](../architecture/03-decision-guide.md)と [11 の判断フレームワーク](../architecture/11-decision-frameworks.md)を「要件の言葉」から逆に引けるようにしたもの。詰まりどころは [02 索引](./02-pitfalls-index.md)の P-ID で参照する。
 > **前提:** 構成の詳細(図・数値・上限)は architecture 各章に置き、本ページは判断と根拠だけを書く。「本ドキュメントの判断」と明記した箇所は公式に書かれていない SI 側の判断。
 
@@ -35,7 +35,7 @@
 
 | ゲート | 判定 | 根拠 |
 | --- | --- | --- |
-| G1 データ | 社外秘だが個人情報は少ない → Regional / Data Zone 可 | 国内処理必須なら Regional Standard(P-M03) |
+| G1 データ | 社外秘だが個人情報は少ない → Regional / Data Zone 可 | 国内処理必須なら Standard / Regional Provisioned(geography 型、Japan East / West。P-M03) |
 | G2 ネットワーク | パブリック + Entra 認証で足りることが多い | 閉域なら S-04 へ |
 | G3 制御 | 「検索して答える」のみ → Prompt agent(M) | 分岐・承認なし |
 | G4 統合 | 新規 AI アプリが主役 → フル統合 | Teams 公開が出口なら P-X 系を確認 |
@@ -48,7 +48,7 @@
 - **File Search を本番に押し切らない。**チャンク 800 / 400・埋め込み固定で日本語長文・表主体の文書に合わないことがある(P-R01)。素の検索 API がないため引用順位の制御や RRF 統合もできない(P-R02)。PoC は代表的な難しい文書 20〜30 件で測る
 - **SharePoint ツールは「ライセンス+OBO+テキストのみ」の三重制約**(P-R09)。実行時に `User does not have valid license` で落ちるため、接続テストが通っても安心しない。ライセンスがない顧客には AI Search の SharePoint インデクサ案を並記
 - **権限別表示は AI Search ツールでは実現できない**(P-R07)。「全員同じ」かどうかをヒアリングで必ず確認し、違うなら A2 で自前セキュリティフィルタ(architecture 04 の 4 方式)
-- Foundry IQ(A5)は「複数エージェント / アプリでナレッジを共有」「ACL 同期」が要件のときに価値が出る。単一アプリなら過剰。Partial GA(P-R08)
+- Foundry IQ(A5)は「複数エージェント / アプリでナレッジを共有」「ACL 同期」が要件のときに価値が出る。単一アプリなら過剰。Partial GA(P-R08)。※2026-09-26: Foundry IQ の MCP ツールは structured input(`{{placeholder}}`)でユーザートークンをリクエストごとに渡せるようになった(クエリ時の権限適用はプレビュー)。ただし**トークンを渡し忘れると権限付きソースが未フィルタで全件返る**(P-R07)ので、権限別表示を A5 で満たす場合は「トークン欠落時の挙動」を受入テストに入れる
 
 **詰まりどころ:** P-R01・R02・R05・R07・R09・R13(日本語アナライザー)・P-I05(API キーで始めてナレッジを足すと Entra 必須)・P-X12(Teams 公開でナレッジ付きだけ失敗)
 
@@ -80,8 +80,9 @@
 - 撤退理由は機能単位で書く。「Foundry はデータがサービス側に残る」は standard setup(BYO)で反証された。成立するのは「添付原本の不保存」と「書き込みの決定性」
 - hosted agent を使うなら cold start +数秒で keep-warm 不要(P-H13)。ACA の scale-to-zero(44.8 秒)とは別物
 - OpenAPI ツールで ITSM を直接叩く場合、Basic 認証・SAS URL は非対応(P-X18)。MI か API キー(ヘッダー)
+- ※2026-09-26: 「プレリリース不使用」でも hosted agent のコンテナ内サーバーを自前実装する必要は薄れた。MAF 用 `agent-framework-foundry-hosting` はプレリリースのままだが、フレームワーク非依存の公式プロトコルライブラリ `azure-ai-agentserver-responses` / `-invocations` は PyPI で stable(P-H20)。一方 `azure-ai-projects` 2.5.0 以降は `openai>=3` 必須で、`openai<3` ピン(P-F12)とは両立しない点を SDK 選定に織り込む
 
-**詰まりどころ:** P-H01・H02・H03・H04・H20(プレリリース lib)・P-A04(Conversations に TTL なし)・P-I02(伝播 15〜45 分)・P-R02・P-M02(gpt-5-mini の遅さ)・P-O04(評価 SDK)・P-C09(プロンプト正本)・P-X18
+**詰まりどころ:** P-H01・H02・H03・H04・H20(プレリリース lib)・P-F12・F14(openai 3 系への依存移行)・P-A04(Conversations に TTL なし)・P-I02(伝播 15〜45 分)・P-R02・P-M02(gpt-5-mini の遅さ)・P-O04(評価 SDK)・P-C09(プロンプト正本)・P-X18
 
 **見積もり・契約で効く点:** 二重保持の削除ジョブ・照合の工数 / BYO Cosmos(5 × autoscale 1,000 RU/s、P-M14)/ 評価ハーネス(自前 4 指標+groundedness)を「載せ替え判断の道具」として先に作る / 閉域なら S-12 の納品プロセス
 
@@ -101,17 +102,18 @@
 | G2 | 基幹連携が社内網なら BYO VNet | ツールは MCP / OpenAPI(VNet サブネット経由) |
 | G5 | 監査要件 → 業務監査ログはアプリ側に別途 | Foundry Tracing は 90 日・機微情報を含みうる(P-O08) |
 
-**推奨構成:** **B2(MAF Workflow を hosted agent で実行、`RequestInfoExecutor` で HITL)**。承認待ちが数時間〜数日なら **B3(MAF + Durable Extension、Functions + DTS にホスト)**。ツールは Toolbox(MCP)経由で基幹 API へ。
+**推奨構成:** **B2(MAF Workflow を hosted agent で実行、`RequestInfoExecutor` で HITL)**。承認待ちが数時間〜数日なら **B3(MAF + Durable Extension、Functions + DTS にホスト)**。ツールは Toolbox(MCP)経由で基幹 API へ(※2026-09-26: Toolboxes は GA)。**起動が「定時・指定日時・GitHub issue / Teams メッセージ」なら Routines(※2026-09-26: GA)でトリガーを持たせ、cron・Webhook 受信の自前配管を省く**。
 
 **決め手と却下案:**
 
 - **ポータルのビジュアル Workflows は 2026-12-01 廃止**なので選ばない。Logic Apps は「業務部門がデザイナーを触る」前提を維持したいときの B5
 - **handoff パターンを one-shot 承認フローに使わない**(P-F02)。制御をコードで決められるなら決定的ルーティング(構造化出力 + switch-case)。順序・終了が確率的になる
-- **チェックポイントはインメモリ既定**(P-F06)。水平スケールや数日の承認待ちには外部ストアか Durable Extension。hosted agent の中から DTS を使う公式パターンは未確認 → Durable なら Functions か自前コンピュートにホスト
+- **チェックポイントはインメモリ既定**(P-F06)。水平スケールや数日の承認待ちには外部ストアか Durable Extension。hosted agent の中から DTS を使う公式パターンは未確認 → Durable なら Functions か自前コンピュートにホスト。※2026-09-26: hosted agent 専用の durable state store と long-running resilience が出たが**どちらもプレビュー**(P-H17・H18)。G5 で GA 限定なら判断は変わらない
+- ※2026-09-26 **Routines(GA)を使う場合の注意**: 呼び出し ID は既定で agent identity。承認者・起票者の権限で OAuth ツールを呼ぶなら**作成時に** creator identity を選ぶ(更新では変えられず、azd 拡張は未対応 = P-A12)。creator は「ルーチン作成者本人」固定で、利用者ごとの委任にはならない。イベント起動の連携先は現状 GitHub issue と Teams チャネルのみ(ServiceNow 等の ITSM イベントは Webhook を自前で受ける)。CMK 非対応、Japan West を含む 5 リージョンは対象外(P-A11)。自己再起動の reminder ツールはプレビュー
 - 更新系ツールには冪等キー・金額 / 権限 / 件数の上限チェックをツール側に置く(プロンプトで「10 万円以上は承認を取れ」は統制ではない)
 - エージェントにガードレールを割り当てるとモデル側を完全上書きする(P-G05)。Tool call / Tool response の介入点を置き忘れると未スキャン
 
-**詰まりどころ:** P-H05(publish で identity 変更)・H07(プロトコル選定)・H17・H18(長時間 workflow のチェックポイント)・P-I07(audience)・P-F02・F04・F06・P-G05・P-X19(Functions ツールは standard のみ)・P-X20(MCP OAuth)
+**詰まりどころ:** P-H05(publish で identity 変更)・H07(プロトコル選定)・H17・H18(長時間 workflow のチェックポイント)・P-A11・A12(Routines のリージョン・dispatch identity)・P-I07(audience)・P-F02・F04・F06・F13(一時エラーで workflow 全体が終了)・P-G05・P-X19(Functions ツールは standard のみ)・P-X20(MCP OAuth)
 
 **見積もり・契約で効く点:** hosted agent の compute(セッション × サイズ、P-H14)/ Durable Task Scheduler / 業務監査ログのストア / 「承認 UI」はスコープに入るか(Teams なら P-X 系)
 
@@ -127,10 +129,10 @@
 
 | ゲート | 判定 | 根拠 |
 | --- | --- | --- |
-| G1 | 国内処理 → Regional Standard(Japan East)。使えるモデル世代が落ちる(P-M03) | Data Zone APAC は国外含む |
+| G1 | 国内処理 → Standard / Regional Provisioned(geography 型、Japan East / West)。使えるモデル世代が落ちる(P-M03) | Data Zone APAC は国外含む |
 | G2 | **閉域は最初のゲート。作成時に確定・後付け不可** | inbound(PE)と outbound(VNet 注入)は別物(P-N01) |
 | G3 | 閉域で使えない機能から逆算 | File Search / Tracing VNet / Memory / Work IQ / Logic Apps / Browser 系 |
-| G5 | 長期・顧客保守 → GA のみ、IaC 必須 | capabilityHost の API は preview 版のみ(P-C06)— サービス面と分けて判断 |
+| G5 | 長期・顧客保守 → GA のみ、IaC 必須 | ※2026-09-26 訂正(旧記載「capabilityHost の API は preview 版のみ — サービス面と分けて判断」は誤り): capabilityHosts / connections は安定版 ARM API(2025-06-01 以降)にもあり、**安定版を pin すれば GA 限定ポリシーと両立**(P-C06)。preview なのは後継の capability settings(2026-07-15-preview) |
 
 **推奨構成:** **D1(standard setup + BYO VNet 注入 + PE)**。RAG は AI Search 自前索引一択、記憶は自前、観測主系は自前 OTel + App Insights(AMPLS)。hosted agent を使うなら**作成時に注入**。
 
@@ -141,11 +143,13 @@
 - **File Search は閉域で提案しない**(P-N13)。公式は 2026-08-14 更新で「対応」になったが、閉域作成アカウントで vector store 作成が 500 の実測
 - **Tracing VNet は Preview**(P-N14)。監査主系を Foundry トレースに置かない
 - 「ポータルは見えるのに Playground が死ぬ」は DNS(6 ゾーン)が定番(P-N02)。踏み台(Bastion)をコストに積む
-- 委任サブネットは /27 最小・/24 推奨。IP 枯渇はポータルに出ない(P-N05)
+- 委任サブネットは /27 最小・/24 推奨。IP 枯渇はポータルに出ない(P-N05)。※2026-09-26: 公式は「/27 は本番に使わない」と明記し、容量表は /27 ≈ 20・/24 ≈ 250 セッション。hosted agent は枯渇時に 429 `subnet_exhausted`
+- 閉域のツール呼び出しが約半分の確率で `TaskCanceledException` になるサービス側の既知問題がある(P-N20)。「リトライで通った = 顧客 DNS / NSG は正常」と判定しない
+- ※2026-09-26: Routines(GA)は VNet 保護プロジェクトで追加設定なしに使えるが **CMK 非対応**(P-A11)。CMK 必須の規制案件ではスケジュール起動を自前(Functions タイマー等)に残す
 - 評価・レッドチーミングは日本リージョンで完結しない(P-O07)。評価データが国外に出る点を所在方針に明記
 - FW の TLS 検査がエージェント通信を壊す。Agent Service の固定 IP はない(P-N07)
 
-**詰まりどころ:** P-H01・H09(private ACR は 2026-06-25 以降のプロジェクト)・P-N01〜N19 のほぼ全部・P-I06(カスタムサブドメイン)・P-C06・C10・C11・P-O06(評価はストレージ公開必須)・P-M03
+**詰まりどころ:** P-H01・H09(private ACR は 2026-06-25 以降のプロジェクト)・P-N01〜N20 のほぼ全部・P-I06(カスタムサブドメイン)・P-C06・C10・C11・P-O06(評価はストレージ公開必須)・P-M03
 
 **見積もり・契約で効く点:** 固定費(Bastion / Firewall / Premium SKU / PE 群、P-N16)/ CapHost 作成 30 分超・purge 20 分のデプロイ時間(P-N15)/ セルフホストランナー(P-N11)/ Regional Standard のクォータが桁違いに小さい(P-M03)/ 「Lv3 でも外に出る通信」(ARM・Entra・App Insights)を顧客了承事項に
 
@@ -176,7 +180,7 @@
 - ストリーミングは既定フィルタ(非同期フィルタは表示済み内容の取り消しが要る、P-G04)
 - Claude を選ぶならフィルタを APIM / アプリ側で(P-M05)
 
-**詰まりどころ:** P-A05・P-G01〜G04・P-X15〜X17・P-M05・M06(model router が Grok へ)・P-M12(PTU 誤設定の請求事故)
+**詰まりどころ:** P-A05・P-G01〜G04・G11(hosted agent のストリーム出力モデレーションが無言でスキップ)・P-X15〜X17・P-M05・M06(model router が Grok へ)・P-M12(PTU 誤設定の請求事故)
 
 **見積もり・契約で効く点:** WAF チューニング工数 / APIM のティア / PTU か Standard か(スパイクは spillover)/ 評価と継続評価(judge のクォータ、P-O06)
 
@@ -194,7 +198,7 @@
 
 **決め手と却下案:**
 
-- **hosted agent は 1 セッション内の複数ユーザー多重化がプロトコル 2.0.0 前提**(1.0.0 は 2026-07-31 からブロック)。`x-agent-user-id` で分離
+- **hosted agent は 1 セッション内の複数ユーザー多重化がプロトコル 2.0.0 前提**(1.0.0 は 2026-07-31 からブロック。※2026-09-26: 現行の isolate-sessions-per-user ページは「1.0.0 は非サポートでプラットフォームがブロック」とだけ書き、日付の記載はない)。利用者の分離は、中間層が呼び出しごとに **`x-ms-user-identity`** ヘッダーで対象ユーザーを指定し(中間層の ID に `…/agents/endpoints/UserIdentityImpersonation/action` をカスタムロールで付与。組込みロールには含まれない)、コンテナ側はプラットフォームが注入する `x-agent-user-id` を読む(※2026-09-26 訂正: 旧記載「`x-agent-user-id` で分離」はコンテナ側の話で、呼び出し側はこのヘッダーを送らない。multiplex-session-users 参照)。テナント別の状態は durable state store のユーザー単位パーティションでも持てるが**プレビュー**(P-H17)
 - **同一アカウント内の全プロジェクトがモデルデプロイを共有**(P-N15)。プロジェクト単位のモデル分離が要件ならアカウントを分ける(クォータ分割・PE 追加)
 - Responses API はテナント分離が難しいと公式に書かれている(architecture 06)。会話・ファイル・vector store の名前空間を自前で
 - 実行時のツール上書き(`vector_store_ids` 等)でテナント別ナレッジを切り替えられる(バージョンを増やさない)。ただし File Search の attributes フィルタは効かない報告(P-R01)
@@ -202,7 +206,7 @@
 
 **詰まりどころ:** P-A05・P-N05(セッション = IP)・P-N15・P-X15〜X17・P-H06(カナリア不可)・P-H14(セッション × サイズ課金)
 
-**見積もり・契約で効く点:** 委任サブネット /24(閉域なら)/ テナント数 × プロジェクト数の Cosmos RU / APIM Premium / 同時セッション上限(既定 50、申請で拡大)
+**見積もり・契約で効く点:** 委任サブネット /24(閉域なら)/ テナント数 × プロジェクト数の Cosmos RU / APIM Premium / 同時セッション上限(※2026-09-26 更新: hosted agent の同時セッションは**サブスクリプション × リージョン単位**で既定 2,000〈Japan East・East US 2 等 7 リージョン〉/ 1,000〈その他〉、全アカウント・プロジェクト合算。超過は `session_quota_exceeded` / `regional_session_quota_exceeded`、増枠はサポート依頼。VNet 注入構成ではさらに**委任サブネットの IP 数**(既定 1 セッション = 1 IP、/24 ≈ 250)で頭打ちになる 2 段構え = P-N05。旧記載「既定 50」は根拠ページの現行版と一致しない)
 
 **実証状況:** **未実証**(labs は単一テナント)。公式の 4 方式比較(architecture 06)と C2 図まで
 
@@ -224,7 +228,7 @@
 - gpt-5 系へのモデル更改でパラメータが壊れる(P-M01)。ライブラリが勝手に付与する `temperature` / `max_tokens` を grep で見つけられない
 - API キー運用のまま OBO ツール(AI Search 等)を足すと Entra 必須(P-I05)
 
-**詰まりどころ:** P-O01・P-M01・M02・M07・P-I05・I06・P-A01(v1 / v2 混在)・P-A03(Assistants 廃止)
+**詰まりどころ:** P-O01・P-M01・M02・M07・M15(新モデル直後のプロジェクト面 500)・P-I05・I06・P-A01(v1 / v2 混在)・P-A03(Assistants 廃止)・P-F14(既存の LangChain / llama-index 系と `openai>=3` 必須の Foundry SDK が同居できない)
 
 **見積もり・契約で効く点:** 自前オーケストレーションの保守工数 / モデル更改の運用(契約論点)/ 評価基盤を最初に作るか
 
@@ -290,7 +294,7 @@
 
 **決め手と却下案:**
 
-- **Voice Live はプレビュー**(GA 一覧表)。ガードレールは組込みで変更・無効化不可(P-G06)。修正が要件なら BYO model 経路
+- **Voice Live のステータスは面ごとに違う**(※2026-09-26 訂正: 旧記載「Voice Live はプレビュー(GA 一覧表)」は Agents 連携面の表記を API 全体に広げていた)。Voice Live API 単体は GA、GA 一覧表の「Agents — Voice Live」は Preview のまま(2026-09-23 取得版)、devblogs 7・8 月号は「Hosted Agents with Voice Live は GA」と明言 → 採用面ごとに [features 07](../features/07-foundry-tools.md) で確認し、提案書には根拠 URL を併記。ガードレールは組込みで変更・無効化不可(P-G06)。修正が要件なら BYO model 経路
 - 日本語の誤認識・言語自動検出・EOU の早発はロケール固定・フレーズリスト・EOU 設定で(P-D05)
 - ACS 連携は 24 kHz / 16 kHz のリサンプリング・再接続・監視を初期スコープに(P-D06)
 - gpt-realtime はピーク時間帯に ResponseFailed、WebSocket 1006(P-D07)。単一リージョン前提にしない。OpenAI 直のサンプルをそのまま移植しない
@@ -298,7 +302,7 @@
 
 **詰まりどころ:** P-D05〜D07・P-M08・P-G06
 
-**見積もり・契約で効く点:** Voice Live のセッション上限・クォータ(architecture 08 E1)/ ACS の通話料 / マイク・電話の実機検証環境 / プレビュー依存の明示
+**見積もり・契約で効く点:** Voice Live のセッション上限・クォータ(architecture 08 E1)/ ACS の通話料 / マイク・電話の実機検証環境 / プレビュー依存の明示(Agents 連携面・BYO model・voice-based prompt agent〈`kind: voice`〉はプレビュー)
 
 **実証状況:** [port 12(claim-voice-live)](../../../labs/maf-ports/ports/claim-voice-live/README.md)(WebSocket 接続 + ツールループまで。**実機音声・電話は未実証**)
 
@@ -359,6 +363,7 @@
 - 初期セットアップの非冪等な手作業(ARM PUT)は戻し忘れの温床。capabilityHost の再 PUT は冪等(P-C06)なので stack 化する
 - Lv3 でも外に出る通信(ARM・Entra・App Insights・Container Apps 委任)を顧客了承事項(T-xx)として明文化(P-N07 の FQDN 一覧)
 - VS Code 拡張・`az cognitiveservices agent` はデプロイ経路にしない(P-C01・C08)。azd か SDK
+- ※2026-09-26: Lv4 の egress 統制に hosted agent の network egress controls(**プレビュー**、ホスト名単位の Allow / Deny、Audit → Enforce)が使えるようになったが、公式は **Azure Firewall の補完であり置き換えではない**と明記(サービスタグ / IP 範囲ルールなし、prompt agent には効かない)。Lv4 の統制主系は引き続き顧客 Firewall で設計し、egress controls は「エージェント定義に宛先ポリシーを持たせる」追加層として扱う(P-N07)
 
 **詰まりどころ:** P-N11・N16・N18・P-C01〜C11・P-H16(azd の断続失敗)・P-I02(伝播待ち)
 
@@ -373,5 +378,5 @@
 - **評価ハーネスを先に作る。**S-01 / S-02 / S-07 / S-11 の「載せ替え・移行の合否」は同一データセット比較があれば 1 日で決まる。「選定は指標で、検証は評価で」(architecture 11 §7)
 - **RBAC 伝播(P-I02)と「読めるのに実行できない」(P-I01)** は全シナリオの初期障害の定番。CI/CD に伝播待ちを入れる
 - **記事の日付を見る。**hosted agent は 2026-04 以前の記事が旧基盤前提(P-H15)。features / architecture の「最終更新」と突き合わせる
-- **プレビュー不使用ポリシーは「サービス面」と「IaC の API version」を分ける**(P-C06)。一律禁止だと GA 機能が使えなくなる
+- **プレビュー不使用ポリシーは「サービス面」と「IaC の API version」を分ける**(P-C06)。一律禁止だと GA 機能が使えなくなる。※2026-09-26: capabilityHosts は安定版 API があるため当初の根拠例は成り立たない(P-C06 訂正)が、「サービスは GA でも SDK 面が beta 名前空間」(Routines の `client.beta.routines`、P-A11)のような食い違いは残るので、原則自体は有効
 - **撤退理由は機能単位で書く**([03 §6](./03-case-helpdesk.md#6-提案への含意-一般化))。「Foundry はデータが残る」は反証されうる。「書き込みの決定性」は今も成立

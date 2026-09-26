@@ -2,7 +2,7 @@
 
 [← ケースブック TOP](./README.md)
 
-> **最終更新:** 2026-09-04(初版)
+> **最終更新:** 2026-09-04(初版)/ 2026-09-26(公式側の状況変化の注記のみ追加。案件当時の事実・判断は書き換えていない。注記は「※2026-09-26」)
 > **出典:** 外部案件リポジトリ `foundry-servicenow-helpdesk`(非公開)の docs/v2〜v4(ADR・検証計画・実測記録)。本リポジトリの [tech-selection-guide §5](../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05) に載せた v2/v3 期の実測に、**v4(2026-08-30、hosted agent + standard setup、公開+閉域の 2 ラウンド)の実測**を加えて、判断の変遷ごと記録する。顧客名・固有情報は含まない。
 
 ## この事例から持ち帰るもの(先に結論)
@@ -40,14 +40,14 @@ architecture の型で言えば **B1(単一エージェント+基幹 API)+ A2(AI
 | 判断 | 決定 | 却下した案と理由 |
 | --- | --- | --- |
 | 実行基盤 | 会話脳 = **hosted agent**(GA・japaneast)。API/UI/Jobs = ACA 継続 | ACA 継続のみ(v3): サーバー・監視配線・版管理のグルーが自前。hosted は App Insights 自動注入・不変バージョン・スケールゼロがマネージドで付く |
-| コンテナ内サーバー | **FastAPI で Responses protocol 2.0.0 を自前実装**。デプロイは `azure-ai-projects`(GA)の `create_version_from_code`(zip + REMOTE_BUILD、ACR 不要) | `agent-framework-foundry-hosting`: **プレリリース版のみ**で「プレリリース不使用」制約と衝突。MAF ごと採用も同 lib 依存で不可。→ プロトコル改訂への追随義務を負う代わりに契約テストで検知 |
+| コンテナ内サーバー | **FastAPI で Responses protocol 2.0.0 を自前実装**。デプロイは `azure-ai-projects`(GA)の `create_version_from_code`(zip + REMOTE_BUILD、ACR 不要) | `agent-framework-foundry-hosting`: **プレリリース版のみ**で「プレリリース不使用」制約と衝突。MAF ごと採用も同 lib 依存で不可。→ プロトコル改訂への追随義務を負う代わりに契約テストで検知。※2026-09-26 注記: 当時すでにフレームワーク非依存の公式プロトコルライブラリ `azure-ai-agentserver-responses` 2.0.0(2026-08-11)/ `-core` 2.0.0(2026-08-06)は PyPI で stable 版が出ており、自前実装以外の GA 側の選択肢があった(検討記録なし)。MAF 用 `agent-framework-foundry-hosting` は 2026-09-26 時点もプレリリースのみ([02 P-H20](./02-pitfalls-index.md#a-hosted-agent)) |
 | 責務分割 | ヒアリング・カテゴリ修正 = 決定的シェル(ACA)/ 検索 3 種 = hosted agent 内の LLM ツール選択 | 全部 hosted: SN 書き込みの決定性が失われる |
 | 会話ストア | **自前 Cosmos(SoR: 状態機械・所有権・ETag)+ Conversations(BYO)の二重保持**。自前 Cosmos が削除台帳を兼ねる | (a) 自前のみ = Foundry の会話面を検証できない (b) Conversations basic = Microsoft 管理ストレージで方針と衝突 |
 | standard setup | **使い捨て RG の新規アカウントで作成時に有効化**(後付け不可)。BYO Cosmos はエージェント用と自前 SoR で**別アカウント**(誤操作防止) | 既存環境への in-place 追加は不可能なので設計しない。長命環境なら第 2 アカウント並設(TPM クォータ分割・PE 追加が必要) |
-| API version | capabilityHosts / connections の ARM API は **2025-04-01-preview のみ**(2026-08-30 時点) → 「コントロールプレーン IaC の版」と「顧客が触るサービス面の GA」を区別し、例外として採用・記録 | — |
+| API version | capabilityHosts / connections の ARM API は **2025-04-01-preview のみ**(2026-08-30 時点) → 「コントロールプレーン IaC の版」と「顧客が触るサービス面の GA」を区別し、例外として採用・記録 | ※2026-09-26 注記: 公式の ARM テンプレートリファレンスでは `capabilityHosts`・`connections` は安定版 API 2025-06-01(以降 2025-09-01 / 2025-12-01 / 2026-03-01 等)にも存在し、当時の「preview のみ」という認識は誤りだった(安定版を pin すれば例外記録は不要だった)。後継の capability settings は 2026-07-15-preview のみ([02 P-C06](./02-pitfalls-index.md#j-iac-cli-ci-cd)) |
 | 検索方式 | faq / ticket = AI Search 継続、manual も **AiSearchTool を恒久採用**(File Search は不成立、§4) | File Search: 素の検索 API がなく決定的ヒット列に写像できない |
 | 保持期間 | Conversations に TTL なし → **終端フック(best-effort)+ 日次スイープ**の 2 段削除。順序は Foundry 先・台帳後 | — |
-| プレビュー不使用 | 採用機能ごとに **GA 証跡(URL・確認日)** を記録してから採用。除外: Memory / Routines / Workflows / Foundry IQ(ポータル面 Preview)/ model router(既定で非 OpenAI へ)/ Bing・Web・SharePoint(公開経路+DPA 外)/ **Tracing VNet(Preview)** | — |
+| プレビュー不使用 | 採用機能ごとに **GA 証跡(URL・確認日)** を記録してから採用。除外: Memory / Routines / Workflows / Foundry IQ(ポータル面 Preview)/ model router(既定で非 OpenAI へ)/ Bing・Web・SharePoint(公開経路+DPA 外)/ **Tracing VNet(Preview)** | ※2026-09-26 注記: このうち **Routines は 2026-09-24 に GA**(ただし Python SDK 面は `client.beta.routines`、CMK 非対応 = [02 P-A11](./02-pitfalls-index.md#b-agent-service-コア))。Memory / Workflows / Tracing VNet は Preview、Foundry IQ は Partial GA のまま(GA 一覧表 2026-09-23 取得版) |
 | プロンプト正本 | **Git 一方向**(Foundry へはデプロイのみ)。v2 の「ポータル編集が Git と乖離して退行」の教訓 | ポータル編集開放: 評価ゲートを通らない変更が本番に入る |
 | 評価 | 自前 4 指標ゲート(ブロッキング)+ evals API groundedness(レポート指標)。**azure-ai-evaluation SDK は不使用**(gpt-5 系ジャッジで 400) | — |
 | 監視 | **主系 = 自前 OTel + App Insights**、Foundry トレーシングは開発時の付加系 | Tracing VNet が Preview のため閉域運用の前提に置けない |
@@ -68,7 +68,7 @@ architecture の型で言えば **B1(単一エージェント+基幹 API)+ A2(AI
 | 8 | **project → App Insights 接続(`connections/appinsights`)がないと hosted agent へ接続文字列が注入されず、コンテナ内部ログがどこにも届かない** | 障害切り分けで最初に確認する項目。Bicep に接続を含める |
 | 9 | v3 脳 vs v4 脳(同一データセット・実インデックス): retrieval hit@3 0.708 → 0.667(誤差域)、unanswerable 0.000 → 0.200(改善: LLM ツール選択が無関係な質問で検索を抑制)、category / hearing 1.000 → 1.000 | **載せ替えによる品質劣化なし**。比較ゲートが RRF 重み付けの実装差を実検出した(回帰検出として機能) |
 | 10 | 破棄: standard setup ではエージェント・会話・ファイルの実体が全て自社 RG 内 → **RG 削除で破棄が閉じる**(basic では Microsoft 管理側の消滅を自分で確認できない) | 「消したことを証明できる」のは BYO の運用上の利点 |
-| 11 | `openai` SDK 3.x は `httpx2`(改名フォーク)を使い `respx` でモック不能 → `openai<3` にピン | テスト戦略が SDK メジャーに依存する |
+| 11 | `openai` SDK 3.x は `httpx2`(改名フォーク)を使い `respx` でモック不能 → `openai<3` にピン | テスト戦略が SDK メジャーに依存する。※2026-09-26 注記: `azure-ai-projects` は 2.5.0(2026-08-20)から `openai>=3.0.0` 必須になったため、`openai<3` ピンとの両立は 2.4.x まで([02 P-F12・F14](./02-pitfalls-index.md#i-maf-とフレームワーク)) |
 
 ### 4-2. 閉域 Lv3(ラウンド 2)— 本トラック最大の発見
 
@@ -107,9 +107,9 @@ Foundry の機能可否とは別に、**「顧客の閉鎖環境に構築して�
 3. **閉域 hosted agent は「作成時に注入」を提案書に書く。**後付け不可なので、Lv3 要件でも注入前提で VNet・委任サブネット(/27 以上)・PE を最初から積む。注入なしで作ると「デプロイは通るのに実行が失敗」で PoC が破綻する
 4. **評価ハーネスを先に作る。**v3 → v4 の載せ替え判断は、同一データセット比較があったから 1 日で「劣化なし」と言えた。技術選定の A/B は評価基盤がないと感想戦になる
 5. **顧客の「閉鎖環境」は Lv 定義を先に合意する。**Lv3(インバウンド遮断)と Lv4(egress 統制・外部 SaaS 禁止)で CI/CD・搬入・監視の設計と見積もりが別物になる
-6. **プレビュー不使用ポリシーは「サービス面」と「IaC の API version」を分けて運用する。**standard setup は GA 機能だが Bicep の API は preview 版しかない(2026-08-30 時点)。一律「preview 禁止」だと GA 機能が使えなくなる
+6. **プレビュー不使用ポリシーは「サービス面」と「IaC の API version」を分けて運用する。**standard setup は GA 機能だが Bicep の API は preview 版しかない(2026-08-30 時点)。一律「preview 禁止」だと GA 機能が使えなくなる。※2026-09-26 注記: capabilityHosts には安定版 API(2025-06-01 以降)があり、この例は成り立たない([02 P-C06](./02-pitfalls-index.md#j-iac-cli-ci-cd))。原則自体は「サービス GA・SDK 面 beta」(Routines)などで引き続き有効
 
 ## 参照
 
 - 本リポジトリ側の関連: [tech-selection-guide §5・§6](../../tech-selection-guide.md) / [architecture 05 B1・B2](../architecture/05-usecase-agent-automation.md) / [architecture 07 §2〜3](../architecture/07-usecase-regulated-edge.md) / [02 詰まりどころ索引](./02-pitfalls-index.md)(P-H・P-I・P-N 系)
-- 公式一次情報(v4 GA 証跡で使用): [Feature readiness at GA](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability)(ms.date 2026-08-14)/ [Configure network isolation](https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link)(2026-08-14)/ [Hosted agents](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents)(2026-08-19)
+- 公式一次情報(v4 GA 証跡で使用): [Feature readiness at GA](https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability)(ms.date 2026-08-14)/ [Configure network isolation](https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link)(2026-08-14)/ [Hosted agents](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents)(2026-08-19)。※2026-09-26 注記: 3 ページとも現存。GA 一覧表は ms.date 2026-08-14 のまま内容更新(Routines が GA に)、Configure network isolation は 2026-08-14 のまま、Hosted agents は ms.date 2026-09-11 に更新(idle timeout 下限 2 分、durable state store〈preview〉の記載追加)

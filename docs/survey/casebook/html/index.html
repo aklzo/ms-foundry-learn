@@ -90,7 +90,7 @@ footer {
 <body><nav class="site"><a href="index.html" class="current">Foundry SI ケースブック</a><a href="01-scenario-playbook.html">01. 要件シナリオ別プレイブック</a><a href="02-pitfalls-index.html">02. 詰まりどころ索引</a><a href="03-case-helpdesk.html">03. 案件事例</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
 <main>
 <h1 id="foundry-si-ケースブック-要件別プレイブック・詰まりどころ索引・案件事例">Foundry SI ケースブック — 要件別プレイブック・詰まりどころ索引・案件事例</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント構成">ドキュメント構成</a></li><li><a href="#出典の格付け-本セット固有のルール">出典の格付け(本セット固有のルール)</a></li><li><a href="#使い方-提案フローとの対応">使い方(提案フローとの対応)</a></li><li><a href="#更新運用">更新運用</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
-<blockquote><p><strong>最終更新:</strong> 2026-09-04 / <strong>版:</strong> 初版<br><a href="../../features/html/index.html">features</a> が「その機能は使えるのか」、<a href="../../architecture/html/index.html">architecture</a> が「どう組むか」、<a href="../../proposal/html/index.html">proposal</a> が「どう提案するか」に答えるのに対し、本セットは <strong>「この要件が来たら何を決め、どこで詰まるか」</strong> に答える。公式ドキュメント調査(survey)と実装検証(<a href="../../tech-selection-guide.md">tech-selection-guide</a> / labs)の<strong>間を埋める実務層</strong>で、公開されている第三者の記事(「ハマった」「苦労した」系)も出典として扱う唯一のセット。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-09-04 / 2026-09-26(月次更新) / <strong>版:</strong> 初版<br><a href="../../features/html/index.html">features</a> が「その機能は使えるのか」、<a href="../../architecture/html/index.html">architecture</a> が「どう組むか」、<a href="../../proposal/html/index.html">proposal</a> が「どう提案するか」に答えるのに対し、本セットは <strong>「この要件が来たら何を決め、どこで詰まるか」</strong> に答える。公式ドキュメント調査(survey)と実装検証(<a href="../../tech-selection-guide.md">tech-selection-guide</a> / labs)の<strong>間を埋める実務層</strong>で、公開されている第三者の記事(「ハマった」「苦労した」系)も出典として扱う唯一のセット。</p></blockquote>
 <h2 id="ドキュメント構成">ドキュメント構成</h2>
 <div class="tablewrap"><table><thead><tr>
 <th>#</th>
@@ -185,6 +185,7 @@ footer {
 <td>公式回答つきのトラブル</td>
 </tr>
 </tbody></table></div>
+<p><strong>取得のコツ(2026-09-26 追記):</strong> Tech Community の記事は既定の curl / WebFetch だとログインリダイレクトや JS レンダリングで本文が取れないことがあるが、Windows 系ブラウザの User-Agent を付けた <code>curl -sL</code> なら本文 HTML を取得できる(公開日は <code>datePublished</code>)。個人ブログの 429 はボット対策で、リンク切れではない。</p>
 <p><strong>リンク切れの扱い:</strong> [記事] は削除・移転が起きる。リンク切れを見つけたら行を消さず「(リンク切れ YYYY-MM-DD 確認)」を付記して残す(症状の記録自体に価値があるため)。</p>
 <p><strong>HTML の再生成:</strong> リポジトリルートで <code>python3 docs/survey/tools/md2html.py casebook</code>(引数なしで全セット)。</p>
 <h2 id="更新履歴">更新履歴</h2>
@@ -192,6 +193,10 @@ footer {
 <th>日付</th>
 <th>内容</th>
 </tr></thead><tbody>
+<tr>
+<td>2026-09-26</td>
+<td>月次更新。<strong>02:</strong> 外部 URL 全件の生存確認(410 の Q&amp;A 2 件に「リンク切れ」付記、リダイレクト 5 件と転載記事 1 件を新 URL / 原文へ差し替え)、[公式] 前提の再確認で「※2026-09-26」注記(Routines GA・リージョン拡大〈P-A11〉、Toolboxes GA〈P-H12〉、idle timeout 2〜60 分〈P-H13〉、サブネット容量表と 429 <code>subnet_exhausted</code>〈P-N05〉、egress controls〈P-N07〉、incoming A2A〈P-A06〉、Foundry IQ の per-request ヘッダーと未フィルタ返却〈P-R07〉、日本 Regional +35% の価格改定〈P-M03〉、Claude の 2 系統〈P-M05〉、state store / resilience〈P-H17・H18・F06〉、公式プロトコルライブラリの stable 化〈P-H20〉、<code>openai&gt;=3</code> 必須化〈P-F12〉、capability settings〈P-N03〉)。<strong>訂正:</strong> P-C06(capabilityHosts は安定版 ARM API 2025-06-01 以降にもある)、P-H06(prompt agent も版間の % 分割なし)、P-H15(旧アダプタ名の特定)。<strong>追加:</strong> P-H23・A12・N20・M15・G11・F13・F14。<strong>01:</strong> S-02 / S-03(Routines GA)/ S-04 / S-05 / S-06(セッション上限・<code>x-ms-user-identity</code>)/ S-07 / S-10(Voice Live の面別ステータス)/ S-12(egress controls)と横断節を更新。<strong>03:</strong> 公式側の変化の注記のみ(API version・プロトコルライブラリ・Routines・openai 3 系)</td>
+</tr>
 <tr>
 <td>2026-09-04</td>
 <td>初版。01 シナリオ 12 本、02 詰まりどころ索引(公式・実測・公開記事)、03 外部案件事例(v2→v3→v4 の判断変遷と 2026-08-30 実測)を作成</td>

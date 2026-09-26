@@ -1,6 +1,6 @@
 # Foundry SI ケースブック — 要件別プレイブック・詰まりどころ索引・案件事例
 
-> **最終更新:** 2026-09-04 / **版:** 初版
+> **最終更新:** 2026-09-04 / 2026-09-26(月次更新) / **版:** 初版
 > [features](../features/README.md) が「その機能は使えるのか」、[architecture](../architecture/README.md) が「どう組むか」、[proposal](../proposal/README.md) が「どう提案するか」に答えるのに対し、本セットは **「この要件が来たら何を決め、どこで詰まるか」** に答える。公式ドキュメント調査(survey)と実装検証([tech-selection-guide](../../tech-selection-guide.md) / labs)の**間を埋める実務層**で、公開されている第三者の記事(「ハマった」「苦労した」系)も出典として扱う唯一のセット。
 
 ## ドキュメント構成
@@ -53,6 +53,8 @@
 | 3 | [microsoft/agent-framework issues](https://github.com/microsoft/agent-framework/issues)、[Azure/azure-sdk-for-python issues(azure-ai-projects)](https://github.com/Azure/azure-sdk-for-python/issues?q=azure-ai-projects)、[microsoft-foundry/foundry-samples issues](https://github.com/microsoft-foundry/foundry-samples/issues) | SDK・サンプルの再現性のある不具合 |
 | 4 | [Microsoft Q&A(Foundry タグ)](https://learn.microsoft.com/en-us/answers/tags/133/azure) | 公式回答つきのトラブル |
 
+**取得のコツ(2026-09-26 追記):** Tech Community の記事は既定の curl / WebFetch だとログインリダイレクトや JS レンダリングで本文が取れないことがあるが、Windows 系ブラウザの User-Agent を付けた `curl -sL` なら本文 HTML を取得できる(公開日は `datePublished`)。個人ブログの 429 はボット対策で、リンク切れではない。
+
 **リンク切れの扱い:** [記事] は削除・移転が起きる。リンク切れを見つけたら行を消さず「(リンク切れ YYYY-MM-DD 確認)」を付記して残す(症状の記録自体に価値があるため)。
 
 **HTML の再生成:** リポジトリルートで `python3 docs/survey/tools/md2html.py casebook`(引数なしで全セット)。
@@ -61,4 +63,5 @@
 
 | 日付 | 内容 |
 | --- | --- |
+| 2026-09-26 | 月次更新。**02:** 外部 URL 全件の生存確認(410 の Q&A 2 件に「リンク切れ」付記、リダイレクト 5 件と転載記事 1 件を新 URL / 原文へ差し替え)、[公式] 前提の再確認で「※2026-09-26」注記(Routines GA・リージョン拡大〈P-A11〉、Toolboxes GA〈P-H12〉、idle timeout 2〜60 分〈P-H13〉、サブネット容量表と 429 `subnet_exhausted`〈P-N05〉、egress controls〈P-N07〉、incoming A2A〈P-A06〉、Foundry IQ の per-request ヘッダーと未フィルタ返却〈P-R07〉、日本 Regional +35% の価格改定〈P-M03〉、Claude の 2 系統〈P-M05〉、state store / resilience〈P-H17・H18・F06〉、公式プロトコルライブラリの stable 化〈P-H20〉、`openai>=3` 必須化〈P-F12〉、capability settings〈P-N03〉)。**訂正:** P-C06(capabilityHosts は安定版 ARM API 2025-06-01 以降にもある)、P-H06(prompt agent も版間の % 分割なし)、P-H15(旧アダプタ名の特定)。**追加:** P-H23・A12・N20・M15・G11・F13・F14。**01:** S-02 / S-03(Routines GA)/ S-04 / S-05 / S-06(セッション上限・`x-ms-user-identity`)/ S-07 / S-10(Voice Live の面別ステータス)/ S-12(egress controls)と横断節を更新。**03:** 公式側の変化の注記のみ(API version・プロトコルライブラリ・Routines・openai 3 系) |
 | 2026-09-04 | 初版。01 シナリオ 12 本、02 詰まりどころ索引(公式・実測・公開記事)、03 外部案件事例(v2→v3→v4 の判断変遷と 2026-08-30 実測)を作成 |

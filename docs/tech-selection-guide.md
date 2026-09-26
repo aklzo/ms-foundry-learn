@@ -1,6 +1,6 @@
 # 技術選定ガイド(実装検証ベース)
 
-> **最終更新:** 2026-09-04 / **版:** 第5版(Wave 1+2+3 + 外部案件 v3 / v4 反映)
+> **最終更新:** 2026-09-04 / **版:** 第5版(Wave 1+2+3 + 外部案件 v3 / v4 反映)/ 2026-09-26 注記追加(実測内容は書き換えず、公式側の変化で前提が崩れた箇所に「※2026-09-26」を付記: 罠 10・21・22)
 > **出典の分離:** 本ドキュメントは **labs/ での実装検証から得たナレッジのみ**を集約する。公式ドキュメント調査由来の知見は [docs/survey/](./survey/README.md)(features / architecture / proposal)にあり、混在させない。各主張には検証元(どのラボ/ポートで実証したか)を付す。
 > **検証環境:** agent-framework 1.10〜1.13 / azure-ai-projects 2.4 / Microsoft Foundry(Japan East、gpt-5.4-mini)/ 2026-07 時点。フレームワークの進化が速いため、**版が変われば結論も変わりうる**。
 
@@ -64,7 +64,7 @@
 7. **検索をどの層で持つかは契約論点**。Foundry の Web search ツールは DPA 対象外・別課金(survey 側の調査結果)。ラボでは自前 DDG 検索を既定にした — クロージャ+`MockTransport` でテスト可能になる副次メリットもある — Port 1・3・4
 8. **Foundry プロジェクトの MI は再デプロイでローテーションしうる**。ARM 制約でロール割り当て名に実行時値を使えないため、id 固定名だと**旧 principal への孤児割り当てが名前一致で温存**され PermissionDenied の温床になる。対策: RBAC を principalId パラメータの第2段テンプレート(roles.bicep)に分離 — Port 9
 9. **クラウド評価の権限は3層**: builtin 評価器の `initialization_parameters.deployment_name`(ジャッジ用デプロイ=評価コストは自分持ち)/ プロジェクト MI(Foundry User + OpenAI User)/ **提出ユーザー自身の Foundry User**。エラーは一律 PermissionDenied で actor が分からず、切り分けに時間を溶かす — Port 9
-10. **Routines の REST は `?api-version=v1` 必須**(Learn の例に記載なし・欠くと BadRequest)。プレビュー機能はサブ機能ごとにリージョン集合が違う(Routines 8 / Memory 19 / hosted agents 31) — Port 11
+10. **Routines の REST は `?api-version=v1` 必須**(Learn の例に記載なし・欠くと BadRequest)。プレビュー機能はサブ機能ごとにリージョン集合が違う(Routines 8 / Memory 19 / hosted agents 31) — Port 11。※2026-09-26 注記: Routines は 2026-09-24 に GA。use-routines(ms.date 2026-08-27)は `api-version=v1` 必須を本文に明記し、リージョンも「UK West / Switzerland West / Japan West / UAE North / Norway East を除く全リージョン」に拡大(8 リージョン限定は解消)。Python SDK 面は `client.beta.routines` のまま([casebook 02 P-A11](./survey/casebook/02-pitfalls-index.md#b-agent-service-コア))
 11. **Voice Live のリージョンは「機能×モデル×事前デプロイ」の3段で読む**: Japan East は Voice Live 対応だが gpt-realtime 系ネイティブ音声モデル非提供。マネージド提供モデルはデプロイ不要(Bicep 差分ゼロ) — Port 12
 12. **middleware の関数形態は `from __future__ import annotations` で型判定が壊れる**(MiddlewareException)。デコレータ明示(`@function_middleware` 等)が必須 — 罠3(c)の middleware 版。short-circuit は2方式で意味が別: `context.result` セット=拒否をモデルに見せてループ続行 / `MiddlewareTermination`=全停止 — Port 14
 13. **オフラインテスト戦略は Protocol 注入で統一できる**: LLM は `SupportsRun`(`.run()→.text`)、外部サービスはコンストラクタ注入 — ScriptedAgent / MockTransport / fake ストアで **約470テストをネットワークなしで回せた**(14ポート合計)。「エージェントはテストできない」は設計の問題 — 全ポート
@@ -154,9 +154,13 @@ foundry-probes(01/02/08)の発見とは独立検証で一致を確認済み。
     再 PUT は冪等。閉域の Key Vault 参照は PE / DNS 完成後でないと ACA デプロイが失敗(dependsOn 必須) — v4
 21. **公式ホスティングライブラリ(`agent-framework-foundry-hosting`)はプレリリース版のみ。**プレリリース不使用の
     顧客制約下では FastAPI で Responses protocol 2.0.0 を自前実装し、`azure-ai-projects`(GA)の
-    `create_version_from_code`(zip + REMOTE_BUILD、ACR 不要)でデプロイする構成が成立する — v4
+    `create_version_from_code`(zip + REMOTE_BUILD、ACR 不要)でデプロイする構成が成立する — v4。
+    ※2026-09-26 注記: MAF 用の `agent-framework-foundry-hosting` は依然プレリリースのみだが、フレームワーク非依存の公式
+    プロトコルライブラリ `azure-ai-agentserver-responses` 2.0.0(2026-08-11)/ `-invocations` 1.0.0 / `-core` 2.0.0 は
+    PyPI で stable。プレリリース不使用の制約下でも、自前実装の前にこちらが選択肢になる([casebook 02 P-H20](./survey/casebook/02-pitfalls-index.md#a-hosted-agent))
 22. **`openai` SDK 3.x は `httpx2`(改名フォーク)を使い `respx` でモック不能** → `openai<3` にピン
-    (azure-ai-projects と両立) — v4
+    (azure-ai-projects と両立) — v4。※2026-09-26 注記: 両立は `azure-ai-projects` 2.4.x まで。2.5.0(2026-08-20)以降は
+    `openai>=3.0.0` 必須([casebook 02 P-F12・F14](./survey/casebook/02-pitfalls-index.md#i-maf-とフレームワーク))
 23. **同一データセットで v3 脳(自前 function calling on ACA)vs v4 脳(hosted agent)を比較し品質劣化なし**
     (retrieval hit@3 0.708 → 0.667 は誤差域、unanswerable は 0.0 → 0.2 に改善)。載せ替え判断は評価ハーネスが
     あれば 1 日で決まる — v4
@@ -168,5 +172,6 @@ foundry-probes(01/02/08)の発見とは独立検証で一致を確認済み。
 | 2026-07-31 | 初版。Wave 1(7ポート+agentic-search-maf)の実装ナレッジを集約 |
 | 2026-07-31 | 第2版。Wave 2(5ポート: Code Interpreter / クラウド評価 / Foundry IQ / hosted agent+Routines / Voice Live)の実装ナレッジを追加。ハマりどころを8点→12点に拡充 |
 | 2026-07-31 | 第3版。Wave 3(services-agency / governed-agent)を反映。**協調の分水嶺を2軸3値に改訂**(グラフ/相談型 agent-as-tool/担当交代)、middleware の知見を追加、全ポートにアーキテクチャ図を整備 |
+| 2026-09-26 | 注記のみ追加(本文の実測は不変): 罠 10(Routines GA・リージョン拡大・`api-version=v1` の Learn 明記)、罠 21(公式プロトコルライブラリ `azure-ai-agentserver-*` の stable 化)、罠 22(`azure-ai-projects` 2.5.0 以降は `openai>=3` 必須) |
 | 2026-09-04 | 第5版。§6 外部案件検証 第 2 弾(v4: hosted agent + standard setup、公開+閉域 Lv3 の 2 ラウンド)を追加: api-version=v1、agent identity の Conversations 権限、閉域の VNet 注入必須、File Search の検索 API 不在、BYO Cosmos の実 RU、cold start、App Insights 接続、プレリリース lib 回避、SDK ピン、v3 / v4 品質比較。§4 に未検証領域(注入つき hosted agent)を追記。casebook(docs/survey/casebook)を新設 |
 | 2026-08-05 | 第4版。§5 外部案件検証(foundry-servicenow-helpdesk)を追加: gpt-5-mini の reasoning 系挙動、リタイア間隔 12〜18 か月の実測、evals API による groundedness バッチ、allowProjectManagement、ACA 実測値 |
