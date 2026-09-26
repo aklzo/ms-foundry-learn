@@ -91,9 +91,9 @@ footer {
 <main>
 <h1 id="05-オブザーバビリティ・評価">05. オブザーバビリティ・評価</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#概要">概要</a></li><li><a href="#機能一覧">機能一覧</a></li><li><a href="#補足ノート">補足ノート</a></li></ul></div>
 <p><a href="index.html">← 機能一覧 TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照) / 2026-09-07(一次情報で再検証。訂正・追記は <a href="index.html#更新履歴">TOP の更新履歴</a>参照)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(2026-07-29 の初版を一次情報に当てて検証・訂正。訂正内容は <a href="index.html#更新履歴">TOP の更新履歴</a>参照) / 2026-09-07(一次情報で再検証。訂正・追記は <a href="index.html#更新履歴">TOP の更新履歴</a>参照) / 2026-09-26(定期再検証。Insights in Foundry〈preview〉追加、評価 VNet 新ページ・評価ジョブの LRO 化・<code>azure-ai-evaluation</code> 1.18.7・2026-09-24 Azure ブログの GA 予告等を反映)</p></blockquote>
 <h2 id="概要">概要</h2>
-<p>トレーシング・評価・モニタリングを統合した観測基盤を扱う。領域別のステータスは混在しており、<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a>(2026-08-14 版。2026-09-07 に再確認、該当行に変化なし)の記載が最も体系的:</p>
+<p>トレーシング・評価・モニタリングを統合した観測基盤を扱う。領域別のステータスは混在しており、<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a>(2026-08-14 版。updated_at 2026-09-23 の版を 2026-09-26 に再確認、本章の該当行に変化なし)の記載が最も体系的:</p>
 <ul>
 <li>Tracing(Trace Replay 含む): <strong>prompt / hosted エージェントは GA、workflow / 外部エージェントはプレビュー</strong></li>
 <li>Tracing VNet: プレビュー</li>
@@ -104,6 +104,7 @@ footer {
 <li>Optimization (cluster analysis): プレビュー</li>
 <li>Agents — traces in agent builder: プレビュー</li>
 <li>Operate &gt; Compliance: プレビュー</li>
+<li>(表外・2026-09-26 追記)<strong>Insights in Foundry: パブリックプレビュー</strong>(2026-09-24 発表。GA 一覧表にはまだ行がない)</li>
 </ul>
 <h2 id="機能一覧">機能一覧</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -132,7 +133,7 @@ footer {
 <td><span class="badge ga">GA</span>(prompt / hosted エージェント)。workflow・外部エージェントはプレビュー</td>
 <td>Foundry(新)の Agents &gt; Traces タブ</td>
 <td><span class="badge na">記載なし</span></td>
-<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code> + opentelemetry-sdk + azure-core-tracing-opentelemetry)</td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code> + opentelemetry-sdk + azure-core-tracing-opentelemetry。<strong>(2026-09-26 追記)</strong> C#〈<code>Azure.AI.Projects</code> + <code>Azure.Monitor.OpenTelemetry.Exporter</code>〉のクライアント側手順も併記。LangChain / LangGraph と Foundry 外で動かす MAF は <code>microsoft-opentelemetry</code> ディストロ〈<code>use_microsoft_opentelemetry</code>〉を使う)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup">trace-agent-setup</a></td>
 <td>LangChain / LangGraph / OpenAI Agents SDK / Microsoft Agent Framework 連携対応(MAF / Semantic Kernel はネイティブ統合、LangChain / LangGraph 連携は Python のみ。フレームワーク連携ページ自体は「(preview)」— trace-agent-framework 2026-06-02 版)。VS Code Foundry Toolkit でローカルトレース可。Tracing の VNet 対応はプレビュー。トレース取り込みの Entra 認証はプレビュー(次行)</td>
 </tr>
@@ -149,7 +150,7 @@ footer {
 <tr>
 <td>Trace Replay</td>
 <td>会話トレースを Trajectories ビュー(スパン階層+ウォーターフォール)と User ビュー(チャット再現)で再生・分析</td>
-<td>表記揺れあり(2026-09-07 も継続): 個別記事の見出しは「Trace Replay <strong>(preview)</strong>」+プレビュー注記(2026-05-13 版)、Build 2026 ブログ(2026-06-03)も「Public Preview」。一方 GA 一覧(2026-08-14 版)は Tracing に含めて「GA for prompt and hosted agents; Preview for workflow and external agents」→ <strong>表が最終権威につき prompt / hosted は GA 扱い、workflow / 外部はプレビュー</strong>。提案書では記事側のプレビュー表記も併記が安全</td>
+<td>表記揺れあり(2026-09-26 も継続。記事は 2026-05-13 版のまま): 個別記事の見出しは「Trace Replay <strong>(preview)</strong>」+プレビュー注記(2026-05-13 版)、Build 2026 ブログ(2026-06-03)も「Public Preview」。一方 GA 一覧(2026-08-14 版)は Tracing に含めて「GA for prompt and hosted agents; Preview for workflow and external agents」→ <strong>表が最終権威につき prompt / hosted は GA 扱い、workflow / 外部はプレビュー</strong>。提案書では記事側のプレビュー表記も併記が安全</td>
 <td>Foundry(新)ポータルのみ(Traces ページから起動)</td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge na">記載なし</span>(ポータル機能)</td>
@@ -162,9 +163,9 @@ footer {
 <td><span class="badge preview">パブリックプレビュー</span>(タイトルに「(preview)」明記)</td>
 <td>Foundry(新)の Data Generation タブ</td>
 <td><span class="badge na">記載なし</span></td>
-<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=<strong>2.4.0</strong>〈2026-08-26 版で 2.2.0 から引き上げ〉、<code>project_client.beta.datasets</code>。JavaScript/TypeScript はジョブ管理操作のみ)</td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=<strong>2.4.0</strong>〈2026-08-26 版で 2.2.0 から引き上げ。2.4.0 で <code>create_generation_job</code> → <code>begin_create_generation_job</code> の <strong>LRO(ポーラー)に変更</strong>されたため〉、<code>project_client.beta.datasets</code>。JavaScript/TypeScript はジョブ管理操作のみ。<strong>(2026-09-26 追記)</strong> 2.7.0〈PyPI 2026-09-18〉で <code>TracesDataGenerationJobOptions.trace_ids</code>〈トレース ID 明示指定〉追加・<code>max_samples</code> は任意化)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/traces-to-dataset" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/traces-to-dataset">traces-to-dataset</a></td>
-<td>max_samples は 15〜1000(上限であり保証ではない)。App Insights / ストレージへのパブリックネットワークアクセスが必要。プロジェクトのマネージド ID に App Insights の Log Analytics Reader 必須。対応リージョン限定(<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network">data generation リージョン表</a>、日本は Japan East のみ)。インテリジェントサンプリングは既定 ON、<code>agent_version</code> の固定を推奨</td>
+<td>max_samples は 15〜1000(上限であり保証ではない)。App Insights / ストレージへのパブリックネットワークアクセスが必要。プロジェクトのマネージド ID に App Insights の Log Analytics Reader 必須。対応リージョン限定(<a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network">data generation リージョン表</a>、日本は Japan East のみ)。インテリジェントサンプリングは既定 ON、<code>agent_version</code> の固定を推奨。<strong>(2026-09-26 追記)</strong> 2026-09-24 の Azure ブログは「Synthetic and traces to dataset generation, generally available later this month」と <strong>9 月中の GA を予告</strong>(2026-09-26 時点のドキュメントは preview 表記のまま。 <a href="https://azure.microsoft.com/en-us/blog/ship-agents-faster-with-expanded-model-choice-voice-agents-and-continuous-optimization/" title="https://azure.microsoft.com/en-us/blog/ship-agents-faster-with-expanded-model-choice-voice-agents-and-continuous-optimization/">ship-agents-faster-with-expanded-model-choice-voice-agents-and-continuous-optimization</a> )</td>
 </tr>
 <tr>
 <td>合成評価データセット生成(Data Generation)</td>
@@ -174,17 +175,17 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=2.5.0、<code>project_client.beta.datasets</code>)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/evaluation-dataset-synthetic" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/evaluation-dataset-synthetic">evaluation-dataset-synthetic</a></td>
-<td>Responses API 対応モデルのデプロイが必須(管理者接続モデルは不可)。対応リージョンはトレース→データセットと同じ data generation リージョン表。VNet も同じくネットワーク注入+評価専用テンプレート(15a)</td>
+<td>Responses API 対応の Azure OpenAI モデルデプロイが必須(<strong>2026-09-26 訂正</strong>: 旧記載の「管理者接続モデルは不可」はページに明記がない。ただし管理者接続モデル側は Chat Completions API 前提〈evaluate-admin-connected-models〉なので、実質使えないと見て要検証)。対応リージョンはトレース→データセットと同じ data generation リージョン表。VNet も同じくネットワーク注入+評価専用テンプレート(15a)。<strong>(2026-09-26 追記)</strong> <code>azure-ai-projects</code> 2.7.0 で beta の <code>DataGenerationJobOptions</code> / <code>SimulationSeedDataGenerationJobOptions</code> から <code>max_samples</code> コンストラクタ引数が削除された(破壊的変更)。ドキュメントの Simulation seed のコード例は <code>SimulationSeedDataGenerationJobOptions(max_samples=15)</code> のままなので、2.7.0 以降では動かない可能性あり(要確認)。9 月中の GA 予告は前行と同じ</td>
 </tr>
 <tr>
 <td>Evaluations(評価・クラウド評価)</td>
 <td>Foundry プロジェクトに対する評価実行。エージェントターゲット評価、ルーブリック評価器の自動生成、データセット評価</td>
-<td><span class="badge ga">GA</span>(「some evaluators and features are Preview」— GA 一覧 2026-08-14 版)。プレビュー明記(2026-08-26〜31 版の SDK ページ群): 会話データセット評価(conversation レベル)、トレース評価、会話シミュレーション、合成クエリ生成、管理者接続モデル(AI Gateway 経由モデル)の利用</td>
+<td><span class="badge ga">GA</span>(「some evaluators and features are Preview」— GA 一覧 2026-08-14 版)。プレビュー明記(2026-08-26〜09-17 版の SDK ページ群): 会話データセット評価(conversation レベル)、トレース評価(個別インタラクション / 会話全体)、会話シミュレーション(2026-09-11 版で独立ページ化)、合成クエリ生成、管理者接続モデル(APIM 等のエンタープライズ AI ゲートウェイ経由モデル。「might not be available in all regions」)の利用</td>
 <td>Foundry(新)の Evaluations タブ・評価ウィザード</td>
 <td><span class="badge na">記載なし</span>(az)。azd 拡張の評価コマンドはプレビュー(別行)</td>
-<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=2.2.0〈エージェント評価 how-to は &gt;=2.4.0〉+ OpenAI evals クライアント。JavaScript/TypeScript <code>@azure/ai-projects</code> と REST(cURL)を全ページで併記、C# は継続的評価ページ)</td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=2.2.0〈エージェント評価 how-to は &gt;=2.4.0〉+ OpenAI evals クライアント。JavaScript/TypeScript <code>@azure/ai-projects</code> と REST(cURL)を全ページで併記。<strong>C# も 2026-09 時点でハブと各 SDK ページに併記</strong>〈<code>Azure.AI.Projects</code> prerelease〉— 2026-09-07 版の「C# は継続的評価ページのみ」から更新)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/cloud-evaluation(" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/cloud-evaluation(">cloud-evaluation(</a>旧: /azure/foundry/how-to/develop/cloud-evaluation はリダイレクト)・ <a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/evaluate-agent" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/evaluate-agent">evaluate-agent</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/evaluation-datasets" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/evaluation-datasets">evaluation-datasets</a></td>
-<td><strong>Entra ID 認証必須(API キー不可)</strong>(GA 一覧の注記でも再確認)。GitHub Actions 連携(<code>microsoft/ai-agent-evals@v3-beta</code>、<strong>プレビュー</strong>)で CI/CD ゲート化可。2026-08 にクラウド評価ドキュメントがハブ+7 本(datasets / targets / deployed-interactions / conversations / synthetic-data / results / admin-connected-models)に再編。データセットは JSONL / CSV、標準列は <code>messages</code> または <code>query</code>+<code>response</code>、<code>evaluation_level</code> は turn / conversation(実行内の評価器は同一レベル必須)。上限: 1 行 2 MB・1 バッチ 100,000 行。VNet 対応はネットワーク注入(サブネット委任)前提で評価専用テンプレート(15a)あり、BYO ストレージ可(evaluation-regions-limits-virtual-network 2026-04-03 版)。model router はターゲットとしてのみ利用可</td>
+<td><strong>Entra ID 認証必須(API キー不可)</strong>(GA 一覧の注記でも再確認)。GitHub Actions 連携(<code>microsoft/ai-agent-evals@v3-beta</code>、<strong>プレビュー</strong>)で CI/CD ゲート化可。2026-08 にクラウド評価ドキュメントがハブ+子ページ群に再編(<strong>2026-09-26 時点のハブの一覧</strong>: datasets / targets / deployed-interactions / synthetic-data / conversations / deployed-conversations / simulate-conversations〈音声シミュレーション=Voice Live TTS+<code>audio_effects</code> も可〉/ results の 8 ワークフロー+ admin-connected-models)。評価実行は「run を作成 → 完了までポーリング → 結果取得」の非同期型で、<strong><code>azure-ai-projects</code> 2.4.0 以降は評価器生成(ルーブリック)・データセット生成・最適化ジョブの作成が LRO(<code>begin_create_generation_job</code> 等のポーラー)に変更</strong>(7・8 月号ブログ 2026-09-09「Evaluation jobs become long-running operations」。JS/TS 2.4.0・Java Agents 2.3.0・.NET 3.0.0-beta.1 も同様。即時に結果を読む旧コードは要修正)。データセットは JSONL / CSV、標準列は <code>messages</code> または <code>query</code>+<code>response</code>、<code>evaluation_level</code> は turn / conversation(実行内の評価器は同一レベル必須)。上限: 1 行 2 MB・1 バッチ 100,000 行。VNet 対応はネットワーク注入(サブネット委任)前提で評価専用テンプレート(15a)あり、BYO ストレージ可。<strong>(2026-09-26 更新)</strong> VNet の記述は独立ページ <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-virtual-network">evaluation-virtual-network</a>(2026-09-11 版・2026-09-25 公開)に移動し、旧ページ(evaluation-regions-limits-virtual-network)からは VNet 節が削除された。新ページの要点: BYO VNet 対応リージョン表に <strong>Japan East</strong> を含む(Japan West は表にない)/評価・red teaming の実行失敗を防ぐため<strong>プロジェクト MI に Foundry リソーススコープの Foundry User を初期設定時に付与</strong>/実行が In progress のまま止まる場合はアカウント・プロジェクト両方の capability host を確認/診断スクリプトあり。model router はターゲットとしてのみ利用可</td>
 </tr>
 <tr>
 <td>組み込み評価器: 品質・RAG・類似度</td>
@@ -214,7 +215,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(evals API、<code>builtin.task_adherence</code> 等)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/agent-evaluators" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/agent-evaluators">agent-evaluators</a></td>
-<td><strong>⚠ 使ってはいけない組合せが明記されている(2026-07-30 に正確な記述へ修正)</strong>: 「<strong><code>tool_call_accuracy</code> / <code>tool input accuracy</code> / <code>tool_output_utilization</code> / <code>tool_call_success</code> / <code>groundedness</code> の各評価器は、エージェントの会話に次のツール呼び出しが含まれる場合は使うな</strong>」— <strong>Azure AI Search / Bing Grounding / Bing Custom Search / SharePoint Grounding / Code Interpreter / Fabric Data Agent / Web Search</strong>。<strong>完全サポートは File Search / Function Tool / MCP / Knowledge-based MCP の4つのみ。</strong><code>groundedness</code>(ツール系ではなく RAG 評価器)が対象に含まれる点に注意</td>
+<td><strong>⚠ 使ってはいけない組合せが明記されている(2026-07-30 に正確な記述へ修正)</strong>: 「<strong><code>tool_call_accuracy</code> / <code>tool input accuracy</code> / <code>tool_output_utilization</code> / <code>tool_call_success</code> / <code>groundedness</code> の各評価器は、エージェントの会話に次のツール呼び出しが含まれる場合は使うな</strong>」— <strong>Azure AI Search / Bing Grounding / Bing Custom Search / SharePoint Grounding / Code Interpreter / Fabric Data Agent / Web Search</strong>。<strong>完全サポートは File Search / Function Tool / MCP / Knowledge-based MCP の4つのみ。</strong><code>groundedness</code>(ツール系ではなく RAG 評価器)が対象に含まれる点に注意(agent-evaluators 2026-08-26 版でも同文言)。<strong>(2026-09-26 追記)</strong> ローカル SDK の <code>azure-ai-evaluation</code> は 1.18.1(2026-07-09)で <code>azure_ai_search</code> / <code>azure_fabric</code> / <code>sharepoint_grounding</code> のツール呼び出しを <code>ToolCallSuccessEvaluator</code> / <code>ToolOutputUtilizationEvaluator</code> で受け付けるよう変更済み(Groundedness は引き続き拒否。PyPI の変更履歴)。クラウド評価器側のドキュメントの制限一覧はまだ更新されていない</td>
 </tr>
 <tr>
 <td>Rubric 評価器 / カスタム評価器</td>
@@ -224,7 +225,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(<code>project_client.beta.evaluators</code>)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/built-in-evaluators" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/built-in-evaluators">built-in-evaluators</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/rubric-evaluators" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/rubric-evaluators">rubric-evaluators</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/custom-evaluators" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/custom-evaluators">custom-evaluators</a></td>
-<td>evaluate-agent ページでは Rubric 評価器をエージェント評価の主要手段として推奨。Rubric 自動生成の入力は Foundry agent / システムプロンプト / 参照ファイル(本番トレースは単独不可・これらとの併用のみ)。カスタム評価器は code-based / prompt-based / endpoint-based の 3 種(<code>azure-ai-projects</code>&gt;=2.0.0、custom-evaluators 2026-06-17 版)。Build 2026 ブログ(2026-06-03)でも Rubric は Public Preview</td>
+<td>evaluate-agent ページでは Rubric 評価器をエージェント評価の主要手段として推奨。Rubric 自動生成の入力は Foundry agent / システムプロンプト / 参照ファイル(本番トレースは単独不可・これらとの併用のみ)。カスタム評価器は code-based / prompt-based / endpoint-based の 3 種(<code>azure-ai-projects</code>&gt;=2.0.0、custom-evaluators 2026-06-17 版)。Build 2026 ブログ(2026-06-03)でも Rubric は Public Preview。<strong>(2026-09-26 追記)</strong> 2026-09-24 の Azure ブログが「Rubric evaluator, generally available later this month」と <strong>9 月中の GA を予告</strong>(2026-09-26 時点で rubric-evaluators ページは「(preview)」のまま〈2026-07-21 版〉)。ルーブリックの生成は <code>azure-ai-projects</code> 2.4.0 以降 <code>beta.evaluators.begin_create_generation_job</code>(LRO)に変わった</td>
 </tr>
 <tr>
 <td>クラスター分析(Optimization / cluster analysis)</td>
@@ -239,12 +240,12 @@ footer {
 <tr>
 <td>ローカル評価(<code>azure-ai-evaluation</code>)</td>
 <td><code>evaluate()</code> API とローカル評価器クラス群によるローカル実行評価</td>
-<td>パッケージ自体は GA(stable <strong>1.18.5</strong>〈PyPI 2026-09-04〉、非推奨表記なし。Learn の README は 1.18.3 表記〈2026-07-29 版〉)。ただし<strong>ドキュメントは Foundry (classic) 専用に移動</strong>(「This article isn't available for the new Foundry portal」。見出しは「…with the Azure AI Evaluation SDK <strong>(preview)</strong> (classic)」で、ローカル評価手順そのものにプレビュー注記が付く)</td>
+<td>パッケージ自体は GA(stable <strong>1.18.7</strong>〈PyPI 2026-09-25。<code>aoai_output_items_page_size</code> 引数を削除する破壊的変更を含む〉、Development Status は Production/Stable で非推奨表記なし。Learn の README は 1.18.6 表記〈2026-09-23 版〉。1.18.2 で管理者接続〈BYO〉ジャッジモデル、1.18.3 で App Insights への評価結果送信の Entra 認証に対応)。ただし<strong>ドキュメントは Foundry (classic) 専用に移動</strong>(「This article isn't available for the new Foundry portal」。見出しは「…with the Azure AI Evaluation SDK <strong>(preview)</strong> (classic)」で、ローカル評価手順そのものにプレビュー注記が付く)</td>
 <td>classic のみ(新ポータルのドキュメント体系から除外)</td>
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(<code>pip install azure-ai-evaluation</code>)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/develop/evaluate-sdk" title="https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/develop/evaluate-sdk">evaluate-sdk</a> ・ <a href="https://learn.microsoft.com/en-us/python/api/overview/azure/ai-evaluation-readme" title="https://learn.microsoft.com/en-us/python/api/overview/azure/ai-evaluation-readme">ai-evaluation-readme</a></td>
-<td>新 Foundry の評価は <code>azure-ai-projects</code>&gt;=2.2.0 + OpenAI evals クライアントに全面移行。明示的な後継宣言・廃止日は未確認(2026-09-07 再確認、変化なし)</td>
+<td>新 Foundry の評価は <code>azure-ai-projects</code>&gt;=2.2.0 + OpenAI evals クライアントに全面移行。明示的な後継宣言・廃止日は未確認(2026-09-26 再確認、変化なし。evaluate-sdk〈classic〉は 2026-02-25 版のまま)</td>
 </tr>
 <tr>
 <td>azd による評価(<code>azd ai agent eval</code>)</td>
@@ -254,7 +255,7 @@ footer {
 <td><strong>対応(azd。拡張 0.1.40-preview 以上)</strong></td>
 <td>n/a(azd が SDK 相当の処理を代行)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/azure-developer-cli-evaluation" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/azure-developer-cli-evaluation">azure-developer-cli-evaluation</a></td>
-<td>hosted agent ライフサイクル(<code>init → provision → deploy → eval</code>)が主線、prompt agent もターゲットにできる。<strong>A2A / Activity プロトコル・長時間実行・ストリーミングのエージェントはターゲット評価不可</strong>(トレース評価を使う)。Build 2026 ブログでも「AZD observability dev experience: Public Preview」</td>
+<td>hosted agent ライフサイクル(<code>init → provision → deploy → eval</code>)が主線、prompt agent もターゲットにできる。<strong>A2A / Activity プロトコル・長時間実行・ストリーミングのエージェントはターゲット評価不可</strong>(トレース評価を使う)。Build 2026 ブログでも「AZD observability dev experience: Public Preview」。拡張の最低版の表記は 2026-09-26 時点でも 0.1.40-preview(7・8 月号ブログの推奨ベースラインは azd 1.32.0+ と拡張 1.0.0-beta.13)</td>
 </tr>
 <tr>
 <td>継続的評価(Continuous evaluation)</td>
@@ -264,7 +265,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=2.0.0 の <code>evaluation_rules</code>。.NET もあり。JavaScript/TypeScript は継続的評価ルールのみ〈スケジュール評価はポータル〉)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard">how-to-monitor-agents-dashboard</a></td>
-<td>カスタム評価器(プレビュー)も継続的評価に追加可。プロジェクトのマネージド ID に Foundry User ロール必須。ポータルのウィザードは「監視対象エージェントの選択」が手順に含まれ、SDK 例も <code>EvaluationRuleFilter(agent_name=…)</code> でエージェント単位(エージェント指定が必須との明示文言は未確認)。Live traffic では Random / Intelligent sampling を選択可。AI Gateway 経由で Foundry 外エージェントも対象化可</td>
+<td>カスタム評価器(プレビュー)も継続的評価に追加可。プロジェクトのマネージド ID に Foundry User ロール必須。ポータルのウィザードは「監視対象エージェントの選択」が手順に含まれ、SDK 例も <code>EvaluationRuleFilter(agent_name=…)</code> でエージェント単位(エージェント指定が必須との明示文言は未確認)。Live traffic では Random / Intelligent sampling を選択可。AI Gateway 経由で Foundry 外エージェントも対象化可。Monitor 設定表の構成(Recurring evaluations / Red team scans / Alerts がいずれも preview)は 2026-09-03 版でも変化なし</td>
 </tr>
 <tr>
 <td>AI Red Teaming Agent</td>
@@ -274,7 +275,7 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=2.0.0。REST は api-version <code>2025-11-15-preview</code>)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/ai-red-teaming-agent" title="https://learn.microsoft.com/en-us/azure/foundry/concepts/ai-red-teaming-agent">ai-red-teaming-agent</a> ・ <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/run-ai-red-teaming-cloud" title="https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/run-ai-red-teaming-cloud">run-ai-red-teaming-cloud</a></td>
-<td>エージェント固有リスク(Prohibited Actions / Sensitive Data Leakage / Task Adherence)はクラウドのみ、テキストのみ。対応リージョン: East US 2, France Central, Sweden Central, Switzerland West, US North Central(概念ページ 2026-08-19 版。評価リージョン表 2026-04-03 版は East US 2 / North Central US の 2 つのみで不一致 → 要確認)。対応マトリクス(2026-08-19 版): hosted prompt / hosted container エージェント・Azure ツール呼び出し = 対応、<strong>workflow / 非 Foundry エージェント / 非 Azure ツール / Function / Browser automation / Connected Agent / Computer Use ツール = 非対応</strong>。エージェント向け XPIA(間接プロンプトインジェクション)スキャンあり。Monitor の定期 Red team scans はプレビュー</td>
+<td>エージェント固有リスク(Prohibited Actions / Sensitive Data Leakage / Task Adherence)はクラウドのみ、テキストのみ。対応リージョン: East US 2, France Central, Sweden Central, Switzerland West, US North Central(概念ページ 2026-08-19 版。一方、評価リージョン表〈updated 2026-08-18〉は 2026-08-17 の改訂で「新 Foundry の AI red teaming = East US 2 / North Central US」「5 リージョンは classic〈ローカル red teaming〉のリスト」と書き分けたため、概念ページの「Cloud red teaming」5 リージョン表記とは依然不一致 → 要確認。run-ai-red-teaming-cloud 2026-09-03 版にはリージョン記載なし)。対応マトリクス(2026-08-19 版): hosted prompt / hosted container エージェント・Azure ツール呼び出し = 対応、<strong>workflow / 非 Foundry エージェント / 非 Azure ツール / Function / Browser automation / Connected Agent / Computer Use ツール = 非対応</strong>。エージェント向け XPIA(間接プロンプトインジェクション)スキャンあり。Monitor の定期 Red team scans はプレビュー。<strong>(2026-09-26 追記)</strong> VNet 構成では「評価・red teaming の実行失敗を防ぐためプロジェクト MI に Foundry User を付与」と明記(evaluation-virtual-network 2026-09-11 版)</td>
 </tr>
 <tr>
 <td>Agent Monitoring Dashboard</td>
@@ -284,7 +285,17 @@ footer {
 <td><span class="badge na">記載なし</span></td>
 <td>継続的評価ルール設定のみ SDK(表示はポータル)</td>
 <td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard">how-to-monitor-agents-dashboard</a></td>
-<td>データは接続済み App Insights に保存(保持・課金は App Insights 設定に従う)。AI Gateway 経由で非 Foundry エージェントのオンボードも可</td>
+<td>データは接続済み App Insights に保存(保持・課金は App Insights 設定に従う)。AI Gateway 経由で非 Foundry エージェントのオンボードも可。<strong>(2026-09-26 追記)</strong> 記事タイトルは「Monitor agents with the Agent Monitoring Dashboard」(2026-09-03 版。ページ内の「View agent metrics (preview)」と冒頭の preview 注記は継続)。ログ表示には Log Analytics Reader、テーブルが Protected なら <strong>Privileged Monitoring Data Reader</strong> も必要</td>
+</tr>
+<tr>
+<td>Insights in Foundry(<strong>2026-09-26 新規</strong>)</td>
+<td>接続済み App Insights のエージェントトレースを GPT ジャッジモデルで横断分析し、繰り返し起きている挙動を「Insight」(カテゴリ・重大度・影響バージョン・根拠トレース・推定原因・修正案)として提示。評価器を事前に定義しなくても未知の問題を見つける用途で、確定した Insight を評価・Agent Optimizer・担当者へのエスカレーションに回す</td>
+<td><strong>パブリックプレビュー</strong>(記事タイトル「Use Insights in Foundry (preview)」2026-09-22 版。Tech Community ブログ 2026-09-24「public preview」)</td>
+<td>Foundry(新)の Build &gt; Agents &gt; 対象エージェント &gt; <strong>Insights</strong> タブ(Run scan now / スケジュール生成は Settings &gt; Insights)</td>
+<td><span class="badge na">記載なし</span>(ローカルのコーディングエージェントからは Foundry MCP Server の <code>agent_insights_get</code> / Microsoft Foundry Skill で読み取りのみ可)</td>
+<td><span class="badge ok">対応</span>(<code>azure-ai-projects</code>&gt;=<strong>2.6.1</strong>。オンデマンド分析とスケジュール設定。サンプル <code>samples/agent_insights/</code>)</td>
+<td><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/agent-insights" title="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/agent-insights">agent-insights</a> ・ <a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/insights-in-foundry-turns-agent-traces-into-action/4559634" title="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/insights-in-foundry-turns-agent-traces-into-action/4559634">4559634</a></td>
+<td>前提: <strong>GPT-5 以降の GPT モデルのデプロイ</strong>(ジャッジは GPT のみ。mini / nano も可だが大きいモデル推奨)+ App Insights 接続。ロール: 利用者は prompt agent なら Foundry User、hosted agent なら <strong>Foundry Project Manager</strong>。利用者とプロジェクト MI の両方に App Insights の Monitoring Reader(<code>AppGenAIContent</code> テーブルが Protected なら Privileged Monitoring Data Reader も)。初回スキャンは過去 7 日分のトレースが対象。具体的なプロンプト / コード修正案が出るのは prompt agent とコードベースの hosted agent のみ(PR 作成・自動デプロイはしない)。分析に使うモデルの料金が発生(スケジュールを有効にすると即時実行されることがある)。対応エージェント種別・モデル・リージョン・上限・価格はプレビュー中に変わり得ると明記</td>
 </tr>
 <tr>
 <td>Microsoft Purview 連携</td>
@@ -308,10 +319,11 @@ footer {
 </tr>
 </tbody></table></div>
 <h2 id="補足ノート">補足ノート</h2>
-<p><strong>1. Trace Replay のステータス揺れ(重要・2026-09-07 も継続)</strong> What's new(June 2026)では「(preview)」として新規掲載、GA 一覧(2026-08-14 版)では Tracing に含めて「GA for prompt and hosted agents; Preview for workflow and external agents」。一方、個別記事(trace-agent-replay、2026-05-13 版)の見出しは「Review agent interactions with Trace Replay <strong>(preview)</strong>」でプレビュー注記付き(HTML の <code>&lt;title&gt;</code> には付かない。2026-07-30 版の「個別記事タイトルに (preview) は付いていない」は見出しを見落としていたため訂正)、Build 2026 ブログ(2026-06-03)も「Trace replay and visualization: Public Preview」。報告上は両出典を併記し、表が最終権威につき「prompt / hosted エージェントでは GA 扱い、workflow / 外部エージェントはプレビュー」とするが、提案書では記事側のプレビュー表記も注記するのが安全。</p>
-<p><strong>2. 評価 SDK の世代交代</strong> 新 Foundry の評価ドキュメントは全面的に <strong><code>azure-ai-projects</code>(&gt;=2.2.0)+ OpenAI 互換 evals API</strong>(<code>client.evals.create</code> / <code>builtin.*</code> 評価器名)ベースに書き換えられた。<code>azure-ai-evaluation</code>(ローカル評価)は stable 1.18.5(PyPI 2026-09-04)まで更新が続き廃止告知はないが、ドキュメントは foundry-classic 配下(hub-based プロジェクト向け)に隔離され、見出しにも「(preview)」が付く。正式な移行アナウンス文書は未確認(2026-09-07 再確認)。2026-08 にはクラウド評価ドキュメントがハブ(cloud-evaluation)+ 7 本(datasets / targets / deployed-interactions / conversations / synthetic-data / results / admin-connected-models)+ データセット概念 2 本(evaluation-datasets / evaluation-dataset-schema)に再編され、全ページで Python と JavaScript/TypeScript(<code>@azure/ai-projects</code>)・cURL を併記。機能ごとに要求版が異なる(ハブ &gt;=2.2.0、エージェント評価・トレース→データセット &gt;=2.4.0、合成データセット生成 &gt;=2.5.0)。</p>
+<p><strong>1. Trace Replay のステータス揺れ(重要・2026-09-26 も継続)</strong> What's new(June 2026)では「(preview)」として新規掲載、GA 一覧(2026-08-14 版)では Tracing に含めて「GA for prompt and hosted agents; Preview for workflow and external agents」。一方、個別記事(trace-agent-replay、2026-05-13 版)の見出しは「Review agent interactions with Trace Replay <strong>(preview)</strong>」でプレビュー注記付き(HTML の <code>&lt;title&gt;</code> には付かない。2026-07-30 版の「個別記事タイトルに (preview) は付いていない」は見出しを見落としていたため訂正)、Build 2026 ブログ(2026-06-03)も「Trace replay and visualization: Public Preview」。報告上は両出典を併記し、表が最終権威につき「prompt / hosted エージェントでは GA 扱い、workflow / 外部エージェントはプレビュー」とするが、提案書では記事側のプレビュー表記も注記するのが安全。</p>
+<p><strong>2. 評価 SDK の世代交代</strong> 新 Foundry の評価ドキュメントは全面的に <strong><code>azure-ai-projects</code>(&gt;=2.2.0)+ OpenAI 互換 evals API</strong>(<code>client.evals.create</code> / <code>builtin.*</code> 評価器名)ベースに書き換えられた。<code>azure-ai-evaluation</code>(ローカル評価)は stable 1.18.7(PyPI 2026-09-25)まで更新が続き廃止告知はないが、ドキュメントは foundry-classic 配下(hub-based プロジェクト向け)に隔離され、見出しにも「(preview)」が付く。正式な移行アナウンス文書は未確認(2026-09-26 再確認)。2026-08 にはクラウド評価ドキュメントがハブ(cloud-evaluation)+ 7 本(datasets / targets / deployed-interactions / conversations / synthetic-data / results / admin-connected-models)+ データセット概念 2 本(evaluation-datasets / evaluation-dataset-schema)に再編され、全ページで Python と JavaScript/TypeScript(<code>@azure/ai-projects</code>)・cURL を併記。機能ごとに要求版が異なる(ハブ &gt;=2.2.0、エージェント評価・トレース→データセット &gt;=2.4.0、合成データセット生成 &gt;=2.5.0、Insights &gt;=2.6.1)。<strong>(2026-09-26 追記)</strong> 2.4.0 で評価器生成・データセット生成・最適化ジョブの作成が LRO(<code>begin_*</code> ポーラー)に変わり、2.5.0 で Python 3.10 以上・<code>openai&gt;=3.0.0</code> が必須、2.7.0 で beta のデータ生成オプションから <code>max_samples</code> 引数が削除された(PyPI 変更履歴・7・8 月号ブログ 2026-09-09)。ドキュメントのコード例が最新 SDK に追いついていない箇所があるため、評価パイプラインの SDK 更新時は「ジョブ投入〜完了」まで通しで検証する。</p>
 <p><strong>3. 継続的評価の位置づけ(2026-09-07 訂正)</strong> Monitor 設定パネル(how-to-monitor-agents-dashboard 2026-08-08 版)は「Recurring evaluations (preview)」「Red team scans (preview)」「Alerts (preview)」の 3 項目構成になり、継続的評価(Continuous)はスケジュール評価(Scheduled)と並ぶ「Recurring evaluations」の一種として <strong>preview に包含</strong>された(旧版で Continuous evaluation だけ preview 表記がなかった状態は解消)。ダッシュボード表示自体も preview、GA 一覧(2026-08-14 版)でも Monitoring 領域全体がプレビュー。なお Microsoft のブログ(Tech Community 2026-03-16「Generally Available: Evaluations, Monitoring, and Tracing」)は Monitoring を GA と表現しているが、GA 一覧表が最終権威につき本書はプレビュー扱い。本番採用判断時は「継続的評価を含む監視系は全体がプレビュー」として扱う。</p>
-<p><strong>4. サーフェス全般の傾向(2026-09-07 更新)</strong> 観測性・評価領域の手順書は「Foundry(新)ポータル + Python SDK(<code>azure-ai-projects</code>)」が主線で、2026-08 の再編後は JavaScript/TypeScript(<code>@azure/ai-projects</code>)と REST(cURL)を全ページで併記、C#/.NET は継続的評価ページのみ。REST の api-version は <code>2025-11-15-preview</code> が主だが、合成データ生成ページは <code>v1</code> を使用(混在)。<strong>Azure CLI(<code>az</code>)の手順は Entra トレース取り込みのロール割当(<code>az role assignment create</code>)のみ</strong>(2026-07-30 版の「どのページにも記載なし」から更新)。評価の CLI サーフェスは Azure CLI ではなく <strong>azd 拡張(<code>azd ai agent eval</code>、プレビュー)</strong> が担う。</p>
+<p><strong>4. サーフェス全般の傾向(2026-09-26 更新)</strong> 観測性・評価領域の手順書は「Foundry(新)ポータル + Python SDK(<code>azure-ai-projects</code>)」が主線で、2026-08 の再編後は JavaScript/TypeScript(<code>@azure/ai-projects</code>)と REST(cURL)を全ページで併記。C#/.NET は 2026-09-07 時点では継続的評価ページのみだったが、2026-09-26 時点ではクラウド評価のハブと各 SDK ページ・トレース設定にも C# タブがある。REST の api-version は <code>2025-11-15-preview</code> が主だが、合成データ生成ページは <code>v1</code> を使用(混在)。<strong>Azure CLI(<code>az</code>)の手順は Entra トレース取り込みのロール割当(<code>az role assignment create</code>)のみ</strong>(2026-07-30 版の「どのページにも記載なし」から更新)。評価の CLI サーフェスは Azure CLI ではなく <strong>azd 拡張(<code>azd ai agent eval</code>、プレビュー)</strong> が担う。Insights は Foundry MCP Server / Microsoft Foundry Skill から読み取れる(2026-09-26 追記)。</p>
 <p><strong>5. Purview / Defender 連携の設計上の注意(2026-09-07 追記)</strong> Purview 連携の有効化は Foundry の Operate &gt; Compliance(Foundry Account Owner)が現行手順で、Defender for Cloud 側のトグルは「deprecated」明記(ai-onboarding 2026-07-29 版)。Purview 連携は<strong>ネットワーク分離未対応</strong>(how-to-manage-compliance-security 2026-05-15 版)、Data Security Policies は Entra ユーザーコンテキスト付きの <code>/chat/completions</code> 呼び出しにのみ適用、PAYG 未設定なら Audit のみ。Foundry agents のデータが対象に含まれるかは記載が揺れる(control plane ページ「applications and agents」 vs Defender ページ「Foundry agents のデータは含まれない」)ため、エージェント案件では要確認。Defender for Cloud の AI threat protection は GA だが 30 日試用に 750 億トークンの上限があり、Foundry Models 経由のテキストトークンのみが対象。</p>
+<p><strong>6. 2026-09-24 発表(継続的改善ループ)の位置づけ(2026-09-26 追記)</strong> Azure ブログ「Ship agents faster with expanded model choice, voice agents, and continuous optimization」(2026-09-24、 <a href="https://azure.microsoft.com/en-us/blog/ship-agents-faster-with-expanded-model-choice-voice-agents-and-continuous-optimization/" title="https://azure.microsoft.com/en-us/blog/ship-agents-faster-with-expanded-model-choice-voice-agents-and-continuous-optimization/">ship-agents-faster-with-expanded-model-choice-voice-agents-and-continuous-optimization</a> )は「観測 → 理解 → 評価 → 最適化 → 検証」のループとして、<strong>Insights in Foundry(public preview)</strong>、<strong>Rubric evaluator / Synthetic and traces to dataset generation / Agent optimizer の GA を「later this month」と予告</strong>した。2026-09-26 時点で Learn の各ページと GA 一覧表はまだプレビュー表記のため、本書は<strong>プレビュー扱いを維持し、GA 化は次回更新で一次情報(ページのラベル・GA 一覧表)を確認してから反映</strong>する。同じ発表で、10 月に Azure API Management の新しい AI Gateway ティアのプレビュー統合と、評価を含む Foundry 各所で <strong>Admin Connected Models</strong> を使うハブ&amp;スポーク構成が予告されている。voice agents(public preview)向けのトレース・トランスクリプト・音声評価(「Voice-agent observability」)も同じ発表に含まれる。</p>
 </main>
 <footer>このHTMLは docs/survey/features/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>
