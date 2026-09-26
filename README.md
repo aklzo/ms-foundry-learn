@@ -19,7 +19,7 @@ Microsoft Foundry(旧 Azure AI Foundry)のキャッチアップと、SI 案件�
 | [labs/agentic-search-maf/](labs/agentic-search-maf/README.md) | 検証ラボ: 自己評価型リサーチエージェントを MAF で実装した学習用プロジェクト |
 | [labs/maf-ports/](labs/maf-ports/README.md) | 検証ラボ: awesome-llm-apps の7パターンを MAF+Foundry へ移植(Wave 1 完了。Azure リソースは検証後削除済み) |
 | [labs/foundry-probes/](labs/foundry-probes/README.md) | 検証ラボ: maf-ports に乗らなかった Foundry 機能 9 本の挙動確認 probe(実測済み。リソース削除済み) |
-| [labs/cu-video-rag/](labs/cu-video-rag/README.md) | 検証ラボ: Content Understanding video × AI Search × RAG の精度検証(104 本・111 問+ragas。CER 0.60% / カスタムフィールドで hit@3 0.955。PDF レポート同梱。リソース削除済み) |
+| [labs/cu-video-rag/](labs/cu-video-rag/README.md) | 検証ラボ: Content Understanding video × AI Search × RAG の精度検証(104 本・111 問+ragas。ラウンド 3〈評価設計是正後〉で CER 0.44% / カスタムフィールドで hit@3 0.937・画面のみ情報の ans@3 0.672。PDF レポート同梱。リソース削除済み) |
 
 ## 調査ドキュメントの読み方・更新
 

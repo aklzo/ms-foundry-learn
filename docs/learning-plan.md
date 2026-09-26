@@ -13,7 +13,7 @@ SI 案件における **AI エージェント関連の技術選定判断がで�
 
 学習は座学ではなく**同一シナリオを複数方式で実装して境界を体感する検証実験**を中心に進め、最終成果物として `docs/tech-selection-guide.md`(技術選定ガイド)を作る。
 
-> 注: AI-103 資格は本計画ではいったんスコープ外。ただし本計画のハンズオンは試験ドメイン 1・2(計 55〜65%)とほぼ重なるため、後日受験する場合は Phase 3(Vision / Language 系)の追加学習のみで対応できる。
+> 注: AI-103 資格(Azure AI Apps and Agents Developer Associate。AI-102 は 2026-06-30 に退役)は本計画ではいったんスコープ外。ただし本計画のハンズオンは試験ドメイン 1・2(計 55〜65%)とほぼ重なるため、後日受験する場合は Phase 3(Vision / Language 系)の追加学習のみで対応できる。
 
 ## 2. 技術選定の全体像(2026 年 7 月時点)
 
@@ -58,6 +58,8 @@ Foundry Agent Service には 2 種類のエージェントタイプがある:
 > 3. **A2A エンドポイント**: 正式なワークフローが不要な軽量のエージェント間連携
 >
 > Microsoft 自身がコードファースト(= MAF)へ誘導しており、ポータル完結のワークフロー構成を長期運用前提で提案するのはリスク。なお **Foundry IQ はワークフローの移行先ではない**(§3.4 参照)。
+>
+> ※2026-09-26 注記: **Connected Agents は新 Foundry(Agents v2)では提供されない**(移行ガイド 2026-09-11 版の対応表で「No(Recommendation: A2A tool)」、classic のパブリックプレビューのみ)。エージェント間委任は **A2A ツール(`a2a` 型は 2026-09 GA)** が後継。本節・Phase 1 の Connected Agents は計画作成時(2026-07-03)の記述として残す。
 
 ### 3.2 コード(MAF 等)が必要になる(はずの)構成
 
@@ -168,7 +170,7 @@ ms-foundry-learn/
 - [Microsoft Agent Framework Overview](https://learn.microsoft.com/en-us/agent-framework/overview/)
 - [MAF at Build 2026(Agent Harness / Hosted Agents / CodeAct)](https://devblogs.microsoft.com/agent-framework/microsoft-agent-framework-at-build-2026-announce/)
 - [What is Foundry IQ?(公式)](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/what-is-foundry-iq) / [Foundry IQ 発表記事](https://devblogs.microsoft.com/foundry/build-smarter-agents-faster-with-foundry-iq/)
-- [LangGraph ドキュメント](https://langchain-ai.github.io/langgraph/)
+- [LangGraph ドキュメント](https://docs.langchain.com/oss/python/langgraph/overview)(旧 `langchain-ai.github.io/langgraph/` から移転)
 - [LangGraph vs MAF 比較(HackerNoon)](https://hackernoon.com/langgraph-vs-microsoft-agent-framework-the-real-difference-is-state)
 
 ## 8. マイルストーン
