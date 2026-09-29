@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(定期更新: File Search 閉域表記・S3 HD の Foundry IQ 対応・agentic retrieval 最新 preview API〈2026-08-01-preview〉・Foundry IQ のリクエスト単位ヘッダー・Work IQ の VNet/経路を一次情報で再確認)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(定期更新: File Search 閉域表記・S3 HD の Foundry IQ 対応・agentic retrieval 最新 preview API〈2026-08-01-preview〉・Foundry IQ のリクエスト単位ヘッダー・Work IQ の VNet/経路を一次情報で再確認) / 2026-09-29(KB の MCP エンドポイントが GA 版 `2026-04-01` でも使える〈extractive のみ〉ことを訂正反映)
 
 Foundry 案件で最も数が多い類型。**同じ「社内文書に答えるチャット」でも、権限要件・文書の性質・鮮度要件によって取るべきアーキテクチャが 5 通りに分かれる。**本ページはその 5 パターンを、選択理由と地雷つきで整理する。
 
@@ -274,7 +274,7 @@ Text Split スキルを文字ベースで使うなら `textSplitMode: pages` / `
 
 ### エージェントからの接続と、その制約
 
-Foundry Agent Service との接続は **MCP 経由**(`knowledge_base_retrieve` ツールのみ)。MCP エンドポイントはプレビュー API 必須 — foundry-iq-connect(2026-08-07 版、2026-09-17 更新)は Python / REST サンプルで `2026-08-01-preview`、C# サンプルのみ `2026-05-01-preview` のまま(2026-09-26 確認。詳細は [features 04](../features/04-tools-knowledge.md))。
+Foundry Agent Service との接続は **MCP 経由**(`knowledge_base_retrieve` ツールのみ)。~~MCP エンドポイントはプレビュー API 必須~~ → **2026-09-29 訂正: KB の MCP エンドポイント自体は GA 版 `2026-04-01` でも使える**(agentic-retrieval-how-to-retrieve 2026-09-04 版〈Learn 更新 09-17〉:「By using 2026-04-01, retrieval is always minimal and extractive, and the connection returns grounding data only」。合成回答が要るなら `2026-08-01-preview`)。ただし **Foundry Agent Service 側の接続(`RemoteTool` 接続)はプレビュー**で、foundry-iq-connect(2026-08-07 版、2026-09-17 更新)の例は Python / REST が `2026-08-01-preview`、C# のみ `2026-05-01-preview` のまま(詳細は [features 04](../features/04-tools-knowledge.md))。つまり「MCP の API 版を GA に揃える」ことはできるが、「Agent Service から KB を呼ぶ構成全体を GA にする」ことはまだできない。
 
 **ユーザー単位の権限透過(2026-09-26 更新):** 以前の版は「Foundry Agent Service は MCP ツールのリクエスト単位ヘッダーをサポートしない → remote SharePoint でユーザー単位の権限透過をやるなら Azure OpenAI Responses API を使え」と明記していたが、**foundry-iq-connect の現行版(2026-09-17 更新)ではこの制約の記述が消え、代わりに「エージェント定義で structured input を宣言し、MCP ツールのヘッダーに `{{placeholder}}` として参照すれば呼び出しごとに値を差し替えられる」手順が載った**(project connection に紐づく MCP ツールで有効)。ユーザーのトークンを `x-ms-query-source-authorization` ヘッダーで渡すと、ACL 付き indexed ソース・remote SharePoint がユーザー単位でフィルタされる。
 

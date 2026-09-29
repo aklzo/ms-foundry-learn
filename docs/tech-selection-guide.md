@@ -1,6 +1,6 @@
 # 技術選定ガイド(実装検証ベース)
 
-> **最終更新:** 2026-09-04 / **版:** 第5版(Wave 1+2+3 + 外部案件 v3 / v4 反映)/ 2026-09-26 注記追加(実測内容は書き換えず、公式側の変化で前提が崩れた箇所に「※2026-09-26」を付記: 罠 10・21・22)
+> **最終更新:** 2026-09-04 / **版:** 第5版(Wave 1+2+3 + 外部案件 v3 / v4 反映)/ 2026-09-26 注記追加(実測内容は書き換えず、公式側の変化で前提が崩れた箇所に「※2026-09-26」を付記: 罠 10・21・22)/ 2026-09-29 全ラボを agent-framework 1.19 / openai 3.20 でオフライン再検証(版の変化で前提が変わった箇所に「※2026-09-29」を付記: 罠 3・4・10)
 > **出典の分離:** 本ドキュメントは **labs/ での実装検証から得たナレッジのみ**を集約する。公式ドキュメント調査由来の知見は [docs/survey/](./survey/README.md)(features / architecture / proposal)にあり、混在させない。各主張には検証元(どのラボ/ポートで実証したか)を付す。
 > **検証環境:** agent-framework 1.10〜1.13 / azure-ai-projects 2.4 / Microsoft Foundry(Japan East、gpt-5.4-mini)/ 2026-07 時点。フレームワークの進化が速いため、**版が変われば結論も変わりうる**。
 
@@ -57,17 +57,17 @@
 
 1. **Bicep 作成の Foundry プロジェクトは MI にモデルのデータプレーン権限が付かない**(ポータル作成は自動付与)。Memory(プレビュー)がストア構成のモデルをプロジェクト MI で呼ぶため 401 ResourceError になる。`Cognitive Services OpenAI User` をプロジェクト/アカウント MI に割り当てる(shared.bicep 参照)。**RBAC 伝播は5〜15分・ノード間で不均一**(片方のプローブが通った後もテストが数分 401 を返した)— Port 5
 2. **データプレーンは Bicep の外**。AI Search のインデックス、Memory のストアは ARM で作れず、「Bicep → セットアップスクリプト」の**2段デプロイが定型**。IaC 完結を前提にした見積もりは崩れる — Port 4・5
-3. **依存の版ピン3点**: (a) `mcp>=1.24,<2` — agent-framework の上限要求は推移的依存では強制されず、mcp 2.0 が入ると接続時 AttributeError(`InitializeResult.protocolVersion`)。(b) async の azure-search-documents は `aiohttp` が別途必要。(c) `from __future__ import annotations` はツールスキーマ推論・テストに `get_type_hints` 前提を強いる — Port 6・4・1
-4. **MCP のヘッダー注入**: MAF の `MCPStreamableHTTPTool` の `header_provider` は **call_tool 時のみ**で接続時(initialize / tools/list)に付かない。全リクエスト認証のサーバー(GitHub リモート MCP 等)では `httpx.AsyncClient(headers=...)` を `http_client` に渡す — Port 6
+3. **依存の版ピン3点**: (a) `mcp>=1.24,<2` — agent-framework の上限要求は推移的依存では強制されず、mcp 2.0 が入ると接続時 AttributeError(`InitializeResult.protocolVersion`)。(b) async の azure-search-documents は `aiohttp` が別途必要。(c) `from __future__ import annotations` はツールスキーマ推論・テストに `get_type_hints` 前提を強いる — Port 6・4・1。※2026-09-29: MAF 1.19 でも `mcp<2` は必要(`agent-framework-core[all]` / `-foundry-hosting` 自身が `mcp<2` を宣言。mcp 2.2 で同じ AttributeError を再現 — Port 6・10)。加えて **`agent-framework-foundry` 1.13.1 は `azure-ai-projects<2.7.0` を要求**し、MAF の Foundry 連携と同居させると projects は 2.6.1 止まり(2.7.0 の新機能は入らない)。同パッケージは廃止済みの `azure-ai-inference` も依存に持ち続ける — Port 11
+4. **MCP のヘッダー注入**: MAF の `MCPStreamableHTTPTool` の `header_provider` は **call_tool 時のみ**で接続時(initialize / tools/list)に付かない。全リクエスト認証のサーバー(GitHub リモート MCP 等)では `httpx.AsyncClient(headers=...)` を `http_client` に渡す — Port 6。※2026-09-29: この癖は 1.12.1 固有で **1.13.0 で解消**(接続時にも注入)。1.19.0 で**同一オリジンにだけ注入する `static_headers`** が追加され、自前 `http_client` にヘッダーを持たせる方式は MAF の docstring 上「漏洩しうる」扱いになった。Port 6・10 は `static_headers` に移行済み(1.18 以前は未知の引数を黙って捨てるため無認証接続になる — 下限 1.19 が必須。ライブ未検証)
 5. **Foundry Memory の意味論**: mem0 の同期 `add` と違い **LRO+debounce(update_delay 既定300秒)**。「書いた直後に読む」は成立しない前提で UX・テストを設計する(`update_delay=0`+`previous_update_id` チェーン+完了待ちで吸収可能)。認証は Entra のみ・API キー不可 — Port 5
 6. **reasoning 系モデルは temperature を受け付けない**。「温度で多様性」は死んだ技法 — ペルソナ差し替えで翻訳する(MoA 系の移植で必須)— Port 2
 7. **検索をどの層で持つかは契約論点**。Foundry の Web search ツールは DPA 対象外・別課金(survey 側の調査結果)。ラボでは自前 DDG 検索を既定にした — クロージャ+`MockTransport` でテスト可能になる副次メリットもある — Port 1・3・4
 8. **Foundry プロジェクトの MI は再デプロイでローテーションしうる**。ARM 制約でロール割り当て名に実行時値を使えないため、id 固定名だと**旧 principal への孤児割り当てが名前一致で温存**され PermissionDenied の温床になる。対策: RBAC を principalId パラメータの第2段テンプレート(roles.bicep)に分離 — Port 9
 9. **クラウド評価の権限は3層**: builtin 評価器の `initialization_parameters.deployment_name`(ジャッジ用デプロイ=評価コストは自分持ち)/ プロジェクト MI(Foundry User + OpenAI User)/ **提出ユーザー自身の Foundry User**。エラーは一律 PermissionDenied で actor が分からず、切り分けに時間を溶かす — Port 9
-10. **Routines の REST は `?api-version=v1` 必須**(Learn の例に記載なし・欠くと BadRequest)。プレビュー機能はサブ機能ごとにリージョン集合が違う(Routines 8 / Memory 19 / hosted agents 31) — Port 11。※2026-09-26 注記: Routines は 2026-09-24 に GA。use-routines(ms.date 2026-08-27)は `api-version=v1` 必須を本文に明記し、リージョンも「UK West / Switzerland West / Japan West / UAE North / Norway East を除く全リージョン」に拡大(8 リージョン限定は解消)。Python SDK 面は `client.beta.routines` のまま([casebook 02 P-A11](./survey/casebook/02-pitfalls-index.md#b-agent-service-コア))
+10. **Routines の REST は `?api-version=v1` 必須**(Learn の例に記載なし・欠くと BadRequest)。プレビュー機能はサブ機能ごとにリージョン集合が違う(Routines 8 / Memory 19 / hosted agents 31) — Port 11。※2026-09-26 注記: Routines は 2026-09-24 に GA。use-routines(ms.date 2026-08-27)は `api-version=v1` 必須を本文に明記し、リージョンも「UK West / Switzerland West / Japan West / UAE North / Norway East を除く全リージョン」に拡大(8 リージョン限定は解消)。Python SDK 面は `client.beta.routines` のまま([casebook 02 P-A11](./survey/casebook/02-pitfalls-index.md#b-agent-service-コア))。※2026-09-29: `Foundry-Features: Routines=V1Preview` は現行の REST 仕様から消え(任意ヘッダーの値は `V2Preview`、SDK 2.5.0 以降が自動付与)、Port 11 はヘッダーを外した(ライブ未検証)
 11. **Voice Live のリージョンは「機能×モデル×事前デプロイ」の3段で読む**: Japan East は Voice Live 対応だが gpt-realtime 系ネイティブ音声モデル非提供。マネージド提供モデルはデプロイ不要(Bicep 差分ゼロ) — Port 12
 12. **middleware の関数形態は `from __future__ import annotations` で型判定が壊れる**(MiddlewareException)。デコレータ明示(`@function_middleware` 等)が必須 — 罠3(c)の middleware 版。short-circuit は2方式で意味が別: `context.result` セット=拒否をモデルに見せてループ続行 / `MiddlewareTermination`=全停止 — Port 14
-13. **オフラインテスト戦略は Protocol 注入で統一できる**: LLM は `SupportsRun`(`.run()→.text`)、外部サービスはコンストラクタ注入 — ScriptedAgent / MockTransport / fake ストアで **約470テストをネットワークなしで回せた**(14ポート合計)。「エージェントはテストできない」は設計の問題 — 全ポート
+13. **オフラインテスト戦略は Protocol 注入で統一できる**: LLM は `SupportsRun`(`.run()→.text`)、外部サービスはコンストラクタ注入 — ScriptedAgent / MockTransport / fake ストアで **約470テストをネットワークなしで回せた**(14ポート合計)。「エージェントはテストできない」は設計の問題 — 全ポート。※2026-09-29: 依存を最新化(agent-framework 1.19 / openai 3.20)した時点の 14 ポート合計は **544 件 passed**(+hosting extra 込みで 1 件。いずれもネットワーク不要)
 
 ## 3. パターン別リファレンス(どこを見るか)
 

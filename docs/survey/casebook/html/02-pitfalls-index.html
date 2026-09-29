@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="02-詰まりどころ索引-症状から引く-原因・対処・出典">02. 詰まりどころ索引 — 症状から引く「原因・対処・出典」</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#使い方">使い方</a></li><li><a href="#a-hosted-agent">A. hosted agent</a></li><li><a href="#b-agent-service-コア">B. Agent Service コア</a></li><li><a href="#c-id-と-rbac">C. ID と RBAC</a></li><li><a href="#d-ネットワークと閉域">D. ネットワークと閉域</a></li><li><a href="#e-rag-とナレッジ">E. RAG とナレッジ</a></li><li><a href="#f-モデル-クォータ-コスト">F. モデル / クォータ / コスト</a></li><li><a href="#g-観測と評価">G. 観測と評価</a></li><li><a href="#h-ガードレール">H. ガードレール</a></li><li><a href="#i-maf-とフレームワーク">I. MAF とフレームワーク</a></li><li><a href="#j-iac-cli-ci-cd">J. IaC / CLI / CI-CD</a></li><li><a href="#k-copilot-studio-m365-apim-業務連携">K. Copilot Studio / M365 / APIM / 業務連携</a></li><li><a href="#l-文書処理と音声">L. 文書処理と音声</a></li><li><a href="#公開記事が見当たらなかったトピック-2026-09-04-時点-2026-09-26-再確認">公開記事が見当たらなかったトピック(2026-09-04 時点、2026-09-26 再確認)</a></li><li><a href="#出典の取得状況-メタ情報">出典の取得状況(メタ情報)</a></li></ul></div>
 <p><a href="index.html">← ケースブック TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-09-04(初版。公開記事の実在確認 2026-09-04)/ 2026-09-26(月次更新: 全外部 URL の生存確認〈410 が 2 件 → リンク切れ付記、リダイレクト 5 件 → 新 URL〉、[公式] 前提の再確認〈Routines GA・hosted agent の idle timeout / サブネット容量表・egress controls 登場・azure-ai-projects 2.5.0 の openai&gt;=3 必須化 等を「※2026-09-26」で注記〉、2026-09-04 以降の公開記事・issue から P-H23 / P-A12 / P-N20 / P-M15 / P-G11 / P-F13 / P-F14 を追加)<br>機能・レイヤー別に「<strong>症状 → 原因 → 設計上の対処 → 出典</strong>」を索引化したもの。出典は <strong>[公式]</strong>(Microsoft Learn・公式ブログ・公式サンプル)/ <strong>[実測]</strong>(本リポジトリの labs、外部案件)/ <strong>[記事]</strong>(第三者の公開記事。サイト名と公開年月を併記)の 3 種(<a href="index.html#出典の格付け-本セット固有のルール">README の格付け</a>)。<br><strong>読み方の注意:</strong> [記事] は執筆時点の挙動であり、特に hosted agents は <strong>2025-11 初回プレビュー → 2026-04 新基盤プレビュー → 2026-06〜07 GA</strong> と短期間で基盤が入れ替わっている。<strong>2026-04 以前の記事は旧基盤(<code>agent.yaml</code>・<code>az cognitiveservices agent</code>・<code>from_agent_framework()</code>)前提</strong>で、現行では手順が変わっているものがある(該当行に「旧基盤」と明記)。ID(P-xx)は提案書・設計書から参照するためのもので、行の追加は末尾に足す(振り直さない)。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-09-04(初版。公開記事の実在確認 2026-09-04)/ 2026-09-26(月次更新: 全外部 URL の生存確認〈410 が 2 件 → リンク切れ付記、リダイレクト 5 件 → 新 URL〉、[公式] 前提の再確認〈Routines GA・hosted agent の idle timeout / サブネット容量表・egress controls 登場・azure-ai-projects 2.5.0 の openai&gt;=3 必須化 等を「※2026-09-26」で注記〉、2026-09-04 以降の公開記事・issue から P-H23 / P-A12 / P-N20 / P-M15 / P-G11 / P-F13 / P-F14 を追加) / 2026-09-29(P-A11 に Routines の <code>Foundry-Features</code> 値〈V2Preview〉の変化を「※2026-09-29」で注記。P-F03 に MAF 1.13 / 1.19 でのヘッダー注入の変化を注記 — labs 最新化チェックの結果)<br>機能・レイヤー別に「<strong>症状 → 原因 → 設計上の対処 → 出典</strong>」を索引化したもの。出典は <strong>[公式]</strong>(Microsoft Learn・公式ブログ・公式サンプル)/ <strong>[実測]</strong>(本リポジトリの labs、外部案件)/ <strong>[記事]</strong>(第三者の公開記事。サイト名と公開年月を併記)の 3 種(<a href="index.html#出典の格付け-本セット固有のルール">README の格付け</a>)。<br><strong>読み方の注意:</strong> [記事] は執筆時点の挙動であり、特に hosted agents は <strong>2025-11 初回プレビュー → 2026-04 新基盤プレビュー → 2026-06〜07 GA</strong> と短期間で基盤が入れ替わっている。<strong>2026-04 以前の記事は旧基盤(<code>agent.yaml</code>・<code>az cognitiveservices agent</code>・<code>from_agent_framework()</code>)前提</strong>で、現行では手順が変わっているものがある(該当行に「旧基盤」と明記)。ID(P-xx)は提案書・設計書から参照するためのもので、行の追加は末尾に足す(振り直さない)。</p></blockquote>
 <h2 id="使い方">使い方</h2>
 <ul>
 <li><strong>設計レビュー前:</strong> 採用する構成のシナリオ(<a href="01-scenario-playbook.html">01</a>)が参照する P-ID を列挙し、「対処」欄が設計・見積もりに入っているかを確認する</li>
@@ -125,7 +125,7 @@ footer {
 <td>エージェント面エンドポイント(<code>/agents/{name}/endpoint/protocols/openai/responses</code>)が 400 "Unsupported API version"</td>
 <td><strong><code>?api-version=v1</code> クエリ必須</strong>。プロジェクトの <code>/openai/v1</code> 面は逆にクエリを拒否する非対称。Routines REST と同型</td>
 <td>REST 直叩きをやめ SDK(<code>get_openai_client(agent_name=...)</code>)に統一するか、<code>default_query</code> で固定</td>
-<td><a href="03-case-helpdesk.html#4-1-公開環境-ラウンド-1">実測: 外部案件</a> / <a href="../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">実測: port 11 Routines</a> / <a href="https://github.com/microsoft/agent-framework/issues/5680">記事: agent-framework issue 2026-05</a> / <a href="https://qiita.com/FukuharaYohei/items/6aabcccf701b6d918022">記事: Qiita 2026-05</a></td>
+<td><a href="03-case-helpdesk.html#4-1-公開環境-ラウンド-1">実測: 外部案件</a> / <a href="../../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">実測: port 11 Routines</a> / <a href="https://github.com/microsoft/agent-framework/issues/5680">記事: agent-framework issue 2026-05</a> / <a href="https://qiita.com/FukuharaYohei/items/6aabcccf701b6d918022">記事: Qiita 2026-05</a></td>
 </tr>
 <tr>
 <td>P-H04</td>
@@ -188,7 +188,7 @@ footer {
 <td>hosted agent から Toolbox(Web Search / Code Interpreter)を呼ぶと 404 "API deployment does not exist"</td>
 <td>プロジェクトエンドポイント形式・デプロイ名の不一致、<code>Foundry-Features: Toolboxes=V1Preview</code> ヘッダー依存。なお「ツール直付け不可」は<strong>Foundry 管理ツール</strong>の話で、コンテナ内の自前コードのツール(httpx 呼び出し等)は無関係。<strong>※2026-09-26: Toolboxes は GA</strong>(GA 一覧表・devblogs 7・8 月号で明言。Azure ブログ 2026-09-24 は「hosted agent 向けは GA、prompt agent への拡大はプレビュー」、Toolbox 内の tool search も GA)。Python / JS の <code>azure-ai-projects</code> 2.3.0 で <code>project.beta.toolboxes</code> → <code>project.toolboxes</code> に stable 化し、現行の Toolbox ページ(ms.date 2026-08-26)には <code>Toolboxes=V1Preview</code> ヘッダーの記載がない(残るのは <code>Skills=V1Preview</code>)。ヘッダー依存の原因は旧 SDK / プレビュー期のもの</td>
 <td>必須ツールは単体疎通テストを受入条件に。自前 API 呼び出し中心なら Toolbox 不要、Foundry 管理ツール中心なら Toolbox 設計が先。SDK は 2.3.0 以降の stable 面(<code>project.toolboxes</code>)に揃える</td>
-<td><a href="https://learn.microsoft.com/en-in/answers/questions/5895612/foundry-toolbox-on-hosted-agents-not-working">記事: Q&amp;A 2026-05</a> / <a href="../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">実測: port 11</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox">公式: Toolbox</a> / <a href="https://devblogs.microsoft.com/foundry/whats-new-in-microsoft-foundry-july-august-2026/">公式: 7・8 月号</a></td>
+<td><a href="https://learn.microsoft.com/en-in/answers/questions/5895612/foundry-toolbox-on-hosted-agents-not-working">記事: Q&amp;A 2026-05</a> / <a href="../../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">実測: port 11</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/toolbox">公式: Toolbox</a> / <a href="https://devblogs.microsoft.com/foundry/whats-new-in-microsoft-foundry-july-august-2026/">公式: 7・8 月号</a></td>
 </tr>
 <tr>
 <td>P-H13</td>
@@ -302,7 +302,7 @@ footer {
 <td>会話が消えない / <code>store=False</code> にしたら会話にも残らない / アカウントエンドポイント経由で 404</td>
 <td>Conversations に TTL なし。<code>store=False</code> は会話継続も切る。Conversations はプロジェクトエンドポイント経由のみ</td>
 <td>終端フック + 日次スイープの 2 段削除。順序は Foundry 先・台帳後</td>
-<td><a href="../../../labs/foundry-probes/probes/01-conversations/NOTES.md">実測: probe 01</a> / <a href="03-case-helpdesk.html#3-v4-の設計判断-adr-12-本の要約">実測: 外部案件 V4-008</a></td>
+<td><a href="../../../../labs/foundry-probes/probes/01-conversations/NOTES.md">実測: probe 01</a> / <a href="03-case-helpdesk.html#3-v4-の設計判断-adr-12-本の要約">実測: 外部案件 V4-008</a></td>
 </tr>
 <tr>
 <td>P-A05</td>
@@ -330,14 +330,14 @@ footer {
 <td>Memory(プレビュー)が BYO + <code>disableLocalAuth=true</code> で 500(診断ログでは 403)。memory store 作成が 500</td>
 <td>プレビューの BYO 制限またはサービス側欠陥の疑い。store 作成は Cosmos コンテナ / AI Search インデックス作成のコントロールプレーン操作を伴い、project MI に上位ロールと NW 到達性が要る。書き込みは LRO + debounce(既定 300 秒)</td>
 <td>Memory は PoC で必ず実測、自前メモリのフォールバックを用意。「書いた直後に読む」UX にしない</td>
-<td><a href="https://learn.microsoft.com/en-us/answers/questions/5968337/azure-ai-foundry-server-side-memory-store-project">記事: Q&amp;A 2026-08</a> / <a href="https://learn.microsoft.com/en-au/answers/questions/5815653/cannot-provision-memory-store-in-azure-ai-foundry">記事: Q&amp;A 2026-03</a> / <a href="../../../labs/maf-ports/ports/travel-memory/README.md">実測: port 5</a></td>
+<td><a href="https://learn.microsoft.com/en-us/answers/questions/5968337/azure-ai-foundry-server-side-memory-store-project">記事: Q&amp;A 2026-08</a> / <a href="https://learn.microsoft.com/en-au/answers/questions/5815653/cannot-provision-memory-store-in-azure-ai-foundry">記事: Q&amp;A 2026-03</a> / <a href="../../../../labs/maf-ports/ports/travel-memory/README.md">実測: port 5</a></td>
 </tr>
 <tr>
 <td>P-A09</td>
 <td><code>instructions</code> を実行時に上書きすると 400</td>
 <td>prompt agent の定義は版で固定。<code>agent_reference</code> で旧版固定呼び出し</td>
 <td>環境差はツール引数のリクエスト単位上書き(<code>vector_store_ids</code> 等)で吸収し、指示文は版で管理</td>
-<td><a href="../../../labs/foundry-probes/probes/02-prompt-agents/NOTES.md">実測: probe 02</a></td>
+<td><a href="../../../../labs/foundry-probes/probes/02-prompt-agents/NOTES.md">実測: probe 02</a></td>
 </tr>
 <tr>
 <td>P-A10</td>
@@ -349,9 +349,9 @@ footer {
 <tr>
 <td>P-A11</td>
 <td>Routines REST が BadRequest</td>
-<td><code>?api-version=v1</code> 必須(Learn の例に記載なし)。<code>Foundry-Features: Routines=V1Preview</code> ヘッダー。対応リージョンは 8(Memory 19 / hosted 31 と別集合)。<strong>※2026-09-26: Routines は GA(2026-09-24、GA 一覧表も GA)。</strong>use-routines(ms.date 2026-08-27)は <code>api-version=v1</code> 必須を本文に明記し、<code>Routines=V1Preview</code> ヘッダーの記載はなくなった。リージョンは「UK West / Switzerland West / <strong>Japan West</strong> / UAE North / Norway East を除く全 Foundry リージョン」に拡大(hosted agent 31 リージョンのうちこの 5 つは Routines 不可)。VNet 保護プロジェクトは追加設定なしで可、<strong>CMK 非対応</strong>、ワークフローエージェント非対応。SDK は Python が <code>client.beta.routines</code>(<code>azure-ai-projects&gt;=2.4.0</code>)、.NET はプレビューパッケージのみ、reminder ツールは preview</td>
+<td><code>?api-version=v1</code> 必須(Learn の例に記載なし)。<code>Foundry-Features: Routines=V1Preview</code> ヘッダー。対応リージョンは 8(Memory 19 / hosted 31 と別集合)。<strong>※2026-09-26: Routines は GA(2026-09-24、GA 一覧表も GA)。</strong>use-routines(ms.date 2026-08-27)は <code>api-version=v1</code> 必須を本文に明記し、<code>Routines=V1Preview</code> ヘッダーの記載はなくなった。リージョンは「UK West / Switzerland West / <strong>Japan West</strong> / UAE North / Norway East を除く全 Foundry リージョン」に拡大(hosted agent 31 リージョンのうちこの 5 つは Routines 不可)。VNet 保護プロジェクトは追加設定なしで可、<strong>CMK 非対応</strong>、ワークフローエージェント非対応。SDK は Python が <code>client.beta.routines</code>(<code>azure-ai-projects&gt;=2.4.0</code>)、.NET はプレビューパッケージのみ、reminder ツールは preview。<strong>※2026-09-29: ヘッダー値は <code>Routines=V2Preview</code> に変わっている</strong>(REST 仕様〈azure-rest-api-specs、2026-08-20〉ではヘッダーは任意で列挙値は V2Preview のみ、<code>azure-ai-projects</code> 2.5.0 以降の <code>.beta.routines</code> と <code>azure-ai-agentserver-core</code> 2.1.0b2 以降も V2Preview を自動付与)。<strong>V1Preview を固定で送るコードはヘッダーを外すか V2Preview に揃える</strong>(V1Preview を送った場合の挙動は公式に記載なし=要確認。port 11 は 2026-09-29 にヘッダーを外した — ライブ未検証)。SDK 2.5.0 で <code>list</code> / <code>list_runs</code> のページングが <code>before</code> → <code>after</code> + <code>next_link</code> に変更</td>
 <td>リージョンは使うサブ機能の積集合で決める(日本案件で Japan West を DR 先にする場合は Routines が使えない)。「プレビュー不使用」ポリシーでは <strong>サービスは GA でも SDK 面が beta 名前空間</strong>である点を例外記録に残す。CMK 必須のワークロードでは使わない</td>
-<td><a href="../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">実測: port 11</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-routines">公式: use-routines</a> / <a href="https://devblogs.microsoft.com/foundry/from-chatbots-to-automated-assistants-routines-in-microsoft-foundry-are-now-generally-available/">公式: Routines GA ブログ 2026-09-24</a></td>
+<td><a href="../../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">実測: port 11</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-routines">公式: use-routines</a> / <a href="https://devblogs.microsoft.com/foundry/from-chatbots-to-automated-assistants-routines-in-microsoft-foundry-are-now-generally-available/">公式: Routines GA ブログ 2026-09-24</a></td>
 </tr>
 <tr>
 <td>P-A12</td>
@@ -381,21 +381,21 @@ footer {
 <td>ロール付与直後のテストが 401 / 403 で「バグ」と誤診する</td>
 <td><strong>RBAC 伝播は 5〜45 分、MI ごと・ノードごとに不均一</strong>(片方のプローブが通った後も別経路が数分 401)</td>
 <td>CI/CD に伝播待ちポーリングを入れる。伝播窓の失敗を切り分け手順に明記</td>
-<td><a href="../../../labs/maf-ports/ports/travel-memory/README.md">実測: port 5(5〜15 分)</a> / <a href="03-case-helpdesk.html#4-1-公開環境-ラウンド-1">実測: 外部案件(15〜45 分)</a> / <a href="https://github.com/Azure/azure-dev/issues/8026">記事: azure-dev issue 2026-05</a></td>
+<td><a href="../../../../labs/maf-ports/ports/travel-memory/README.md">実測: port 5(5〜15 分)</a> / <a href="03-case-helpdesk.html#4-1-公開環境-ラウンド-1">実測: 外部案件(15〜45 分)</a> / <a href="https://github.com/Azure/azure-dev/issues/8026">記事: azure-dev issue 2026-05</a></td>
 </tr>
 <tr>
 <td>P-I03</td>
 <td>Bicep / Terraform で作ったプロジェクトだと Memory や Agent Framework が 401 / 404、ポータルで作ると動く</td>
 <td>ポータル作成はプロジェクト MI へのデータプレーン権限と AOAI 接続を自動付与するが、<strong>IaC 作成では付かない</strong></td>
 <td><code>Cognitive Services OpenAI User</code> をプロジェクト / アカウント MI に明示割当。接続オブジェクトの存在を IaC の完了条件(スモークテスト)に</td>
-<td><a href="../../../labs/maf-ports/ports/travel-memory/README.md">実測: port 5</a> / <a href="https://learn.microsoft.com/en-us/answers/questions/5607343/ai-foundry-project-created-via-terraform-is-not-us">記事: Q&amp;A 2025-11</a></td>
+<td><a href="../../../../labs/maf-ports/ports/travel-memory/README.md">実測: port 5</a> / <a href="https://learn.microsoft.com/en-us/answers/questions/5607343/ai-foundry-project-created-via-terraform-is-not-us">記事: Q&amp;A 2025-11</a></td>
 </tr>
 <tr>
 <td>P-I04</td>
 <td>再デプロイ後に PermissionDenied が再発する</td>
 <td>プロジェクト MI が再デプロイでローテーションしうる。ARM 制約で id 固定名のロール割り当てが旧 principal への孤児として温存される</td>
 <td>RBAC を principalId パラメータの第 2 段テンプレートに分離</td>
-<td><a href="../../../labs/maf-ports/ports/critique-loop/README.md">実測: port 9</a></td>
+<td><a href="../../../../labs/maf-ports/ports/critique-loop/README.md">実測: port 9</a></td>
 </tr>
 <tr>
 <td>P-I05</td>
@@ -430,14 +430,14 @@ footer {
 <td>クラウド評価が一律 PermissionDenied で actor が分からない</td>
 <td>権限が 3 層: ジャッジ用デプロイ(<code>initialization_parameters.deployment_name</code>)/ プロジェクト MI(Foundry User + OpenAI User)/ 提出ユーザー自身の Foundry User</td>
 <td>3 層を最初から付与。継続評価はプロジェクト MI に Foundry User がないと<strong>静かに失敗</strong></td>
-<td><a href="../../../labs/maf-ports/ports/critique-loop/README.md">実測: port 9</a> / <a href="https://jannikreinhard.com/microsoft-foundry-observability/">記事: 個人ブログ 2026-07</a></td>
+<td><a href="../../../../labs/maf-ports/ports/critique-loop/README.md">実測: port 9</a> / <a href="https://jannikreinhard.com/microsoft-foundry-observability/">記事: 個人ブログ 2026-07</a></td>
 </tr>
 <tr>
 <td>P-I10</td>
 <td>embeddings がプロジェクトエンドポイント経由で 404</td>
 <td>embeddings は<strong>アカウントエンドポイント経由のみ</strong>(chat は両方)</td>
 <td>接続情報を 2 本持つ</td>
-<td><a href="../../../labs/foundry-probes/probes/08-embeddings-routing/NOTES.md">実測: probe 08</a></td>
+<td><a href="../../../../labs/foundry-probes/probes/08-embeddings-routing/NOTES.md">実測: probe 08</a></td>
 </tr>
 <tr>
 <td>P-I11</td>
@@ -616,7 +616,7 @@ footer {
 <td>File Search で日本語の長文契約書・表主体の技術文書の精度が出ない。attributes フィルタが効かない。チャンク・埋め込みを変えられない</td>
 <td>チャンク 800 / オーバーラップ 400 / text-embedding-3-large 256 次元 / 最大 20 チャンク、いずれも<strong>固定</strong>。エージェント・会話とも vector store は 1 個のみ。attributes フィルタは設定方法が文書化されておらず効かない報告あり</td>
 <td>PoC で代表的な難しい文書 20〜30 件で測り、駄目なら早期に AI Search 自前索引へ。メタデータ絞り込み前提の設計はしない</td>
-<td><a href="https://learn.microsoft.com/ja-jp/azure/foundry/agents/concepts/vector-stores">公式: vector stores</a> / <a href="../../../labs/foundry-probes/probes/03-file-search/NOTES.md">実測: probe 03</a> / <a href="https://note.com/lucid_cougar1555/n/n8fc63c3beca3">記事: note 2026-03</a> / <a href="https://learn.microsoft.com/en-us/answers/questions/4375356/implementing-custom-chunking-and-embedding-strateg">記事: Q&amp;A 2025-07</a></td>
+<td><a href="https://learn.microsoft.com/ja-jp/azure/foundry/agents/concepts/vector-stores">公式: vector stores</a> / <a href="../../../../labs/foundry-probes/probes/03-file-search/NOTES.md">実測: probe 03</a> / <a href="https://note.com/lucid_cougar1555/n/n8fc63c3beca3">記事: note 2026-03</a> / <a href="https://learn.microsoft.com/en-us/answers/questions/4375356/implementing-custom-chunking-and-embedding-strateg">記事: Q&amp;A 2025-07</a></td>
 </tr>
 <tr>
 <td>P-R02</td>
@@ -700,7 +700,7 @@ footer {
 <td>日本語の検索精度が出ない(1 文字ずつ分割、助詞が残る、複合語が壊れる)</td>
 <td>既定の Standard Lucene アナライザー。<code>ja.lucene</code>(活用形正規化・助詞除去が強い)と <code>ja.microsoft</code>(「2024年」を 1 トークン、揺れ表記生成)で挙動が違う</td>
 <td>インデックス定義で日本語アナライザーを明示。Foundry IQ / AI Search ツールでも自前インデックス側のアナライザー設計は SI 責任</td>
-<td><a href="https://licensecounter.jp/engineer-voice/blog/articles/20241115_azure_ai_search_analyzer.html">記事: SB C&amp;S 2024-11</a> / <a href="../../../labs/maf-ports/ports/corrective-rag/README.md">実測: port 4</a></td>
+<td><a href="https://licensecounter.jp/engineer-voice/blog/articles/20241115_azure_ai_search_analyzer.html">記事: SB C&amp;S 2024-11</a> / <a href="../../../../labs/maf-ports/ports/corrective-rag/README.md">実測: port 4</a></td>
 </tr>
 <tr>
 <td>P-R14</td>
@@ -723,14 +723,14 @@ footer {
 <td>gpt-5 系に切り替えたら <code>temperature</code> / <code>max_tokens</code> / <code>top_p</code> が 400 Unsupported parameter。ソース grep で見つからない</td>
 <td>推論モデルはサンプリング系パラメータを持たない。<strong>LangChain / SK 等のライブラリが勝手に付与</strong>する。<code>max_tokens</code> → <code>max_completion_tokens</code>(推論分を見込んで拡大)</td>
 <td>モデル差し替えは「パラメータ互換層」を設計に持つ。「温度で多様性」はペルソナ差し替えに翻訳</td>
-<td><a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/migrating-to-gpt-5-x-without-breaking-gpt-4-a-practical-backward-compatible-play/4522936">記事: Foundry blog 2026-05</a> / <a href="https://github.com/microsoft/semantic-kernel/issues/12899">記事: SK issue 2025-08</a> / <a href="../../../labs/maf-ports/ports/mixture-of-agents/README.md">実測: port 2</a></td>
+<td><a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/migrating-to-gpt-5-x-without-breaking-gpt-4-a-practical-backward-compatible-play/4522936">記事: Foundry blog 2026-05</a> / <a href="https://github.com/microsoft/semantic-kernel/issues/12899">記事: SK issue 2025-08</a> / <a href="../../../../labs/maf-ports/ports/mixture-of-agents/README.md">実測: port 2</a></td>
 </tr>
 <tr>
 <td>P-M02</td>
 <td>「mini 級 = 軽量」のつもりで gpt-5-mini をチャット既定にしたら p50 10 秒</td>
 <td>gpt-5-mini は実質 reasoning 系挙動(出力トークンの約 7 割が推論トークン)。gpt-5.4-mini は推論 0・p50 3.0 秒</td>
 <td>チャット UX の既定は 5.4 系 / 5.6-luna。推論トークン分の出力上限とコストを見積もりに</td>
-<td><a href="../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">実測: 外部案件 v3</a></td>
+<td><a href="../../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">実測: 外部案件 v3</a></td>
 </tr>
 <tr>
 <td>P-M03</td>
@@ -758,21 +758,21 @@ footer {
 <td>Model router が既定でいきなり Grok(xAI)にルーティングする。大きいプロンプトで失敗する</td>
 <td>既定プールに非 OpenAI モデルを含む。実効コンテキストは最小モデルに律速</td>
 <td>「Model subset」で対象モデルを明示。データガバナンス要件のある環境で無設定デプロイしない。<code>response.model</code> で監査</td>
-<td><a href="../../../labs/foundry-probes/probes/05-model-router/NOTES.md">実測: probe 05</a> / <a href="https://futurework.blog/2026/05/28/model-router-with-claude-opus-4-7-and-mai-image-2e-in-microsoft-foundry/">記事: 個人ブログ(MVP) 2026-05</a></td>
+<td><a href="../../../../labs/foundry-probes/probes/05-model-router/NOTES.md">実測: probe 05</a> / <a href="https://futurework.blog/2026/05/28/model-router-with-claude-opus-4-7-and-mai-image-2e-in-microsoft-foundry/">記事: 個人ブログ(MVP) 2026-05</a></td>
 </tr>
 <tr>
 <td>P-M07</td>
 <td>モデルのリタイアで 1 年以内に再検証が発生</td>
 <td>リタイア間隔はモデル系列で 12〜18 か月(Models API <code>deprecation.inference</code> 実測)。Fireworks 系は 15 日前通知</td>
 <td>提案の温度感は「リリースから 18 か月・安全側 12 か月」。運用契約に「モデル移行対応」を含めるかを契約論点に</td>
-<td><a href="../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">実測: 外部案件</a> / <a href="../../features/html/02-models.html">公式: features 02</a></td>
+<td><a href="../../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">実測: 外部案件</a> / <a href="../../features/html/02-models.html">公式: features 02</a></td>
 </tr>
 <tr>
 <td>P-M08</td>
 <td>音声モデル(gpt-4o-transcribe / mini-tts / gpt-realtime 系)が Japan East に来ない</td>
 <td>音声系はテキスト系よりリージョン展開が遅い。Global Standard だと US East 2 等へ往復</td>
 <td>「リアルタイム音声 + 国内処理」の両立は現時点で不可と早期に伝える。UI / オーケストレーションは日本、音声処理だけ Global の分離案</td>
-<td><a href="https://learn.microsoft.com/ja-jp/answers/questions/5840106/azure-openai-gpt-4o-transcribe-gpt-4o-mini-tts-jap">記事: Q&amp;A(日本語) 2026-03</a> / <a href="../../../labs/maf-ports/ports/claim-voice-live/README.md">実測: port 12</a></td>
+<td><a href="https://learn.microsoft.com/ja-jp/answers/questions/5840106/azure-openai-gpt-4o-transcribe-gpt-4o-mini-tts-jap">記事: Q&amp;A(日本語) 2026-03</a> / <a href="../../../../labs/maf-ports/ports/claim-voice-live/README.md">実測: port 12</a></td>
 </tr>
 <tr>
 <td>P-M09</td>
@@ -858,14 +858,14 @@ footer {
 <td><code>azure-ai-evaluation</code> SDK が gpt-5 系ジャッジで 400 <code>unsupported_parameter</code>(<code>max_tokens</code>)</td>
 <td>内部 prompty が <code>max_tokens</code> を送る</td>
 <td><strong>evals API(<code>client.evals</code> + <code>builtin.groundedness</code>)は gpt-5 系ジャッジで動く</strong>。file_content 一括投入でバッチ採点。ジャッジを 4o / 4.1 系にする案も</td>
-<td><a href="../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">実測: 外部案件</a> / <a href="https://github.com/Azure/azure-sdk-for-python/issues/39909">記事: sdk issue 2025-02</a></td>
+<td><a href="../../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">実測: 外部案件</a> / <a href="https://github.com/Azure/azure-sdk-for-python/issues/39909">記事: sdk issue 2025-02</a></td>
 </tr>
 <tr>
 <td>P-O05</td>
 <td>継続評価が生 response に効かない / 自動ランが <code>evals.runs</code> に出ない</td>
 <td><strong>prompt agent スコープ必須</strong>。自動ランは Monitor 側集計</td>
 <td>配線は SDK 完結。評価対象をエージェント化する</td>
-<td><a href="../../../labs/foundry-probes/probes/09-continuous-eval/NOTES.md">実測: probe 09</a></td>
+<td><a href="../../../../labs/foundry-probes/probes/09-continuous-eval/NOTES.md">実測: probe 09</a></td>
 </tr>
 <tr>
 <td>P-O06</td>
@@ -907,7 +907,7 @@ footer {
 <td>オフラインテストが IMDS(169.254.169.254)を突いてハングする</td>
 <td>hosting ライブラリの既定 observability 構成</td>
 <td><code>configure_observability=None</code> で切る</td>
-<td><a href="../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">実測: port 11</a></td>
+<td><a href="../../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">実測: port 11</a></td>
 </tr>
 </tbody></table></div>
 <h2 id="h-ガードレール">H. ガードレール</h2>
@@ -1015,29 +1015,29 @@ footer {
 <td>P-F02</td>
 <td>「handoff」を one-shot パイプラインに使ったら順序・終了が確率的になった。HandoffBuilder のツールが Foundry provider だと注入されず文章で「引き継ぎます」と言うだけ</td>
 <td>MAF core に first-class handoff はない。<code>HandoffBuilder</code> は別パッケージの<strong>会話型</strong>(全結線メッシュ + HITL 既定)。<code>AzureAIProjectAgentProvider</code> 経由では handoff ツール未注入(→ <code>AzureOpenAIResponsesClient</code>)。クローン時に MCPTool が消える不具合もあった</td>
-<td>制御をコードで決められるなら決定的ルーティング(構造化出力 + switch-case)。2 軸 3 値の分水嶺は <a href="../../tech-selection-guide.md#1-1-マルチエージェント協調の分水嶺port-3・7・13-で実証--2軸3値">tech-selection-guide §1-1</a></td>
-<td><a href="../../../labs/maf-ports/ports/game-design-team/README.md">実測: port 3・7</a> / <a href="https://github.com/microsoft/agent-framework/issues/4378">記事: agent-framework issue 2026-03</a> / <a href="https://github.com/microsoft/agent-framework/issues/1804">記事: agent-framework issue 2025-10</a></td>
+<td>制御をコードで決められるなら決定的ルーティング(構造化出力 + switch-case)。2 軸 3 値の分水嶺は <a href="../../../tech-selection-guide.md#1-1-マルチエージェント協調の分水嶺port-3・7・13-で実証--2軸3値">tech-selection-guide §1-1</a></td>
+<td><a href="../../../../labs/maf-ports/ports/game-design-team/README.md">実測: port 3・7</a> / <a href="https://github.com/microsoft/agent-framework/issues/4378">記事: agent-framework issue 2026-03</a> / <a href="https://github.com/microsoft/agent-framework/issues/1804">記事: agent-framework issue 2025-10</a></td>
 </tr>
 <tr>
 <td>P-F03</td>
 <td>MCP の認証ヘッダーが接続時(initialize / tools/list)に付かない。Agent Service 側では "Headers that can include sensitive information are not allowed"</td>
 <td><code>MCPStreamableHTTPTool</code> の <code>header_provider</code> は call_tool 時のみ。Foundry 側は <strong>project connection 経由</strong>が前提</td>
-<td>全リクエスト認証のサーバーは <code>httpx.AsyncClient(headers=...)</code> を <code>http_client</code> に。Foundry では <code>project_connection_id</code></td>
-<td><a href="../../../labs/maf-ports/ports/github-mcp/README.md">実測: port 6</a> / <a href="https://github.com/microsoft/agent-framework/issues/3299">記事: agent-framework issue 2026-01</a></td>
+<td>全リクエスト認証のサーバーは <code>httpx.AsyncClient(headers=...)</code> を <code>http_client</code> に。Foundry では <code>project_connection_id</code>。<strong>※2026-09-29: MAF 1.13.0 で接続時にも注入されるよう解消、1.19.0 で同一オリジン限定の <code>static_headers</code> が追加</strong>(自前 http_client 方式は docstring 上「漏洩しうる」扱い)。port 6・10 は <code>static_headers</code> に移行(1.18 以前は引数が黙って無視されるため下限 1.19 必須)</td>
+<td><a href="../../../../labs/maf-ports/ports/github-mcp/README.md">実測: port 6</a> / <a href="https://github.com/microsoft/agent-framework/issues/3299">記事: agent-framework issue 2026-01</a></td>
 </tr>
 <tr>
 <td>P-F04</td>
 <td><code>from __future__ import annotations</code> を入れたらツールスキーマ推論・middleware が壊れる(MiddlewareException)</td>
 <td>型判定が <code>get_type_hints</code> 前提</td>
 <td>デコレータ明示(<code>@function_middleware</code> 等)。short-circuit は 2 方式(<code>context.result</code> = 拒否を見せて続行 / <code>MiddlewareTermination</code> = 全停止)の意味が別</td>
-<td><a href="../../../labs/maf-ports/ports/governed-agent/README.md">実測: port 14</a></td>
+<td><a href="../../../../labs/maf-ports/ports/governed-agent/README.md">実測: port 14</a></td>
 </tr>
 <tr>
 <td>P-F05</td>
 <td>mcp 2.0 が入ると接続時 AttributeError(<code>InitializeResult.protocolVersion</code>)。async の azure-search-documents が落ちる</td>
 <td>agent-framework の上限要求は推移的依存で強制されない。<code>aiohttp</code> 未宣言</td>
 <td><code>mcp&gt;=1.24,&lt;2</code> を明示、<code>aiohttp</code> を追加</td>
-<td><a href="../../../labs/maf-ports/ports/github-mcp/README.md">実測: port 6・4</a></td>
+<td><a href="../../../../labs/maf-ports/ports/github-mcp/README.md">実測: port 6・4</a></td>
 </tr>
 <tr>
 <td>P-F06</td>
@@ -1065,7 +1065,7 @@ footer {
 <td>構造化出力がスキーマ不一致でも例外にならず <code>response.value = None</code></td>
 <td>Foundry V2 agent の挙動</td>
 <td>None チェックを必須に。strict モードとの組合せを probe で確認</td>
-<td><a href="https://github.com/microsoft/agent-framework/issues/3268">記事: agent-framework issue 2026-01</a> / <a href="../../../labs/foundry-probes/probes/06-structured-outputs/NOTES.md">実測: probe 06</a></td>
+<td><a href="https://github.com/microsoft/agent-framework/issues/3268">記事: agent-framework issue 2026-01</a> / <a href="../../../../labs/foundry-probes/probes/06-structured-outputs/NOTES.md">実測: probe 06</a></td>
 </tr>
 <tr>
 <td>P-F10</td>
@@ -1123,14 +1123,14 @@ footer {
 <td>IaC 完結の前提で見積もったら索引・Memory ストア・エージェント定義が ARM で作れない</td>
 <td>データプレーンは Bicep の外</td>
 <td>「Bicep → セットアップスクリプト」の 2 段デプロイが定型</td>
-<td><a href="../../../labs/maf-ports/ports/corrective-rag/README.md">実測: port 4・5</a></td>
+<td><a href="../../../../labs/maf-ports/ports/corrective-rag/README.md">実測: port 4・5</a></td>
 </tr>
 <tr>
 <td>P-C03</td>
 <td>Bicep のプロジェクト作成が <code>Project can only created under AIServices Kind account</code>。Terraform の azurerm でプロジェクト・接続・CapHost が作れない</td>
 <td><code>allowProjectManagement: true</code>(Terraform は <code>project_management_enabled</code>)必須。azurerm は project 管理・NW 注入・BYO・接続に未対応(open)</td>
 <td>Terraform 標準は「azurerm + azapi」。純 azurerm は提案しない。ポータル作成環境との差分チェックリスト(接続・双方向 RBAC)</td>
-<td><a href="../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">実測: 外部案件</a> / <a href="https://github.com/hashicorp/terraform-provider-azurerm/issues/29956">記事: azurerm issue 2025-06(open)</a> / <a href="https://learn.microsoft.com/en-us/answers/questions/5621546/ai-foundry-created-with-terraform-cannot-add-ai-se">記事: Q&amp;A 2025-11</a></td>
+<td><a href="../../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">実測: 外部案件</a> / <a href="https://github.com/hashicorp/terraform-provider-azurerm/issues/29956">記事: azurerm issue 2025-06(open)</a> / <a href="https://learn.microsoft.com/en-us/answers/questions/5621546/ai-foundry-created-with-terraform-cannot-add-ai-se">記事: Q&amp;A 2025-11</a></td>
 </tr>
 <tr>
 <td>P-C04</td>
@@ -1371,22 +1371,22 @@ footer {
 <td>P-D01</td>
 <td>Content Understanding(CU)動画で先頭・末尾の発話が消える / 重複セグメント / アナライザーの PUT 上書きが黙って無視される / モデルデプロイの 429 がアナライザーエラーとして返る / 再デプロイ後に defaults 未登録 / ソフト削除 → パージ → 同名再作成で内部モデル解決が壊れる</td>
 <td>CU の実装上の罠 13 点(実測)</td>
-<td><a href="../../../labs/cu-video-rag/docs/findings.md">cu-video-rag findings</a> の §1 をそのまま設計レビューのチェックリストに</td>
-<td><a href="../../../labs/cu-video-rag/docs/findings.md">実測: cu-video-rag</a></td>
+<td><a href="../../../../labs/cu-video-rag/docs/findings.md">cu-video-rag findings</a> の §1 をそのまま設計レビューのチェックリストに</td>
+<td><a href="../../../../labs/cu-video-rag/docs/findings.md">実測: cu-video-rag</a></td>
 </tr>
 <tr>
 <td>P-D02</td>
 <td>CU の請求が想定と合わない</td>
 <td>LLM / 埋め込みトークンは Foundry モデルデプロイに課金され CU の請求に出ない。contextualization トークンが別建て。agentic / ラベル付き学習は advanced レート。source grounding + confidence で入力約 2 倍</td>
 <td>請求が 2 か所に分かれる前提でコストダッシュボード。代表ファイルで <code>usage</code> を実測してから見積もる(実測: 動画 1 時間 ≈ $2.7〜2.9)</td>
-<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/pricing-explainer">公式: pricing explainer</a> / <a href="../../../labs/cu-video-rag/README.md">実測: cu-video-rag</a></td>
+<td><a href="https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/pricing-explainer">公式: pricing explainer</a> / <a href="../../../../labs/cu-video-rag/README.md">実測: cu-video-rag</a></td>
 </tr>
 <tr>
 <td>P-D03</td>
 <td>CU 動画で画面上の細かい文字や高速動作が取れない</td>
 <td>フレームサンプリング最大 1 FPS、512×512 リサイズ、音声は発話のみ。未対応ロケールは「最も近いロケール」に丸められる</td>
 <td>要件で「細かい文字転記」「高速動作検知」は CU 単体では満たせないと明示(実測: CER 0.44%・画面転記 100% は条件付き)</td>
-<td><a href="https://learn.microsoft.com/ja-jp/azure/ai-services/content-understanding/video/overview">公式: video overview</a> / <a href="../../../labs/cu-video-rag/docs/findings.md">実測: cu-video-rag</a></td>
+<td><a href="https://learn.microsoft.com/ja-jp/azure/ai-services/content-understanding/video/overview">公式: video overview</a> / <a href="../../../../labs/cu-video-rag/docs/findings.md">実測: cu-video-rag</a></td>
 </tr>
 <tr>
 <td>P-D04</td>
@@ -1400,7 +1400,7 @@ footer {
 <td>Voice Live で日本語の主語を誤認識 / 言語自動検出が崩れる / 文の途中で確定してコマンドが早発</td>
 <td>言語自動検出・EOU(end of utterance)設定。Japan East はネイティブ音声モデル(gpt-realtime 系)非提供で、マネージド提供モデルはデプロイ不要</td>
 <td>ロケール固定・フレーズリスト・EOU 設定を初期チューニング項目に。リージョンは「機能 × モデル × 事前デプロイ」の 3 段で読む</td>
-<td><a href="https://zenn.dev/headwaters/articles/21270b66d31569">記事: Zenn ヘッドウォータース 2025-06</a> / <a href="../../../labs/maf-ports/ports/claim-voice-live/README.md">実測: port 12</a></td>
+<td><a href="https://zenn.dev/headwaters/articles/21270b66d31569">記事: Zenn ヘッドウォータース 2025-06</a> / <a href="../../../../labs/maf-ports/ports/claim-voice-live/README.md">実測: port 12</a></td>
 </tr>
 <tr>
 <td>P-D06</td>
@@ -1432,7 +1432,7 @@ footer {
 <tr>
 <td>Agent Service</td>
 <td>model router が Grok に流れて問題化した事例 / basic → standard 切替で状態が消えた事例 / Routines の障害記事 / RBAC 伝播の定量記事</td>
-<td><a href="../../../labs/foundry-probes/probes/05-model-router/NOTES.md">probe 05</a>、<a href="../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">port 11</a>、<a href="03-case-helpdesk.html">03</a>(伝播 15〜45 分)</td>
+<td><a href="../../../../labs/foundry-probes/probes/05-model-router/NOTES.md">probe 05</a>、<a href="../../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">port 11</a>、<a href="03-case-helpdesk.html">03</a>(伝播 15〜45 分)</td>
 </tr>
 <tr>
 <td>閉域・規制</td>
@@ -1442,17 +1442,17 @@ footer {
 <tr>
 <td>RAG</td>
 <td>File Search の日本語検索品質を定量測定した記事 / Foundry IQ の MCP エンドポイント固有エラー / On Your Data → Agent Service の移行体験記 / CU + AI Search スキル統合のトラブル</td>
-<td><a href="../../../labs/foundry-probes/probes/03-file-search/NOTES.md">probe 03</a>、<a href="../../../labs/cu-video-rag/README.md">cu-video-rag</a></td>
+<td><a href="../../../../labs/foundry-probes/probes/03-file-search/NOTES.md">probe 03</a>、<a href="../../../../labs/cu-video-rag/README.md">cu-video-rag</a></td>
 </tr>
 <tr>
 <td>観測・評価・安全</td>
 <td>AI Red Teaming Agent の実施時トラブル / Monitoring ダッシュボード・継続評価が動かない事例 / evals API のハマり / App Insights トレース取り込みコストの請求事故 / Guardrails for agents(プレビュー)・PII 検出の実測 / 修正済みコンテンツフィルター申請の所要日数体験記</td>
-<td><a href="../../../labs/foundry-probes/probes/09-continuous-eval/NOTES.md">probe 09</a>、<a href="../../../labs/foundry-probes/probes/07-guardrails/NOTES.md">probe 07</a></td>
+<td><a href="../../../../labs/foundry-probes/probes/09-continuous-eval/NOTES.md">probe 09</a>、<a href="../../../../labs/foundry-probes/probes/07-guardrails/NOTES.md">probe 07</a></td>
 </tr>
 <tr>
 <td>MAF</td>
 <td>Durable extension の苦労談 / middleware 固有の不具合 / Semantic Kernel → MAF 移行の日本語体験記 / 「Foundry でなく LangGraph / OpenAI Agents SDK を選んだ」当事者の一次証言</td>
-<td><a href="../../../labs/maf-ports/ports/governed-agent/README.md">port 14</a>、<a href="../../tech-selection-guide.md#1-3-フレームワーク書き換えコストの実測感全ポート">tech-selection-guide §1-3</a></td>
+<td><a href="../../../../labs/maf-ports/ports/governed-agent/README.md">port 14</a>、<a href="../../../tech-selection-guide.md#1-3-フレームワーク書き換えコストの実測感全ポート">tech-selection-guide §1-3</a></td>
 </tr>
 <tr>
 <td>Copilot Studio / M365</td>

@@ -2,7 +2,7 @@
 
 [← 提案実務ガイド TOP](./README.md)
 
-> **最終更新:** 2026-07-31 / 2026-09-26(課金単位を pricing ページ・learn で再確認: hosted agent・Foundry IQ Serverless・Voice Live・CU・Data Zone / Regional プレミアム・flex を追記、URL 1 件差し替え)
+> **最終更新:** 2026-07-31 / 2026-09-26(課金単位を pricing ページ・learn で再確認: hosted agent・Foundry IQ Serverless・Voice Live・CU・Data Zone / Regional プレミアム・flex を追記、URL 1 件差し替え)/ 2026-09-29(Flex processing の専用ページ公開〈preview・50% 割引・gpt-5.6-sol のみ〉を反映)
 > **方針: このドキュメントに単価を書かない。**モデル単価は改定・リタイア・新モデル投入で頻繁に変わるため、ここには「変わらないもの」= 見積もりの手順・式・コスト構成要素のチェックリスト・単価の取得先だけを置く。試算例も単価は記号のまま示す。
 
 ## Step 1: ワークロードのプロファイリング(トークン量の推計)
@@ -99,7 +99,7 @@
 | レバー | 効果 | 制約 |
 | --- | --- | --- |
 | Batch デプロイ | **50% 引き** | 24h ターゲット・SLA なし。夜間バッチ処理向け |
-| Flex 処理(`service_tier: flex`) | 対応モデルでの低優先度処理 | **2026-09-25 に flex→standard の自動フォールバックが廃止**され、非対応モデルへの flex 要求は HTTP 400。対応モデル・単価は要確認(learn に Flex 専用ページが見当たらず、告知は [priority-processing](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/priority-processing) 2026-09-22 版)。逆方向の Priority processing(低遅延・割増)も同ページ |
+| Flex 処理(`service_tier: flex`、**プレビュー**) | 対応モデルでの低優先度処理 | **Standard のトークン単価の 50% 割引**(キャッシュ入力割引も併用可)、専用の Flex メーターで Cost analysis 上も分離。**対応モデルは当初 `gpt-5.6-sol`(2026-07-09)の Global Standard のみ**、SLA なし。容量不足の HTTP 429 は非課金だが、Flex と Standard は同じデプロイのクォータを共有する。**2026-09-25 に flex→standard の自動フォールバックが廃止**され、非対応モデルへの flex 要求は HTTP 400(2026-09-29: 専用ページ [Flex processing](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/flex-processing) が 2026-09-28 に公開され、「専用ページが見当たらず要確認」を解消)。見積では「Flex で回す比率」と「Standard へのアプリ側フォールバック率」を分けて置く。逆方向の Priority processing(低遅延・割増)は [priority-processing](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/priority-processing) |
 | プロンプトキャッシュ | キャッシュ入力単価が大幅減 | システムプロンプト・ツール定義を先頭に固定する設計が前提 |
 | Model router | 簡単な質問を安いモデルへ自動ルーティング | Global / Data Zone Standard のみ。Claude をプールに入れるなら事前デプロイ必須(Claude 分は Marketplace 課金)。ルーティングプールはバージョン更新で入れ替わるため評価をやり直す(model-router 2026-09-01 版。非 OpenAI ルーティングのプレビュー表記は現行ページにない) |
 | セマンティックキャッシュ(APIM) | FAQ 的トラフィックの LLM 呼び出し自体を削減 | RediSearch 有効の Azure Managed Redis が別途必要(作成時のみ有効化可) |

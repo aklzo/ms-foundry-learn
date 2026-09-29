@@ -46,7 +46,7 @@ Foundry のネットワーク設計は「**egress(送信)モデルを先に決�
 
 ## 2. BYO VNet(Standard agent setup)の設計
 
-![D1 規制業種・閉域(BYO VNet)のアーキテクチャ図](./images/d1-closed-network.png)
+![D1 規制業種・閉域(BYO VNet)— hosted agent の VNet 注入・Data Proxy と PE・egress controls + Firewall のアーキテクチャ図](./images/d1-closed-network.png)
 
 ### 委任サブネット要件
 
@@ -412,7 +412,7 @@ MCSB v1.0 ベースで「古いガイダンスを含む可能性がある」と�
 | **Foundry Local on Azure Local** | **オンプレ K8s 上のエンタープライズ推論基盤**(Arc 拡張) | **プレビュー、かつ申請制**(拡張 2607〈2026-08〉/ 2609〈2026-09〉時点でも同じ) |
 | **Foundry Tools の切断コンテナ** | Speech / Language / Vision / Document Intelligence 等を**エアギャップで動かす** | サービスごとに GA / preview が異なる |
 
-![D3 エッジ・オンプレ 3 形態の比較図](./images/d3-edge-onprem.png)
+![D3 エッジ・オンプレ 3 形態(Foundry Local / Foundry Local on Azure Local / 切断コンテナ)の比較図](./images/d3-edge-onprem.png)
 
 ### 9.1 Foundry Local(端末上)
 

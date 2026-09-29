@@ -2,7 +2,7 @@
 
 [← 提案実務ガイド TOP](./README.md)
 
-> **最終更新:** 2026-07-31 / 2026-09-26(Data Zone APAC・閉域ツール表・トレース VNet の現行表記、個情法 令和 8 年改正・AI 法関連の最新版、ISMAP の learn 掲載ページ、Work IQ の境界外処理を反映)
+> **最終更新:** 2026-07-31 / 2026-09-26(Data Zone APAC・閉域ツール表・トレース VNet の現行表記、個情法 令和 8 年改正・AI 法関連の最新版、ISMAP の learn 掲載ページ、Work IQ の境界外処理を反映) / 2026-09-29(Fireworks on Foundry のデータ処理場所〈Microsoft 施設外・US のみ〉と claude-sonnet-5-5 を §2 に反映)
 > **免責: 本メモは SI の技術側が論点を整理するためのもの。法解釈・規制適合の最終判断は必ず顧客の法務・コンプライアンス部門と行うこと。**「検証済み」と記した項目は 2026-07 時点の learn.microsoft.com 現行ページで確認済みの事実([features](../features/README.md) / [architecture](../architecture/README.md) の調査に基づく)。
 
 ## 0. 前提: データフローの4層整理
@@ -33,7 +33,7 @@
 | ファインチューニング | Global Training は**データ所在保証なし**。リージョナル学習を選ぶ | FT 案件はトレーニングタイプを明示 |
 | 安全性評価・Red Teaming | 対応リージョンは国外のみ(日本非対応)。**評価のためにプロンプト・応答が国外に渡る** | 使うなら明示合意、使わないなら構成から除外 |
 | Task adherence(ガードレール) | データが指定 Geo 外(US/EU)で処理される可能性を公式明記 | 同上 |
-| Claude 等パートナーモデル | Hosted on Azure 版は US 系(Data Zone US)。**日本国内処理の選択肢はない**(2026-07 時点。models-from-partners 2026-09-21 版でも Claude の Data Zone は US のみ・APAC なし) | 国内要件がある案件では Azure OpenAI 系を選ぶ |
+| Claude 等パートナーモデル | Hosted on Azure 版は US 系(Data Zone US)。**日本国内処理の選択肢はない**(2026-07 時点。models-from-partners 2026-09-21 版でも Claude の Data Zone は US のみ・APAC なし。2026-09-28 追加の `claude-sonnet-5-5` も同じ)。**Fireworks 経由の `FW-*` モデルは推論が Fireworks の GPU 上で行われ Microsoft 施設外に出る**(Fireworks は Microsoft のサブプロセッサで DPA の範囲内。提供は現時点で US のみ・SOC 1 Type 2 非準拠 — [Fireworks privacy & compliance FAQ](https://learn.microsoft.com/en-us/azure/foundry/how-to/fireworks/privacy-compliance-faq) 2026-09-28 新設) | 国内要件がある案件では Azure OpenAI 系を選ぶ。`FW-*` は候補から外す |
 
 ## 3. 個人情報保護法
 

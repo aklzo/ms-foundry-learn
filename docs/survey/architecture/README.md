@@ -1,6 +1,6 @@
 # Microsoft Foundry アーキテクチャ設計ガイド
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)/ 2026-09-26(四半期定期更新: AAC・WAF・CAF・Copilot Studio と期限・ステータスを一次情報で再突合)/ **版:** 初版
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正)/ 2026-09-26(四半期定期更新: AAC・WAF・CAF・Copilot Studio と期限・ステータスを一次情報で再突合)/ 2026-09-29(features 差分更新の波及: 04 / 05 / 08)/ **版:** 初版
 > SI の技術選定・アーキテクチャ選定基準の構築を目的に、**Microsoft Foundry を使ったシステムアーキテクチャ**を、インフラを含めた広い視点で整理したもの。機能単位の GA / プレビュー調査は [features/](../features/README.md) を参照。
 
 ## ドキュメント一覧
@@ -176,7 +176,7 @@
 - **公式ドキュメント間で記述が食い違っている箇所**(Data Zone の APAC 記載漏れ、hosted agents の GA / preview 表記、Reservation の交換可否など)は、その旨を併記している。
 - **リンク切れ・削除済みリソース**(ALZ 版 baseline の実装リポジトリなど)も、探して見つからないことに時間を使わないよう明記している。
 - **本ガイドは公式ドキュメント由来の構成判断に限定する。**現場で詰まった点(公開記事・labs・外部案件の実測)と、要件シナリオ別の判断(「ヘルプデスク × ITSM」「閉域必須」等)は [casebook/](../casebook/README.md) に分離した。各章の「⚠ 現場知見」「→ casebook P-xx」はそこへの導線。
-- **アーキテクチャ図(Azure 公式アイコン)は `images/*.png`(全 18 枚)。**生成スクリプトと再生成手順は [diagrams/](./diagrams/README.md)(maf-ports の描画ヘルパーを共有。図中テキストは英語)。公式-B と A〜E の主要パターンを整備済み。構成が既存図と実質同じもの(公式-A/C、A3/A4、C1/C3、D2)は作図せず理由を diagrams/README に記載。ASCII 図は生成 AI 用にそのまま残している。
+- **アーキテクチャ図(Azure 公式アイコン)は `images/*.png`(全 18 枚)。**生成スクリプトと再生成手順は [diagrams/](./diagrams/README.md)(maf-ports の描画ヘルパーを共有)。**2026-09-29 に全 18 枚を v2 スタイルへ描き直し** — 日本語ラベル・処理番号(①②…と下端の「処理の流れ」)・GA / Preview バッジ・タグ付き注記帯・2 倍解像度。スライド用の切り出し版は `images/slide/*.png`。公式-B と A〜E の主要パターンを整備済み。構成が既存図と実質同じもの(公式-A/C、A3/A4、C1/C3、D2)は作図せず理由を diagrams/README に記載。ASCII 図は生成 AI 用にそのまま残している。
 
 ### 更新運用
 
@@ -210,3 +210,4 @@
 | 2026-09-04 | **casebook セット新設に伴う更新。**03 章 G2 表を公式 2026-08-14 版(File Search「PE 経由」表記・Tracing VNet Preview)+外部案件実測(hosted agent は PNA Disabled で VNet 注入必須)で改訂、05 章 B2 に現場知見 6 点、07 章 §3 のツール表・機能表を更新、10 章にアンチパターン A12〜A15(注入なし hosted agent / App Insights 接続なし / プロンプト二重化 / 反証される撤退理由)を追加 |
 | 2026-07-30 | **全 11 ファイルのファクトチェック(公式ドキュメント突合)と訂正を適用。**確定日の反映: On Your Data 廃止 **2026-10-14**、コンテナプロトコル 1.0.0 ブロック開始 **2026-07-31**。古い記述の更新: **Foundry Local GA(2026-04-09 公式ブログ)**、Toolbox GA、FLUX.2 GA、tsuzumi-7b Legacy(2026-08-31 リタイア)、Groundedness detection 6→4 リージョン、SharePoint「ライセンス必須」→ pay-as-you-go 併記、全遮断 PE のポータル対応。誤りの訂正: capabilityHost 変更は「プロジェクト再作成」でなく「capability host の削除・再作成」、MACAE の org(microsoft)、FT デプロイ上限 10/リソース、Cosmos DB コンテナー 3〜5 個(追加関係)、agent identity とマネージド ID の混同、ガードレール既定閾値「画像 Low」→ テキスト・画像とも Medium、File Search「固定」→ 既定値。ミスリードの限定: 「国内処理必須 → Data Zone(APAC)」を Regional Standard(Japan East)に分離、A2A「ポータル未対応」を incoming 有効化に限定、Front Door パターンのベースライン記事への帰属を Front Door 一般ドキュメントに修正、Cost Analysis「約5時間遅延」を時間非特定に。公式間不整合の両論併記: AI Red Teaming リージョン(2 vs 5)、Traces VNet(非対応 vs プレビュー)、azd コマンド列挙 |
 | 2026-09-26 | **四半期定期更新(README・01・02・03・11)。**AAC 3 本は ms.date 2026-06-17 のままだが本文加筆を GitHub 履歴で確認し反映(Baseline: private MCP サブネット `snet-mcpServers`・hosted agent の egress / per-user 分離の適用条件・モデル×ツール選定の注意・ID 分離〈Assignment restrictions プレビュー〉、ALZ 版: spoke 要求 `/22`→`/21`)。**ステータス更新:** Routines GA(2026-09-24)、A2A ツール v1.0 GA、Copilot Studio の A2A 接続 GA(2026-04、11 章の「いずれもプレビュー」は誤り)、Toolbox 内 Tool search GA、Model router のリージョン拡大(GS 32 / DZ 23)、継続的評価=プレビュー、Azure Government で MCP が Yes。**期限:** プロトコル 1.0.0・初期プレビュー基盤・Assistants API を到来済みに。**訂正:** Japan West の Class A 非対応(解消)、Regional Standard の「単一リージョン処理」(正: geography 内)、RBAC「SDK 非対応と明記」(正: 記載なし)、Azure Functions ツール GA(正: 公式間不整合)、prompt agent の `FixedRatio` による % 分割(正: No traffic splitting)。**追記:** capability settings(プレビュー)による BYO 構成の変更=プロジェクト再作成、hosted agent ガードレールのフェイルオープン、2026-09-01 の Data Zone / Regional 価格プレミアム、Dynamic AI agents at scale の URL 特定、Copilot Studio の GitHub Copilot harness と Foundry 接続の前提(Activity エンドポイント) |
+| 2026-09-29 | **features 差分更新(2026-09-29)の波及。**04: 「Foundry IQ の MCP エンドポイントはプレビュー API 必須」を訂正(KB の MCP は GA `2026-04-01` でも extractive で利用可。Agent Service 側の RemoteTool 接続はプレビュー)/ 05: hosted agent のユーザー委任アクセス(アプリ管理の OBO+`x-client-*` 転送、公式ページ 2026-09-28 新設)を認可パターンに追記 / 08: gpt-realtime-2.1 系が Voice Live 上でも GA(2026-09-29)、`mai-transcribe-2` 明示指定・`phrase_list` 対応。図(a5 の MCP ラベル・d1 の capability host 注記・b1 の Azure Functions (GA) ラベル)は別担当に波及を連絡 |

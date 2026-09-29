@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="08-ユースケース編-e-音声・文書処理-idp-・大量バッチ・マルチモーダル・m365-連携">08. ユースケース編 E — 音声・文書処理(IDP)・大量バッチ・マルチモーダル・M365 連携</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#パターン一覧">パターン一覧</a></li><li><a href="#e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</a></li><li><a href="#e2-文書処理・idp-intelligent-document-processing">E2. 文書処理・IDP(Intelligent Document Processing)</a></li><li><a href="#e3-大量バッチ処理">E3. 大量バッチ処理</a></li><li><a href="#e4-マルチモーダル生成-画像・動画">E4. マルチモーダル生成(画像・動画)</a></li><li><a href="#e5-m365-teams-連携">E5. M365 / Teams 連携</a></li><li><a href="#e6-ファインチューニング-モデルカスタマイズの運用">E6. ファインチューニング / モデルカスタマイズの運用</a></li><li><a href="#この章で-公式に確認できなかった-もの">この章で「公式に確認できなかった」もの</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(Voice Live のステータス・モデル・クォータ、voice-based agents(preview)の電話チャネル、CU 上限値、画像/動画モデルのリタイア日と gpt-image-2.5 系、Content provenance 新記事、Work IQ、FT 対応モデルを一次情報で再検証)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(Voice Live のステータス・モデル・クォータ、voice-based agents(preview)の電話チャネル、CU 上限値、画像/動画モデルのリタイア日と gpt-image-2.5 系、Content provenance 新記事、Work IQ、FT 対応モデルを一次情報で再検証) / 2026-09-29(gpt-realtime-2.1 系が Voice Live 上でも GA 化したこと、<code>mai-transcribe-2</code> の明示指定・<code>phrase_list</code> 対応を反映)</p></blockquote>
 <p>チャット / RAG / 業務自動化に収まらない類型をまとめる。共通するのは、<strong>Foundry Agent Service の外側にある Foundry Tools(旧 Azure AI Services)やモデル固有の API が主役になる</strong>点で、エージェント中心の設計論がそのままは当てはまらない。</p>
 <h2 id="パターン一覧">パターン一覧</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -139,7 +139,7 @@ footer {
 </tbody></table></div>
 <hr>
 <h2 id="e1-音声エージェント-コンタクトセンター">E1. 音声エージェント / コンタクトセンター</h2>
-<p><img src="../images/e1-voice.png" alt="E1 音声エージェント(Voice Live + ACS)のアーキテクチャ図" loading="lazy"></p>
+<p><img src="../images/e1-voice.png" alt="E1 音声エージェント(ACS → 自社ミドル層 → Voice Live、voice-based agent の電話チャネル〈プレビュー〉)のアーキテクチャ図" loading="lazy"></p>
 <h3 id="voice-live-api-とは">Voice Live API とは</h3>
 <p><strong>フルマネージドの speech-to-speech 統合 API。</strong>STT + 生成 AI + TTS + アバターを<strong>単一のインターフェース</strong>で提供する。「STT → LLM → TTS」を自分でつなぐ必要がなく、公式も「<strong>デプロイも管理も不要</strong>」と明記している。</p>
 <div class="tablewrap"><table><thead><tr>
@@ -148,11 +148,11 @@ footer {
 </tr></thead><tbody>
 <tr>
 <td>STT</td>
-<td>Azure speech to text(既定)/ <code>mai-transcribe</code>(プレビュー。現在は <code>mai-transcribe-2</code> のエイリアス)/ <code>whisper-1</code> / <code>gpt-4o-transcribe</code> / <code>gpt-4o-mini-transcribe</code> / <code>gpt-4o-transcribe-diarize</code></td>
+<td>Azure speech to text(既定)/ <code>mai-transcribe</code>(プレビュー。現在は <code>mai-transcribe-2</code> のエイリアス。2026-09-24 以降は <code>mai-transcribe-2</code> の明示指定も可、<code>phrase_list</code> も両者で有効)/ <code>whisper-1</code> / <code>gpt-4o-transcribe</code> / <code>gpt-4o-mini-transcribe</code> / <code>gpt-4o-transcribe-diarize</code></td>
 </tr>
 <tr>
 <td>LLM</td>
-<td><code>gpt-realtime-2.1</code> / <code>-2.1-mini</code> / <code>-2.1-datazone</code>(Voice Live 上はプレビュー)/ <code>gpt-realtime-1.5</code> / <code>gpt-realtime</code> / <code>gpt-realtime-mini</code>(各 <code>-datazone</code> 版あり)/ <code>gpt-4o</code> 系 / <code>gpt-4.1</code> 系 / <code>gpt-5</code>〜<code>gpt-5.4</code> 系 / <code>gpt-5.6-terra</code> / <code>gpt-5.6-luna</code> / <code>phi4-mm-realtime</code>(プレビュー)/ <code>azure-realtime</code>(2026-07-25 GA)。<code>gpt-5.5</code> / <code>gpt-5.4-mini</code> / <code>gpt-5.4-nano</code> は事前デプロイされず BYOM 経由(overview 2026-09-06 版)</td>
+<td><code>gpt-realtime-2.1</code> / <code>-2.1-mini</code> / <code>-2.1-datazone</code>(<strong>2026-09-29 に Voice Live 上でも GA</strong>。それまではプレビュー表記)/ <code>gpt-realtime-1.5</code> / <code>gpt-realtime</code> / <code>gpt-realtime-mini</code>(各 <code>-datazone</code> 版あり)/ <code>gpt-4o</code> 系 / <code>gpt-4.1</code> 系 / <code>gpt-5</code>〜<code>gpt-5.4</code> 系 / <code>gpt-5.6-terra</code> / <code>gpt-5.6-luna</code> / <code>phi4-mm-realtime</code>(プレビュー)/ <code>azure-realtime</code>(2026-07-25 GA)。<code>gpt-5.5</code> / <code>gpt-5.4-mini</code> / <code>gpt-5.4-nano</code> は事前デプロイされず BYOM 経由(overview 2026-09-06 版)</td>
 </tr>
 <tr>
 <td>TTS</td>
@@ -208,7 +208,7 @@ footer {
 <p>個別機能で明示的にプレビューなのは:</p>
 <ul>
 <li><strong>WebRTC 接続</strong>(SLA なし・本番非推奨の標準免責文つき。webrtc ページ 2026-04-30 版)</li>
-<li><code>gpt-realtime-2.1</code> 系(Voice Live の対応表上。リタイア表 2026-09-21 版では gpt-realtime-2.1 / -mini は GA)、<code>phi4-mm-realtime</code>、<code>mai-transcribe</code>(<code>mai-transcribe-2</code>)、<code>MAI-Voice-2-Flash</code>、BYOM の Anthropic プロファイル、評価ハーネス(2026-05)</li>
+<li><del><code>gpt-realtime-2.1</code> 系</del>(<strong>2026-09-29 に Voice Live の対応表でも preview ラベルが外れ GA</strong>。リタイア表 2026-09-21 版でも gpt-realtime-2.1 / -mini は GA)、<code>phi4-mm-realtime</code>、<code>mai-transcribe</code>(<code>mai-transcribe-2</code>)、<code>MAI-Voice-2-Flash</code>、BYOM の Anthropic プロファイル、評価ハーネス(2026-05)</li>
 <li><del>auto-truncation</del>(2026-04 に GA。2026-07-30 版の記載は誤り)</li>
 </ul>
 <blockquote><p>本番設計では <strong>WebRTC を外し WebSocket に寄せる</strong>のが安全。</p></blockquote>
@@ -787,7 +787,7 @@ footer {
 <h2 id="e5-m365-teams-連携">E5. M365 / Teams 連携</h2>
 <h3 id="エージェントを-teams-m365-copilot-に公開する">エージェントを Teams / M365 Copilot に公開する</h3>
 <p><strong>公開フロー自体は GA。</strong>安定エンドポイントを Teams アプリマニフェスト化して M365 / Teams のエージェントストアへ公開する。</p>
-<p><img src="../images/e5-m365-channels.png" alt="E5 Teams / M365 公開のアーキテクチャ図" loading="lazy"></p>
+<p><img src="../images/e5-m365-channels.png" alt="E5 Teams / M365 Copilot 公開(Bot Service 経由)と Copilot Studio 連携・Work IQ のアーキテクチャ図" loading="lazy"></p>
 <div class="tablewrap"><table><thead><tr>
 <th>項目</th>
 <th>内容</th>

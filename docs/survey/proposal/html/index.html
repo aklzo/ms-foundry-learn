@@ -90,7 +90,7 @@ footer {
 <body><nav class="site"><a href="index.html" class="current">Foundry 提案実務ガイド</a><a href="01-hearing-sheet.html">01. 要件ヒアリングシート</a><a href="02-cost-estimation.html">02. コスト見積もり手順</a><a href="03-japan-compliance.html">03. 日本規制対応メモ</a><a href="04-azure-knowledge-map.html">04. 前提 Azure 知識マップ</a><a href="05-case-studies.html">05. 公開事例集</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a><a class="xset" href="../../casebook/html/index.html">→ casebook</a></nav>
 <main>
 <h1 id="foundry-提案実務ガイド">Foundry 提案実務ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント構成">ドキュメント構成</a></li><li><a href="#使い方-提案フローとの対応">使い方(提案フローとの対応)</a></li><li><a href="#更新方針">更新方針</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
-<blockquote><p><strong>最終更新:</strong> 2026-07-31 / 2026-09-26(全 5 本を一次情報で再確認)/ <strong>版:</strong> 初版<br><a href="../../features/html/index.html">features(機能ステータス)</a> が「その機能は使えるのか」、<a href="../../architecture/html/index.html">architecture(設計ガイド)</a> が「どう組むか」に答えるのに対し、本セットは <strong>SI の提案活動そのもの</strong>(ヒアリング → 構成決定 → 見積もり → リスク説明)を支援する実務ドキュメント群。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31 / 2026-09-26(全 5 本を一次情報で再確認)/ 2026-09-29(02 / 03 に features 差分更新を波及)/ <strong>版:</strong> 初版<br><a href="../../features/html/index.html">features(機能ステータス)</a> が「その機能は使えるのか」、<a href="../../architecture/html/index.html">architecture(設計ガイド)</a> が「どう組むか」に答えるのに対し、本セットは <strong>SI の提案活動そのもの</strong>(ヒアリング → 構成決定 → 見積もり → リスク説明)を支援する実務ドキュメント群。</p></blockquote>
 <h2 id="ドキュメント構成">ドキュメント構成</h2>
 <div class="tablewrap"><table><thead><tr>
 <th>#</th>
@@ -162,6 +162,10 @@ footer {
 <tr>
 <td>2026-09-26</td>
 <td><strong>全 5 本を一次情報で再確認</strong>。01: Routines GA(2026-09-24)反映・hosted agent 同時セッション上限を 2 段(サブスクリプション×リージョン既定 2,000 / 1,000 + サブネット IP)に訂正・トラフィック分割は prompt / hosted とも非対応に訂正・閉域ツール表(File Search の公式表記変化)・Data Zone APAC の定義・Assistants 廃止済み。02: 課金単位を追記(hosted agent vCPU / GiB 時間・Foundry IQ Serverless 2026-09-13 課金開始・Voice Live・CU 3 層・Routines)、Data Zone / Regional 価格プレミアム(2026-09-01)、flex フォールバック廃止、Model router の制約更新、モデル単価 URL 差し替え。03: 国内処理 = geography 型(Japan East / West)、令和 8 年改正個情法・AI 法関連(AI 事業者ガイドライン 第 1.2 版)、DS-920、ISMAP の learn 掲載ページ、Work IQ の境界外処理、トレース VNet の現行表記。04: AI-102 退役 → AI-103、capability settings 移行中の注記。05: 日本の Foundry 事例 3 件追加・巡回先 URL 更新</td>
+</tr>
+<tr>
+<td>2026-09-29</td>
+<td>features 差分更新の波及。<strong>02:</strong> Flex 処理の行を専用ページ(preview・Standard 比 50% 割引・当初 gpt-5.6-sol のみ・SLA なし・429 非課金)で更新し「専用ページが見当たらず要確認」を解消 / <strong>03:</strong> §2 のパートナーモデル行に Fireworks on Foundry のデータ処理場所(Microsoft 施設外の Fireworks GPU・現在 US のみ・SOC 1 Type 2 非準拠)と claude-sonnet-5-5 を追記</td>
 </tr>
 </tbody></table></div>
 </main>

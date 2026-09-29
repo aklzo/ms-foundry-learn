@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(Voice Live のステータス・モデル・クォータ、voice-based agents(preview)の電話チャネル、CU 上限値、画像/動画モデルのリタイア日と gpt-image-2.5 系、Content provenance 新記事、Work IQ、FT 対応モデルを一次情報で再検証)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(Voice Live のステータス・モデル・クォータ、voice-based agents(preview)の電話チャネル、CU 上限値、画像/動画モデルのリタイア日と gpt-image-2.5 系、Content provenance 新記事、Work IQ、FT 対応モデルを一次情報で再検証) / 2026-09-29(gpt-realtime-2.1 系が Voice Live 上でも GA 化したこと、`mai-transcribe-2` の明示指定・`phrase_list` 対応を反映)
 
 チャット / RAG / 業務自動化に収まらない類型をまとめる。共通するのは、**Foundry Agent Service の外側にある Foundry Tools(旧 Azure AI Services)やモデル固有の API が主役になる**点で、エージェント中心の設計論がそのままは当てはまらない。
 
@@ -21,7 +21,7 @@
 
 ## E1. 音声エージェント / コンタクトセンター
 
-![E1 音声エージェント(Voice Live + ACS)のアーキテクチャ図](./images/e1-voice.png)
+![E1 音声エージェント(ACS → 自社ミドル層 → Voice Live、voice-based agent の電話チャネル〈プレビュー〉)のアーキテクチャ図](./images/e1-voice.png)
 
 ### Voice Live API とは
 
@@ -29,8 +29,8 @@
 
 | 構成要素 | 選択肢 |
 |---|---|
-| STT | Azure speech to text(既定)/ `mai-transcribe`(プレビュー。現在は `mai-transcribe-2` のエイリアス)/ `whisper-1` / `gpt-4o-transcribe` / `gpt-4o-mini-transcribe` / `gpt-4o-transcribe-diarize` |
-| LLM | `gpt-realtime-2.1` / `-2.1-mini` / `-2.1-datazone`(Voice Live 上はプレビュー)/ `gpt-realtime-1.5` / `gpt-realtime` / `gpt-realtime-mini`(各 `-datazone` 版あり)/ `gpt-4o` 系 / `gpt-4.1` 系 / `gpt-5`〜`gpt-5.4` 系 / `gpt-5.6-terra` / `gpt-5.6-luna` / `phi4-mm-realtime`(プレビュー)/ `azure-realtime`(2026-07-25 GA)。`gpt-5.5` / `gpt-5.4-mini` / `gpt-5.4-nano` は事前デプロイされず BYOM 経由(overview 2026-09-06 版) |
+| STT | Azure speech to text(既定)/ `mai-transcribe`(プレビュー。現在は `mai-transcribe-2` のエイリアス。2026-09-24 以降は `mai-transcribe-2` の明示指定も可、`phrase_list` も両者で有効)/ `whisper-1` / `gpt-4o-transcribe` / `gpt-4o-mini-transcribe` / `gpt-4o-transcribe-diarize` |
+| LLM | `gpt-realtime-2.1` / `-2.1-mini` / `-2.1-datazone`(**2026-09-29 に Voice Live 上でも GA**。それまではプレビュー表記)/ `gpt-realtime-1.5` / `gpt-realtime` / `gpt-realtime-mini`(各 `-datazone` 版あり)/ `gpt-4o` 系 / `gpt-4.1` 系 / `gpt-5`〜`gpt-5.4` 系 / `gpt-5.6-terra` / `gpt-5.6-luna` / `phi4-mm-realtime`(プレビュー)/ `azure-realtime`(2026-07-25 GA)。`gpt-5.5` / `gpt-5.4-mini` / `gpt-5.4-nano` は事前デプロイされず BYOM 経由(overview 2026-09-06 版) |
 | TTS | 600+ voices・150+ locales、HD voices、`MAI-Voice-2-Flash`(プレビュー)、Custom Voice(限定アクセス) |
 | アバター | standard / custom / **photo avatar**(静止画 1 枚から talking head)。viseme 出力、word 単位タイムスタンプ |
 | 会話品質 | ノイズ抑制、エコーキャンセル、**日本語対応のセマンティック VAD**、フィラー除去、barge-in(割り込み)、auto-truncate |
@@ -53,7 +53,7 @@
 個別機能で明示的にプレビューなのは:
 
 - **WebRTC 接続**(SLA なし・本番非推奨の標準免責文つき。webrtc ページ 2026-04-30 版)
-- `gpt-realtime-2.1` 系(Voice Live の対応表上。リタイア表 2026-09-21 版では gpt-realtime-2.1 / -mini は GA)、`phi4-mm-realtime`、`mai-transcribe`(`mai-transcribe-2`)、`MAI-Voice-2-Flash`、BYOM の Anthropic プロファイル、評価ハーネス(2026-05)
+- ~~`gpt-realtime-2.1` 系~~(**2026-09-29 に Voice Live の対応表でも preview ラベルが外れ GA**。リタイア表 2026-09-21 版でも gpt-realtime-2.1 / -mini は GA)、`phi4-mm-realtime`、`mai-transcribe`(`mai-transcribe-2`)、`MAI-Voice-2-Flash`、BYOM の Anthropic プロファイル、評価ハーネス(2026-05)
 - ~~auto-truncation~~(2026-04 に GA。2026-07-30 版の記載は誤り)
 
 > 本番設計では **WebRTC を外し WebSocket に寄せる**のが安全。
@@ -453,7 +453,7 @@ OpenAI 互換側は Create / Get Status / Download / **List** / **Delete** の 5
 
 **公開フロー自体は GA。**安定エンドポイントを Teams アプリマニフェスト化して M365 / Teams のエージェントストアへ公開する。
 
-![E5 Teams / M365 公開のアーキテクチャ図](./images/e5-m365-channels.png)
+![E5 Teams / M365 Copilot 公開(Bot Service 経由)と Copilot Studio 連携・Work IQ のアーキテクチャ図](./images/e5-m365-channels.png)
 
 | 項目 | 内容 |
 |---|---|

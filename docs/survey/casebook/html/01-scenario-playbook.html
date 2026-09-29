@@ -218,7 +218,7 @@ footer {
 </ul>
 <p><strong>詰まりどころ:</strong> P-R01・R02・R05・R07・R09・R13(日本語アナライザー)・P-I05(API キーで始めてナレッジを足すと Entra 必須)・P-X12(Teams 公開でナレッジ付きだけ失敗)</p>
 <p><strong>見積もり・契約で効く点:</strong> AI Search のティア(Basic 以上、閉域なら PE 対応 SKU)/ M365 Copilot ライセンスの有無 / モデル更改(リタイア 12〜18 か月、P-M07)の運用を契約に含めるか / 評価ハーネス(20〜30 件の正解セット)を PoC の成果物に</p>
-<p><strong>実証状況:</strong> <a href="../../../labs/maf-ports/ports/corrective-rag/README.md">port 4(corrective-rag)</a>・<a href="../../../labs/maf-ports/ports/db-routing-iq/README.md">port 10(Foundry IQ)</a>・<a href="../../../labs/foundry-probes/probes/03-file-search/NOTES.md">probe 03(File Search)</a>・<a href="03-case-helpdesk.html">外部案件 §4</a>(File Search の限界)</p>
+<p><strong>実証状況:</strong> <a href="../../../../labs/maf-ports/ports/corrective-rag/README.md">port 4(corrective-rag)</a>・<a href="../../../../labs/maf-ports/ports/db-routing-iq/README.md">port 10(Foundry IQ)</a>・<a href="../../../../labs/foundry-probes/probes/03-file-search/NOTES.md">probe 03(File Search)</a>・<a href="03-case-helpdesk.html">外部案件 §4</a>(File Search の限界)</p>
 <hr>
 <h2 id="s-02-社内ヘルプデスク-itsm-servicenow-連携">S-02. 社内ヘルプデスク × ITSM(ServiceNow)連携</h2>
 <p><strong>要件の言葉:</strong> 「問い合わせを AI が聞き返して一次回答」「チケットに要約を書き戻す」「解決 / 引き継ぎの判定」「データの正は ITSM 側」「添付は保存したくない」</p>
@@ -303,7 +303,7 @@ footer {
 </ul>
 <p><strong>詰まりどころ:</strong> P-H05(publish で identity 変更)・H07(プロトコル選定)・H17・H18(長時間 workflow のチェックポイント)・P-A11・A12(Routines のリージョン・dispatch identity)・P-I07(audience)・P-F02・F04・F06・F13(一時エラーで workflow 全体が終了)・P-G05・P-X19(Functions ツールは standard のみ)・P-X20(MCP OAuth)</p>
 <p><strong>見積もり・契約で効く点:</strong> hosted agent の compute(セッション × サイズ、P-H14)/ Durable Task Scheduler / 業務監査ログのストア / 「承認 UI」はスコープに入るか(Teams なら P-X 系)</p>
-<p><strong>実証状況:</strong> <a href="../../../labs/maf-ports/ports/research-handoff/README.md">port 3(handoff → switch-case)</a>・<a href="../../../labs/maf-ports/ports/game-design-team/README.md">port 7(リング)</a>・<a href="../../../labs/maf-ports/ports/governed-agent/README.md">port 14(middleware ガバナンス)</a>。<strong>Durable Extension・HITL の数日待ちは未実証</strong></p>
+<p><strong>実証状況:</strong> <a href="../../../../labs/maf-ports/ports/research-handoff/README.md">port 3(handoff → switch-case)</a>・<a href="../../../../labs/maf-ports/ports/game-design-team/README.md">port 7(リング)</a>・<a href="../../../../labs/maf-ports/ports/governed-agent/README.md">port 14(middleware ガバナンス)</a>。<strong>Durable Extension・HITL の数日待ちは未実証</strong></p>
 <hr>
 <h2 id="s-04-閉域必須の規制業種-金融・公共">S-04. 閉域必須の規制業種(金融・公共)</h2>
 <p><strong>要件の言葉:</strong> 「インターネットに出ない」「プライベートエンドポイントで」「監査で通信経路を説明できること」「データは国内」</p>
@@ -392,7 +392,7 @@ footer {
 </ul>
 <p><strong>詰まりどころ:</strong> P-A05・P-G01〜G04・G11(hosted agent のストリーム出力モデレーションが無言でスキップ)・P-X15〜X17・P-M05・M06(model router が Grok へ)・P-M12(PTU 誤設定の請求事故)</p>
 <p><strong>見積もり・契約で効く点:</strong> WAF チューニング工数 / APIM のティア / PTU か Standard か(スパイクは spillover)/ 評価と継続評価(judge のクォータ、P-O06)</p>
-<p><strong>実証状況:</strong> <a href="../../../labs/foundry-probes/probes/07-guardrails/NOTES.md">probe 07(ガードレール)</a>・<a href="../../../labs/foundry-probes/probes/05-model-router/NOTES.md">probe 05(model router)</a>。<strong>WAF / APIM を含む公開構成の E2E は未実証</strong></p>
+<p><strong>実証状況:</strong> <a href="../../../../labs/foundry-probes/probes/07-guardrails/NOTES.md">probe 07(ガードレール)</a>・<a href="../../../../labs/foundry-probes/probes/05-model-router/NOTES.md">probe 05(model router)</a>。<strong>WAF / APIM を含む公開構成の E2E は未実証</strong></p>
 <hr>
 <h2 id="s-06-マルチテナント-saas">S-06. マルチテナント SaaS</h2>
 <p><strong>要件の言葉:</strong> 「複数のお客様に同じエージェントを提供」「テナントごとに課金」「テナント間でデータが混ざらない証明」</p>
@@ -424,7 +424,7 @@ footer {
 </ul>
 <p><strong>詰まりどころ:</strong> P-O01・P-M01・M02・M07・M15(新モデル直後のプロジェクト面 500)・P-I05・I06・P-A01(v1 / v2 混在)・P-A03(Assistants 廃止)・P-F14(既存の LangChain / llama-index 系と <code>openai&gt;=3</code> 必須の Foundry SDK が同居できない)</p>
 <p><strong>見積もり・契約で効く点:</strong> 自前オーケストレーションの保守工数 / モデル更改の運用(契約論点)/ 評価基盤を最初に作るか</p>
-<p><strong>実証状況:</strong> <a href="03-case-helpdesk.html">外部案件 v3</a>(AOAI chat completions + 自前 function calling on ACA)・<a href="../../tech-selection-guide.md#1-3-フレームワーク書き換えコストの実測感全ポート">tech-selection-guide §1-3</a>(フレームワーク書き換えの実測感)</p>
+<p><strong>実証状況:</strong> <a href="03-case-helpdesk.html">外部案件 v3</a>(AOAI chat completions + 自前 function calling on ACA)・<a href="../../../tech-selection-guide.md#1-3-フレームワーク書き換えコストの実測感全ポート">tech-selection-guide §1-3</a>(フレームワーク書き換えの実測感)</p>
 <hr>
 <h2 id="s-08-copilot-studio-で始めた業務部門から-限界-と言われた">S-08. Copilot Studio で始めた業務部門から「限界」と言われた</h2>
 <p><strong>要件の言葉:</strong> 「Copilot Studio で作ったが回答精度が上がらない」「ツールが増えて誤選択する」「基幹 API を叩きたい」「業務部門が引き続き触りたい」</p>
@@ -456,7 +456,7 @@ footer {
 </ul>
 <p><strong>詰まりどころ:</strong> P-D01〜D04・P-R13・P-M03(CU のリージョン)</p>
 <p><strong>見積もり・契約で効く点:</strong> CU の contextualization トークン別建て / advanced レート(agentic・ラベル付き)/ ページ・サイズ上限 / 前処理(画像入り PDF・文字エスケープ正規化)の工数</p>
-<p><strong>実証状況:</strong> <strong><a href="../../../labs/cu-video-rag/README.md">cu-video-rag</a></strong>(104 本・111 クエリ・ragas、CER 0.44%、ans@3 0.67、コスト $12)</p>
+<p><strong>実証状況:</strong> <strong><a href="../../../../labs/cu-video-rag/README.md">cu-video-rag</a></strong>(104 本・111 クエリ・ragas、CER 0.44%、ans@3 0.67、コスト $12)</p>
 <hr>
 <h2 id="s-10-音声エージェント-コンタクトセンター">S-10. 音声エージェント(コンタクトセンター)</h2>
 <p><strong>要件の言葉:</strong> 「電話で受け付けたい」「リアルタイムで対話」「日本語」「通話録音は国内に」</p>
@@ -472,7 +472,7 @@ footer {
 </ul>
 <p><strong>詰まりどころ:</strong> P-D05〜D07・P-M08・P-G06</p>
 <p><strong>見積もり・契約で効く点:</strong> Voice Live のセッション上限・クォータ(architecture 08 E1)/ ACS の通話料 / マイク・電話の実機検証環境 / プレビュー依存の明示(Agents 連携面・BYO model・voice-based prompt agent〈<code>kind: voice</code>〉はプレビュー)</p>
-<p><strong>実証状況:</strong> <a href="../../../labs/maf-ports/ports/claim-voice-live/README.md">port 12(claim-voice-live)</a>(WebSocket 接続 + ツールループまで。<strong>実機音声・電話は未実証</strong>)</p>
+<p><strong>実証状況:</strong> <a href="../../../../labs/maf-ports/ports/claim-voice-live/README.md">port 12(claim-voice-live)</a>(WebSocket 接続 + ツールループまで。<strong>実機音声・電話は未実証</strong>)</p>
 <hr>
 <h2 id="s-11-廃止期限駆動の移行案件">S-11. 廃止期限駆動の移行案件</h2>
 <p><strong>要件の言葉:</strong> 「Assistants API で作ったものがある」「prompt flow で組んだ」「ハブベースのプロジェクト」「Azure OpenAI On Your Data で RAG」「去年の hosted agent プレビューで作った」</p>
@@ -530,7 +530,7 @@ footer {
 </ul>
 <p><strong>詰まりどころ:</strong> P-A01〜A03・A10・P-H15・P-F01(MAF のマイナー破壊的変更)・F07・F10・P-R12・P-N17</p>
 <p><strong>見積もり・契約で効く点:</strong> 会話履歴の移行(なし前提)/ 2 クライアント構成への改修範囲 / 評価基盤(移行の合否判定)/ 期限内に PoC → 本番が収まるか(7-3)</p>
-<p><strong>実証状況:</strong> <a href="../../tech-selection-guide.md#1-3-フレームワーク書き換えコストの実測感全ポート">tech-selection-guide §1-3</a>(13 パターンの書き換え実測)・<a href="../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">port 11</a>(新基盤 hosted agent)</p>
+<p><strong>実証状況:</strong> <a href="../../../tech-selection-guide.md#1-3-フレームワーク書き換えコストの実測感全ポート">tech-selection-guide §1-3</a>(13 パターンの書き換え実測)・<a href="../../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">port 11</a>(新基盤 hosted agent)</p>
 <hr>
 <h2 id="s-12-顧客閉域環境への納品-ci-cd・構築・搬入・プロンプト運用">S-12. 顧客閉域環境への納品(CI/CD・構築・搬入・プロンプト運用)</h2>
 <p><strong>要件の言葉:</strong> 「弊社の閉鎖環境に構築して引き渡してほしい」「ソースコードも弊社環境に」「外部 SaaS(GitHub)は使えない」「運用後にプロンプトを直したい」</p>

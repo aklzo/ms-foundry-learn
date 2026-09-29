@@ -206,6 +206,7 @@ def fix_link(url: str) -> str:
 
     同ディレクトリ:      ./03-x.md            -> 03-x.html
     他ドキュメントセット: ../features/03-x.md  -> ../../features/html/03-x.html
+    その他の相対リンク:   ../../x.md           -> ../../../x.md(html/ の 1 階層分を補正)
     """
     if url.startswith(("http://", "https://", "#", "mailto:")):
         return url
@@ -220,7 +221,11 @@ def fix_link(url: str) -> str:
     m = re.match(r"^(?:\./)?(images/[\w.-]+)$", url)
     if m:
         return f"../{m.group(1)}"
-    return url
+    if url.startswith("/"):
+        return url
+    # それ以外の相対リンク(survey 外の MD・labs・diagrams/ など)は、HTML が html/ に
+    # 1 階層深く出力される分だけ上に戻す(例: ../../tech-selection-guide.md -> ../../../tech-selection-guide.md)
+    return "../" + url.removeprefix("./")
 
 
 def fix_img(url: str) -> str:

@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="03-日本規制対応メモ-ismap-fisc-個情法-医療">03. 日本規制対応メモ(ISMAP / FISC / 個情法 / 医療)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#0-前提-データフローの4層整理">0. 前提: データフローの4層整理</a></li><li><a href="#1-ismap-政府情報システム">1. ISMAP(政府情報システム)</a></li><li><a href="#2-データ所在-全規制共通の土台">2. データ所在(全規制共通の土台)</a></li><li><a href="#3-個人情報保護法">3. 個人情報保護法</a></li><li><a href="#4-金融-fisc-安全対策基準">4. 金融(FISC 安全対策基準)</a></li><li><a href="#5-医療-3省2ガイドライン">5. 医療(3省2ガイドライン)</a></li><li><a href="#6-契約・知財まわり-業種横断">6. 契約・知財まわり(業種横断)</a></li><li><a href="#7-顧客からの定番質問と回答の型">7. 顧客からの定番質問と回答の型</a></li><li><a href="#出典-主要">出典(主要)</a></li></ul></div>
 <p><a href="index.html">← 提案実務ガイド TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-31 / 2026-09-26(Data Zone APAC・閉域ツール表・トレース VNet の現行表記、個情法 令和 8 年改正・AI 法関連の最新版、ISMAP の learn 掲載ページ、Work IQ の境界外処理を反映)<br><strong>免責: 本メモは SI の技術側が論点を整理するためのもの。法解釈・規制適合の最終判断は必ず顧客の法務・コンプライアンス部門と行うこと。</strong>「検証済み」と記した項目は 2026-07 時点の learn.microsoft.com 現行ページで確認済みの事実(<a href="../../features/html/index.html">features</a> / <a href="../../architecture/html/index.html">architecture</a> の調査に基づく)。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-31 / 2026-09-26(Data Zone APAC・閉域ツール表・トレース VNet の現行表記、個情法 令和 8 年改正・AI 法関連の最新版、ISMAP の learn 掲載ページ、Work IQ の境界外処理を反映) / 2026-09-29(Fireworks on Foundry のデータ処理場所〈Microsoft 施設外・US のみ〉と claude-sonnet-5-5 を §2 に反映)<br><strong>免責: 本メモは SI の技術側が論点を整理するためのもの。法解釈・規制適合の最終判断は必ず顧客の法務・コンプライアンス部門と行うこと。</strong>「検証済み」と記した項目は 2026-07 時点の learn.microsoft.com 現行ページで確認済みの事実(<a href="../../features/html/index.html">features</a> / <a href="../../architecture/html/index.html">architecture</a> の調査に基づく)。</p></blockquote>
 <h2 id="0-前提-データフローの4層整理">0. 前提: データフローの4層整理</h2>
 <p>規制の議論はまず「どのデータがどこへ行くか」を4層に分けると噛み合う:</p>
 <div class="tablewrap"><table><thead><tr>
@@ -161,8 +161,8 @@ footer {
 </tr>
 <tr>
 <td>Claude 等パートナーモデル</td>
-<td>Hosted on Azure 版は US 系(Data Zone US)。<strong>日本国内処理の選択肢はない</strong>(2026-07 時点。models-from-partners 2026-09-21 版でも Claude の Data Zone は US のみ・APAC なし)</td>
-<td>国内要件がある案件では Azure OpenAI 系を選ぶ</td>
+<td>Hosted on Azure 版は US 系(Data Zone US)。<strong>日本国内処理の選択肢はない</strong>(2026-07 時点。models-from-partners 2026-09-21 版でも Claude の Data Zone は US のみ・APAC なし。2026-09-28 追加の <code>claude-sonnet-5-5</code> も同じ)。<strong>Fireworks 経由の <code>FW-*</code> モデルは推論が Fireworks の GPU 上で行われ Microsoft 施設外に出る</strong>(Fireworks は Microsoft のサブプロセッサで DPA の範囲内。提供は現時点で US のみ・SOC 1 Type 2 非準拠 — <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/fireworks/privacy-compliance-faq">Fireworks privacy &amp; compliance FAQ</a> 2026-09-28 新設)</td>
+<td>国内要件がある案件では Azure OpenAI 系を選ぶ。<code>FW-*</code> は候補から外す</td>
 </tr>
 </tbody></table></div>
 <h2 id="3-個人情報保護法">3. 個人情報保護法</h2>

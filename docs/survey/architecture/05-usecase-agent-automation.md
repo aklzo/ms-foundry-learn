@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(B2 に外部案件の現場知見を追記) / 2026-09-26(定期更新: Routines GA・A2A v1.0 GA・hosted agent の idle timeout 可変化と長時間実行〈プレビュー〉・新エージェントオブジェクトモデルの identity・Connected Agents 非対応の明記・connector namespace 型 MCP を反映)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(B2 に外部案件の現場知見を追記) / 2026-09-26(定期更新: Routines GA・A2A v1.0 GA・hosted agent の idle timeout 可変化と長時間実行〈プレビュー〉・新エージェントオブジェクトモデルの identity・Connected Agents 非対応の明記・connector namespace 型 MCP を反映) / 2026-09-29(hosted agent の OBO トークン転送〈公式ページ新設〉を認可パターンに追記)
 
 「検索して答える」で終わらず、**エージェントが業務システムに対して実際にアクションを起こす**類型。RAG チャットとの決定的な違いは、**誤動作が実世界に不可逆な影響を与えうる**ことで、そのため承認・監査・冪等性・権限の設計が主題になる。
 
@@ -58,7 +58,7 @@ WAF が明示している通り:
 |---|---|---|
 | OpenAPI ツール(GA) | anonymous / API キー / マネージド ID | API キーは 1 スキーム / ツール |
 | MCP ツール(GA) | キー / Entra(agent MI・project MI)/ **OAuth ID パススルー(OBO)** | 長時間実行はプレビュー |
-| Azure Functions(GA) | キュー経由 | **standard セットアップのみ(basic 不可)** |
+| Azure Functions(本章初版では GA と記載。※2026-09-29: features 04 では公式ページ間で表記が矛盾し**要確認**、移行ガイドの対応表は「No」) | キュー経由 | **standard セットアップのみ(basic 不可)** |
 | Logic Apps コネクタ → MCP 変換(プレビュー) | コネクタ依存 | 1 コネクタ / ツール、**OAuth 2.0 コネクタ非対応**、マネージドコネクタのみ |
 | connector namespace の managed MCP サーバー(プレビュー、2026-09-26 追記) | **OAuth2 のみ**(エンドユーザーごとに初回同意) | Foundry Tools Catalog の 1,000+ コネクタを Foundry 管理の MCP サーバーとして公開。ポータルは検証済みコネクタのみ、コード(REST/SDK/azd)は制限なし。OAuth2 以外は上の Logic Apps 経路([connectors](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/connectors) 2026-08-19 版) |
 
@@ -78,6 +78,8 @@ WAF が明示している通り:
 |---|---|---|
 | **Attended(OBO / 委任アクセス)** | ユーザーがアプリに認証 → アプリがユーザートークンを Agent Service に渡す → 「エージェント ID + ユーザーの委任権限」を持つトークンに交換 | **ユーザーが同意し認可されているリソースにしかアクセスできない** |
 | **Unattended(アプリケーション専用)** | blueprint を Entra に認証 → agent identity のトークン取得 → ダウンストリーム向けスコープ付きトークン | エージェント自身の RBAC のみ。人間は不在 |
+
+> **2026-09-29 追記 — hosted agent での Attended は「アプリ管理の OBO+ヘッダー転送」。**新設の [Use on-behalf-of flow with hosted agents](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-on-behalf-of-flow)(2026-09-28 公開)は、Foundry がトークン交換するのではなく**バックエンドが OBO 交換した下流トークンを `x-client-*` ヘッダー(例 `x-client-graph-access-token`)でコンテナへ転送**し、`x-ms-user-identity` でユーザーを Foundry に伝える方式を示す。バックエンドのワークロード ID に **Foundry Agent Consumer+組み込みロールに含まれないカスタム data action `…/agents/endpoints/UserIdentityImpersonation/action`** が必要で、`Authorization`(Foundry 向けトークン)はコンテナへ転送されない。下流トークンがコンテナのコードから見えるため、**バックエンドとコンテナが同一アプリの信頼境界内にある場合だけ採用**し、ツール側で認証できるなら Toolbox の認証を、データだけ要るならバックエンドが下流 API を呼ぶ方式を優先する(公式の選択表)。トークンの更新はされないので長時間処理は分割する。
 
 **Entra Agent ID**(公式ページに GA / プレビューのステータス表記なし)により、プロジェクトで最初のエージェントを作った時点で既定の blueprint と agent identity がプロビジョニングされる。
 
@@ -190,7 +192,7 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 
 **まず「本当に必要か」を問う。**多くの案件は単一エージェント + 複数ツールで足りる。マルチエージェントが要るのは「担当領域ごとにプロンプト・ナレッジ・**権限**を分けたい」「並列に調査させたい」場合。
 
-![B4 マルチエージェント(専門分化)のアーキテクチャ図](./images/b4-multi-agent.png)
+![B4 マルチエージェント(専門分化)— MAF オーケストレータ + hosted agent・A2A v1.0 委譲・ビジュアル Workflows 廃止のアーキテクチャ図](./images/b4-multi-agent.png)
 
 ### ⚠ ポータルのビジュアル Workflows は選択肢から外れた
 
@@ -251,7 +253,7 @@ Foundry の Tracing だけに依存しない。理由は 3 つ。
 
 **想定:** 業務部門がフローを保守したい。承認・通知・既存 SaaS 連携が処理の主役で、AI は判断の一部を担う。
 
-![B5 業務フローエンジン主導のアーキテクチャ図](./images/b5-flow-engine.png)
+![B5 業務フローエンジン主導 — Logic Apps agent loop が主役で Foundry を部品に使い、Copilot Studio 接続(プレビュー)と M365 公開(GA)を示すアーキテクチャ図](./images/b5-flow-engine.png)
 
 **Logic Apps の agent loop** は 2 形態ある:
 - **Autonomous agentic workflows** — agent loop と LLM で反復的に判断・実行、人間の介入なし

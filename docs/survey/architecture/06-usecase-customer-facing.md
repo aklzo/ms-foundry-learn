@@ -96,7 +96,7 @@
 
 ## C2. マルチテナント SaaS
 
-![C2 マルチテナント SaaS のアーキテクチャ図](./images/c2-multitenant-saas.png)
+![C2 マルチテナント SaaS — データ API 層でテナント分離・APIM でテナント別計測・共有 / 専用デプロイのアーキテクチャ図](./images/c2-multitenant-saas.png)
 
 ### テナント分離の 3 モデル
 

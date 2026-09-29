@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="03-案件事例-社内ヘルプデスク-servicenow-設計判断が-3-回変わった経緯と実測">03. 案件事例: 社内ヘルプデスク × ServiceNow — 設計判断が 3 回変わった経緯と実測</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この事例から持ち帰るもの-先に結論">この事例から持ち帰るもの(先に結論)</a></li><li><a href="#1-案件の骨格">1. 案件の骨格</a></li><li><a href="#2-判断の変遷-タイムライン">2. 判断の変遷(タイムライン)</a></li><li><a href="#3-v4-の設計判断-adr-12-本の要約">3. v4 の設計判断(ADR 12 本の要約)</a></li><li><a href="#4-実測-2026-08-30・japaneast・2-ラウンド">4. 実測(2026-08-30・japaneast・2 ラウンド)</a></li><li><a href="#5-顧客閉域環境への納品で問題になった点-v2-期の洗い出し-2026-08-07">5. 顧客閉域環境への納品で問題になった点(v2 期の洗い出し、2026-08-07)</a></li><li><a href="#6-提案への含意-一般化">6. 提案への含意(一般化)</a></li><li><a href="#参照">参照</a></li></ul></div>
 <p><a href="index.html">← ケースブック TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-09-04(初版)/ 2026-09-26(公式側の状況変化の注記のみ追加。案件当時の事実・判断は書き換えていない。注記は「※2026-09-26」)<br><strong>出典:</strong> 外部案件リポジトリ <code>foundry-servicenow-helpdesk</code>(非公開)の docs/v2〜v4(ADR・検証計画・実測記録)。本リポジトリの <a href="../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">tech-selection-guide §5</a> に載せた v2/v3 期の実測に、<strong>v4(2026-08-30、hosted agent + standard setup、公開+閉域の 2 ラウンド)の実測</strong>を加えて、判断の変遷ごと記録する。顧客名・固有情報は含まない。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-09-04(初版)/ 2026-09-26(公式側の状況変化の注記のみ追加。案件当時の事実・判断は書き換えていない。注記は「※2026-09-26」)<br><strong>出典:</strong> 外部案件リポジトリ <code>foundry-servicenow-helpdesk</code>(非公開)の docs/v2〜v4(ADR・検証計画・実測記録)。本リポジトリの <a href="../../../tech-selection-guide.md#5-外部案件検証からの追記foundry-servicenow-helpdesk、2026-08-05">tech-selection-guide §5</a> に載せた v2/v3 期の実測に、<strong>v4(2026-08-30、hosted agent + standard setup、公開+閉域の 2 ラウンド)の実測</strong>を加えて、判断の変遷ごと記録する。顧客名・固有情報は含まない。</p></blockquote>
 <h2 id="この事例から持ち帰るもの-先に結論">この事例から持ち帰るもの(先に結論)</h2>
 <ol>
 <li><strong>「Foundry を使うか」は 1 回で決まらない。</strong>同じ案件で「フル活用(v2)→ 意図的撤退(v3)→ hosted agent で再挑戦(v4)」と 3 回判断が変わった。変わった理由は技術の不足ではなく、<strong>顧客制約(データ所在・プレビュー不使用・閉域)の解像度が上がったこと</strong>と、<strong>公式側の対応(standard setup の BYO、hosted agents GA)が追いついたこと</strong>の 2 つ</li>
@@ -238,7 +238,7 @@ footer {
 <tr>
 <td>1</td>
 <td><strong>エージェント面エンドポイント(<code>/agents/{name}/endpoint/protocols/openai/responses</code>)は <code>?api-version=v1</code> クエリ必須</strong>(欠くと 400)。プロジェクトの <code>/openai/v1</code> 面は逆にクエリを拒否 — 非対称</td>
-<td>Routines REST(<a href="../../tech-selection-guide.md#2-実装ナレッジ集ハマりどころ">tech-selection-guide 罠 10</a>)と同型。SDK の <code>default_query</code> で固定</td>
+<td>Routines REST(<a href="../../../tech-selection-guide.md#2-実装ナレッジ集ハマりどころ">tech-selection-guide 罠 10</a>)と同型。SDK の <code>default_query</code> で固定</td>
 </tr>
 <tr>
 <td>2</td>
@@ -398,7 +398,7 @@ footer {
 </ol>
 <h2 id="参照">参照</h2>
 <ul>
-<li>本リポジトリ側の関連: <a href="../../tech-selection-guide.md">tech-selection-guide §5・§6</a> / <a href="../../architecture/html/05-usecase-agent-automation.html">architecture 05 B1・B2</a> / <a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07 §2〜3</a> / <a href="02-pitfalls-index.html">02 詰まりどころ索引</a>(P-H・P-I・P-N 系)</li>
+<li>本リポジトリ側の関連: <a href="../../../tech-selection-guide.md">tech-selection-guide §5・§6</a> / <a href="../../architecture/html/05-usecase-agent-automation.html">architecture 05 B1・B2</a> / <a href="../../architecture/html/07-usecase-regulated-edge.html">architecture 07 §2〜3</a> / <a href="02-pitfalls-index.html">02 詰まりどころ索引</a>(P-H・P-I・P-N 系)</li>
 <li>公式一次情報(v4 GA 証跡で使用): <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/general-availability">Feature readiness at GA</a>(ms.date 2026-08-14)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link">Configure network isolation</a>(2026-08-14)/ <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents">Hosted agents</a>(2026-08-19)。※2026-09-26 注記: 3 ページとも現存。GA 一覧表は ms.date 2026-08-14 のまま内容更新(Routines が GA に)、Configure network isolation は 2026-08-14 のまま、Hosted agents は ms.date 2026-09-11 に更新(idle timeout 下限 2 分、durable state store〈preview〉の記載追加)</li>
 </ul>
 </main>
