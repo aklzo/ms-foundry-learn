@@ -7,6 +7,8 @@
  * スライドは 3 段構成: h1 = 項目タイトル → .msg = スライドメッセージ(主張文)→ ボディ(図中心)。
  * ボディは .msg と .refs の間で上下中央に配置される(flex + auto マージン)。
  * 図解用のコンポーネント(.cards / .gates / .duo / .timeline / .qtree / .axes / .mhs / .flow)を下部に定義。
+ * 第 4 版(2026-09-29)で追加: 全幅アーキ図 .figfull / 要点バッジ列 .keys / アイコン付きカード .card.ic /
+ * 旧→新の対応 .vs / 推奨構成マップ .map / タグ .tag / ラボ一覧 .tiles。背景は白基調(表紙も白+アクセント帯)。
  */
 @import 'default';
 
@@ -30,7 +32,7 @@ section {
   line-height: 1.6;
   color: var(--fg);
   background: #ffffff;
-  padding: 45px 60px 60px;
+  padding: 42px 60px 58px;
   /* 3 段構成のため flex 縦積みに。default テーマの place-content: safe center center を明示的に打ち消す */
   display: flex;
   flex-direction: column;
@@ -45,8 +47,8 @@ section h1 {
   font-size: 1.28em;
   line-height: 1.4;
   border-bottom: 2px solid var(--border);
-  padding-bottom: 0.15em;
-  margin-bottom: 0.4em;
+  padding-bottom: 0.12em;
+  margin-bottom: 0.35em;
   flex: none;
 }
 
@@ -101,6 +103,8 @@ section table {
   line-height: 1.5;
   border-collapse: collapse;
   margin: 0.4em 0;
+  width: 100%;
+  display: table;
 }
 section th, section td {
   border: 1px solid var(--border);
@@ -108,31 +112,33 @@ section th, section td {
   text-align: left;
   vertical-align: top;
 }
-section th { background: var(--nav-bg); }
+section th { background: var(--nav-bg); border-bottom: 2px solid #b9c6d3; }
 section tbody tr:nth-child(even) td { background: #fbfcfd; }
 
 section.dense { font-size: 22px; }
-section.dense table { font-size: 0.6em; line-height: 1.35; }
-section.dense th, section.dense td { padding: 0.2em 0.4em; }
+section.dense table { font-size: 0.74em; line-height: 1.4; }
+section.dense th, section.dense td { padding: 0.26em 0.5em; }
 
 /* 20 行級の全体マップ用 */
 section.xdense { font-size: 21px; }
 section.xdense h1 { margin-bottom: 0.25em; }
-section.xdense table { font-size: 0.55em; line-height: 1.3; margin-left: auto; margin-right: auto; }
-section.xdense th, section.xdense td { padding: 0.15em 0.4em; }
+section.xdense table { font-size: 0.64em; line-height: 1.35; margin-left: auto; margin-right: auto; }
+section.xdense th, section.xdense td { padding: 0.2em 0.45em; }
 
 /* セクション扉・タイトル */
 section.lead {
-  background: var(--accent);
-  color: #ffffff;
-  text-align: center;
+  background: #ffffff;
+  color: var(--fg);
+  text-align: left;
   justify-content: center;
+  padding-left: 96px;
+  border-left: 16px solid var(--accent);
 }
-section.lead h1, section.lead h2 { color: #ffffff; border-bottom: none; }
-section.lead a { color: #cfe6fa; }
-section.lead p { color: #e8f1fa; }
-section.lead footer { color: rgba(255, 255, 255, 0.65); }
-section.lead::after { color: rgba(255, 255, 255, 0.65); }
+section.lead h1 { color: var(--accent); border-bottom: none; font-size: 1.9em; margin-bottom: 0.1em; }
+section.lead h2 { color: var(--fg); font-weight: 600; font-size: 1.15em; margin-top: 0; }
+section.lead p { color: var(--muted); font-size: 0.8em; }
+section.lead .leadicons { display: flex; gap: 0.6em; margin-top: 1.1em; }
+section.lead .leadicons img { width: 44px; height: 44px; border: none; }
 
 section img { background: #ffffff; }
 section p img:not([class*="emoji"]) {
@@ -165,7 +171,7 @@ section p img:not([class*="emoji"]) {
 section .refs {
   margin-top: auto;
   flex: none;
-  font-size: 0.72em;
+  font-size: 0.66em;
   color: var(--muted);
   border-top: 1px solid var(--border);
   padding-top: 0.25em;
@@ -179,9 +185,9 @@ section .refs {
   align-items: start;
 }
 
-section footer { color: var(--muted); font-size: 0.55em; left: 60px; }
+section footer { color: #8a939c; font-size: 0.5em; left: 60px; bottom: 16px; }
 section header { color: var(--muted); font-size: 0.55em; left: 60px; top: 18px; }
-section::after { color: var(--muted); font-size: 0.6em; }
+section::after { color: #8a939c; font-size: 0.55em; bottom: 14px; }
 
 /* ===================================================================
  * 図解コンポーネント(発表資料形式)
@@ -375,3 +381,114 @@ section::after { color: var(--muted); font-size: 0.6em; }
   margin-right: 0.25em;
 }
 .chip.gray { background: var(--muted); }
+
+/* ===================================================================
+ * 第 4 版の追加コンポーネント
+ * =================================================================== */
+
+/* --- 全幅アーキ図: <div class="figfull"><img src="../survey/architecture/images/slide/b2.png"></div>
+ *     図は survey の diagrams/*.py が出力する「スライド用切り出し版」(images/slide/)を使う。
+ *     .keys と組み合わせるときは .figfull.withkeys(図の高さを詰める) --- */
+.figfull { margin: 0.1em 0 0; text-align: center; }
+.figfull img {
+  display: block; margin: 0 auto;
+  max-width: 100%; max-height: 452px; width: auto; height: auto;
+  border: none !important; border-radius: 0 !important;
+}
+.figfull.withkeys img { max-height: 362px; }
+.figfull .cap { font-size: 0.6em; color: var(--muted); margin-top: 0.15em; }
+
+/* --- 要点バッジ列: <div class="keys"><div class="k"><span class="n">1</span>本文</div>...</div> --- */
+.keys { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0.6em; margin: 0.35em 0 0; }
+.keys .k {
+  position: relative; padding: 0.3em 0 0 1.85em;
+  font-size: 0.64em; line-height: 1.45;
+  border-top: 3px solid var(--accent);
+}
+.keys .k > .n { position: absolute; left: 0; top: 0.42em; }
+.keys .k .n, .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.45em; height: 1.45em; border-radius: 50%;
+  background: var(--accent); color: #ffffff; font-weight: 700; font-size: 0.95em; line-height: 1;
+  vertical-align: 0.05em;
+}
+.keys .k.warn { border-top-color: var(--dep); }
+.keys .k.warn .n { background: var(--dep); }
+
+/* --- アイコン付きカード: <div class="card ic"><img src="assets/icons/search.png"><div><div class="t">題</div>本文</div></div> --- */
+.card.ic { display: grid; grid-template-columns: 2.3em 1fr; gap: 0 0.6em; align-items: start; }
+.card.ic > img { width: 2.3em; height: 2.3em; border: none !important; border-radius: 0 !important; background: transparent; margin-top: 0.15em; }
+.cards.c4 .card.ic { grid-template-columns: 1.9em 1fr; }
+.cards.c4 .card.ic > img { width: 1.9em; height: 1.9em; }
+.card.white { background: #ffffff; }
+.card.hl { border-color: var(--accent); background: #eef5fc; }
+
+/* --- タグ(図の注記帯と同じ色分け): <span class="tag cost">課金</span> --- */
+.tag {
+  display: inline-block; font-size: 0.72em; font-weight: 700; line-height: 1.5;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap; vertical-align: 0.08em;
+  color: #57606a; background: #eaeef2;
+}
+.tag.cost { color: #c44a0c; background: #fdebe1; }
+.tag.auth { color: #005a9e; background: #e1eefa; }
+.tag.limit { color: #b4232d; background: #fbe5e6; }
+.tag.net { color: #46505a; background: #e6e9ec; }
+.tag.ops, .tag.rec { color: #107c41; background: #def4e7; }
+.tag.new { color: #ffffff; background: var(--accent); }
+
+/* --- 旧→新の対応: <div class="vs"><div class="row"><span class="k">観点</span><span class="old">旧</span><span class="to">→</span><span class="new">現行</span></div>...</div> --- */
+.vs { margin: 0.3em 0; }
+.vs .row {
+  display: grid; grid-template-columns: 7.5em 1fr 1.6em 1.15fr; gap: 0 0.5em; align-items: center;
+  margin: 0.28em 0; font-size: 0.74em; line-height: 1.4;
+}
+.vs .row .k { font-weight: 700; color: var(--muted); text-align: right; }
+.vs .row .old { border: 1px dashed #c3ccd5; border-radius: 8px; padding: 0.22em 0.6em; color: var(--muted); background: #ffffff; }
+.vs .row .to { color: var(--accent); font-weight: 800; text-align: center; }
+.vs .row .new { border: 1px solid var(--accent); border-left-width: 5px; border-radius: 8px; padding: 0.22em 0.6em; background: #eef5fc; font-weight: 700; }
+
+/* --- 推奨構成マップ: <div class="map"><div class="fam"><div class="h"><img>A 社内ナレッジ</div><div class="rec">本線 <b>A2</b> ...</div><div class="alt">...</div></div>...</div> --- */
+.map { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5em; margin: 0.3em 0; }
+.map .fam { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #ffffff; font-size: 0.68em; line-height: 1.45; display: flex; flex-direction: column; }
+.map .fam .h { background: var(--nav-bg); border-bottom: 1px solid var(--border); padding: 0.4em 0.55em; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 0.4em; }
+.map .fam .h img { width: 1.9em; height: 1.9em; border: none !important; border-radius: 0 !important; }
+.map .fam .rec { margin: 0.45em 0.55em 0.2em; padding: 0.3em 0.45em; border-left: 4px solid var(--ga); background: #eefaf1; border-radius: 0 6px 6px 0; }
+.map .fam .rec .l { display: block; font-size: 0.85em; color: var(--ga); font-weight: 700; }
+.map .fam .alt { margin: 0.2em 0.55em 0.45em; color: var(--muted); }
+.map .fam .alt b { color: var(--fg); }
+
+/* --- ラボ一覧タイル: <div class="tiles"><div class="tile"><div class="p">直列パイプライン</div><div class="l">trend-analysis</div><div class="d">説明</div></div>...</div> --- */
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.45em; margin: 0.3em 0; }
+.tiles .tile { border: 1px solid var(--border); border-top: 4px solid var(--accent); border-radius: 8px; padding: 0.4em 0.6em; background: #ffffff; font-size: 0.74em; line-height: 1.45; }
+.tiles .tile .p { font-weight: 700; }
+.tiles .tile .l { font-family: Consolas, "SF Mono", Menlo, monospace; color: var(--accent); font-size: 0.92em; }
+.tiles .tile .d { color: var(--muted); font-size: 0.92em; }
+
+/* --- 2 分割(左: 図やリスト / 右: カード): <div class="split"><div>...</div><div>...</div></div> --- */
+.split { display: grid; grid-template-columns: 1.35fr 1fr; gap: 0 1em; align-items: center; }
+.split.even { grid-template-columns: 1fr 1fr; }
+
+/* タイムラインの強化(線と点を太く、今日の位置を示す .tl.today) */
+.timeline { border-top-color: #c9d3dd; }
+.timeline .tl::before { width: 0.75em; height: 0.75em; top: -1.55em; box-shadow: 0 0 0 3px #ffffff; }
+.timeline .tl .d { font-size: 1.12em; }
+.timeline .tl.today .d { color: var(--accent); }
+.timeline .tl.today::before { background: var(--accent); }
+.timeline .tl.past { opacity: 0.55; }
+.timeline .tl.past .d { text-decoration: line-through; }
+
+/* 要点列のタグ版(番号の代わりに 課金 / 制約 などのタグ): <div class="keys tagged"><div class="k"><span class="tag limit">制約</span>本文</div></div> */
+.keys.tagged .k { padding-left: 0; }
+.keys.tagged .k > .tag { margin-right: 0.35em; }
+/* 番号付きの要点(図の処理番号と対応)を 2 行に折る場合: .keys.rows2 */
+.keys.rows2 { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); gap: 0.25em 0.8em; }
+.keys.rows2 .k { border-top: none; padding-top: 0; }
+/* 大きめの本文(図のないスライドで余白を埋めない程度に) */
+.lede { font-size: 0.86em; color: var(--fg); }
+.keys.rows2 { border-top: 3px solid var(--accent); padding-top: 0.3em; }
+.keys.rows2 .k > .n { top: 0.02em; }
+/* 要点が 2 段(5 項目以上)のときは図の高さをさらに詰める(:has は PDF 出力の Chromium でも有効) */
+.figfull.withkeys:has(+ .keys.rows2) img { max-height: 338px; }
+/* 行数の多い付録表(12 行以上)を 1 枚に収める: <!-- _class: dense tight --> */
+section.tight table { font-size: 0.66em; line-height: 1.35; }
+section.tight th, section.tight td { padding: 0.2em 0.45em; }

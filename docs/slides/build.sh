@@ -27,6 +27,9 @@ if ! fc-list :lang=ja 2>/dev/null | grep -q . && [[ -d /mnt/c/Windows/Fonts ]]; 
   export FONTCONFIG_FILE="$(pwd)/tools/fonts.conf"
 fi
 
+# 図の「処理の流れ」パネル → スライドの処理番号の説明(.keys)を同期
+python3 tools/sync_keys.py
+
 MARP=(npx -y @marp-team/marp-cli@4.5.0 --theme-set themes/si-foundry.css --html --allow-local-files)
 
 "${MARP[@]}" foundry-si-overview.md -o foundry-si-overview.html
