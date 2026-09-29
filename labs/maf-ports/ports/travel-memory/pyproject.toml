@@ -4,11 +4,13 @@ version = "0.1.0"
 description = "awesome-llm-apps ai_travel_agent_memory の MAF + Foundry 移植(mem0 → Foundry Memory)"
 requires-python = ">=3.11"
 dependencies = [
-    "agent-framework-core>=1.10",
-    "agent-framework-openai>=1.10",
+    "agent-framework-core>=1.19",  # 2026-09-29 最新化チェックで検証した版
+    "agent-framework-openai>=1.14.4",
     "aiohttp>=3.9", # azure-* の async クライアントのトランスポート(corrective-rag の学びと同件)
-    "azure-ai-projects>=2.3",
-    "azure-identity>=1.17",
+    # Memory Store API(client.beta.memory_stores)。2.7.0 で検証。2.5→2.7 で memory 系の
+    # シグネチャ差分なし(default_ttl_seconds が timedelta になったのは 2.3.0)
+    "azure-ai-projects>=2.7",
+    "azure-identity>=1.25",
     "python-dotenv>=1.0",
     "typing-extensions>=4.10",
 ]

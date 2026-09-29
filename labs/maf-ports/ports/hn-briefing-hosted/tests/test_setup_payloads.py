@@ -1,7 +1,7 @@
 """デプロイ zip ステージングと Routine ペイロード(純関数)のオフラインテスト。
 
 hosted agent のコードデプロイ規約(zip ルートに main.py / requirements.txt)と
-Routines プレビューの REST 契約(トリガー/アクションのスキーマ・フィーチャー
+Routines(GA)の REST 契約(トリガー/アクションのスキーマ・api-version・
 ヘッダー)をここで固定する — スクリプト側は HTTP/SDK を貼るだけ。
 """
 
@@ -17,10 +17,11 @@ from hn_briefing_maf.hosting_setup import (
 from hn_briefing_maf.routine_setup import (
     DEFAULT_CRON,
     DEFAULT_TIME_ZONE,
-    ROUTINES_FEATURE_HEADER,
     TOKEN_SCOPE,
     build_routine_payload,
+    routine_request_headers,
     routine_url,
+    routines_collection_url,
 )
 
 # --- hosted agent デプロイ(zip 規約+バージョン定義)---
@@ -51,7 +52,7 @@ def test_definition_kwargs_encode_container_protocol_2_and_keyless_env() -> None
 
     assert kwargs["entry_point"] == ["python", "main.py"]
     assert kwargs["protocols"] == [("responses", "2.0.0")]
-    assert RESPONSES_PROTOCOL_VERSION == "2.0.0"  # 1.0.0 は非推奨(猶予後ブロック)
+    assert RESPONSES_PROTOCOL_VERSION == "2.0.0"  # 1.0.0 はサポート終了(ブロック済み)
     assert (kwargs["cpu"], kwargs["memory"]) == ("0.5", "1Gi")
     # コンテナへ渡すのは接続先とモデル名のみ — API キーは渡さない(agent identity)
     assert kwargs["environment_variables"] == {
@@ -63,7 +64,7 @@ def test_definition_kwargs_encode_container_protocol_2_and_keyless_env() -> None
 # --- Routine(REST 契約)---
 
 
-def test_routine_payload_matches_preview_rest_schema() -> None:
+def test_routine_payload_matches_rest_schema() -> None:
     payload = build_routine_payload(agent_name="hn-briefing-agent")
 
     trigger = payload["triggers"]["daily-briefing"]
@@ -76,7 +77,7 @@ def test_routine_payload_matches_preview_rest_schema() -> None:
     assert payload["action"]["agent_name"] == "hn-briefing-agent"
     assert "input" in payload["action"]
     assert payload["enabled"] is True
-    assert len(payload["triggers"]) == 1  # プレビューは 1 トリガー+1 アクション
+    assert len(payload["triggers"]) == 1  # 1 トリガー+1 アクション固定(GA 後も同じ)
 
 
 def test_routine_defaults_port_original_schedule() -> None:
@@ -98,6 +99,10 @@ def test_routine_url_and_headers() -> None:
     assert routine_url(endpoint, "x", suffix="/runs").endswith(
         "/routines/x/runs?api-version=v1"
     )
-    # プレビューのフィーチャーヘッダーとトークンリソース(Learn の REST 例のまま)
-    assert ROUTINES_FEATURE_HEADER == {"Foundry-Features": "Routines=V1Preview"}
+    assert routines_collection_url(endpoint) == (
+        "https://acct.services.ai.azure.com/api/projects/maf-ports/routines?api-version=v1"
+    )
+    # GA 後は Bearer のみ。プレビュー期の Foundry-Features: Routines=V1Preview は
+    # 仕様から削除されたキーなので送らない(routine_setup.py の docstring)
+    assert routine_request_headers("tok") == {"Authorization": "Bearer tok"}
     assert TOKEN_SCOPE == "https://ai.azure.com/.default"

@@ -93,6 +93,10 @@ uv sync --extra dev --extra live && uv run pytest -m live   # ライブスモー
 
 **課金注意**: Code Interpreter は**セッション単位の追加課金**(アクティブ 1 時間/アイドル 30 分 — [04-tools-knowledge.md](../../../../docs/survey/features/04-tools-knowledge.md)。Azure Container Apps dynamic sessions 基盤・Hyper-V 分離・アウトバウンド通信不可)。CLI / ライブスモークの実行ごとにコンテナが起動するため、モデルのトークン課金と別にセッション課金が発生する。インフラ: 共有基盤のみ(existing 参照)— サンドボックスはサービス側プロビジョニングのため**本ポート固有の Azure リソースはゼロ**。
 
+**2026-09-29 注記(課金単位)**: 上の「アクティブ 1 時間/アイドル 30 分」は Agent Service の code-interpreter ページ(2026-08-05 版)の記述。本ポートが通る **OpenAI v1 Responses API 経路**については Responses how-to(2026-08-18 版)が「セッションごとに**分単位課金・最低 5 分**、コンテナは **20 分**アクセスがないと失効」と書いている。どちらの記述でも「実行ごとにセッション課金が乗る」ことは同じだが、見積もりでは経路に合った方を使う。
+
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
+
 ## 評価
 
 [tests/eval_dataset.jsonl](./tests/eval_dataset.jsonl)(6 ケース)は決定的な正解がある集計(合計 / カテゴリ別 / フィルタ+平均)+日付パースを要する月別傾向+画像生成+**サンドボックス境界の観察**(ファイル削除・シェル要求への応答)。サンプルデータの正解値はオフラインテスト(`test_sample_csv_shape_and_totals`)で固定してあるため、応答数値の正誤を機械照合できる — 実データ依存だった Port 6(GitHub)と違い、**評価が決定的**になるのが「データを同梱してサンドボックスに渡す」構成の副産物。ライブ実行時は App Insights のスパンで code_interpreter 呼び出しを突き合わせ、応答は Foundry の Task adherence / Relevance 評価器に渡せる形にしてある。
@@ -115,6 +119,19 @@ az monitor app-insights query --app appi-mafportsw2 -g rg-maf-ports \
 - オフライン **24 passed** / ruff clean / bicep build OK
 - ライブスモーク **1 passed(14.7s)**: sample_sales.csv を Files API でアップロード → サーバー側 Code Interpreter が Python 実行 → 合計 3,225,050 / 上位カテゴリ Electronics を正答(オフラインで固定した期待値と一致)
 - トレース: `invoke_agent` / `chat gpt-5.4-mini` スパンを App Insights で確認(Code Interpreter の実行はモデル側スパン内に内包)
+
+## 検証結果(2026-09-29 最新化チェック)
+
+- **依存更新**: agent-framework-core 1.13.0 → **1.19.0** / agent-framework-openai 1.12.0 → **1.14.4** / openai 2.51.0 → **3.20.0**(agent-framework-openai 1.14.2 以降は `openai>=2.25,<4`)/ azure-monitor-opentelemetry 1.8.10。pyproject の下限を検証版に引き上げ
+- オフラインテスト **24 passed**(`-W error::DeprecationWarning` でも通過)/ `ruff check .` clean / `az bicep build` OK(生成 json なし)。ruff 0.16 の既定ルール拡大で `docs/architecture.py` が I001 / RUF100 / ISC004 に掛かっていた件は、図の v2 化(下記)で解消し、`uv run ruff check .` をそのまま使える状態に戻した
+- **構成図を v2 に更新**([docs/architecture.png](./docs/architecture.png)。日本語ラベル+処理順バッジ 1〜5+ステータス+タグ付き注記)。課金注記を旧「セッション課金(アクティブ 1 時間 / アイドル 30 分)」から本ポートの経路に合う「Responses 経路: 分単位・最低 5 分、20 分無操作で失効」に更新し、サンドボックス内の配置 `/mnt/data/{file-id}-{元の名前}` を追記
+- **コード変更なし**。確認した内容:
+  - MAF: `SupportsCodeInterpreterTool` は存続、`OpenAIChatClient.get_code_interpreter_tool(file_ids=, container="auto")`(agent-framework-openai 1.14.4 `_chat_client.py` 1205 行)は同じ dict `{"type": "code_interpreter", "container": {"type": "auto", "file_ids": [...]}}` を返す。応答側の `code_interpreter_call` → `code_interpreter_tool_call` / `_result`(logs → text、image → uri)のパースも同形(同 3157 行)。`OpenAIChatClient.client` は `AsyncOpenAI`(`files.create` は async)
+  - openai 3.20: `FilePurpose` に `"assistants"` が残り、Responses の `CodeInterpreter` TypedDict も `container: {"type": "auto", "file_ids": [...]}` のまま(`memory_limit` / `network_policy` が任意項目として増えた)
+  - Foundry: Responses how-to(ms.date 2026-08-18)と code-interpreter ページ(2026-08-05)はいずれも `files.create(purpose="assistants")` → `container.file_ids` の同じ形。CROSS 調査でも Code Interpreter に 2026-08 以降の機能変更なし
+- **変更不要と判断した点**: サンドボックス内のファイル名 — code-interpreter ページは `/mnt/data/{file-id}-{original-filename}` にマウントと明記(本 README の「アップロード時の名前で見える」は不正確)だが、`build_analysis_prompt` は「/mnt/data 配下を探せ」という書き方なので接頭辞が付いても動く(2026-07-31 ライブで正答済み)/ infra/main.bicep(existing 参照のみ。`Microsoft.CognitiveServices/accounts@2025-06-01` は現行でも有効)
+- **ライブ未検証で残るリスク**: (1) Assistants API リタイア(2026-08-26)後も Files API が `purpose="assistants"` を受理すること(Learn の現行サンプルはこの値のまま)、(2) openai 3.x での Responses API 往復、(3) **実行ログ(`--- 実行結果 ---`)が空になる可能性** — OpenAI Responses API の `code_interpreter_call.outputs` は `include=["code_interpreter_call.outputs"]` を指定しないと null になり得る仕様で、MAF は自動付与しない(`extract_analysis` の logs / image_uris はこの outputs 依存)。2026-07-31 ライブの記録は実行コードと正答のみでログ表示の有無は未記録。ログが出ない場合は `agent.run(prompt, options={"include": ["code_interpreter_call.outputs"]})` の追加が候補(runbook の確認観点に入れた)
+- **今後の選択肢**: Agent Service 側に寄せるなら `agent_framework.foundry.FoundryChatClient.get_code_interpreter_tool()`、hosted agent から使うなら Toolbox(GA)に `CodeInterpreterToolboxTool` を入れて `FoundryToolbox` で消費する形(ただし toolbox 経由の hosted agent ではユーザー分離なし — 全ユーザーが同一コンテナを共有、と code-interpreter ページに明記)
 
 ## 学び(MAF/Foundry vs 元構成)
 

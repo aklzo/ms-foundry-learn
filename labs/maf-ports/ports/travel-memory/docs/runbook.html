@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>travel-memory 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="runbook.html" class="current">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="travel-memory-実行ガイド">travel-memory 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/travel-memory/</code>(Port 5・パターン: Foundry Memory による長期記憶 — 検索 → 注入 → 応答 → 追加の明示ループ)<br><strong>最終確認:</strong> 2026-09-29 オフライン(23 passed・<code>ruff check .</code> clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / azure-ai-projects 2.7.0 / openai 3.20.0)/ ライブ: 2026-07-31(当時の構成 core 1.12.1 / azure-ai-projects 2.4.0 / openai 2.51.0。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li>1 ターン目で伝えた嗜好(例: 窓側席・ベジタリアン)が、Foundry Memory の<strong>非同期抽出(LRO)</strong>を経て <code>--user</code> の scope に記憶として保存され、2 ターン目の <code>search_memories</code> でヒットして <code>Relevant past information:</code> としてプロンプトに注入されること。</li>
+<li>記憶が <code>--user</code>(= Foundry の scope)単位で完全に分離され、<code>delete_scope</code> で丸ごと消せること。</li>
+<li>技術選定上の意味: mem0 の <code>add</code> は同期だが Foundry は <strong>LRO+debounce</strong>(既定 <code>update_delay=300</code> 秒)。本ポートは <code>update_delay=0</code>+<code>previous_update_id</code> チェーンで毎ターン追加を近似するが、<strong>「追加した事実がいつ検索に見えるか」の結果整合性は消えない</strong>(README の学び 1)。Memory は<strong>パブリックプレビュー</strong>(VNet 非対応・課金体系変更の可能性あり)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<pre><code>質問 ─▶ MemoryStore.search(query, user)      Foundry: search_memories(scope=user, max_memories=5)
+     ─▶ build_full_prompt                     &quot;Relevant past information:\n- ...\n\nHuman: &lt;質問&gt;\nAI:&quot;
+     ─▶ travel_agent(MAF Agent)               Responses API(共有基盤のモデル)
+     ─▶ MemoryStore.add(質問, role=user)      Foundry: begin_update_memories(update_delay=0, previous_update_id=…)
+        MemoryStore.add(回答, role=assistant) (既定 fire-and-forget。--wait で LRO 完了まで待つ)</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>CLI / <code>chat.run_turn</code>(ローカル)</td>
+<td>検索 → 注入 → 応答 → 追加の順序を保つ 1 ターン処理</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>MAF <code>Agent</code> travel_agent(<code>agents.py</code>)</td>
+<td><code>OpenAIChatClient</code>(Responses API)で共有基盤のモデルを api-key で呼ぶ</td>
+<td>—</td>
+</tr>
+<tr>
+<td>モデルデプロイ(共有基盤、既定 gpt-5.4-mini)</td>
+<td>回答生成+Memory ストアの chat_model(事実抽出・統合)</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>埋め込みデプロイ text-embedding-3-small</td>
+<td>Memory ストアの embedding_model(記憶の検索)</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>Foundry Memory ストア <code>travel_memory</code>(プロジェクトのデータプレーン、プレビュー)</td>
+<td>記憶の抽出・統合・検索。<code>scripts/setup_memory.py</code> で作成(Bicep 不可)</td>
+<td>ストア自体のアイドル課金なし。抽出・検索時に上の 2 デプロイのトークンを消費</td>
+</tr>
+<tr>
+<td>App Insights(共有基盤)</td>
+<td>OTel トレースの送信先(任意)</td>
+<td>取り込み量従量</td>
+</tr>
+</tbody></table></div>
+<p>クォータ(プレビュー): 100 scopes/ストア・10,000 memories/scope・search / update 各 1,000 req/min。</p>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得。検証は 3.13)</td>
+<td>オフライン実行はこれだけ</td>
+</tr>
+<tr>
+<td>ツール(ライブ)</td>
+<td>Azure CLI(<code>az login</code> 済み)</td>
+<td>Memory Store API は <strong>Entra ID 認証</strong>(<code>DefaultAzureCredential</code>、audience <code>https://ai.azure.com/</code>)。チャットモデルは api-key</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)+第 2 段の <a href="../../../infra/roles.bicep">infra/roles.bicep</a>+埋め込みデプロイ <code>text-embedding-3-small</code></td>
+<td>埋め込みは Port 4 corrective-rag の <code>infra/main.bicep</code> が追加する(AI Search Free も一緒に作られる)。埋め込みだけ欲しい場合は §5.1 の az コマンド</td>
+</tr>
+<tr>
+<td>権限(サービス側)</td>
+<td>プロジェクト MI とアカウント MI に <strong>Cognitive Services OpenAI User+Foundry User</strong>(roles.bicep が付与)</td>
+<td>欠けると <code>search_memories</code> が 401(Memory サービスがストア構成のモデルを MI で呼ぶため)。伝播に 5〜15 分</td>
+</tr>
+<tr>
+<td>権限(実行ユーザー)</td>
+<td><code>az login</code> の ID にプロジェクト(またはアカウント)の <strong>Foundry User</strong>(旧名 Azure AI User、ロール ID <code>53ca6127-db72-4b80-b1b0-d745d6d5456d</code>)</td>
+<td>Owner / Contributor はデータアクションを含まないため別途必要</td>
+</tr>
+<tr>
+<td>リージョン</td>
+<td>共有基盤は Japan East(Memory 対応 19 リージョンに含まれる)</td>
+<td>VNet 統合は非対応</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <code>.env.example</code>。<strong>ライブ実行時のみ必要</strong>。読み込み順はカレントの <code>.env</code> → lab ルートの <code>.env</code> で、既にシェルにある値が優先):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_PROJECT_ENDPOINT</code></td>
+<td>Memory Store API の呼び先(<code>https://&lt;foundry&gt;.services.ai.azure.com/api/projects/maf-ports</code>)。必須</td>
+<td>shared.bicep の出力 <code>projectEndpoint</code>(本ポートの <code>infra/main.bicep</code> も同じ値を出力)</td>
+</tr>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>モデル呼び出し先(<code>https://&lt;foundry&gt;.openai.azure.com/openai/v1</code>)。必須</td>
+<td>shared.bicep の出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>回答用デプロイ名。<code>setup_memory.py</code> の chat_model の既定にもなる。必須</td>
+<td>shared.bicep の出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>モデルの api-key 認証。必須(Memory API には使わない)</td>
+<td><code>az cognitiveservices account keys list -n &lt;foundryName&gt; -g &lt;rg&gt; --query key1 -o tsv</code></td>
+</tr>
+<tr>
+<td><code>MEMORY_STORE_NAME</code></td>
+<td>Memory ストア名。任意(既定 <code>travel_memory</code>)</td>
+<td>自分で決める(<code>setup_memory.py</code> と CLI で同じ値)</td>
+</tr>
+<tr>
+<td><code>MEMORY_STORE_EMBEDDING_MODEL</code></td>
+<td><code>setup_memory.py</code> が使う埋め込みデプロイ名。任意(既定 <code>text-embedding-3-small</code>)</td>
+<td>埋め込みデプロイ名</td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>トレース送信先。任意(未設定ならトレース無効で実行は続く)</td>
+<td>shared.bicep の出力 <code>appInsightsConnectionString</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/travel-memory
+uv sync --extra dev
+uv run pytest                        # 期待: 23 passed, 1 deselected(live は既定で除外。ネットワーク不要)
+uv run ruff check .                  # 期待: All checks passed!(図スクリプト docs/architecture.py を含む)</code></pre>
+<p>オフラインテストが固定している主な挙動(記憶層は <code>InMemoryFakeStore</code> / SDK 互換スタブ、LLM は ScriptedAgent):</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> 1 ターンの順序が「search → 応答 → add(user)→ add(assistant)」で、add 時点で応答が確定している(<code>test_turn_order_search_inject_respond_add</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> プロンプト書式が元アプリと 1 文字単位で一致し、記憶 0 件でもヘッダーだけは注入される(<code>test_build_full_prompt_matches_original_format</code> / <code>test_no_memories_still_injects_header</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 空応答は <code>ValueError</code> で、記憶への追加は行われない(<code>test_empty_answer_raises_and_skips_memory_add</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> alice の記憶が bob のプロンプト・検索・一覧に漏れない(<code>test_user_scope_isolation_end_to_end</code> / <code>test_user_id_scope_isolation</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> SDK 呼び出しの写像: user_id → <code>scope</code>、テキスト → <code>{&quot;role&quot;, &quot;type&quot;: &quot;message&quot;, &quot;content&quot;}</code>、limit → <code>MemorySearchOptions.max_memories</code>(<code>test_search_maps_arguments_and_results</code> / <code>test_add_sends_message_item_with_role</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> <code>previous_update_id</code> が scope ごとにチェーンされ、<code>update_delay</code> 既定 0、<code>wait_for_update=True</code> のときだけ LRO を待つ(<code>test_add_chains_previous_update_id_per_scope</code> / <code>test_update_delay_defaults_to_immediate</code> / <code>test_wait_for_update_awaits_lro_result</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> <code>delete_all</code> が <code>delete_scope</code> を呼び、その scope のチェーンをリセットする(<code>test_delete_all_calls_delete_scope_and_resets_chain</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code># 共有基盤+roles.bicep が未作成なら先に作る(→ labs/maf-ports/infra/docs/runbook.md)。
+# 埋め込みデプロイ: Port 4 の infra を流す(AI Search Free も作られる)か、埋め込みだけを追加する(例):
+az cognitiveservices account deployment create -n aif-&lt;baseName&gt; -g &lt;rg&gt; \
+  --deployment-name text-embedding-3-small --model-name text-embedding-3-small \
+  --model-version 1 --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10
+
+# 任意: 共有基盤の存在確認とエンドポイント取得(existing 参照+出力のみのテンプレート)
+cd labs/maf-ports/ports/travel-memory
+az deployment group create -g &lt;rg&gt; -f infra/main.bicep -p baseName=&lt;baseName&gt; \
+  --query properties.outputs -o json   # 期待: openaiV1Endpoint / projectEndpoint が返る
+
+# Memory ストア作成(データプレーン。1 回だけ。要 az login)
+uv sync --extra dev --extra live
+uv run python scripts/setup_memory.py            # 既存ならスキップ。--recreate で作り直し</code></pre>
+<p><code>setup_memory.py</code> の出力例:</p>
+<pre><code>created memory store: travel_memory (id=...)
+  chat_model=gpt-5.4-mini embedding_model=text-embedding-3-small</code></pre>
+<p>(2 回目以降は <code>memory store already exists: travel_memory (id=...)</code> と定義が表示される)</p>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code>uv run travel-memory-maf --user alice --wait --once &quot;長距離便は必ず窓側席、機内食はベジタリアンです&quot;
+uv run travel-memory-maf --user alice --once &quot;東京からロンドンの航空券、何をリクエストすべき?&quot;
+uv run travel-memory-maf --user alice --memories     # 抽出された記憶の一覧(元アプリの View My Memory)
+uv run travel-memory-maf --user alice                # 対話モード(/memories で一覧、/quit で終了)
+uv run pytest -m live                                # ライブスモーク(1 passed が期待。2026-07-31 は 139 秒)</code></pre>
+<p><code>--wait</code> は記憶追加の LRO(抽出・統合)完了まで待つ。1 ターンあたり 1 分程度かかることがある。付けないと fire-and-forget で即座に戻る。</p>
+<p>期待される出力の例(値は実行ごとに変わる。抽出される記憶の文面と件数は LLM 依存):</p>
+<pre><code>[memory] 0 hits                                   ← stderr(1 ターン目。まだ記憶がない)
+承知しました。窓側席とベジタリアン機内食ですね…  ← stdout(回答)
+
+[memory] 2 hits                                   ← stderr(2 ターン目)
+  - User prefers window seats on long-haul flights
+  - User requests vegetarian in-flight meals
+航空会社には窓側席の指定とベジタリアンミール(VGML 等)を…
+
+Memory history for alice:                         ← --memories
+- User prefers window seats on long-haul flights [user_profile]
+- ... [chat_summary]</code></pre>
+<p>終了コードは 正常 0 / 環境変数不足 2(<code>error: 環境変数が未設定: ...</code>)。Memory API のエラー(401 / 404 など)は azure-core の例外のトレースバックで終わる。</p>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: 記憶の往復</td>
+<td>§5.2 の 1〜2 行目(1 ターン目は <code>--wait</code>)</td>
+<td>2 ターン目の stderr が <code>[memory] 1 hits</code> 以上で、嗜好(窓側・ベジタリアン)を含む記憶が表示され、回答がそれを踏まえている</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>記憶の型付け・統合</td>
+<td><code>--memories</code></td>
+<td>各行末に <code>[user_profile]</code> / <code>[chat_summary]</code> / <code>[procedural]</code> のいずれかの kind。同じ嗜好を言い直しても重複行が増え続けない(統合)。抽出は LLM 依存なので件数は固定しない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>パターン固有: 結果整合性</td>
+<td>新しい <code>--user</code> で <code>--wait</code> なしに嗜好を伝え、直後に関連質問 → 1〜2 分後に同じ質問</td>
+<td>直後は <code>[memory] 0 hits</code> になり得る(LRO 未完了)。時間をおくとヒットする。「記憶の鮮度がターン単位で要るか」の判断材料</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>scope 分離</td>
+<td><code>uv run travel-memory-maf --user bob --once &quot;東京からロンドンの航空券、何をリクエストすべき?&quot;</code> と <code>--user bob --memories</code></td>
+<td>bob は <code>[memory] 0 hits</code>、一覧は <code>(no memories for user &#x27;bob&#x27;)</code>。alice の嗜好が回答に出ない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>異常系: 設定不足</td>
+<td><code>FOUNDRY_PROJECT_ENDPOINT= uv run travel-memory-maf --user x --once hi</code>(空文字はシェル側の値が優先され .env で上書きされない)</td>
+<td>終了コード 2、stderr に <code>error: 環境変数が未設定: FOUNDRY_PROJECT_ENDPOINT(labs/maf-ports/.env を確認。…)</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>異常系: ストア未作成</td>
+<td><code>MEMORY_STORE_NAME=no_such_store uv run travel-memory-maf --user alice --once hi</code></td>
+<td><code>search_memories</code> が 404 系の HttpResponseError で終了(ライブ未確認)。検索が先なのでモデルは呼ばれず、記憶も追加されない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>パターン固有: サービス側 RBAC</td>
+<td>roles.bicep 直後に #1 を実行</td>
+<td>401 が出る場合は MI への Cognitive Services OpenAI User / Foundry User の伝播待ち(5〜15 分。ノード間で不均一で、一度通っても数分 401 が混ざることがある)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>観測: トレース着信</td>
+<td>§7 の KQL</td>
+<td><code>invoke_agent travel_agent</code> と <code>chat &lt;デプロイ名&gt;</code> がターン数分出る。Memory API の呼び出しは HTTP / Azure SDK の依存関係として出る(名前は未確認)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>コスト</td>
+<td>ポータルで 2 デプロイ(gpt-5.4-mini / text-embedding-3-small)のトークンメトリック</td>
+<td>1 ターン = 回答の chat 1 回+検索 1 回+追加 LRO 2 回(user / assistant の抽出・統合でチャットモデルと埋め込みを消費)。ストアのアイドル課金はない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>10</td>
+<td>後片付け</td>
+<td><code>uv run python scripts/setup_memory.py --delete</code></td>
+<td><code>deleted memory store: travel_memory</code>。ライブスモークはテスト scope を <code>delete_scope</code> で自動掃除済み</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code># スパン名ごとの件数(送信から着信まで数分かかることがある)
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | summarize count() by name&quot;</code></pre>
+<ul>
+<li>期待するスパン名: <code>invoke_agent travel_agent</code> / <code>chat &lt;デプロイ名&gt;</code>(ツールは使わないので <code>execute_tool</code> は出ない)。azure-monitor-opentelemetry 1.8.10 は httpx と Azure SDK を既定で計装するため、Memory API(<code>…/memory_stores/travel_memory:search_memories</code> など)や Responses API の HTTP 呼び出しも依存関係として並ぶ(1.8.9 時代のライブより行が増える。名前はライブ未確認)。</li>
+<li>評価: <a href="../tests/eval_dataset.jsonl">tests/eval_dataset.jsonl</a>(5 ケース)は全て多ターンシナリオ(座席+機内食 / 低予算宿 / 甲殻類アレルギー / scope 分離 / 嗜好の更新)。<code>--wait</code> でターン間の抽出完了を保証して流し、<code>TurnResult.prompt</code>(注入済み全文)を Relevance / Task adherence 評価器に渡せる形。クラウド評価の実装はない(評価 API の使い方は Port 9 critique-loop)。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code>uv run python scripts/setup_memory.py --delete   # Memory ストアを削除(全 scope の記憶が消える)
+# 共有基盤ごと消す場合:
+az group delete -n &lt;rg&gt; --yes --no-wait</code></pre>
+<ul>
+<li>特定ユーザーの記憶だけ消す(GDPR 的な削除要求の再現)なら、<code>FoundryMemoryStore.delete_all(user_id)</code>(= <code>delete_scope</code>)を使う。CLI にはこのサブコマンドはない(ライブスモークが使用)。</li>
+<li>Memory ストアはリソースグループ削除でプロジェクトごと消える。埋め込みデプロイを az で追加した場合もアカウントと一緒に消える。</li>
+</ul>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>error: 環境変数が未設定: ...</code>(終了コード 2)</td>
+<td><code>labs/maf-ports/.env</code> がない / 変数名の誤り</td>
+<td><code>.env.example</code> をコピーし、共有基盤の出力を転記。<code>FOUNDRY_PROJECT_ENDPOINT</code> を忘れやすい</td>
+</tr>
+<tr>
+<td><code>DefaultAzureCredential failed to retrieve a token</code></td>
+<td><code>az login</code> していない / テナント違い</td>
+<td><code>az login</code>(必要なら <code>--tenant</code>)。Memory API は API キーでは呼べない</td>
+</tr>
+<tr>
+<td><code>search_memories</code> が 401 <code>ResourceError</code></td>
+<td>サービス側がストア構成モデルをプロジェクト MI で呼べない(Bicep 作成プロジェクトは自動付与されない)</td>
+<td>roles.bicep を流したか確認し、5〜15 分待って再実行</td>
+</tr>
+<tr>
+<td>403 / <code>PermissionDenied</code>(自分の呼び出し)</td>
+<td>実行ユーザーにデータプレーンのロールがない</td>
+<td>プロジェクト(またはアカウント)に Foundry User を付与</td>
+</tr>
+<tr>
+<td>404(ストア)</td>
+<td><code>setup_memory.py</code> 未実行 / <code>MEMORY_STORE_NAME</code> の不一致</td>
+<td><code>setup_memory.py</code> で作成、名前を揃える</td>
+</tr>
+<tr>
+<td><code>setup_memory.py</code> が 400 系で失敗</td>
+<td>chat / embedding のデプロイ名が存在しない</td>
+<td><code>az cognitiveservices account deployment list -n &lt;foundryName&gt; -g &lt;rg&gt; -o table</code> で確認し <code>--chat-model</code> / <code>--embedding-model</code> で指定</td>
+</tr>
+<tr>
+<td>記憶がいつまでも 0 件</td>
+<td>LRO 未完了 / 抽出対象の情報がない発言だった</td>
+<td><code>--wait</code> を付けて再実行。<code>--memories</code> で保存状況を直接見る</td>
+</tr>
+<tr>
+<td><code>tracing: App Insights 有効</code> が出ない</td>
+<td>接続文字列が未設定、または <code>--extra live</code> 未導入</td>
+<td><code>uv sync --extra dev --extra live</code> と <code>APPLICATIONINSIGHTS_CONNECTION_STRING</code> を確認</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a></li>
+<li>共有基盤(デプロイ・.env・RBAC・削除): <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a></li>
+<li>Memory の機能状況(プレビュー・クォータ・リージョン): <a href="../../../../../docs/survey/features/html/03-agent-service.html">features/03-agent-service.md</a></li>
+<li>次のパターン: <a href="../../github-mcp/docs/runbook.html">github-mcp(Port 6・リモート MCP)</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(依存を agent-framework-core 1.19.0 / azure-ai-projects 2.7.0 / openai 3.20.0 に更新。Memory Store API の変更なしを確認。<code>setup_memory.py</code> の TTL を <code>timedelta(0)</code> に。構成図を v2(日本語・処理順バッジ・タグ付き注記)に更新し、図スクリプトも ruff clean に)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/travel-memory/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

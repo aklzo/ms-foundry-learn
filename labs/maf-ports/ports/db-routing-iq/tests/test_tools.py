@@ -1,9 +1,10 @@
 """MCP ツール配線+Web fallback ツールのオフラインテスト。
 
 実 knowledge base へは接続しない。MCP ツールクラスの境界は ``tool_cls`` の
-コンストラクタ注入、DDG は httpx.MockTransport で置き換える
-(PORTING.md §4 の scripted fake 方針)。"""
+コンストラクタ注入、MCP ハンドシェイクと DDG は httpx.MockTransport で置き
+換える(PORTING.md §4 の scripted fake 方針)。"""
 
+import json
 from typing import Any
 
 import httpx
@@ -13,10 +14,8 @@ from db_routing_iq_maf.config import DbRoutingIqSettings
 from db_routing_iq_maf.tools import (
     KB_RETRIEVE_TOOL,
     KB_TOOL_NAME,
-    SSE_READ_TIMEOUT_SECONDS,
     build_kb_headers,
     build_kb_mcp_tool,
-    make_http_client,
     make_web_search_tool,
 )
 
@@ -56,49 +55,33 @@ def test_build_kb_headers_uses_api_key_header() -> None:
 # --- ツール定義の組み立て(コンストラクタ注入)---
 
 
-def test_tool_cls_injection_receives_kb_mcp_url_and_client() -> None:
-    sentinel_client = object()
-
-    tool = build_kb_mcp_tool(make_settings(), sentinel_client, tool_cls=FakeMcpTool)
+def test_tool_cls_injection_receives_kb_mcp_url_and_static_headers() -> None:
+    tool = build_kb_mcp_tool(make_settings(), tool_cls=FakeMcpTool)
 
     assert tool.name == KB_TOOL_NAME == "knowledge_base"
     assert tool.url == (
         "https://srch-example.search.windows.net/knowledgebases/db-routing-kb/mcp"
-        "?api-version=2026-05-01-preview"
+        "?api-version=2026-08-01-preview"
     )
-    assert tool.kwargs["http_client"] is sentinel_client
+    # api-key は static_headers(MAF 1.19 — 同一オリジン限定で全リクエストに付与)
+    assert tool.kwargs["static_headers"] == {"api-key": "search-key"}
+    # HTTP クライアントは既定で MAF に任せる(生成・破棄もツール側)
+    assert tool.kwargs["http_client"] is None
     assert tool.kwargs["load_prompts"] is False
 
 
 def test_tool_allow_list_is_knowledge_base_retrieve_only() -> None:
     """knowledge base の公開ツールは knowledge_base_retrieve のみ。allow-list
     で明示し、サービス側の将来のツール追加でも公開面が広がらないようにする。"""
-    tool = build_kb_mcp_tool(make_settings(), object(), tool_cls=FakeMcpTool)
+    tool = build_kb_mcp_tool(make_settings(), tool_cls=FakeMcpTool)
 
     assert tool.kwargs["allowed_tools"] == [KB_RETRIEVE_TOOL] == ["knowledge_base_retrieve"]
 
 
 def test_tool_url_follows_kb_name_override() -> None:
-    tool = build_kb_mcp_tool(
-        make_settings(kb_name="other-kb"), object(), tool_cls=FakeMcpTool
-    )
+    tool = build_kb_mcp_tool(make_settings(kb_name="other-kb"), tool_cls=FakeMcpTool)
 
     assert "/knowledgebases/other-kb/mcp" in tool.url
-
-
-# --- httpx クライアント(api-key はここに載る。接続はしない)---
-
-
-async def test_make_http_client_carries_api_key_without_redirects() -> None:
-    client = make_http_client(make_settings())
-    try:
-        assert client.headers["api-key"] == "search-key"
-        # オリジン外へのキー漏出防止: リダイレクト追従は無効(httpx 既定)のまま
-        assert client.follow_redirects is False
-        # SSE 読み取りは MAF 既定と同じ長め(300s)
-        assert client.timeout.read == SSE_READ_TIMEOUT_SECONDS
-    finally:
-        await client.aclose()
 
 
 # --- 実 MCPStreamableHTTPTool での配線(構築のみ。接続はしない)---
@@ -108,18 +91,73 @@ async def test_real_mcp_tool_offline_wiring() -> None:
     pytest.importorskip("agent_framework")
     from agent_framework import MCPStreamableHTTPTool
 
-    client = make_http_client(make_settings())
-    try:
-        tool = build_kb_mcp_tool(make_settings(), client)
+    tool = build_kb_mcp_tool(make_settings())
 
-        assert isinstance(tool, MCPStreamableHTTPTool)
-        assert tool.name == "knowledge_base"
-        assert tool.allowed_tools == ["knowledge_base_retrieve"]
-        # 未接続: サーバーのツール群は connect(Agent の run / __aenter__)まで空
-        assert tool.is_connected is False
-        assert tool.functions == []
-    finally:
-        await client.aclose()
+    assert isinstance(tool, MCPStreamableHTTPTool)
+    assert tool.name == "knowledge_base"
+    assert tool.allowed_tools == ["knowledge_base_retrieve"]
+    # 未接続: サーバーのツール群は connect(Agent の run / __aenter__)まで空
+    assert tool.is_connected is False
+    assert tool.functions == []
+
+
+# --- 実 MCPStreamableHTTPTool のハンドシェイク(MockTransport の偽 KB サーバー)---
+
+
+def fake_kb_mcp_server(seen: list[tuple[str, str | None]]):
+    """KB の MCP エンドポイントを模した JSON-RPC ハンドラ(streamable HTTP の
+    JSON 応答形)。公開ツールは knowledge_base_retrieve と、allow-list の効き目を
+    見るための余計なツール 1 つ。受けたリクエストの (method, api-key) を記録する。"""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method != "POST":
+            seen.append((request.method, request.headers.get("api-key")))
+            return httpx.Response(405)
+        message = json.loads(request.content)
+        seen.append((message.get("method", "?"), request.headers.get("api-key")))
+        if "id" not in message:  # notifications/initialized 等
+            return httpx.Response(202)
+        if message["method"] == "initialize":
+            result: dict[str, Any] = {
+                "protocolVersion": message["params"]["protocolVersion"],
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "fake-knowledge-base", "version": "0"},
+            }
+        elif message["method"] == "tools/list":
+            schema = {"type": "object", "properties": {"queries": {"type": "array"}}}
+            result = {
+                "tools": [
+                    {"name": KB_RETRIEVE_TOOL, "description": "retrieve", "inputSchema": schema},
+                    {"name": "unexpected_tool", "description": "x", "inputSchema": schema},
+                ]
+            }
+        else:
+            result = {}
+        return httpx.Response(
+            200,
+            json={"jsonrpc": "2.0", "id": message["id"], "result": result},
+            headers={"mcp-session-id": "session-1"},
+        )
+
+    return handler
+
+
+async def test_handshake_carries_api_key_and_exposes_only_retrieve() -> None:
+    """接続段階(initialize / tools/list)から api-key が付くこと — 1.12 系の
+    header_provider で踏んだ罠(接続時にヘッダーが付かない)が static_headers
+    で起きないことを、実 MCPStreamableHTTPTool のハンドシェイクで固定する。"""
+    pytest.importorskip("agent_framework")
+    seen: list[tuple[str, str | None]] = []
+    async with httpx.AsyncClient(transport=httpx.MockTransport(fake_kb_mcp_server(seen))) as http:
+        tool = build_kb_mcp_tool(make_settings(), http_client=http)
+        async with tool:
+            assert tool.is_connected
+            assert [f.name for f in tool.functions] == [KB_RETRIEVE_TOOL]
+
+    methods = [method for method, _ in seen]
+    assert "initialize" in methods
+    assert "tools/list" in methods
+    assert all(api_key == "search-key" for _, api_key in seen), seen
 
 
 # --- Web fallback ツール(自前 DDG。MockTransport)---

@@ -53,9 +53,11 @@
 
 ## 実行手順
 
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
+
 ```bash
-# 0) 依存(初回のみ)
-uv sync && uv run playwright install chromium
+# 0) 依存(初回のみ。playwright の版を上げたときもブラウザの再取得が要る)
+uv sync --extra dev && uv run playwright install chromium
 
 # 1) 基盤(課金発生。検証後は RG ごと削除)
 az group create -n rg-cu-video-rag -l japaneast
@@ -85,6 +87,39 @@ uv run python scripts/gen_report.py   # → docs/report/cu-video-rag-report.pdf
 az group delete -n rg-cu-video-rag --yes --no-wait
 # 注意: 再検証時は Foundry リソースの「同名再作成」を避ける(findings 1-8)
 ```
+
+## 検証結果(2026-09-29 最新化チェック)
+
+Azure リソースは削除済みのため、オフライン(依存更新・静的確認・logs/ からの再計算)と公式ドキュメント照合のみ。
+
+- **依存更新**(`uv lock --upgrade`): playwright 1.62.0 → **1.63.0**(Chromium headless shell v1243 の再取得が必要)、
+  推移依存(pandas 3.0.6・sqlalchemy 2.1.1・websockets 17.1 など)。据え置き: azure-search-documents 12.0.0 /
+  ragas 0.4.3(いずれも最新)、langchain 0.3.30・langchain-openai 0.3.35・langchain-community 0.3.31(意図的な
+  `<0.4` 上限。langchain-community 0.4 では `import ragas.llms` が `langchain_community.chat_models.vertexai`
+  不在で失敗することを確認)、openai 2.54.0(langchain-openai 0.3 系の `openai<3` 制約。本ラボは直接使わない)。
+  pyproject の下限を検証版に引き上げ、上限の理由をコメントに明記。ragas は私有モジュール import と非推奨ラッパー
+  (`LangchainLLMWrapper`)依存のため `<0.5` を追加
+- **オフライン確認**(テストスイートは無い — ライブ実測ラボ): `python -m cu_video_rag.corpus` → 104 本・111+8 問・
+  problems none / `run_pipeline.py offline-metrics` を新しい依存で再実行 → `logs/` の 4 出力(segmentation /
+  fact_transcription / abstention / usage_cost)が 2026-09-03 版と**バイト一致** / `gen_report.py` の HTML は
+  作成日以外一致・PDF 16 ページ生成 / `ruff check` clean / `az bicep build` 警告なし
+- **改修**: `record.py` の未使用 import 削除、`dev` extra(ruff)追加と lint 規則の固定(ruff 0.16 で既定ルールが
+  拡張されたため 0.15 までの既定 `E4/E7/E9/F` に固定)、findings §1 見出しの重複修正と 1-1 への追記
+- **変更不要と判断**: CU の GA api-version は **`2025-11-01` のまま**(whats-new 2026-09-08 版: GA は 2025-11-01、
+  `2026-06-01-preview` はプレビュー。クイックスタートも「既定は GA 2025-11-01」)。`prebuilt-videoSearch` /
+  基底 `prebuilt-video` と親アナライザーの config(`enableSegment`・`contentCategories` 1 カテゴリ・`omitContent`・
+  `returnDetails`)は analyzer-reference 2026-09-15 版で有効、`disableFaceBlurring` は同ページの一覧に無いが
+  GA SDK(azure-ai-contentunderstanding 1.1.0、既定 2025-11-01)のモデルに残る。defaults のエイリアス
+  (findings 1-1)は models-deployments 2026-09-15 版で公式化。gpt-5.4-mini / text-embedding-3-small は
+  service-limits 2026-09-11 版の対応モデル。Azure OpenAI の dated api-version `2024-10-21`(埋め込み・回答生成・
+  ragas 判定)は廃止告知なし。azure-search-documents 12.0.0 は 2026-09-03 の実測時点で既に使用。Bicep の
+  apiVersion(CognitiveServices 2025-06-01 / Search 2023-11-01 / Storage 2023-05-01)は有効
+- **ライブ未検証で残るリスク**: ragas 判定の **gpt-4.1-mini はリタイア表 2026-09-21 版で Deprecated**
+  (新規顧客はデプロイ不可・リタイア 2027-04-14)→ 再デプロイで `judgeModel` が通らない可能性。代替は
+  温度 0 を受け付ける非 reasoning モデルに差し替え、ragas 値は再測定扱い(過去値と直接比較しない)。
+  CU 出力(セグメント分割・usage)はサービス側の更新で変わりうる(findings 1-13 のとおり実行ごとにも揺れる)
+- **今後の選択肢**: httpx 直叩きの代わりに CU 公式 SDK(`azure-ai-contentunderstanding` 1.1.0、GA 2025-11-01)/
+  CU CLI(`cu-cli`、preview)/ Azure OpenAI の v1 API(`/openai/v1`、api-version 不要)
 
 ## 注意(このラボの割り切り)
 

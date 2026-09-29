@@ -8,8 +8,9 @@
 が存在すること)。
 
 ``async with agent:`` が MCP 接続のライフサイクルを担う(enter で initialize +
-tools/list、exit で切断)。api-key ヘッダー付き httpx クライアントと DDG 用
-クライアントの後始末はこちら(finally)の責務。
+tools/list、exit で切断。api-key は MCP ツールの ``static_headers`` が運び、
+HTTP クライアントもツールが生成・破棄する)。DDG 用クライアントの後始末は
+こちら(finally)の責務。
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from .config import ConfigError, DbRoutingIqSettings
 from .observability import setup_tracing
 from .query import DEFAULT_TIMEOUT_SECONDS, response_text, run_query, summarize_tool_calls
 from .search import default_http_client
-from .tools import build_kb_mcp_tool, make_http_client, make_web_search_tool
+from .tools import build_kb_mcp_tool, make_web_search_tool
 
 
 def main() -> None:
@@ -57,10 +58,9 @@ async def _run(args: argparse.Namespace) -> None:
 
     print(f"[kb] {settings.kb_mcp_url}", file=sys.stderr)
 
-    kb_http = make_http_client(settings)
     web_http = default_http_client()
     try:
-        kb_tool = build_kb_mcp_tool(settings, kb_http)
+        kb_tool = build_kb_mcp_tool(settings)
         agent = build_routing_agent(
             build_chat_client(settings), kb_tool, make_web_search_tool(web_http)
         )
@@ -72,7 +72,6 @@ async def _run(args: argparse.Namespace) -> None:
             sys.exit(1)
     finally:
         await web_http.aclose()
-        await kb_http.aclose()
 
     answer = response_text(response)
     tool_calls = summarize_tool_calls(response)

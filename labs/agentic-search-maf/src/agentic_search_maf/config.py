@@ -154,8 +154,8 @@ class Config:
         return config
 
     def validate(self) -> None:
-        # Azure resolves credentials through the MAF client's own environment
-        # conventions (AZURE_OPENAI_* / Entra ID), so it is not checked here.
+        # Azure resolves credentials in llm.build_chat_client
+        # (AZURE_OPENAI_API_KEY, else Entra ID), so it is not checked here.
         needs_key = self.llm.provider in (LlmProviderKind.CLAUDE, LlmProviderKind.OPENAI)
         if needs_key and self.llm.api_key.is_empty():
             raise ConfigError(

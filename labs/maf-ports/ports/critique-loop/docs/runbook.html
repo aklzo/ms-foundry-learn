@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>critique-loop 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="runbook.html" class="current">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="critique-loop-実行ガイド">critique-loop 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/critique-loop/</code>(Port 9・パターン: 評価駆動ループ — 並列候補 → 統合 → 批評 ⇄ 改訂のサイクリックグラフ + Foundry クラウド評価)<br><strong>最終確認:</strong> 2026-09-29 オフライン(44 passed・ruff clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / openai 3.20.0 / azure-ai-projects 2.7.0)/ ライブ: 2026-07-31(当時の構成 = agent-framework-core 1.13 / openai 2.51 / azure-ai-projects 2.4。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li>質問 1 つから、候補 3 体の並列生成(fan-out)→ 統合(fan-in)→ 批評(構造化出力 <code>{&quot;verdict&quot;: &quot;accept&quot;|&quot;revise&quot;, &quot;critiques&quot;: [...]}</code>)→ 改訂 → 再批評、のループが回り、<strong>accept なら早期終了・上限(<code>--max-rounds</code>、既定 2)到達なら打ち切り</strong>で必ず止まること。上限到達時、critic は LLM を呼ばずに打ち切る(= 最終改訂は実行時には誰も批評しない)。</li>
+<li><code>--save-run</code> で保存した版列(初稿 / 改訂 1 / 改訂 2)を、Foundry の evals API(<code>builtin.coherence</code> / <code>builtin.fluency</code> + rubric の <code>score_model</code>)で<strong>サーバー側で採点</strong>し、実行時の verdict(<code>revise</code> / <code>accept</code> / <code>unevaluated</code>)と並べたスコア表が出ること。</li>
+<li>技術選定上の意味: 実行時の LLM judge(制御信号)とクラウド評価(測定)は別部品で、<strong>「実行時 revise が続いたのにクラウド評価では fluency が下がった」</strong>という食い違いが 7 月のライブで実際に出た(<a href="../README.md">README 学び 1・検証結果(ライブ)</a>)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>MAF Workflow(ローカル、<code>workflow.py</code>)</td>
+<td>dispatcher → candidate ×3 → synthesize → critic ⇄ revise → finalize のサイクリックグラフ</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>モデルデプロイ(共有基盤、<code>FOUNDRY_MODEL</code> = gpt-5.4-mini)</td>
+<td>候補 3 + 統合 1 + 批評 ≤ 上限 + 改訂 ≤ 上限 回の呼び出し(上限 2 なら最大 8 回)</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>Foundry クラウド評価(evals API、<code>scripts/run_cloud_eval.py</code>)</td>
+<td>版ごとの採点(評価器 3 つ × 版数)。評価グループ / ランはプロジェクトのデータプレーンのオブジェクト</td>
+<td>判定モデル(同じデプロイ)のトークン従量</td>
+</tr>
+<tr>
+<td>Application Insights(共有基盤)</td>
+<td>OTel トレース(executor.process / invoke_agent / chat)</td>
+<td>取り込み量従量</td>
+</tr>
+<tr>
+<td>本ポート固有の Azure リソース</td>
+<td><strong>なし</strong>(<code>infra/main.bicep</code> は existing 参照と出力のみ)</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得。検証は 3.13)</td>
+<td>オフライン実行はこれだけ</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a> + <a href="../../../infra/roles.bicep">infra/roles.bicep</a>)。本ポート固有リソースなし</td>
+<td>課金あり</td>
+</tr>
+<tr>
+<td>権限(ループ)</td>
+<td>API キー(<code>FOUNDRY_API_KEY</code>)のみ</td>
+<td>—</td>
+</tr>
+<tr>
+<td>権限(クラウド評価)</td>
+<td><code>az login</code> 済みユーザーに<strong>プロジェクトの Foundry User</strong>(旧名 Azure AI User、ロール ID <code>53ca6127-db72-4b80-b1b0-d745d6d5456d</code>)。プロジェクト / アカウント MI には roles.bicep で Foundry User + Cognitive Services OpenAI User</td>
+<td>RBAC 伝播に 5〜15 分。評価は Entra ID のみ(キー不可)</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <code>labs/maf-ports/.env.example</code>。<strong>ライブ実行時のみ必要</strong>):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>ループのチャット呼び出し先(<code>https://&lt;foundry&gt;.openai.azure.com/openai/v1</code>)</td>
+<td>shared.bicep 出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>モデルデプロイ名(ループと評価の判定モデルの両方)</td>
+<td>shared.bicep 出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>ループの API キー(<strong><code>run_cloud_eval.py</code> も設定読み込みで必須扱い</strong>。評価自体は Entra ID)</td>
+<td><code>az cognitiveservices account keys list -n aif-&lt;baseName&gt; -g &lt;rg&gt;</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_PROJECT_ENDPOINT</code></td>
+<td>クラウド評価のみ(<code>https://&lt;foundry&gt;.services.ai.azure.com/api/projects/maf-ports</code>)</td>
+<td>shared.bicep 出力 <code>projectEndpoint</code></td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>トレース送信先(未設定ならトレース無効で動く)</td>
+<td>shared.bicep 出力 <code>appInsightsConnectionString</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/critique-loop
+uv sync --extra dev
+uv run pytest                        # 期待: 44 passed, 1 deselected(ネットワーク不要)
+uv run ruff check .                  # 期待: All checks passed!</code></pre>
+<p>クラウド評価の送信内容だけならオフラインで確認できる(値はダミーでよい。<code>--dry-run</code> はネットワークに出ない):</p>
+<pre><code>uv sync --extra dev --extra eval
+FOUNDRY_OPENAI_V1_ENDPOINT=https://x.openai.azure.com/openai/v1 FOUNDRY_MODEL=gpt-5.4-mini FOUNDRY_API_KEY=dummy \
+  uv run python scripts/run_cloud_eval.py runs/&lt;保存済みの実行結果&gt;.json --dry-run
+# 期待: testing_criteria(azure_ai_evaluator ×2 + score_model)と items(stage / runtime_verdict 付き)の JSON</code></pre>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> 上限到達時は最後の改訂を批評せず(critic は LLM を呼ばない)に打ち切る(<code>test_loop_stops_at_max_rounds_without_final_critique</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 最初の批評が accept なら改訂ゼロで終了、1 回改訂後に accept でも終了(<code>test_early_exit_when_first_critique_accepts</code> / <code>test_accept_after_one_revision</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 構造化出力が壊れていたら応答全文を 1 批評として revise(安全側)、revise なのに批評が空なら accept に正規化(<code>test_malformed_critique_falls_back_to_revise_with_raw_text</code> / <code>test_revise_with_empty_critiques_normalized_to_accept</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 候補 3 体が並列に走り、統合プロンプトに全候補が入る(<code>test_candidates_run_concurrently</code> / <code>test_fan_in_synthesis_prompt_contains_all_candidates</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 評価アイテムの runtime_verdict 対応付け: 上限打ち切りの最終版 = <code>unevaluated</code>、早期終了の最終版 = <code>accept</code>、それ以外 = <code>revise</code>(<code>test_runtime_verdict_mapping_for_max_rounds_run</code> / <code>test_runtime_verdict_mapping_for_accepted_run</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> testing_criteria は <code>builtin.coherence</code>(query+response)/ <code>builtin.fluency</code>(response)+ <code>score_model</code> rubric、データソースはインライン JSONL(<code>test_testing_criteria_builtin_pair_and_rubric</code> / <code>test_data_source_wraps_items_as_inline_jsonl</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 集計は stage 順・評価器ごとの平均と initial → 最終版の delta(<code>test_summarize_orders_stages_and_averages_scores</code> / <code>test_format_summary_shows_verdicts_and_delta</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code># 共有基盤が未作成なら先に作る(labs/maf-ports/README.md「実行の前提」と infra/shared.bicep 冒頭コメント)
+cd labs/maf-ports
+az group create -n &lt;rg&gt; -l japaneast
+az deployment group create -g &lt;rg&gt; -f infra/shared.bicep \
+  -p baseName=&lt;baseName&gt; modelName=gpt-5.4-mini modelVersion=&lt;版&gt; modelCapacity=10
+# 第 2 段: MI へのロール割り当て(クラウド評価に必須。手順は infra/shared.bicep 末尾のコメント)
+az deployment group create -g &lt;rg&gt; -f infra/roles.bicep \
+  -p baseName=&lt;baseName&gt; accountPrincipalId=&lt;AID&gt; projectPrincipalId=&lt;PID&gt;
+# 評価を提出する自分にもプロジェクトの Foundry User(ロール ID で指定すると改名の影響を受けない)
+az role assignment create --assignee &lt;自分の UPN か objectId&gt; \
+  --role 53ca6127-db72-4b80-b1b0-d745d6d5456d \
+  --scope &quot;$(az cognitiveservices account show -n aif-&lt;baseName&gt; -g &lt;rg&gt; --query id -o tsv)/projects/maf-ports&quot;
+
+# 本ポートの Bicep は existing 参照と出力だけ(新規リソースなし。エンドポイントの確認用)
+cd ports/critique-loop
+az deployment group create -g &lt;rg&gt; -f infra/main.bicep -p baseName=&lt;baseName&gt;</code></pre>
+<p>出力を <code>labs/maf-ports/.env</code> に転記する(§3 の表)。</p>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code>cd labs/maf-ports/ports/critique-loop
+uv sync --extra dev --extra live
+uv run critique-loop-maf &quot;Explain recursion with examples.&quot;
+uv run critique-loop-maf &quot;What are the best practices for API design?&quot; --max-rounds 3 --show-history
+uv run critique-loop-maf &quot;Explain recursion with examples.&quot; --save-run runs/recursion.json   # 評価の入力
+uv run pytest -m live            # 期待: 1 passed(max_rounds=1 の最小 1 周)
+
+# クラウド評価(az login 済み + FOUNDRY_PROJECT_ENDPOINT)
+uv sync --extra dev --extra live --extra eval
+uv run python scripts/run_cloud_eval.py runs/recursion.json               # builtin 2 種 + rubric
+uv run python scripts/run_cloud_eval.py runs/recursion.json --no-rubric   # rubric を外す(切り分け用)</code></pre>
+<p>CLI のオプション: <code>--max-rounds</code>(1〜3、既定 2)/ <code>--show-history</code>(各周回の批評と改訂を表示)/ <code>--json</code>(全出力を JSON)/ <code>--save-run PATH</code>。評価スクリプト: <code>--name</code>(評価グループ名)/ <code>--no-rubric</code> / <code>--dry-run</code> / <code>--poll-interval</code>(既定 10 秒)/ <code>--timeout</code>(既定 900 秒)。</p>
+<p>期待される出力の例(ループ。stderr の進捗は CLI の書式どおり、数値は<strong>例</strong>。候補の完了順は並列なので毎回変わる):</p>
+<pre><code>tracing: App Insights 有効
+[candidate:practical] done (2841 chars)
+[candidate:structured] done (3310 chars)
+[candidate:skeptical] done (2977 chars)
+[synthesize] initial draft (3605 chars)
+[critic] round 1: revise (10 critiques)
+[revise] round 1: revised (4420 chars)
+[critic] round 2: revise (6 critiques)
+[revise] round 2: revised (4891 chars)
+[critic] round 3: max-rounds (0 critiques)
+[save] runs/recursion.json
+&lt;最終回答&gt;
+[summary] iterations=3 revisions=2/2 stop=max-rounds final_chars=4891</code></pre>
+<p>期待される出力の例(クラウド評価 <code>--no-rubric</code>。initial と revision-2 の値は 7 月のライブ実測 — README「検証結果(2026-07-31 ライブ)」、revision-1 の値と ID は形の例):</p>
+<pre><code>eval group: eval_...
+eval run: evalrun_... (status=queued)
+  status=in_progress
+  status=completed
+report: https://ai.azure.com/...
+stage       runtime_verdict  coherence  fluency
+initial     revise           4.00       5.00
+revision-1  revise           5.00       4.00
+revision-2  unevaluated      5.00       4.00
+delta initial -&gt; revision-2: coherence: +1.00, fluency: -1.00</code></pre>
+<p>rubric(<code>score_model</code>)込みの既定実行では右端に <code>revision_rubric</code> 列が増える。ただし rubric は 7 月のライブで権限の切り分け中に PermissionDenied が出たまま再実行しておらず(builtin 2 種のみ完走)、<strong>実測の出力例はない</strong>。列が <code>-</code> になる・ランが失敗する場合は §9。</p>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: ループ完走</td>
+<td><code>uv run critique-loop-maf &quot;Explain recursion with examples.&quot;</code></td>
+<td>stderr に candidate ×3 → synthesize → critic / revise が並び、<code>[summary] ... stop=max-rounds</code> か <code>stop=accepted</code> で終わる。最終回答が stdout に出る</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>上限打ち切りの呼び出し回数</td>
+<td><code>--max-rounds 1</code> で実行し stderr を見る</td>
+<td>revise の場合: <code>[critic] round 1: revise</code> → <code>[revise] round 1</code> → <code>[critic] round 2: max-rounds (0 critiques)</code>(上限到達の critic は LLM を呼ばない)。round 1 で accept なら改訂なしで終了</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>分岐: 早期終了</td>
+<td>簡単な質問(例: "What is 2+2?")で実行</td>
+<td>critic が <code>accept</code> を返せば改訂なしで <code>stop=accepted</code>(モデル裁量なので revise が続くこともある — 上限で必ず止まれば OK)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>異常系: 入力検証</td>
+<td><code>--max-rounds 4</code>(モデル呼び出し前に落ちるので、.env の 3 点さえあればダミー値でも確認できる)</td>
+<td><code>error: max_rounds は 1〜3(元アプリのスライダー範囲): 4</code> で exit 2</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>クラウド評価: 送信内容</td>
+<td><code>run_cloud_eval.py ... --dry-run</code></td>
+<td>testing_criteria 3 件と、版数ぶんの items(最後の item の <code>runtime_verdict</code> が <code>unevaluated</code> か <code>accept</code>)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>クラウド評価: 完走</td>
+<td><code>run_cloud_eval.py runs/recursion.json</code>(まず <code>--no-rubric</code> でも可)</td>
+<td>status が <code>completed</code> になり、stage × 評価器の表と <code>delta</code> 行、<code>report:</code> の URL が出る</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>パターン固有: 実行時判断と測定の突き合わせ</td>
+<td>表の <code>runtime_verdict</code> 列と各スコア列を見比べる</td>
+<td><code>unevaluated</code> の最終版にもスコアが付く(実行時の死角をクラウド評価が補う)。revise 続きでもスコアが単調に上がるとは限らない — 下がった評価器があれば README 学び 1 と同じ現象</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>ポータルで評価レポート</td>
+<td><code>report:</code> の URL を開く(Foundry ポータルのプロジェクト → 評価)</td>
+<td>評価グループ <code>critique-loop-stages</code> とランが見え、アイテムごとのスコアと理由が読める</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>観測: トレース到達</td>
+<td>§7 の KQL</td>
+<td><code>executor.process critic</code> が「改訂数 + 1」本、<code>executor.process revise</code> が改訂数ぶん、<code>invoke_agent</code> / <code>chat</code> スパンが並ぶ</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>10</td>
+<td>コスト・後片付け</td>
+<td>§8</td>
+<td>使わない期間は RG ごと削除。評価グループ / ランはプロジェクトと一緒に消える(本ポート固有リソースはない)</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code>az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | summarize count() by name | order by name asc&quot;</code></pre>
+<ul>
+<li>期待するスパン名: <code>workflow.run</code>、<code>executor.process dispatcher</code> / <code>executor.process candidate_structured</code>(ほか 2 体)/ <code>executor.process synthesize</code> / <code>executor.process critic</code> / <code>executor.process revise</code> / <code>executor.process finalize</code>、<code>invoke_agent &lt;エージェント名&gt;</code>(candidate_* / synthesizer_agent / critic_agent / reviser_agent)、<code>chat &lt;モデル名&gt;</code></li>
+<li>周回数の読み方: <code>executor.process critic</code> の件数 = 改訂数 + 1(最後の 1 本は上限到達の打ち切りで、配下に <code>invoke_agent critic_agent</code> がない)</li>
+<li>評価の結果はトレースではなくポータルの評価レポート(<code>report_url</code>)と <code>run_cloud_eval.py</code> の表で見る</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code>az group delete -n &lt;rg&gt; --yes --no-wait   # 共有基盤ごと削除(ステートレス。Bicep + roles.bicep で再現可)</code></pre>
+<p>ローカルの <code>runs/*.json</code> は実行結果(プロンプトと回答全文)を含むので、不要なら削除する。</p>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>error: 環境変数が未設定: ...</code></td>
+<td><code>labs/maf-ports/.env</code> に 3 点(<code>FOUNDRY_OPENAI_V1_ENDPOINT</code> / <code>FOUNDRY_MODEL</code> / <code>FOUNDRY_API_KEY</code>)がない。<code>run_cloud_eval.py</code>(<code>--dry-run</code> 含む)も同じ設定読み込みを通る</td>
+<td>§3 の表どおり転記。<code>--dry-run</code> だけならダミー値でよい</td>
+</tr>
+<tr>
+<td><code>error: FOUNDRY_PROJECT_ENDPOINT が未設定</code></td>
+<td>クラウド評価だけが使う変数</td>
+<td>shared.bicep 出力 <code>projectEndpoint</code> を転記</td>
+</tr>
+<tr>
+<td>評価ランが一律 PermissionDenied</td>
+<td>権限が 3 層ある: 判定用デプロイ(<code>initialization_parameters.deployment_name</code>)/ プロジェクト・アカウント MI(Foundry User + OpenAI User)/ <strong>提出ユーザー自身の Foundry User</strong>(<a href="../../../../../docs/survey/casebook/html/02-pitfalls-index.html#c-id-と-rbac">casebook P-I09</a>)</td>
+<td>roles.bicep を再実行し、提出ユーザーにも Foundry User を付与して 5〜15 分待つ</td>
+</tr>
+<tr>
+<td>再デプロイ後に PermissionDenied が再発</td>
+<td>プロジェクト MI のローテーションで旧 principal への割り当てが孤児化(P-I04)</td>
+<td>roles.bicep を新しい principalId で再実行</td>
+</tr>
+<tr>
+<td>ロール名「Azure AI User」で割り当てできない</td>
+<td>改名ロールアウト(Azure AI User → Foundry User)</td>
+<td>ロール ID <code>53ca6127-db72-4b80-b1b0-d745d6d5456d</code> で指定</td>
+</tr>
+<tr>
+<td>rubric(<code>revision_rubric</code>)だけ失敗・<code>-</code></td>
+<td>7 月は未解決のまま(builtin は完走)</td>
+<td>まず <code>--no-rubric</code> で builtin を通し、rubric は別途切り分け</td>
+</tr>
+<tr>
+<td><code>error: timeout (900s)</code></td>
+<td>評価ランがキュー待ち</td>
+<td><code>--timeout 1800</code> で再実行。ポータルの評価一覧で状態を確認</td>
+</tr>
+<tr>
+<td>トレースが出ない</td>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code> 未設定、または <code>--extra live</code> 未導入</td>
+<td>起動時に <code>tracing: App Insights 有効</code> が出るか確認。取り込みに数分かかる</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a></li>
+<li>評価機能の GA / プレビューと課金: <a href="../../../../../docs/survey/features/html/05-observability-evaluation.html">features/05 観測・評価</a></li>
+<li>詰まりどころ(評価の権限 3 層・MI ローテーション): <a href="../../../../../docs/survey/casebook/html/02-pitfalls-index.html#c-id-と-rbac">casebook 02 C. ID と RBAC</a></li>
+<li>同型パターン: ループ + データ条件の終了は <a href="../../game-design-team/README.md">game-design-team</a>、fan-out / fan-in は <a href="../../mixture-of-agents/README.md">mixture-of-agents</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(依存を agent-framework-core 1.19.0 / openai 3.20.0 / azure-ai-projects 2.7.0 に更新。evals API の経路は変更不要と確認。Bicep はロール名コメントのみ更新。構成図を v2(日本語・処理順バッジ・注記帯)に更新)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/critique-loop/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

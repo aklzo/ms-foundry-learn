@@ -66,7 +66,7 @@ Port 3 では調査のみで不採用にした `HandoffBuilder` を、今回は*
 
 判明した制約(構築テスト `tests/test_handoff_variant.py` で固定):
 
-1. participants は実 `Agent` 限定(clone・ツール注入・middleware 前提)。scripted fake は `TypeError` で弾かれる → **実行のオフラインテストは構造的に不可能**(構築の検証のみ可能)。PORTING.md §4 と両立しないという Port 3 の不採用理由を実物で確認
+1. participants は実 `Agent` 限定(clone・ツール注入・middleware 前提)。scripted fake は `TypeError` で弾かれる → **実行のオフラインテストは構造的に不可能**(構築の検証のみ可能)。PORTING.md §4 と両立しないという Port 3 の不採用理由を実物で確認(※2026-09-29 補足: 正確には「Agent を差し替える scripted fake では不可能」。HTTP レベルのモックなら実行できる — 検証結果 2026-09-29 参照)
 2. 全参加者に `require_per_service_call_history_persistence=True` が必須(handoff ツールを middleware が short-circuit するため、履歴整合の要件。無いと `build()` が `ValueError`)— ドキュメントより先にエラーメッセージで知るタイプの制約
 3. one-shot パイプラインに載せるには「human-in-loop 既定の解除(autonomous mode)」「終了述語の自作」「リング・フェーズ・終了をプロンプトに書き下す」の 3 点が必要で、**主実装ではグラフと Executor が決定的に保証していた性質が全部確率的になる**(LLM がツールを呼び忘れたら autonomous mode の nudge 頼み、フェーズを数え違えたら要約と詳細が崩れる)
 
@@ -74,7 +74,7 @@ Port 3 では調査のみで不採用にした `HandoffBuilder` を、今回は*
 
 ```bash
 uv sync --extra dev --extra live
-uv run pytest                 # オフライン(ネットワーク不要・30 件)
+uv run pytest                 # オフライン(ネットワーク不要・30 件。HandoffBuilder 構築テスト 4 件は --extra orchestrations 導入時のみ有効で、未導入なら 26 passed+1 skipped)
 uv run game-design-team-maf   # 既定値(Epic fantasy with dragons / RPG / ...)で実行(要 ../../.env)
 uv run game-design-team-maf --vibe "Cozy island life" --game-type Simulation \
     --mechanics "Crafting,Exploration" --mood "Peaceful" --depth Medium
@@ -85,6 +85,8 @@ uv run pytest -m live                       # ライブスモーク
 uv sync --extra orchestrations --extra live
 uv run python examples/handoff_builder_variant.py
 ```
+
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
 
 インフラ: 共有基盤のみで動作(`infra/main.bicep` は existing 参照+出力のみ)。
 
@@ -109,10 +111,22 @@ az monitor app-insights query --app appi-mafports -g rg-maf-ports \
 - トレース: `executor.process` が story/gameplay/visuals/tech **各×2**(ループエッジの発火が
   スパン数でそのまま見える)+ deliver ×1、`invoke_agent` ×8 を App Insights で確認
 
+## 検証結果(2026-09-29 最新化チェック)
+
+- 依存更新(`uv lock --upgrade`): agent-framework-core 1.13.0 → **1.19.0** / agent-framework-openai 1.12.0 → **1.14.4** / agent-framework-orchestrations 1.0.2 → **1.2.0** / openai 2.51.0 → **3.20.0**(推移依存。HTTP 層が httpx2 に)/ azure-monitor-opentelemetry 1.8.9 → 1.8.10 / ruff 0.16.1 → 0.16.9。pyproject の下限を検証した版へ引き上げ(`agent-framework-core>=1.19.0` / `agent-framework-openai>=1.14.4` / `agent-framework-orchestrations>=1.2.0`)
+- オフライン **30 passed**(`uv sync --extra dev --extra orchestrations`。`-W error::DeprecationWarning` でも 30 passed)/ `--extra dev` のみなら 26 passed+1 skipped(HandoffBuilder 構築テストのモジュールが skip)/ `uv run ruff check .` clean(`docs/architecture.py` を v2 図〈日本語+処理順バッジ〉に書き直した際に、2026-07-31 の図追加時からあった I001 / RUF100 / ISC004 も解消)/ `az bicep build` OK
+- **`src/` の変更なし(API 互換)**: MAF 1.14〜1.19 の [BREAKING] は本ポートの使用面(`Agent` / `WorkflowBuilder` の `add_edge`・`add_switch_case_edge_group` によるループエッジ / `OpenAIChatClient`)に当たらない。スパン名 `executor.process` / `invoke_agent` と計装の既定有効も不変。実 `Agent`×4 の主実装を HTTP 層だけ差し替えたモックで実行し、8 リクエストが story → gameplay → visuals → tech → story → … → tech の順に並び、4 セクション完成で deliver に抜けることを確認
+- **HandoffBuilder 不採用の理由を 1.2.0 で再確認 → 結論は維持**: 1.0.2 → 1.2.0 の `_handoff.py` の差分は、participant の clone で `compaction_strategy` / `tokenizer` / `additional_properties` を引き継ぐ修正、ワークフロー既定名 `"Handoff"` の付与、orchestration のメッセージ型の checkpoint 許可リスト登録のみ。「participants は `Agent` 限定(`TypeError: Participants must be Agent instances`)」「全参加者に `require_per_service_call_history_persistence=True` が必須(無いと `build()` が `ValueError`)」「one-shot には `with_autonomous_mode()`+`with_termination_condition()` が要る」は不変で、構築テスト 4 件は無修正で通過した
+- **補足(判明した制約 1 の精度)**: Agent を差し替える scripted fake は渡せないが、**HTTP レベルのモック**(Responses API の SSE ストリームを固定)なら実 `Agent` のまま変種をオフライン実行できた。正常時は 8 リクエストで story→gameplay→visuals→tech→story→gameplay→visuals→tech の handoff が発火し、tech の `## Tech Design` で終了。1 役割が handoff を呼び忘れると autonomous mode の nudge(`User did not respond. Continue assisting autonomously.`)が 1 回入って復帰するが、**その役割の発話回数が 1 つずれる**(「2 回目に話すときは詳細」の数え方が崩れる芽 — 学び 5 の「決定的な性質が確率的になる」の具体例)。変種は participants を `stream: true` で呼ぶため、非ストリーミング応答のモックでは handoff を検出できず `request_info` で止まる点に注意。モックが openai / MAF のストリーム解釈に密結合するため、テスト資産にはしていない(スクラッチでの確認のみ)
+- **修正(`examples/handoff_builder_variant.py` の表示)**: `stream=True` の output イベントは応答全体でなく `AgentResponseUpdate`(ストリーミング断片。上記モックでは 8 ターンで 68 件)で届くのに、断片ごとに `----- author -----` 見出しを出していた。旧版(core 1.13.0 / orchestrations 1.0.2)でも同じ挙動なので今回の更新による退行ではなく、2026-07-31 にこの example をライブ実行していなかったため残っていた潜在不具合。話者が変わったときだけ見出しを出し、断片を連結して表示するよう修正(同じモックで表示を確認)
+- GroupChatBuilder(1.0.2 から存在、1.2.0 で API 同一)も比較対象として確認: `selection_func`(ラウンドロビン)+`max_rounds=8` でリング順と停止は決定的に書け、participants には `Executor` も置ける。ただし `Agent` 参加者は静的 instructions とブロードキャストされる会話履歴しか持たないため、フェーズ判定(要約 / 詳細)と共有 context は HandoffBuilder と同じくプロンプト頼み。`Executor` 参加者で決定的にすると主実装の RoleExecutor を GroupChat のメッセージ型に合わせて書き直すだけになる → 主実装(明示グラフ)の判断を維持(ソース確認のみ・実行は未検証)
+- **ライブ未検証**: 以上はオフライン・静的確認のみ(Azure リソースは削除済み)。openai 3.x 経由の実 Foundry 応答での完走、HandoffBuilder 変種の実モデルでの handoff 呼び忘れ頻度は再デプロイ時に要確認
+- 実行手順と確認観点を [docs/runbook.md](./docs/runbook.md) に新設
+
 ## 学び(MAF vs 元構成)— Wave 1 handoff 系の総括を含む
 
 1. **「Swarm」を名乗る元アプリの handoff は、実は 1 箇所も LLM が委譲先を選んでいない。**`SwarmResult(agent="gameplay_agent")` も `AFTER_WORK(next)` も**ターゲットは全部ハードコード**で、実態は「リングを 2 周する固定シーケンス」。だから MAF の明示グラフに 1:1 で写り、しかも決定的になった。ここで Port 3 と接続すると Wave 1 の handoff 系の総括が書ける: handoff には **(a) 委譲先を LLM が実行時に選ぶ動的 handoff**(Port 3 元アプリの triage、HandoffBuilder の思想)と **(b) 委譲先固定の「演出としての handoff」**(本ポートの AfterWork リング)の 2 種があり、元 FW が同じ「handoff」の語で両方を覆うため区別が見えにくい。(a) は Port 3 でやったように「判断を構造化出力に落として条件エッジで分岐」(委譲先が列挙できる場合)か HandoffBuilder(列挙できない会話の場合)、(b) はただの明示グラフでよい — **SI の技術選定でエージェント構成図を見たら、矢印ごとに「この委譲は LLM の判断が本当に必要か」を最初に問う**。必要な矢印が 1 本もなければ「マルチエージェント handoff 基盤」は要らず、Workflows(グラフ)だけで決定的・テスト可能に組める。本ポートはその実証で、8 ターンの協調全体がネットワークなしで 13 テストに固定できた。
 2. **UPDATE_SYSTEM_MESSAGE という複雑装置は、AG2 の「長寿命エージェント+累積会話」モデルの必要悪で、ステートレス実行では消滅する。**元実装は毎ターン (a) system prompt 差し替え、(b) tool_choice で update 関数を強制/解除、(c) `_oai_messages[k][:1]` の履歴切り詰め、と 3 つの内部状態手術をしていた。MAF の `Agent.run` は毎回ステートレスなので、同じことが「context から文字列を組んで渡す」1 つの純関数(prompts.py)になり、単体テストも 7 件で済む。(b) の「引数 story_summary を強制的に呼ばせて回収」は実質**構造化出力の 90 年代的実装**であり、移植では応答テキストをそのまま回収するだけでよかった。(c) はステートレス実行の既定動作そのもの。**「フレームワークの高度な機能」に見えるものが、実は別のフレームワークでは存在しない問題への対症療法**である典型例 — 移植の見積りでは「この機構は相手側で何に対応するか」でなく「相手側でもこの問題は存在するか」を問うべき。
 3. **状態を書くのが LLM か框架か — AG2 は「LLM の関数呼び出しが context を書く」、MAF は「Executor が決定的に書く」。**Port 4 の学び 1(LangGraph の共有 dict → 型付きメッセージ)と同型だが、AG2 は一段深く暗黙的で、状態の書き込み自体を LLM のツール実行(update 関数)に委ねる。書き込み内容・タイミングが LLM の挙動に依存するためテストは実質不可能で、しかも本アプリでは tool_choice で強制している=自由裁量は演出に過ぎない。移植では「LLM は文章を作る/框架が状態を書く」に責務分離され、`summaries` の蓄積(gameplay のプロンプトに story の要約が現れる、2 周目は全員が 4 要約を見る)を決定的にアサートできた。おまけに元コードの context_variables 渡し忘れ(dead code)も、型付きにした瞬間に発見された — **可変 dict の共有状態は「渡し忘れても偶然動く」ことを許す**。
 4. **回数と添字の暗黙結合(max_rounds=13 + chat_history[-4:])は、データ条件の終了+型付き成果物で構造的に消えた。**13 という数は「1 task + 4×(関数呼び出し+関数結果) + 4 詳細」を数えて逆算した値で、エージェントが 1 回でも想定外のターンを使えば、swarm は静かに途中で止まり Streamlit は**別の役割のメッセージを story として表示する**(エラーにすらならない)。移植では「全セクションが揃ったら deliver へ」という switch-case のデータ条件が終了を決め、成果物は役割名キーの dict なので、ズレは即例外になる。Port 4 の「補正ループはループしない」と同じく、**グラフを書き直す作業が元アプリの暗黙の前提(ここでは『各役割はきっかり 1 ターンで応じる』)を洗い出す** — これが Wave 1 を通じて最も再現性の高かった移植の副産物。
-5. **HandoffBuilder に同じ協調を載せる実験は「決定的な性質が確率的になる」ことの実地確認だった。**リング順・フェーズ判定・終了という主実装ではグラフと Executor が保証する性質が、HandoffBuilder では全部プロンプト(「1 回目は要約して handoff_to_* を呼べ、2 回目は詳細を書け」)+ autonomous mode + 終了述語に化ける。しかも participants は実 Agent 限定+`require_per_service_call_history_persistence=True` 必須で、実行のオフラインテストは構造的に組めない(構築のみ 4 件で固定)。Port 3 の「handoff という同じ語が SDK ごとに別のワークロードを指す」の続報として: **HandoffBuilder は『次に誰が話すかが本当に会話次第』な長寿命会話のための道具**であり、固定シーケンスに使うと「LLM がツールを呼び忘れない」ことを祈る羽目になる。逆に固定シーケンス派(MAF core)で動的委譲をやると条件エッジの事前列挙が要る(Port 3 学び 1)。この対称性が Wave 1 handoff 系の結論で、選定基準は一言に圧縮できる — **「委譲先が仕様で決まるならグラフ、会話で決まるなら handoff 基盤」**。
+5. **HandoffBuilder に同じ協調を載せる実験は「決定的な性質が確率的になる」ことの実地確認だった。**リング順・フェーズ判定・終了という主実装ではグラフと Executor が保証する性質が、HandoffBuilder では全部プロンプト(「1 回目は要約して handoff_to_* を呼べ、2 回目は詳細を書け」)+ autonomous mode + 終了述語に化ける。しかも participants は実 Agent 限定+`require_per_service_call_history_persistence=True` 必須で、実行のオフラインテストは構造的に組めない(構築のみ 4 件で固定。※Agent 差し替え型の fake の場合 — 2026-09-29 補足参照)。Port 3 の「handoff という同じ語が SDK ごとに別のワークロードを指す」の続報として: **HandoffBuilder は『次に誰が話すかが本当に会話次第』な長寿命会話のための道具**であり、固定シーケンスに使うと「LLM がツールを呼び忘れない」ことを祈る羽目になる。逆に固定シーケンス派(MAF core)で動的委譲をやると条件エッジの事前列挙が要る(Port 3 学び 1)。この対称性が Wave 1 handoff 系の結論で、選定基準は一言に圧縮できる — **「委譲先が仕様で決まるならグラフ、会話で決まるなら handoff 基盤」**。

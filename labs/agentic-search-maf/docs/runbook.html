@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agentic-search-maf 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../runbooks.html">索引</a><span class="grp">labs:</span><a href="runbook.html" class="current">agentic-search-maf</a><a href="../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../maf-ports/infra/docs/runbook.html">共有基盤</a><a href="../../maf-ports/ports/claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../maf-ports/ports/corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../maf-ports/ports/critique-loop/docs/runbook.html">critique-loop</a><a href="../../maf-ports/ports/data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../maf-ports/ports/db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../maf-ports/ports/game-design-team/docs/runbook.html">game-design-team</a><a href="../../maf-ports/ports/github-mcp/docs/runbook.html">github-mcp</a><a href="../../maf-ports/ports/governed-agent/docs/runbook.html">governed-agent</a><a href="../../maf-ports/ports/hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../maf-ports/ports/mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../maf-ports/ports/research-handoff/docs/runbook.html">research-handoff</a><a href="../../maf-ports/ports/services-agency/docs/runbook.html">services-agency</a><a href="../../maf-ports/ports/travel-memory/docs/runbook.html">travel-memory</a><a href="../../maf-ports/ports/trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="agentic-search-maf-実行ガイド">agentic-search-maf 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このラボで確かめること">1. このラボで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-ローカル-llm-は無料-クラウド-llm-は課金あり">5. ライブ実行(ローカル LLM は無料 / クラウド LLM は課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/agentic-search-maf/</code>(自己評価型リサーチエージェント・パターン: Plan-and-Execute + Reflection ループの MAF Workflow)<br><strong>最終確認:</strong> 2026-09-29 オフライン(50 passed・ruff clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / openai 3.20.0)/ ライブ: <strong>未実施</strong>(初版から実 LLM でのエンドツーエンド実行はしていない。§5 は手順と期待の形のみ)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>・<a href="architecture.md">architecture.md</a>・<a href="maf-port-design.md">maf-port-design.md</a>。</p></blockquote>
+<h2 id="1-このラボで確かめること">1. このラボで確かめること</h2>
+<ul>
+<li>質問 1 つから、Planner → Gatherer → Evaluator ⇄(不足なら再収集)→ Reporter の<strong>循環グラフ</strong>が回り、出典付き Markdown レポートと自己評価(freshness / correctness / coverage)が出ること。</li>
+<li>終了条件が 3 つ(充足 = <code>is_sufficient</code> かつ全軸 70 点以上 / <code>max_iterations</code> 到達 / 追加クエリも新規 finding もない)で必ず止まり、評価やレポート合成が失敗しても<strong>集めた findings を失わない</strong>こと。</li>
+<li>LLM ロールを <code>run()</code> だけのプロトコル(<code>SupportsRun</code>)に依存させておくと、MAF のグラフを<strong>ネットワーク・モデルなしで</strong>統合テストできること(<code>ScriptedAgent</code> パターンの原型。maf-ports のテスト方針の元になった)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p>図(<code>architecture.png</code>)は本ラボには未作成。処理フローの詳細図は <a href="architecture.md">architecture.md</a> の「処理フロー」。</p>
+<pre><code>質問 ─▶ Planner ─▶ Gatherer ─▶ Evaluator ─(ReportTask)─▶ Reporter ─▶ Report(Markdown)
+                      ▲            │
+                      └(GatherTask)┘   ← 自己評価で不足なら追加クエリで再収集
+進捗: Planner / Gatherer / Evaluator の yield_output → type=&quot;intermediate&quot; イベント → CLI 表示と --trace JSONL</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>MAF Workflow(ローカル、<code>workflow.py</code>)</td>
+<td>4 エグゼキュータの循環グラフ。遷移はメッセージ型で決まる決定的コード</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>LLM(<code>llm.py</code>、4 ロールの <code>Agent</code>)</td>
+<td>planner / extractor / evaluator / reporter。既定はローカル Ollama</td>
+<td>Ollama: なし / claude・openai・azure: トークン従量</td>
+</tr>
+<tr>
+<td>検索(<code>search.py</code>)</td>
+<td>duckduckgo(既定・キー不要)/ searxng / serper</td>
+<td>serper のみ API 従量</td>
+</tr>
+<tr>
+<td>取得(<code>fetch/</code>)</td>
+<td>SSRF ガード付き HTTP 取得 + Readability 抽出</td>
+<td>なし</td>
+</tr>
+</tbody></table></div>
+<p>プロバイダーと MAF クライアントの対応(2026-09-29 以降):</p>
+<div class="tablewrap"><table><thead><tr>
+<th><code>--provider</code></th>
+<th>MAF クライアント</th>
+<th>API</th>
+<th>構造化出力</th>
+</tr></thead><tbody>
+<tr>
+<td><code>ollama</code>(既定)</td>
+<td><code>OpenAIChatCompletionClient</code></td>
+<td>Chat Completions(<code>http://localhost:11434/v1</code>)</td>
+<td><code>response_format</code> あり</td>
+</tr>
+<tr>
+<td><code>claude</code></td>
+<td><code>OpenAIChatCompletionClient</code></td>
+<td>Anthropic の OpenAI 互換層(Chat Completions のみ)</td>
+<td>無効化 → プロンプト + 寛容パース</td>
+</tr>
+<tr>
+<td><code>openai</code></td>
+<td><code>OpenAIChatClient</code></td>
+<td>Responses API</td>
+<td>あり</td>
+</tr>
+<tr>
+<td><code>azure</code>(別名 <code>foundry</code>)</td>
+<td><code>OpenAIChatClient</code></td>
+<td>Responses API(<code>&lt;endpoint&gt;/openai/v1/</code>)</td>
+<td>あり</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python は 3.10 以上。開発・検証は 3.13)</td>
+<td>オフライン実行はこれだけ</td>
+</tr>
+<tr>
+<td>ローカル LLM(既定)</td>
+<td><a href="https://ollama.com/">Ollama</a> + <code>ollama pull llama3.2:3b</code></td>
+<td>無料。小型モデルは JSON 崩れが起きやすい(寛容パースが吸収)</td>
+</tr>
+<tr>
+<td>Azure(任意)</td>
+<td>Azure OpenAI / Foundry リソースとモデルデプロイ(例: gpt-5.4-mini)。本ラボに Bicep はない。maf-ports の共有基盤(<a href="../../maf-ports/infra/shared.bicep">shared.bicep</a>)のデプロイを流用できる</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>権限(Azure をキーなしで使う場合)</td>
+<td>署名ユーザーに Cognitive Services OpenAI User 相当(リソース)+ <code>az login</code> + <code>uv sync --extra azure</code></td>
+<td>RBAC 伝播に 5〜15 分</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(シェルで export。<code>.env</code> は読まない。名前は Rust 版と同じ):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>既定 / 取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>AGS_LLM_PROVIDER</code></td>
+<td>LLM プロバイダー(<code>--provider</code> が優先)</td>
+<td><code>ollama</code></td>
+</tr>
+<tr>
+<td><code>AGS_LLM_MODEL</code></td>
+<td>モデル名(azure はデプロイ名。<code>--model</code> が優先)</td>
+<td>ollama: <code>llama3.2:3b</code> / claude: <code>claude-sonnet-5</code> / openai: <code>gpt-4o-mini</code> / azure: なし(必須)</td>
+</tr>
+<tr>
+<td><code>AGS_LLM_BASE_URL</code></td>
+<td>OpenAI 互換エンドポイントの上書き</td>
+<td>ollama: <code>http://localhost:11434/v1</code> / claude: <code>https://api.anthropic.com/v1/</code></td>
+</tr>
+<tr>
+<td><code>ANTHROPIC_API_KEY</code> / <code>OPENAI_API_KEY</code></td>
+<td>claude / openai 用の API キー</td>
+<td>各社コンソール</td>
+</tr>
+<tr>
+<td><code>AZURE_OPENAI_ENDPOINT</code></td>
+<td>azure 用。<strong>リソースのルート</strong>(<code>https://&lt;foundry&gt;.openai.azure.com</code>)。<code>/openai/v1</code> は付けない</td>
+<td>shared.bicep 出力 <code>openaiV1Endpoint</code> から <code>/openai/v1</code> を除いた部分</td>
+</tr>
+<tr>
+<td><code>AZURE_OPENAI_API_KEY</code></td>
+<td>azure 用キー。未設定なら Entra ID(<code>DefaultAzureCredential</code>)</td>
+<td>ポータルの「キーとエンドポイント」</td>
+</tr>
+<tr>
+<td><code>AGS_SEARCH_PROVIDER</code> / <code>AGS_SEARXNG_URL</code> / <code>SERPER_API_KEY</code></td>
+<td>検索プロバイダー切替</td>
+<td><code>duckduckgo</code> / <code>http://localhost:8080</code> / なし</td>
+</tr>
+<tr>
+<td><code>AGS_REPORT_LANGUAGE</code></td>
+<td>レポートの言語</td>
+<td><code>日本語</code></td>
+</tr>
+<tr>
+<td><code>AGS_MAX_CONCURRENT_PAGES</code> / <code>AGS_MAX_RETRIES</code></td>
+<td>1 クエリ内のページ並列度 / 一時障害の再試行回数</td>
+<td>ollama: 1、それ以外: 4 / 2</td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/agentic-search-maf
+uv sync --extra dev
+uv run pytest -q -W error::DeprecationWarning   # 期待: 50 passed(ネットワーク・LLM 不要。非推奨 API の混入も検知)
+uv run ruff check . &amp;&amp; uv run ruff format --check src/ tests/   # 期待: All checks passed! / already formatted</code></pre>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> 1 回目の評価が不足 → 追加クエリで 2 周目 → 充足で終了し、同一 finding は重複排除される(<code>test_loop_runs_followup_iteration_then_stops_when_sufficient</code>。PlanReady 1 回・QueryStarted 2 回・EvaluationDone 2 回)</li>
+<li class="task"><input type="checkbox" class="chk"> 評価者が壊れた JSON を返してもレポートは出る(<code>test_evaluator_failure_still_produces_a_report</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 充足判定は <code>is_sufficient</code> と全軸 70 点以上の二重チェック(<code>test_sufficiency_requires_flag_and_scores</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> SSRF ガードがループバック・プライベート・メタデータ IP・内部ホスト名・資格情報付き URL を拒否する(<code>tests/test_guard.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 寛容パースがコードフェンス・前後の地の文・壊れた要素混じりの出力から finding を救出する(<code>tests/test_json_utils.py</code>・<code>tests/test_schemas.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> プロバイダー → クライアントの対応(ollama/claude は Chat Completions、openai/azure は Responses、azure は <code>/openai/v1/</code>)(<code>tests/test_llm.py</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-ローカル-llm-は無料-クラウド-llm-は課金あり">5. ライブ実行(ローカル LLM は無料 / クラウド LLM は課金あり)</h2>
+<h3 id="5-1-準備">5.1 準備</h3>
+<pre><code># ローカル LLM(既定)
+ollama serve &amp;
+ollama pull llama3.2:3b
+
+# Azure を使う場合(本ラボに Bicep はない。既存のモデルデプロイを使う)
+export AZURE_OPENAI_ENDPOINT=https://&lt;foundry&gt;.openai.azure.com
+export AZURE_OPENAI_API_KEY=...        # 省略時は Entra ID → uv sync --extra dev --extra azure &amp;&amp; az login</code></pre>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code>cd labs/agentic-search-maf
+uv run agentic-search-maf &quot;Microsoft Agent Framework の最新リリースで何が変わったか&quot; \
+  --output report.md --trace report.trace.jsonl -v
+
+# Azure(Foundry Models)で
+uv run agentic-search-maf &quot;質問&quot; --provider azure --model gpt-5.4-mini --max-iterations 2 \
+  --output report.md --trace report.trace.jsonl</code></pre>
+<p>期待される出力の例(stderr。CLI の書式から作った<strong>形の例</strong>で、実測値ではない):</p>
+<pre><code>plan ready: 4 queries: MAF release notes, agent-framework-core changelog, ...
+searching: MAF release notes
+  page https://example.com/... (+3)
+iteration 1 done: +9 findings (total 9)
+evaluation 1: freshness 80, correctness 75, coverage 55, sufficient=False
+searching: &lt;評価者の追加クエリ&gt;
+iteration 2 done: +4 findings (total 13)
+evaluation 2: freshness 85, correctness 80, coverage 75, sufficient=True
+report written to report.md
+trace written to report.trace.jsonl
+done: 13 findings from 6 sources in 2 iteration(s) | scores: freshness 85, correctness 80, coverage 75</code></pre>
+<p><code>report.md</code> の末尾には <code>## Self-assessment</code>(3 軸のスコア表と Known limitations)が付く。</p>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: レポート生成</td>
+<td>§5.2 を実行し <code>report.md</code> を開く</td>
+<td>本文に出典 URL 付きの記述、末尾に <code>## Self-assessment</code> の表。stderr 最終行が <code>done: ... findings from ... sources</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>自己評価ループ</td>
+<td>stderr の <code>evaluation N:</code> 行と <code>searching:</code> 行</td>
+<td><code>sufficient=False</code> の後に評価者由来の追加クエリで次の iteration が始まる。<code>sufficient=True</code> か <code>--max-iterations</code> 到達で止まる</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>早期終了(進捗なし)</td>
+<td>ニッチすぎる質問や <code>AGS_SEARCH_PROVIDER</code> の結果が空になる条件で実行し <code>-v</code> のログを見る</td>
+<td><code>no follow-up queries and no new findings; stopping early</code> が出て、上限前にレポートへ進む</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>異常系: 小型モデルの JSON 崩れ</td>
+<td><code>llama3.2:3b</code> で実行し <code>-v</code> ログを確認</td>
+<td><code>evaluation failed; writing report with the last successful evaluation</code> が出てもレポートは出る(<code>report synthesis failed</code> 時は「調査結果(自動整形)」の findings 羅列)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>SSRF ガード</td>
+<td><code>uv run pytest tests/test_guard.py -q</code></td>
+<td>全件 pass(ライブでは内部 URL が検索結果に出ても <code>skipping page ...</code> で飛ばされる)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>プロバイダー切替</td>
+<td><code>--provider claude</code>(要 <code>ANTHROPIC_API_KEY</code>)/ <code>--provider azure</code> で同じ質問</td>
+<td>claude は構造化出力なし(寛容パース経路)でも完走。azure は <code>/openai/v1/responses</code> に届く(401/404 なら §9)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>観測: trace JSONL</td>
+<td><code>head report.trace.jsonl</code></td>
+<td>1 行 1 イベント。<code>plan_ready</code> → <code>query_started</code> → <code>page_processed</code> → <code>iteration_done</code> → <code>evaluation_done</code> の順に並ぶ</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>コスト</td>
+<td>クラウド LLM 使用時は <code>--max-iterations 2</code> と <code>AGS_MAX_CONCURRENT_PAGES</code> を小さくして試す</td>
+<td>1 調査あたりの呼び出し数 ≒ 1(planner)+ ページ数(extractor)+ iteration 数(evaluator)+ 1(reporter)</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<p>OpenTelemetry / Application Insights には送っていない(本ラボはローカル CLI で、観測は <code>--trace</code> の JSON Lines に一本化)。trace は Rust 版 GUI の監査トレースと同形式。</p>
+<pre><code># イベント種別ごとの件数
+python3 -c &quot;import json,collections,sys; print(collections.Counter(json.loads(l)[&#x27;type&#x27;] for l in open(&#x27;report.trace.jsonl&#x27;) if l.strip()))&quot;</code></pre>
+<ul>
+<li>期待: <code>plan_ready</code> 1 件、<code>evaluation_done</code> = iteration 数、<code>page_processed</code> = 処理したページ数。</li>
+<li>1 行の形: <code>{&quot;timestamp&quot;: &quot;2026-...+09:00&quot;, &quot;type&quot;: &quot;plan_ready&quot;, &quot;queries&quot;: [...]}</code>(時刻 + イベントのフィールドを平坦化)。</li>
+<li>自己評価の中身は <code>evaluation_done</code> 行の <code>evaluation</code>(3 軸の score / issues と <code>followup_queries</code>)で追える。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<ul>
+<li>ローカル実行のみなら不要(Ollama を止めるだけ)。</li>
+<li>Azure のモデルデプロイを本ラボ用に作った場合は、使い終わったらリソースグループごと削除する(<code>az group delete -n &lt;rg&gt; --yes --no-wait</code>)。maf-ports の共有基盤を流用した場合はそちらの手順に従う。</li>
+</ul>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>ConfigError: provider azure requires AZURE_OPENAI_ENDPOINT</code></td>
+<td>エンドポイント未設定</td>
+<td><code>AZURE_OPENAI_ENDPOINT=https://&lt;foundry&gt;.openai.azure.com</code> を export</td>
+</tr>
+<tr>
+<td>azure で 404(URL が <code>/openai/v1/openai/v1/</code>)</td>
+<td>エンドポイントに <code>/openai/v1</code> まで含めた</td>
+<td>MAF が <code>/openai/v1/</code> を付けるので、リソースのルートだけを渡す</td>
+</tr>
+<tr>
+<td><code>ConfigError: provider azure without AZURE_OPENAI_API_KEY uses Entra ID ...</code></td>
+<td>キーなし運用で <code>azure-identity</code> 未導入</td>
+<td><code>uv sync --extra dev --extra azure</code> と <code>az login</code>(または API キーを設定)</td>
+</tr>
+<tr>
+<td>azure で 401 / PermissionDenied</td>
+<td>Entra ID の RBAC 未付与・伝播待ち、またはリソースでキー認証が無効</td>
+<td>ロールを付与して 5〜15 分待つ / キーレスに切り替える</td>
+</tr>
+<tr>
+<td><code>SettingNotFoundError: ... requires a model</code></td>
+<td>azure でデプロイ名未指定</td>
+<td><code>--model &lt;deployment&gt;</code> か <code>AGS_LLM_MODEL</code></td>
+</tr>
+<tr>
+<td>claude / ollama で 404 <code>/v1/responses</code></td>
+<td>2026-09-29 より前のコード(Responses クライアントで互換エンドポイントを叩いていた)</td>
+<td>最新の <code>llm.py</code>(<code>OpenAIChatCompletionClient</code>)を使う</td>
+</tr>
+<tr>
+<td>Ollama 実行が非常に遅い / タイムアウト</td>
+<td>ローカル推論は prefill 律速(タイムアウトは ollama のみ 900 秒)</td>
+<td>小さいモデル・<code>--max-iterations</code> を下げる。並列度は 1 のままが速い</td>
+</tr>
+<tr>
+<td><code>query &#x27;...&#x27; failed: duckduckgo returned HTTP 202</code>(や 429)</td>
+<td>DuckDuckGo のレート制限・ボット判定</td>
+<td>時間をおく / <code>AGS_SEARCH_PROVIDER=searxng</code>(ローカル SearXNG)か <code>serper</code></td>
+</tr>
+<tr>
+<td>stderr に <code>ExperimentalWarning: [SKILLS]/[HARNESS]</code></td>
+<td>MAF の実験的機能の予告</td>
+<td>無害</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a> / <a href="architecture.md">architecture.md</a> / <a href="maf-port-design.md">maf-port-design.md</a> / <a href="maf-implementation-notes.md">maf-implementation-notes.md</a></li>
+<li>開発者サーフェス(SDK・MAF)の位置づけ: <a href="../../../docs/survey/features/html/08-developer-experience.html">features/08 開発者サーフェス</a></li>
+<li>エージェント自動化ユースケースのアーキ: <a href="../../../docs/survey/architecture/html/05-usecase-agent-automation.html">architecture/05</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(agent-framework-core 1.10→1.19 / openai 2.x→3.20 に更新、<code>uv.lock</code> 新設。ollama/claude を Chat Completions クライアントへ、azure のキーなし時に Entra ID を明示)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/agentic-search-maf/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

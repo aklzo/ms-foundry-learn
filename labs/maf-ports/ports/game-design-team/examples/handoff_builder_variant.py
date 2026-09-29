@@ -61,23 +61,30 @@ async def _run(spec: GameSpec) -> None:
     workflow = build_handoff_variant_workflow(build_chat_client(settings))
 
     # HandoffBuilder では各エージェントの応答がそのまま workflow の output
-    # イベントになる(終端イベントはない)。会話順に全応答を表示する。
+    # イベントになる(終端イベントはない)。stream=True の output は応答全体
+    # ではなく AgentResponseUpdate(ストリーミング断片)で届くため、話者が
+    # 変わったときだけ見出しを出し、断片は連結して会話順に表示する
+    # (2026-09-29 修正: 旧実装は断片ごとに見出しを出していた)。
+    current_author: str | None = None
     async for event in workflow.run(spec.to_task(), stream=True):
         if event.type == "handoff_sent":
             data = event.data
-            print(f"[handoff] {data.source} -> {data.target}", file=sys.stderr)
+            print(f"\n[handoff] {data.source} -> {data.target}", file=sys.stderr)
         elif event.type == "output":
-            response = event.data
-            author = getattr(response, "author_name", None) or getattr(
+            update = event.data
+            author = getattr(update, "author_name", None) or getattr(
                 event, "executor_id", "?"
             )
-            text = getattr(response, "text", str(response))
-            print(f"\n----- {author} -----\n{text}")
+            if author != current_author:
+                print(f"\n\n----- {author} -----", flush=True)
+                current_author = author
+            print(getattr(update, "text", None) or "", end="", flush=True)
         elif event.type in ("request_info",):
             # autonomous mode でも turn limit 到達時などに出得る。one-shot
             # 実行ではここで打ち切る(会話型セマンティクスが残る証左)。
-            print("[request_info] ユーザー入力要求 — one-shot 実行のため終了", file=sys.stderr)
+            print("\n[request_info] ユーザー入力要求 — one-shot 実行のため終了", file=sys.stderr)
             return
+    print()
 
 
 if __name__ == "__main__":

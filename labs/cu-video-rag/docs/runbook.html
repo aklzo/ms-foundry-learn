@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cu-video-rag 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="runbook.html" class="current">cu-video-rag</a><a href="../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../maf-ports/infra/docs/runbook.html">共有基盤</a><a href="../../maf-ports/ports/claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../maf-ports/ports/corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../maf-ports/ports/critique-loop/docs/runbook.html">critique-loop</a><a href="../../maf-ports/ports/data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../maf-ports/ports/db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../maf-ports/ports/game-design-team/docs/runbook.html">game-design-team</a><a href="../../maf-ports/ports/github-mcp/docs/runbook.html">github-mcp</a><a href="../../maf-ports/ports/governed-agent/docs/runbook.html">governed-agent</a><a href="../../maf-ports/ports/hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../maf-ports/ports/mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../maf-ports/ports/research-handoff/docs/runbook.html">research-handoff</a><a href="../../maf-ports/ports/services-agency/docs/runbook.html">services-agency</a><a href="../../maf-ports/ports/travel-memory/docs/runbook.html">travel-memory</a><a href="../../maf-ports/ports/trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="cu-video-rag-実行ガイド">cu-video-rag 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このラボで確かめること">1. このラボで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/cu-video-rag/</code>(Content Understanding 動画 × AI Search ハイブリッド検索 × RAG の精度検証。maf-ports のポートではない単独ラボ)<br><strong>最終確認:</strong> 2026-09-29 オフライン(テストスイートなし。<code>corpus</code> 検証 problems none・<code>offline-metrics</code> の再計算が 2026-09-03 版とバイト一致・レポート再生成 OK・ruff clean・<code>az bicep build</code> OK。依存 playwright 1.63.0 / azure-search-documents 12.0.0 / ragas 0.4.3 / langchain 0.3.30)/ ライブ: 2026-09-03(ラウンド 3、japaneast、CU GA API <code>2025-11-01</code>。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。結論と持ち帰りは <a href="../README.md">README</a>、評価設計は <a href="./design.md">design.md</a>、詰まりどころの全記録は <a href="./findings.md">findings.md</a>、正式な結果は <a href="./report/cu-video-rag-report.pdf">レポート PDF</a>。</p></blockquote>
+<h2 id="1-このラボで確かめること">1. このラボで確かめること</h2>
+<ul>
+<li>CU の <code>prebuilt-videoSearch</code>(GA <code>2025-11-01</code>)の<strong>日本語書き起こしが、別途 STT を実装しなくてよい水準か</strong>(台本を正解にした CER)。</li>
+<li><strong>画面にしか出ない情報</strong>(エラー番号・設定値・金額など)が検索・RAG で使えるか。素の prebuilt(構成 B)と、日本語カスタムフィールドを持つ <strong>2 段アナライザー</strong>(構成 C/D)を、書き起こしのみ(A0/A)と比べる(中心指標は正解動画に限定した ans@3)。</li>
+<li>実装上の必須処理(<strong>単語タイムスタンプでの再配分</strong>・<strong>セグメント被覆検査</strong>)と、<strong>研修動画 1 時間あたりの解析コスト</strong>を実測値で持ち帰る。</li>
+<li>技術選定上の意味: 「動画ナレッジの取り込みは CU で書き起こしまで賄えるが、日本語では 2 段カスタムアナライザー前提で工数を見る」(<a href="../README.md">README 結論・持ち帰り</a>)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p>図は用意していない(パイプラインはバッチスクリプトの直列実行)。流れと各段の出力:</p>
+<pre><code>[1 データ生成・ローカル]  corpus.py(定義=正解) → Speech TTS(ja-JP) → Playwright スクショ → ffmpeg concat
+                           → data/videos/*.mp4 ・ data/ground_truth/*.json(104 本)
+[2 CU 解析]               upload(Blob + 読み取り SAS 3 日) → analyze
+                           prebuilt-videoSearch            → logs/cu/prebuilt/&lt;id&gt;.json
+                           videoSearchJa(親: 分割)→ segmentFieldsJa(サブ: 日本語フィールド) → logs/cu/custom/&lt;id&gt;.json
+                           → cer(書き起こし CER → logs/cer_&lt;tag&gt;.json)
+[3 索引]                  chunks.py(セグメント分解 + 単語再配分) → index --config A0/A/B/C/D
+                           → AI Search cuvrag-&lt;config&gt;(ja.lucene BM25 + text-embedding-3-small HNSW、RRF)
+[4 評価]                  eval(hit@k / MRR / seg_hit@1 / ans@k + 構成間 95% CI → logs/eval_*.json)
+                           rag-answer(top-3 + gpt-5.4-mini) → ragas(判定 gpt-4.1-mini・温度 0)
+                           offline-metrics(Azure 不要: 境界一致・画面転記率・棄権率・usage/コスト)
+[5 レポート]              gen_report.py → docs/report/report.html + cu-video-rag-report.pdf</code></pre>
+<p>構成 A0〜D の中身は <a href="./design.md">design.md §3</a>、2 段アナライザーが必要な理由は <a href="./findings.md">findings.md §1-4</a>。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>ローカル(uv / Playwright / ffmpeg)</td>
+<td>合成研修動画 104 本(計 72.5 分)と正解の生成、チャンク化、指標計算、レポート生成</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>Foundry リソース <code>aif-&lt;baseName&gt;</code>(kind AIServices, S0)</td>
+<td>CU データプレーン(<code>/contentunderstanding</code>、プロジェクト不要)+ Speech TTS + モデルデプロイの親</td>
+<td>CU: 動画抽出(時間課金)+ contextualization トークン / TTS: 文字数</td>
+</tr>
+<tr>
+<td>モデルデプロイ <code>gpt-5.4-mini</code>(GlobalStandard 200K TPM)</td>
+<td>CU のセグメント分割・生成フィールド、RAG の回答生成</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>モデルデプロイ <code>text-embedding-3-small</code>(120K)</td>
+<td>CU defaults の埋め込み、検索ベクトル</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>モデルデプロイ <code>gpt-4.1-mini</code>(100K)</td>
+<td>ragas の判定 LLM</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>Storage(Standard_LRS、<code>videos</code> コンテナ)</td>
+<td>mp4 置き場(CU へは SAS URL で渡す)</td>
+<td>容量(僅少)</td>
+</tr>
+<tr>
+<td>AI Search basic</td>
+<td>インデックス <code>cuvrag-a0</code> / <code>-a</code> / <code>-b</code> / <code>-c</code> / <code>-d</code></td>
+<td><strong>稼働時間課金(約 $0.133/時)— 放置しない</strong></td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得。検証は 3.13)</td>
+<td>オフライン確認はこれだけ(+ レポート再生成に Chromium)</td>
+</tr>
+<tr>
+<td>ツール(データ生成・レポート)</td>
+<td>Playwright Chromium(<code>uv run playwright install chromium</code>)、ffmpeg(PATH 上)、日本語フォント(Noto Sans CJK JP 等)</td>
+<td>playwright の版を上げたらブラウザも取り直す(§9)</td>
+</tr>
+<tr>
+<td>ツール(ライブ)</td>
+<td>Azure CLI(<code>az deployment</code> / <code>az storage</code> / <code>az search</code>)</td>
+<td><code>upload</code> は <code>az storage blob upload-batch</code> を呼ぶ</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>使い捨て RG(japaneast)に <a href="../infra/main.bicep">infra/main.bicep</a> をデプロイ</td>
+<td>課金あり。GlobalStandard のクォータ(gpt-5.4-mini 200K TPM ほか)が必要</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>RG への Contributor + ロール割り当て権限(Bicep が署名ユーザーに Cognitive Services OpenAI User / Cognitive Services User / Storage Blob Data Contributor を付与)</td>
+<td>ラボ本体はキー認証(TTS / CU / Search / SAS)。顧客環境では Entra ID + RBAC にする(<a href="../README.md">README 注意</a>)</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/cu-video-rag/.env</code>。<strong><code>scripts/setup_azure.sh</code> がデプロイ出力とキーから生成する</strong>。雛形ファイルは無い。キーを含むので共有しない・git 管理外):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途(使うサブコマンド)</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_ENDPOINT</code></td>
+<td>CU の呼び出し先(defaults / create-analyzer / analyze)</td>
+<td>main.bicep 出力 <code>foundryEndpoint</code></td>
+</tr>
+<tr>
+<td><code>AOAI_ENDPOINT</code></td>
+<td>埋め込み・回答生成・ragas(<code>https://&lt;sub&gt;.cognitiveservices.azure.com</code>、アカウント直。プロジェクト経由の embeddings は 404 — foundry-probes 08)</td>
+<td>main.bicep 出力 <code>aoaiEndpoint</code></td>
+</tr>
+<tr>
+<td><code>AI_KEY</code></td>
+<td>Foundry リソースのキー(TTS・CU・モデル呼び出しすべて)</td>
+<td><code>az cognitiveservices account keys list</code></td>
+</tr>
+<tr>
+<td><code>REGION</code></td>
+<td>TTS のリージョン(dataset)。setup_azure.sh は <code>japaneast</code> 固定</td>
+<td>固定値</td>
+</tr>
+<tr>
+<td><code>STORAGE_NAME</code> / <code>STORAGE_KEY</code></td>
+<td>Blob アップロードと SAS 生成(upload)</td>
+<td>main.bicep 出力 <code>storageName</code> / <code>az storage account keys list</code></td>
+</tr>
+<tr>
+<td><code>SEARCH_ENDPOINT</code> / <code>SEARCH_ADMIN_KEY</code></td>
+<td>インデックス作成・検索(index / eval / rag-answer)</td>
+<td>main.bicep 出力 <code>searchEndpoint</code> / <code>az search admin-key show</code></td>
+</tr>
+<tr>
+<td><code>COMPLETION_MODEL</code> / <code>COMPLETION_DEPLOYMENT</code></td>
+<td>defaults 登録のモデル名 / デプロイ名、回答生成のデプロイ</td>
+<td>固定値 <code>gpt-5.4-mini</code></td>
+</tr>
+<tr>
+<td><code>EMBED_MODEL</code> / <code>EMBED_DEPLOYMENT</code></td>
+<td>defaults 登録、検索ベクトル、ragas の埋め込み</td>
+<td>固定値 <code>text-embedding-3-small</code></td>
+</tr>
+<tr>
+<td><code>JUDGE_DEPLOYMENT</code></td>
+<td>ragas の判定 LLM</td>
+<td>固定値 <code>gpt-4.1-mini</code></td>
+</tr>
+<tr>
+<td><code>RG</code> / <code>FOUNDRY_NAME</code></td>
+<td>記録用(コードは読まない)</td>
+<td>setup_azure.sh の <code>RG</code>(既定 <code>rg-cu-video-rag</code>)/ 出力 <code>foundryName</code></td>
+</tr>
+</tbody></table></div>
+<p>setup_azure.sh 自体は <code>RG</code>(既定 <code>rg-cu-video-rag</code>)と <code>DEP</code>(デプロイ名、既定 <code>cuvrag</code>)を環境変数で上書きできる。</p>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<p>このラボにテストスイートは無い(ライブ実測が本体)。オフラインで確かめられるのは、正解データの整合性・保存済みログからの指標再計算・レポート再生成・lint:</p>
+<pre><code>cd labs/cu-video-rag
+uv sync --extra dev
+uv run ruff check .                                   # 期待: All checks passed!
+uv run python -m cu_video_rag.corpus                  # 期待: 下の出力例(problems: none)
+uv run python scripts/run_pipeline.py offline-metrics # logs/ がある環境のみ(logs/ は git 管理外)
+uv run playwright install chromium                    # 初回・playwright 更新時のみ
+uv run python scripts/gen_report.py                   # logs/ 必須。docs/report/ の HTML・PDF を上書き(作成日が今日になる)</code></pre>
+<p><code>corpus</code> の期待出力(2026-09-29 実行):</p>
+<pre><code>scenarios: 104 Counter({&#x27;narrated&#x27;: 88, &#x27;silent&#x27;: 10, &#x27;slide&#x27;: 5, &#x27;long&#x27;: 1})
+queries: 111 Counter({&#x27;S&#x27;: 61, &#x27;N&#x27;: 42, &#x27;C&#x27;: 8}) + unanswerable 8
+problems: none</code></pre>
+<p>オフラインで確認できる主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> <code>corpus.validate()</code> が「S クエリの回答値が他の動画の台本・画面に(部分文字列としても)現れない」ことを機械検証して <code>problems: none</code>(<a href="./findings.md">findings 1-11</a>)</li>
+<li class="task"><input type="checkbox" class="chk"> <code>offline-metrics</code> の再計算が記録値と一致: 画面転記率 custom <code>found_any 1.0</code>(67/67)/ prebuilt <code>0.179</code>、棄権率 U は A・C とも <code>1.0</code>、<code>total variable: 8.1626</code>(2026-09-29 に依存更新後の環境で 4 ファイルともバイト一致を確認)</li>
+<li class="task"><input type="checkbox" class="chk"> <code>gen_report.py</code> がレポートを再生成できる(HTML は作成日以外一致、PDF 16 ページ)。数値は logs/ からの機械転記なので手で直さない</li>
+</ul>
+<p>ライブ評価をしていない環境(新しく clone した直後など)では logs/ が無いため、<code>offline-metrics</code> は空の集計に、<code>gen_report.py</code> は <code>missing .../logs/... — 評価を先に実行してください</code> で止まる。</p>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<p>実測時の規模(104 本 × 2 アナライザー + 検索 5 構成 + ragas 2 構成)で、CU 解析 1 巡 ≈ $7、全体 ≈ $8〜12 が目安(§6 の判定基準・<a href="../README.md">README 結論</a>)。</p>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code>cd labs/cu-video-rag
+uv sync --extra dev &amp;&amp; uv run playwright install chromium
+az group create -n rg-cu-video-rag -l japaneast
+# baseName は前回と別名にする(同名の再作成は CU が壊れる — findings 1-8)
+az deployment group create -g rg-cu-video-rag -n cuvrag -f infra/main.bicep \
+  -p baseName=&lt;新しい名前&gt; userObjectId=$(az ad signed-in-user show --query id -o tsv)
+./scripts/setup_azure.sh    # .env 生成 + CU defaults へモデルを紐づけ(= run_pipeline.py defaults)</code></pre>
+<p>Bicep パラメータ: <code>baseName</code>(必須)/ <code>userObjectId</code>(必須)/ <code>location</code>(既定 RG のリージョン)/ <code>completionModel</code>・<code>completionVersion</code>(既定 <code>gpt-5.4-mini</code> / <code>2026-03-17</code>)/ <code>embeddingModel</code>・<code>embeddingVersion</code>(<code>text-embedding-3-small</code> / <code>1</code>)/ <code>judgeModel</code>・<code>judgeVersion</code>(<code>gpt-4.1-mini</code> / <code>2025-04-14</code>)。出力: <code>foundryName</code> / <code>foundryEndpoint</code> / <code>aoaiEndpoint</code> / <code>storageName</code> / <code>searchName</code> / <code>searchEndpoint</code>。</p>
+<p><code>defaults</code> の登録内容は <code>gpt-5.4-mini</code> / <code>text-embedding-3-small</code>(モデル名 → デプロイ名)に加えて、prebuilt が参照する<strong>エイリアス</strong> <code>prebuilt-analyzer-completion-mini</code> / <code>prebuilt-analyzer-embedding</code>(findings 1-1)。GA 版で失敗したときだけ <code>2026-06-01-preview</code> で再試行する実装。defaults とカスタムアナライザーは<strong>データプレーンの状態</strong>なので、環境を作り直したら毎回やり直す(findings 1-7)。</p>
+<h3 id="5-2-実行-データ生成-cu-解析-索引-評価-レポート">5.2 実行(データ生成 → CU 解析 → 索引 → 評価 → レポート)</h3>
+<pre><code># 1) データ生成(TTS + 画面合成。再開可能。定義を変えた動画だけ作り直し、その古い CU 結果を削除する)
+uv run python scripts/run_pipeline.py dataset
+
+# 2) カスタム 2 段アナライザーを作成(サブ → 親の順。親がサブを参照するため)
+uv run python scripts/run_pipeline.py create-analyzer --id segmentFieldsJa --file src/cu_video_rag/analyzer_segment_fields_ja.json
+uv run python scripts/run_pipeline.py create-analyzer --id videoSearchJa --file src/cu_video_rag/analyzer_videosearch_ja.json
+
+# 3) upload → analyze ×2 → cer → index A0/A/B/C/D → eval → rag-answer A,C → ragas A,C → offline-metrics
+./scripts/run_full_eval.sh 2&gt;&amp;1 | tee logs/full_eval.log   # 最後に ALL_DONE
+
+# 4) レポート(logs/ から機械転記)
+uv run python scripts/gen_report.py                         # → docs/report/cu-video-rag-report.pdf</code></pre>
+<p>個別に叩くときのサブコマンド(<code>scripts/run_pipeline.py</code>):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>サブコマンド</th>
+<th>主な引数</th>
+<th>出力</th>
+</tr></thead><tbody>
+<tr>
+<td><code>upload</code></td>
+<td>—</td>
+<td>Blob へ一括アップロード、<code>data/eval/video_urls.json</code>(SAS 付き URL、期限 3 日)</td>
+</tr>
+<tr>
+<td><code>analyze</code></td>
+<td><code>--analyzer</code>(既定 <code>prebuilt-videoSearch</code>)<code>--tag</code>(既定 <code>prebuilt</code>)<code>--parallel 4</code> <code>--only &lt;id&gt;</code> <code>--force</code></td>
+<td><code>logs/cu/&lt;tag&gt;/&lt;id&gt;.json</code>(既存はスキップ = 再開可能)、<code>logs/timings_&lt;tag&gt;.json</code></td>
+</tr>
+<tr>
+<td><code>cer</code></td>
+<td><code>--tag</code></td>
+<td><code>logs/cer_&lt;tag&gt;.json</code></td>
+</tr>
+<tr>
+<td><code>index</code></td>
+<td><code>--config</code>(A0 / A / B / C / D。<code>--tag</code> で解析結果の系統を上書き可)</td>
+<td>インデックス <code>cuvrag-&lt;config&gt;</code>(毎回削除 → 再作成)</td>
+</tr>
+<tr>
+<td><code>eval</code></td>
+<td><code>--configs A0,A,B,C,D</code></td>
+<td><code>logs/eval_&lt;config&gt;.json</code>、<code>logs/eval_compare.json</code>(対応ありブートストラップ 95% CI)</td>
+</tr>
+<tr>
+<td><code>rag-answer</code> / <code>ragas</code></td>
+<td><code>--config</code></td>
+<td><code>logs/rag_answers_&lt;config&gt;.json</code> / <code>logs/ragas_&lt;config&gt;.json</code></td>
+</tr>
+<tr>
+<td><code>offline-metrics</code></td>
+<td>—</td>
+<td><code>logs/segmentation.json</code> / <code>fact_transcription.json</code> / <code>abstention.json</code> / <code>usage_cost.json</code></td>
+</tr>
+</tbody></table></div>
+<p>所要時間の目安(2026-09-03 のログ): 解析は 1 本あたり中央値 31 秒(prebuilt)/ 41 秒(カスタム)で、<code>--parallel 4</code> なら 104 本で 1 アナライザーあたり十数分。ragas は 1 構成 555 ジョブで約 17 分。</p>
+<p>期待される出力の例(<code>logs/full_eval3.log</code> から抜粋。値は実行ごとに変わる):</p>
+<pre><code>=== analyze prebuilt ===
+analyzing 26 videos with prebuilt-videoSearch (parallel=4)
+  done vpn-setup: 41.2s, segments=6, retries=0
+=== cer ===
+{&quot;micro_cer&quot;: 0.0173, &quot;missing&quot;: []}          # prebuilt(再解析分 26 本)
+{&quot;micro_cer&quot;: 0.0044, &quot;missing&quot;: []}          # custom
+=== index ===
+config C: uploaded 312/312 chunks (embedding tokens 70451)
+=== retrieval eval ===
+| 構成 | 対象 | n | hit@1 | hit@3 | MRR | seg_hit@1 | ans@1 | ans@3 |
+| A | 全体 | 111 | 0.622 | 0.865 | 0.727 | 0.495 | 0.000 | 0.000 |
+| C | 全体 | 111 | 0.730 | 0.937 | 0.826 | 0.595 | 0.557 | 0.672 |
+[A-&gt;C] {&#x27;hit@1&#x27;: &#x27;+0.108 [+0.009,+0.207]*&#x27;, ...}
+config C (n=111):
+  context_recall: 0.8018
+  answer_correctness: 0.5894
+abstention[C]: {&#x27;n&#x27;: 8, &#x27;abstain_rate&#x27;: 1.0, &#x27;answered_anyway&#x27;: []} / answerable {&#x27;n&#x27;: 111, &#x27;abstain_rate&#x27;: 0.297}
+ALL_DONE</code></pre>
+<h3 id="5-3-判定基準-再測定で-再現できた-と見なす水準">5.3 判定基準(再測定で「再現できた」と見なす水準)</h3>
+<p>値は 2026-09-03 ラウンド 3 の記録(<a href="./findings.md">findings.md §0</a> / レポート §7〜10)。合成データでも CU の出力は実行ごとに揺れる(findings 1-13)ので、数値の一致ではなく<strong>大小関係と桁</strong>を見る。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>段階</th>
+<th>指標(出力ファイル)</th>
+<th>記録値</th>
+<th>合否の見方</th>
+</tr></thead><tbody>
+<tr>
+<td>データ生成</td>
+<td><code>corpus.validate()</code></td>
+<td>problems none</td>
+<td>1 件でもあれば <code>dataset</code> が停止する(不合格)</td>
+</tr>
+<tr>
+<td>CU 解析</td>
+<td><code>analyze</code> の failed</td>
+<td>0 本</td>
+<td>failed があると exit 1。§9 で原因を切り分けて <code>--only &lt;動画 id&gt;</code> で再解析</td>
+</tr>
+<tr>
+<td>書き起こし</td>
+<td>CER micro(<code>logs/cer_&lt;tag&gt;.json</code>、94 本)</td>
+<td>custom 0.44% / prebuilt 1.34%</td>
+<td>1% 前後なら合格。1 本だけ極端に悪い場合は先頭・末尾欠落(findings 1-13)を疑う</td>
+</tr>
+<tr>
+<td>検索</td>
+<td>hit@3 全 111 問(<code>logs/eval_*.json</code>)</td>
+<td>A 0.865 / C 0.937</td>
+<td>C ≥ A</td>
+</tr>
+<tr>
+<td>検索(画面のみ S 61 問)</td>
+<td>ans@3(正解動画限定)</td>
+<td>A 0.000 / B 0.115 / C 0.672 / D 0.689</td>
+<td><strong>A が 0 のまま</strong>(書き起こしに値が無い)かつ C が大きく上回る。A が 0 でなければ評価データへの値の漏れ(findings 1-11)</td>
+</tr>
+<tr>
+<td>CU 出力</td>
+<td>画面転記率 <code>found_any</code>(<code>logs/fact_transcription.json</code>、67 件)</td>
+<td>custom 1.0 / prebuilt 0.179</td>
+<td>custom がほぼ全件</td>
+</tr>
+<tr>
+<td>CU 出力</td>
+<td>セグメント境界 ±2 秒・被覆(<code>logs/segmentation.json</code>、custom)</td>
+<td>precision 0.942 / recall 0.605 / <code>coverage_min</code> 0.798 / <code>videos_with_head_gap_over_3s</code> 0</td>
+<td>先頭欠落 3 秒超の動画が出たら再解析</td>
+</tr>
+<tr>
+<td>RAG</td>
+<td>棄権率(<code>logs/abstention.json</code>)</td>
+<td>U 8 問は A・C とも 1.0、正解あり質問は A 0.568 → C 0.297</td>
+<td>U が 1.0 未満なら捏造(<code>answered_anyway</code> を確認)</td>
+</tr>
+<tr>
+<td>RAG</td>
+<td>ragas(<code>logs/ragas_C.json</code>)</td>
+<td>context_precision 0.73 / context_recall 0.80 / answer_correctness 0.59</td>
+<td>C &gt; A。判定 LLM に依存する相対比較として読む。answer_relevancy は参考値</td>
+</tr>
+<tr>
+<td>コスト</td>
+<td><code>logs/usage_cost.json</code></td>
+<td>104 本 1 回で prebuilt $3.39 / custom $3.61(1 時間あたり $2.68 / $2.85)</td>
+<td>桁が同じ。単価は <code>cost.py</code> の <code>PRICES_USD</code>(2026-09-03 取得)なので見積もり時は最新を確認</td>
+</tr>
+</tbody></table></div>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: 正解データの整合性</td>
+<td><code>uv run python -m cu_video_rag.corpus</code>、<code>dataset</code> 後に <code>data/videos/</code> と <code>data/ground_truth/</code> のファイル数</td>
+<td><code>problems: none</code>、mp4 と <code>data/ground_truth/*.json</code> が 104 本ずつ</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>正常系: CU の前提設定</td>
+<td><code>setup_azure.sh</code> の末尾出力(defaults の GET)</td>
+<td><code>modelDeployments</code> にモデル名 2 つ + エイリアス 2 つ(<code>prebuilt-analyzer-completion-mini</code> / <code>prebuilt-analyzer-embedding</code>)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>正常系: 解析が全件通る</td>
+<td><code>run_full_eval.sh</code> の analyze 行、<code>ls logs/cu/prebuilt logs/cu/custom</code></td>
+<td><code>FAILED</code> なし、各 104 JSON。<code>retries</code> が多いなら TPM 不足(findings 1-6)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>パターン固有: 2 段アナライザーでフィールドが出る</td>
+<td><code>logs/cu/custom/vpn-setup.json</code> のセグメント <code>contents[]</code> を開く</td>
+<td>各セグメントに <code>summaryJa</code>(日本語)・<code>screenTexts</code>(例: <code>vpn.contoso-jp.example</code>・<code>エラー 809</code>)・<code>uiActions</code> がある。prebuilt 側は英語 <code>Summary</code> のみ</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>パターン固有: 画面のみ情報が検索で取れる</td>
+<td><code>eval</code> の表(タイプ S の ans@3)と <code>logs/fact_transcription.json</code></td>
+<td>A 0.000 / C ≈0.67、custom の転記率 ≈1.0(§5.3)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>分岐・異常系: 発話の欠落を検知できる</td>
+<td><code>offline-metrics</code> の <code>transcript divergence</code> 行と <code>segmentation.json</code> の <code>videos_with_head_gap_over_3s</code></td>
+<td>乖離動画(実測時は password-reset・g67-portal-cancel)を列挙できる。欠落動画は <code>analyze --analyzer &lt;id&gt; --tag &lt;tag&gt; --only &lt;動画 id&gt; --force</code> で再解析</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>分岐・異常系: 根拠が無い質問で捏造しない</td>
+<td><code>logs/abstention.json</code></td>
+<td>U 8 問の <code>abstain_rate</code> 1.0、<code>answered_anyway</code> が空</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>観測: 処理時間とトークンの記録</td>
+<td><code>logs/timings_&lt;tag&gt;.json</code>(秒・セグメント数・リトライ・usage)と <code>logs/usage_other.json</code></td>
+<td>全動画に <code>usage</code>(<code>videoHours</code> / <code>contextualizationTokens</code> / <code>tokens</code>)が入り、<code>offline-metrics</code> のコスト集計が出る</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>コスト・後片付け</td>
+<td>§8 の削除後に <code>az group show -n rg-cu-video-rag</code>、翌日以降 Cost Management</td>
+<td>RG が消えている(AI Search の時間課金が止まる)。実課金が usage 概算と桁で一致</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<p>OTel トレースは組み込んでいない(バッチ評価スクリプトで、観測は <code>logs/</code> の JSON — timings・usage・eval・ragas — で行う)。評価は §5.3 の各ファイルと <a href="./report/cu-video-rag-report.pdf">レポート PDF</a> で確認する。</p>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code>az group delete -n rg-cu-video-rag --yes --no-wait   # AI Search basic が時間課金なので検証後すぐ消す
+rm -f .env                                           # キー入り。残すならキーを再生成(az cognitiveservices account keys regenerate 等)</code></pre>
+<ul>
+<li>Foundry リソースはソフト削除になる。<strong>次の検証は <code>baseName</code> を変えて別名で作る</strong>(パージ → 同名再作成すると CU の解析が 404 で失敗し続けた — findings 1-8)。</li>
+<li><code>data/</code>(mp4・音声・画面)と <code>logs/</code> はローカルに残る(git 管理外)。再解析しない限りレポートの再生成・<code>offline-metrics</code> はこのままできる。</li>
+</ul>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td>analyze が <code>Failed</code>: <code>This analyzer needs a &#x27;completion&#x27; model deployment ... none was resolved</code></td>
+<td>defaults にエイリアス未登録(1-1)/ 環境を作り直した後の defaults 未登録(1-7)/ カスタム定義で <code>models.completion</code> 省略(1-5)</td>
+<td><code>run_pipeline.py defaults</code> を再実行。カスタム定義の <code>models.completion</code> を確認。エラーは PATCH 時ではなく analyze 時に出る</td>
+</tr>
+<tr>
+<td><code>create-analyzer</code> が 400(<code>InvalidBaseAnalyzerId</code> / <code>omitContent ... has fields</code> / <code>segmentationDefinition must be provided</code>)</td>
+<td>基底にできるのは <code>prebuilt-video</code> 等 4 つだけ、<code>omitContent</code> とフィールドは併用不可、分割は <code>contentCategories</code> で定義(1-2)</td>
+<td>リポジトリの 2 つの JSON 定義をそのまま使う</td>
+</tr>
+<tr>
+<td>定義を変えて <code>create-analyzer</code> したのに結果が変わらない</td>
+<td>既存 ID への PUT は成功応答なのに反映されない(1-3)</td>
+<td>削除してから作り直す: <code>uv run python -c &quot;import os,sys; sys.path.insert(0,&#x27;src&#x27;); from dotenv import load_dotenv; load_dotenv(&#x27;.env&#x27;); from cu_video_rag.cu_client import CuClient; CuClient(os.environ[&#x27;FOUNDRY_ENDPOINT&#x27;], os.environ[&#x27;AI_KEY&#x27;]).delete_analyzer(&#x27;videoSearchJa&#x27;)&quot;</code></td>
+</tr>
+<tr>
+<td>カスタムフィールドが結果のどこにも出ない</td>
+<td>親の <code>fieldSchema</code> はセグメントに適用されない(1-4)</td>
+<td>サブ(<code>segmentFieldsJa</code>)にフィールドを持たせ、親の <code>contentCategories.segment.analyzerId</code> から参照する</td>
+</tr>
+<tr>
+<td>analyze が <code>RateLimit, 429</code> で Failed</td>
+<td>CU ではなく紐づけた補完デプロイの TPM 不足(1-6)</td>
+<td><code>--parallel</code> を下げる / TPM を増やす(Bicep 既定 200K)。スクリプトは 5 回まで指数バックオフで再試行する</td>
+</tr>
+<tr>
+<td>analyze が <code>(NotFound, 404, The Azure OpenAI deployment or resource was not found.)</code> のまま直らない</td>
+<td>ソフト削除 → パージ → 同名再作成したアカウント(1-8)</td>
+<td>別名の <code>baseName</code> で作り直す</td>
+</tr>
+<tr>
+<td>同名で作り直そうとして <code>FlagMustBeSetForRestore</code></td>
+<td>Foundry リソースがソフト削除中</td>
+<td>パージではなく別名で作る(上の行)</td>
+</tr>
+<tr>
+<td>1 本だけ CER が極端に悪い / 書き起こしの先頭・末尾が欠ける</td>
+<td>セグメントが動画の先頭・末尾を覆わず発話が消える(実行ごとに揺れる、1-13)</td>
+<td><code>analyze --analyzer &lt;アナライザー&gt; --tag &lt;tag&gt; --only &lt;動画 id&gt; --force</code> で再解析(prebuilt なら <code>prebuilt-videoSearch</code> / <code>prebuilt</code>、カスタムなら <code>videoSearchJa</code> / <code>custom</code>)。取り込み実装では被覆検査を入れる</td>
+</tr>
+<tr>
+<td>seg_hit@1 が低い / 書き起こしが空のセグメントが多い</td>
+<td>transcriptPhrases は開始時刻のセグメントに丸ごと付く(1-10)</td>
+<td>構成 A 以降は <code>chunks.resplit_transcripts</code> で再配分済み。A0 は影響測定用にわざと未適用</td>
+</tr>
+<tr>
+<td>書き起こしのみ(A)で ans@3 が 0 でない</td>
+<td>回答値が他の動画にも出ている(1-11)</td>
+<td><code>python -m cu_video_rag.corpus</code> の problems を確認して定義を直し、<code>dataset</code> を再実行</td>
+</tr>
+<tr>
+<td><code>analyze</code> で動画を取得できない</td>
+<td>SAS の期限(3 日)切れ</td>
+<td><code>upload</code> を再実行して URL を作り直す</td>
+</tr>
+<tr>
+<td>ragas のログに <code>DeploymentNotFound 404</code>、answer_relevancy に NaN</td>
+<td>実測時も一部ジョブで発生(A 9 件・C 13 件が NaN。平均は NaN を除いて計算)</td>
+<td><code>JUDGE_DEPLOYMENT</code> / <code>EMBED_DEPLOYMENT</code> を確認。デプロイ直後なら数分待って <code>ragas --config &lt;C&gt;</code> だけ再実行</td>
+</tr>
+<tr>
+<td><code>judgeModel</code>(gpt-4.1-mini)のデプロイが通らない</td>
+<td>リタイア表 2026-09-21 版で Deprecated(新規顧客はデプロイ不可、リタイア 2027-04-14)</td>
+<td>温度 0 を受け付ける非 reasoning モデルに <code>judgeModel</code> / <code>judgeVersion</code> と <code>.env</code> の <code>JUDGE_DEPLOYMENT</code> を差し替える。ragas 値は再測定扱い(過去値と直接比べない)</td>
+</tr>
+<tr>
+<td><code>gen_report.py</code> が <code>Executable doesn&#x27;t exist at .../chromium_headless_shell-XXXX</code></td>
+<td>playwright を上げた後にブラウザ未取得</td>
+<td><code>uv run playwright install chromium</code></td>
+</tr>
+<tr>
+<td><code>missing env: X (scripts/setup_azure.sh を先に実行)</code></td>
+<td><code>.env</code> が無い・古い</td>
+<td><code>./scripts/setup_azure.sh</code>(<code>RG</code> / <code>DEP</code> を合わせる)</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>結論・持ち帰り・最新化チェックの記録: <a href="../README.md">README</a></li>
+<li>評価設計(データ・構成 A0〜D・指標): <a href="./design.md">design.md</a> / 詰まりどころ 13 件と定量結果: <a href="./findings.md">findings.md</a> / データセット調査: <a href="./dataset-research.md">dataset-research.md</a></li>
+<li>要件シナリオ(文書・動画処理): <a href="../../../docs/survey/casebook/html/01-scenario-playbook.html#s-09-文書・動画処理-idp">casebook S-09</a> / 詰まりどころ索引 P-D01〜P-D03: <a href="../../../docs/survey/casebook/html/02-pitfalls-index.html#l-文書処理と音声">casebook L. 文書処理と音声</a></li>
+<li>Content Understanding の GA / プレビュー状況: <a href="../../../docs/survey/features/html/07-foundry-tools.html">features 07 Foundry Tools</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(依存更新 playwright 1.63.0 ほか、ragas / langchain の上限に理由を明記、<code>dev</code> extra に ruff。CU GA api-version は <code>2025-11-01</code> のまま変更不要)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/cu-video-rag/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

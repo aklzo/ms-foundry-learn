@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>corrective-rag 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="runbook.html" class="current">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="corrective-rag-実行ガイド">corrective-rag 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/corrective-rag/</code>(Port 4・パターン: 補正ループ RAG — switch-case 分岐+Azure AI Search Free+クライアント側埋め込み)<br><strong>最終確認:</strong> 2026-09-29 オフライン(37 passed・ruff clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / openai 3.20.0 / azure-search-documents 12.0.0)/ ライブ: 2026-07-31(当時の構成。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li>質問 → ベクトル検索(上位 4 件)→ <strong>文書ごとの yes/no 採点</strong> → 全件関連なら直接 <code>generate</code>、1 件でも低関連なら <code>transform_query</code>(クエリ書換)→ <code>web_search</code>(DuckDuckGo・最大 3 件)→ <code>generate</code>、という<strong>2 経路の分岐</strong>が switch-case エッジで起きること。</li>
+<li>補正パスは<strong>最大 1 回</strong>(再採点・再書換なし)。「補正ループ」という名前に反して元実装どおりの一方向 DAG で、グラフ構造そのものが上限になっていること。</li>
+<li>Qdrant → Azure AI Search の置換で、埋め込みモデルのデプロイ・次元数(1536)・インデックス投入(データプレーン)が<strong>自分の設計項目になる</strong>こと(README 学び 2)。LangGraph の共有 dict が MAF の型付きメッセージに分解される点は README 学び 1。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>MAF Workflow(ローカル、<code>workflow.py</code>)</td>
+<td>retrieve → grade_documents →(switch-case)→ generate / transform_query → web_search → generate</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>モデルデプロイ gpt-5.4-mini(共有基盤)</td>
+<td>採点(<code>response_format=GradeScore</code>)・書換・生成の 3 役割で共用</td>
+<td>トークン従量(採点は検索件数ぶん呼ばれる)</td>
+</tr>
+<tr>
+<td>埋め込みデプロイ text-embedding-3-small(本ポートの <code>infra/main.bicep</code> が共有 Foundry に追加)</td>
+<td>投入時(<code>setup_index.py</code>)とクエリ時(<code>OpenAIEmbedder</code>)のクライアント側埋め込み</td>
+<td>トークン従量(微小)</td>
+</tr>
+<tr>
+<td>Azure AI Search <code>srch-&lt;baseName&gt;</code>(Free SKU)</td>
+<td>純ベクトル検索(HNSW・1536 次元・インデックス <code>corrective-rag</code>)</td>
+<td>無料(1 サブスクリプション 1 つまで)</td>
+</tr>
+<tr>
+<td>DuckDuckGo HTML(Azure 外)</td>
+<td>Web 検索フォールバック(キー不要、3 試行・4s/8s 待ち)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>App Insights <code>appi-&lt;baseName&gt;</code>(共有基盤)</td>
+<td>OTel トレースの送信先</td>
+<td>取り込み量従量(少量)</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python は uv が取得。検証は 3.13)</td>
+<td>オフライン実行はこれだけ</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)+本ポート固有: AI Search(Free)と text-embedding-3-small デプロイ(<a href="../infra/main.bicep">infra/main.bicep</a>)</td>
+<td>Free Search は 1 サブスクリプションに 1 つまで。既に別の Free があると作成に失敗する</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>デプロイ先 RG の共同作成者(共有 Foundry アカウントへのデプロイ追加を含む)。実行時の認証は <strong>API キー</strong>(Foundry・AI Search とも)なので、データプレーンの RBAC 付与は不要</td>
+<td>本番は RBAC / Key Vault(README 参照)</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <a href="../../../.env.example">.env.example</a>。<strong>ライブ実行時のみ必要</strong>。<code>AZURE_SEARCH_*</code> は雛形に無いので手で追記する):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>チャット・埋め込みの呼び先(<code>https://&lt;foundry&gt;.openai.azure.com/openai/v1</code>)</td>
+<td>shared.bicep / main.bicep の出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>チャットモデルのデプロイ名(例: <code>gpt-5.4-mini</code>)</td>
+<td>shared.bicep の出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>Foundry の API キー</td>
+<td><code>az cognitiveservices account keys list -n aif-&lt;baseName&gt; -g &lt;rg&gt;</code></td>
+</tr>
+<tr>
+<td><code>AZURE_SEARCH_ENDPOINT</code></td>
+<td>AI Search のエンドポイント</td>
+<td>main.bicep の出力 <code>searchEndpoint</code></td>
+</tr>
+<tr>
+<td><code>AZURE_SEARCH_ADMIN_KEY</code></td>
+<td>AI Search の管理キー(インデックス作成・検索の両方に使用)</td>
+<td>main.bicep の出力 <code>searchAdminKey</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_EMBEDDING_MODEL</code>(任意)</td>
+<td>埋め込みデプロイ名</td>
+<td>既定 <code>text-embedding-3-small</code>(main.bicep の出力 <code>embeddingDeploymentName</code>)</td>
+</tr>
+<tr>
+<td><code>AZURE_SEARCH_INDEX</code>(任意)</td>
+<td>インデックス名</td>
+<td>既定 <code>corrective-rag</code></td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code>(任意)</td>
+<td>トレース送信先。未設定ならトレース無効で実行は続く</td>
+<td>shared.bicep の出力 <code>appInsightsConnectionString</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/corrective-rag
+uv sync --extra dev
+uv run pytest                                  # 期待: 37 passed, 1 deselected(live は既定で除外。ネットワーク不要)
+uv run pytest -W error::DeprecationWarning     # 期待: 37 passed(非推奨 API の混入検知)
+uv run ruff check .                            # 期待: All checks passed!</code></pre>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> 全文書が関連 → 書換・Web 検索なしで直接生成(<code>test_all_relevant_generates_directly</code>)/ 1 件でも低関連 → 書換 → Web 検索 → 生成(<code>test_low_relevance_triggers_rewrite_and_web_search</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 補正パスは 1 回だけで、Web 結果は再採点されない(<code>test_single_corrective_pass_no_regrade_or_rerewrite</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 採点がパース不能なら安全側に文書を残す(<code>test_unparseable_grade_keeps_document</code>)。ネイティブ構造化出力 <code>.value</code> が優先される(<code>test_grader_native_value_path</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 検索 0 件のときは Web 検索に行かず<strong>空コンテキストで直接生成</strong>する元実装の癖を保存(<code>test_empty_retrieval_goes_direct_with_empty_context</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> Web 検索が 3 試行とも失敗 / 0 件でも、残った文書だけで生成まで進む(<code>test_web_search_failure_still_generates_with_filtered_docs</code> / <code>test_web_search_empty_results_appends_nothing</code>)。リトライ待ちは 4s → 8s(<code>tests/test_search.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 進捗イベントが経路どおりに出る(<code>test_progress_events_direct_route</code> / <code>test_progress_events_corrective_route</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code># (1) 共有基盤が未作成なら先に作る(詳細は labs/maf-ports/README.md「実行の前提」)
+cd labs/maf-ports
+az group create -n rg-maf-ports -l japaneast
+az deployment group create -g rg-maf-ports -f infra/shared.bicep \
+  -p baseName=mafports modelName=gpt-5.4-mini modelVersion=2026-03-17 modelCapacity=10
+#   モデル名・版は docs/survey/features/02-models.md で現行を確認(上は 2026-09-29 時点の例)
+
+# (2) 本ポート固有: AI Search(Free)+ text-embedding-3-small デプロイ
+cd ports/corrective-rag
+az deployment group create -g rg-maf-ports -f infra/main.bicep -p baseName=mafports
+az deployment group show -g rg-maf-ports -n main --query properties.outputs
+#   → searchEndpoint / searchAdminKey を ../../.env の AZURE_SEARCH_ENDPOINT / AZURE_SEARCH_ADMIN_KEY に転記</code></pre>
+<p>main.bicep のパラメータ: <code>baseName</code>(必須。shared.bicep と同じ値)/ <code>searchServiceName</code>(既定 <code>srch-&lt;baseName&gt;</code>、グローバル一意)/ <code>embeddingModelName</code>(既定 <code>text-embedding-3-small</code>)/ <code>embeddingModelVersion</code>(既定 <code>1</code>)/ <code>embeddingCapacity</code>(既定 10 = 10K TPM)。</p>
+<h3 id="5-2-インデックス作成と実行">5.2 インデックス作成と実行</h3>
+<pre><code>uv sync --extra dev --extra live
+uv run python scripts/setup_index.py --recreate   # data/*.md を埋め込んで投入(再実行は --recreate なしでも冪等な upsert)
+uv run corrective-rag-maf &quot;Azure AI Search の Free レベルにはどんな制約がありますか?&quot;
+uv run corrective-rag-maf --json &quot;Azure AI Search の Basic レベルは月額いくら?&quot;   # 補正パス期待
+uv run corrective-rag-maf --top-k 6 &quot;Foundry Agent Service の組み込みツールは?&quot;   # 取得件数の変更
+uv run pytest -m live                              # ライブスモーク(インデックス作成済みが前提)</code></pre>
+<p>期待される出力の例(値は実行ごとに変わる。CLI の書式と 2026-07-31 ライブ結果から作った<strong>形の例</strong>):</p>
+<pre><code>$ uv run python scripts/setup_index.py --recreate
+deleted index: corrective-rag            ← 初回は &quot;no existing index to delete&quot;
+index ready: corrective-rag (https://srch-mafports.search.windows.net)
+chunked 4 files into 12 chunks
+embedded with text-embedding-3-small
+uploaded 12/12 chunks
+
+$ uv run corrective-rag-maf &quot;Azure AI Search の Free レベルにはどんな制約がありますか?&quot;
+tracing: App Insights 有効
+[retrieve] 4 docs
+[grade] kept=1 dropped=3 → transform query + web search     ← 全件 yes なら &quot;→ generate&quot;
+[transform_query] &#x27;Azure AI Search の Free レベルには…&#x27; → &#x27;Azure AI Search Free tier limitations …&#x27;
+[web_search] 3 results                                       ← 失敗時は &quot;[web_search] failed&quot;
+&lt;回答本文(stdout)&gt;
+
+(corrective path: query rewritten to &#x27;…&#x27;, web results: 3)</code></pre>
+<p><code>--json</code> の出力は <code>question</code> / <code>original_question</code> / <code>answer</code> / <code>corrected</code> / <code>documents</code> / <code>grades</code>(文書ごとの <code>yes</code> / <code>no</code> / <code>error-kept</code>)/ <code>web_result_count</code>(直行時は <code>null</code>)/ <code>web_search_failed</code>。</p>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: インデックス投入</td>
+<td><code>uv run python scripts/setup_index.py --recreate</code></td>
+<td><code>uploaded 12/12 chunks</code>(2026-07-31 のライブ時は 11 チャンク。コーパス訂正で 12 に)。終了コード 0</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>正常系: コーパス内の質問</td>
+<td>§5.2 の 1 問目を実行</td>
+<td>回答がコーパス(インデックス 3 個・50 MB・セマンティックランカーは無料枠のみ)に沿う。stderr の <code>[grade]</code> 行で経路を確認 — 採点が厳しく in-domain でも補正パスに入ることがある(2026-07-31 は 4 件中 3 件棄却)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>分岐: 補正パス</td>
+<td>鮮度依存の質問を <code>--json</code> で実行(§5.2 の 2 問目)</td>
+<td><code>corrected: true</code>、<code>question</code> が書換後で <code>original_question</code> と異なる、<code>web_result_count</code> が 1〜3、<code>grades</code> に <code>no</code> を含む</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>補正は 1 回だけ</td>
+<td>同じ実行の stderr</td>
+<td><code>[transform_query]</code> と <code>[web_search]</code> が各 1 行だけ。<code>--json</code> の <code>grades</code> の件数 = <code>[retrieve]</code> の件数(Web 結果は再採点されない)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>異常系: Web 検索失敗</td>
+<td>DuckDuckGo がレート制限(202 / 429)を返したとき、またはオフラインテスト <code>test_web_search_failure_still_generates_with_filtered_docs</code></td>
+<td><code>[web_search] failed</code> の後も回答が出る。<code>--json</code> の <code>web_search_failed: true</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>観測: トレース</td>
+<td>§7 の KQL</td>
+<td><code>executor.process retrieve</code> / <code>grade_documents</code> / <code>transform_query</code> / <code>web_search</code> / <code>generate</code> と、<code>invoke_agent grader_agent</code> が<strong>採点した文書数ぶん</strong>並ぶ</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>評価の下準備(任意)</td>
+<td><code>tests/eval_dataset.jsonl</code> の 7 問を <code>--json</code> で流し、<code>corrected</code> を <code>expected_route</code>(direct / corrective)と突き合わせる</td>
+<td>分岐の当否を観察記録として残す(合否ラインは設けない)。<code>documents</code>+<code>answer</code>+質問は Foundry の Groundedness 評価器の入力になる</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>コスト・後片付け</td>
+<td>§8 を実行後 <code>az group show -n rg-maf-ports</code></td>
+<td><code>ResourceGroupNotFound</code>。Free Search は月額 0 だが 1 サブスクリプション 1 枠を占有するので、使わないなら消す</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code>az monitor app-insights query --app appi-mafports -g rg-maf-ports \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | summarize count() by name | order by name asc&quot;</code></pre>
+<ul>
+<li>期待するスパン名: <code>executor.process retrieve</code> / <code>executor.process grade_documents</code> / <code>executor.process generate</code>(補正パスなら <code>executor.process transform_query</code> / <code>executor.process web_search</code> も)、<code>invoke_agent grader_agent</code>(文書数ぶん)/ <code>invoke_agent rewriter_agent</code> / <code>invoke_agent generator_agent</code>、各 LLM 呼び出しの <code>chat &lt;model&gt;</code>。</li>
+<li>取り込みには数分の遅延がある。0 件なら <code>APPLICATIONINSIGHTS_CONNECTION_STRING</code> の設定と、CLI の最初の行に <code>tracing: App Insights 有効</code> が出たかを確認。</li>
+<li>埋め込み(<code>OpenAIEmbedder</code>)と AI Search の呼び出しは MAF の計装対象外なので、スパンには出ない。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code>az group delete -n rg-maf-ports --yes --no-wait   # 共有基盤ごと削除(インデックスは setup_index.py で再構築できるのでステートレス)
+
+# 共有基盤を残して本ポート分だけ消す場合
+az search service delete -n srch-mafports -g rg-maf-ports --yes
+az cognitiveservices account deployment delete -n aif-mafports -g rg-maf-ports --deployment-name text-embedding-3-small</code></pre>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>error: 環境変数が未設定: AZURE_SEARCH_ENDPOINT, …</code>(終了コード 2)</td>
+<td><code>.env</code> に AI Search の値が無い(<code>.env.example</code> に載っていない)</td>
+<td>main.bicep の出力 <code>searchEndpoint</code> / <code>searchAdminKey</code> を <code>labs/maf-ports/.env</code> に追記</td>
+</tr>
+<tr>
+<td><code>ModuleNotFoundError: azure.search</code> / <code>openai</code>、または aiohttp 関連の ImportError</td>
+<td><code>--extra live</code> なしで同期した(非同期の azure-search-documents は aiohttp が必要)</td>
+<td><code>uv sync --extra dev --extra live</code></td>
+</tr>
+<tr>
+<td>検索で 404(index not found)</td>
+<td>インデックス未作成、または <code>AZURE_SEARCH_INDEX</code> の食い違い</td>
+<td><code>uv run python scripts/setup_index.py</code> を先に実行</td>
+</tr>
+<tr>
+<td>main.bicep のデプロイで Free の作成に失敗</td>
+<td>同じサブスクリプションに既に Free の検索サービスがある / リージョンの容量制約</td>
+<td>既存の Free を削除するか、<code>searchServiceName</code> を既存に合わせず別サブスクリプション・別リージョンで作る</td>
+</tr>
+<tr>
+<td>しばらく使っていなかったら検索サービスが消えていた</td>
+<td>Free は長期間操作がないと削除され得る(公式の制限事項)</td>
+<td>main.bicep を再デプロイ → <code>setup_index.py --recreate</code></td>
+</tr>
+<tr>
+<td>埋め込みで <code>DeploymentNotFound</code></td>
+<td>埋め込みデプロイ未作成、または <code>FOUNDRY_EMBEDDING_MODEL</code> の不一致</td>
+<td>main.bicep の出力 <code>embeddingDeploymentName</code> と揃える</td>
+</tr>
+<tr>
+<td>投入・検索でベクトル次元のエラー</td>
+<td>埋め込みモデルを 1536 次元以外(例: text-embedding-3-large = 3072)に変えた</td>
+<td><code>retrieval.EMBEDDING_DIMENSIONS</code> を合わせ、<code>--recreate</code> で作り直す</td>
+</tr>
+<tr>
+<td>Foundry 呼び出しで 401</td>
+<td><code>FOUNDRY_API_KEY</code> の誤り / アカウントのキー認証が無効</td>
+<td>キーを取り直す(shared.bicep は <code>disableLocalAuth: false</code>)</td>
+</tr>
+<tr>
+<td><code>[web_search] failed</code> が続く</td>
+<td>DuckDuckGo のレート制限・ボット判定</td>
+<td>時間をおく。失敗しても回答は出る(元実装どおりの挙動)</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a>(LangGraph → MAF 対応表・Free SKU の割り切り・補正ループはループしない)</li>
+<li>RAG のアーキテクチャ選定: <a href="../../../../../docs/survey/architecture/html/04-usecase-chat-rag.html">architecture/04 チャット・RAG</a> / Foundry IQ・AI Search の位置づけ: <a href="../../../../../docs/survey/features/html/04-tools-knowledge.html">features/04 ツール・ナレッジ</a></li>
+<li>移植規約(テスト・トレース・Bicep の必須要件): <a href="../../../PORTING.md">PORTING.md</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(agent-framework-core 1.12→1.19 / openai 2.51→3.20 に更新、コード変更なし。「Free はセマンティックランカー不可」の誤記を訂正し、コーパスが 12 チャンクに。図を v2〈日本語+処理順〉に更新)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/corrective-rag/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

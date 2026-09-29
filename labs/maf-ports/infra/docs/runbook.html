@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>共有基盤 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="runbook.html" class="current">共有基盤</a><a href="../../ports/claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../ports/corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../ports/critique-loop/docs/runbook.html">critique-loop</a><a href="../../ports/data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../ports/db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../ports/game-design-team/docs/runbook.html">game-design-team</a><a href="../../ports/github-mcp/docs/runbook.html">github-mcp</a><a href="../../ports/governed-agent/docs/runbook.html">governed-agent</a><a href="../../ports/hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../ports/mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../ports/research-handoff/docs/runbook.html">research-handoff</a><a href="../../ports/services-agency/docs/runbook.html">services-agency</a><a href="../../ports/travel-memory/docs/runbook.html">travel-memory</a><a href="../../ports/trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="共有基盤-実行ガイド">共有基盤 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-この基盤で確かめること">1. この基盤で確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン検証-azure-不要・無料">4. オフライン検証(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/infra/</code>(<a href="../shared.bicep">shared.bicep</a> + <a href="../roles.bicep">roles.bicep</a>)— 全ポート共通の Foundry アカウント+プロジェクト+モデルデプロイ+監視と、マネージド ID への RBAC(第 2 段)<br><strong>最終確認:</strong> 2026-09-29 オフライン(<code>az bicep build</code> 2 本 OK・az CLI 2.87.0 / Bicep CLI 0.45.15・apiVersion とロール ID を現行 docs と照合)/ ライブ: 2026-07-31(Wave 1 は <code>baseName=mafports</code>、Wave 2 は <code>mafportsw2</code>。いずれも検証後に削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。ラボ全体の概要と進捗は <a href="../../README.md">maf-ports README</a>、移植規約(Bicep 規約を含む)は <a href="../../PORTING.md">PORTING.md</a>。</p></blockquote>
+<h2 id="1-この基盤で確かめること">1. この基盤で確かめること</h2>
+<ul>
+<li><strong>2 段デプロイ</strong>(① shared.bicep → ② roles.bicep)で、各ポートが <code>labs/maf-ports/.env</code> の 5 変数だけで Foundry に接続できる状態を作れること。</li>
+<li>RBAC を第 2 段に分けた理由(Wave 2 で実測した罠): Bicep で作ったプロジェクト/アカウントの MI には、Memory やクラウド評価が必要とするモデルデータプレーン権限が<strong>自動では付かない</strong>。さらに MI は再デプロイでローテーションし得るため、principalId を guid のシードに含めて割り当て名を作り直す(旧 principal への孤児割り当てを残さない)。</li>
+<li><strong>ステートレス設計</strong>: 使わない期間は RG ごと削除し、Bicep から再現できること(ただし Foundry アカウント名の soft delete 48 時間に注意 — §8)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<div class="tablewrap"><table><thead><tr>
+<th>リソース</th>
+<th>型(apiVersion)</th>
+<th>名前</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>Log Analytics</td>
+<td><code>Microsoft.OperationalInsights/workspaces</code>(2023-09-01)</td>
+<td><code>log-&lt;baseName&gt;</code></td>
+<td>App Insights の格納先(PerGB2018・保持 30 日)</td>
+<td>取り込み量従量</td>
+</tr>
+<tr>
+<td>Application Insights</td>
+<td><code>Microsoft.Insights/components</code>(2020-02-02)</td>
+<td><code>appi-&lt;baseName&gt;</code></td>
+<td>全ポートの OTel トレース送信先(ワークスペースベース)</td>
+<td>取り込み量従量(Log Analytics 側)</td>
+</tr>
+<tr>
+<td>Foundry アカウント</td>
+<td><code>Microsoft.CognitiveServices/accounts</code>(2025-06-01)</td>
+<td><code>aif-&lt;baseName&gt;</code></td>
+<td>kind <code>AIServices</code>・SKU S0・<code>allowProjectManagement</code>・システム割り当て MI・公開ネットワーク・ローカル認証(api-key)有効</td>
+<td>固定費なし(使った機能の従量)</td>
+</tr>
+<tr>
+<td>プロジェクト</td>
+<td><code>accounts/projects</code>(2025-06-01)</td>
+<td><code>maf-ports</code>(固定)</td>
+<td>ポートの作業単位・システム割り当て MI</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>AppInsights 接続</td>
+<td><code>accounts/projects/connections</code>(2025-06-01)</td>
+<td><code>appinsights-&lt;baseName&gt;</code></td>
+<td>プロジェクトのトレース画面の参照先(接続文字列を ApiKey として保持、全員共有)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>モデルデプロイ</td>
+<td><code>accounts/deployments</code>(2025-06-01)</td>
+<td><code>&lt;modelName&gt;</code>(= デプロイ名)</td>
+<td>GlobalStandard・容量 <code>modelCapacity</code>(1K TPM 単位)・<code>OnceCurrentVersionExpired</code> で自動版上げ</td>
+<td>トークン従量(容量は上限で予約課金ではない)</td>
+</tr>
+<tr>
+<td>ロール割り当て ×4(第 2 段)</td>
+<td><code>Microsoft.Authorization/roleAssignments</code>(2022-04-01)</td>
+<td><code>guid(account.id, principalId, roleId)</code></td>
+<td>アカウント MI・プロジェクト MI × {Cognitive Services OpenAI User, Foundry User}、スコープはアカウント</td>
+<td>なし</td>
+</tr>
+</tbody></table></div>
+<p>apiVersion の監査(2026-09-29):</p>
+<ul>
+<li><code>Microsoft.CognitiveServices/*</code> の <strong>2025-06-01 は据え置き</strong>。Foundry の Bicep how-to がリンクする公式サンプル(foundry-samples <code>infrastructure-setup-bicep/00-basic</code>)が今も 2025-06-01 を使っている。テンプレートリファレンスには新しい GA(2025-12-01 / 2026-03-01 / 2026-05-01 / 2026-07-01)があり、スクラッチで 2026-05-01 に置換してもビルド・lint とも警告なしだったが、本基盤が使うプロパティに差がないため変更は次回のライブ検証とセットにする。なお 2026-07-01 は手元の Bicep CLI 0.45.15 の型定義に未収録でオフライン型検査できない。</li>
+<li><code>OperationalInsights/workspaces@2023-09-01</code>(新しい GA 2025-07-01 あり)と <code>Insights/components@2020-02-02</code>(最新 GA)は、公式の App Insights モジュール(<code>41-standard-agent-setup/modules-standard/application-insights.bicep</code>)と同じ版。<code>roleAssignments@2022-04-01</code> は最新 GA。</li>
+<li>ロール ID: <code>5e0bd9bd-…</code> = Cognitive Services OpenAI User、<code>53ca6127-…</code> = <strong>Foundry User</strong>(旧名 Azure AI User。ID は不変。組み込みロール一覧は旧名を載せていない)。</li>
+<li>AppInsights 接続: 公式サンプルはアカウント直下(<code>accounts/connections</code>)に作るが、本基盤はプロジェクト配下。2026-07-31 のライブではプロジェクト配下でトレース表示を確認済み。</li>
+</ul>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>Azure CLI(2.87.0 で確認)+ Bicep(<code>az bicep</code>。0.45.15 で確認)。ポートの実行には uv</td>
+<td><code>az bicep build</code> はオフラインで動く</td>
+</tr>
+<tr>
+<td>サブスクリプション</td>
+<td>Japan East 等で <code>AIServices</code> を作れること、GlobalStandard の対象モデルのクォータ(既定 10K TPM)</td>
+<td>クォータは §5.1 で確認</td>
+</tr>
+<tr>
+<td>権限(デプロイする人)</td>
+<td>RG への<strong>所有者</strong>(または 共同作成者 + ロール割り当て権限)。第 2 段は <code>Microsoft.Authorization/roleAssignments/write</code> が要る</td>
+<td>共同作成者だけだと第 2 段が失敗する</td>
+</tr>
+<tr>
+<td>権限(Entra で呼ぶポートの利用者)</td>
+<td>サインインユーザー自身に <strong>Foundry User</strong>(データプレーン)。roles.bicep は MI にしか付けない</td>
+<td>critique-loop の評価 run など(§5.4)</td>
+</tr>
+</tbody></table></div>
+<p>shared.bicep のパラメータ:</p>
+<div class="tablewrap"><table><thead><tr>
+<th>パラメータ</th>
+<th>必須</th>
+<th>既定</th>
+<th>説明</th>
+</tr></thead><tbody>
+<tr>
+<td><code>baseName</code></td>
+<td>○</td>
+<td>—</td>
+<td>英小文字数字のみ。<code>aif-</code> / <code>appi-</code> / <code>log-</code> の接頭辞で各リソース名になる。<code>aif-&lt;baseName&gt;</code> はカスタムサブドメインにもなるので<strong>グローバル一意</strong></td>
+</tr>
+<tr>
+<td><code>location</code></td>
+<td></td>
+<td>RG の場所</td>
+<td>例: <code>japaneast</code></td>
+</tr>
+<tr>
+<td><code>modelName</code></td>
+<td>○</td>
+<td>—</td>
+<td>リタイアが早いため既定値なし。例: <code>gpt-5.4-mini</code>(2027-09-21 まで GA)。現行の安価 GA モデルは <a href="../../../../docs/survey/features/html/02-models.html">features/02-models.md</a> で確認</td>
+</tr>
+<tr>
+<td><code>modelVersion</code></td>
+<td>○</td>
+<td>—</td>
+<td>例: <code>2026-03-17</code>(2026-08 の foundry-probes 実測時の gpt-5.4-mini の版)。現行版は §5.1 のコマンドで確認</td>
+</tr>
+<tr>
+<td><code>modelCapacity</code></td>
+<td></td>
+<td>10</td>
+<td>GlobalStandard の容量(1K TPM 単位)</td>
+</tr>
+</tbody></table></div>
+<p>roles.bicep のパラメータ: <code>baseName</code>(shared と同じ値)/ <code>accountPrincipalId</code> / <code>projectPrincipalId</code>(§5.3 で取得)。</p>
+<h2 id="4-オフライン検証-azure-不要・無料">4. オフライン検証(Azure 不要・無料)</h2>
+<p>本基盤には pytest はない。テンプレートの構文・型検査だけをローカルで行う(各ポートのオフラインテストは各ポートの実行ガイド)。</p>
+<pre><code>cd labs/maf-ports/infra
+az bicep build --file shared.bicep --stdout &gt; /dev/null   # 期待: エラーなしで何も出ない(新版 Bicep の案内 WARNING は無視してよい)
+az bicep build --file roles.bicep  --stdout &gt; /dev/null   # 同上
+grep -n &#x27;^output&#x27; shared.bicep                            # 期待: foundryName / projectEndpoint / openaiV1Endpoint / modelDeploymentName / appInsightsConnectionString の 5 本</code></pre>
+<p>生成物を残さないこと(<code>--stdout</code> を使えば <code>*.json</code> は作られない)。テンプレートが固定している設計:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> shared.bicep にはロール割り当てを置かない(MI ローテーション時の孤児割り当てを防ぐため第 2 段に分離)</li>
+<li class="task"><input type="checkbox" class="chk"> roles.bicep は 2 principal × 2 ロール = 4 件、名前は <code>guid(account.id, principalId, roleId)</code>(principal が変われば別名で新規作成される)</li>
+<li class="task"><input type="checkbox" class="chk"> 出力 5 本が <code>.env</code> の 5 変数に 1 対 1 で対応する(§5.5。API キーだけは出力に出さず CLI で取る)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-事前確認">5.1 事前確認</h3>
+<pre><code>az login &amp;&amp; az account set -s &lt;subscription&gt;
+az cognitiveservices account list-deleted -o table     # 同名 aif-&lt;baseName&gt; が soft delete 中なら §8 で purge するか baseName を変える
+az cognitiveservices model list -l japaneast \
+  --query &quot;[?model.name==&#x27;gpt-5.4-mini&#x27;].{version:model.version, format:model.format}&quot; -o table   # modelVersion の候補
+az cognitiveservices usage list -l japaneast -o table  # GlobalStandard の残りクォータ(1K TPM 単位)</code></pre>
+<h3 id="5-2-第-1-段-shared-bicep">5.2 第 1 段: shared.bicep</h3>
+<pre><code>cd labs/maf-ports/infra
+az group create -n rg-maf-ports -l japaneast
+az deployment group what-if -g rg-maf-ports -f shared.bicep \
+  -p baseName=&lt;baseName&gt; modelName=gpt-5.4-mini modelVersion=&lt;version&gt; modelCapacity=10   # 任意: 作成内容の確認
+az deployment group create -g rg-maf-ports -n shared -f shared.bicep \
+  -p baseName=&lt;baseName&gt; modelName=gpt-5.4-mini modelVersion=&lt;version&gt; modelCapacity=10</code></pre>
+<p>期待: <code>provisioningState: Succeeded</code>、<code>outputs</code> に 5 本。出力の形の例:</p>
+<pre><code>foundryName                  aif-&lt;baseName&gt;
+projectEndpoint              https://aif-&lt;baseName&gt;.services.ai.azure.com/api/projects/maf-ports
+openaiV1Endpoint             https://aif-&lt;baseName&gt;.openai.azure.com/openai/v1
+modelDeploymentName          gpt-5.4-mini
+appInsightsConnectionString  InstrumentationKey=...;IngestionEndpoint=https://japaneast-...</code></pre>
+<h3 id="5-3-第-2-段-roles-bicep-mi-へのロール割り当て">5.3 第 2 段: roles.bicep(MI へのロール割り当て)</h3>
+<pre><code>RG=rg-maf-ports; BASE=&lt;baseName&gt;
+AID=$(az cognitiveservices account show -n aif-$BASE -g $RG --query identity.principalId -o tsv)
+PID=$(az cognitiveservices account project show -n aif-$BASE -g $RG --project-name maf-ports --query identity.principalId -o tsv)
+#   ↑ Wave 2 で使った同等コマンドは shared.bicep 末尾コメントの az rest 版(api-version=2025-06-01)
+az deployment group create -g $RG -n roles -f roles.bicep \
+  -p baseName=$BASE accountPrincipalId=$AID projectPrincipalId=$PID</code></pre>
+<p>shared.bicep を<strong>再デプロイしたら毎回</strong>第 2 段もやり直す(MI の principalId が変わっていれば新しい名前で割り当てが作られる)。</p>
+<h3 id="5-4-rbac-伝播待ちと利用者の権限">5.4 RBAC 伝播待ちと利用者の権限</h3>
+<ul>
+<li>ロール割り当てがデータプレーンに効くまで <strong>5〜15 分</strong>(travel-memory の実測は約 5〜7 分で、ノード間で不均一 — 片方のプローブが通った後も数分 401 が続いた)。MI でモデルを呼ぶ機能(Memory・クラウド評価)は、この間 401 / PermissionDenied になる。</li>
+<li>api-key でモデルを直接呼ぶだけのポート(trend-analysis / mixture-of-agents / research-handoff など多数)は第 2 段を待たずに動く。</li>
+<li>Entra ID で<strong>プロジェクトのデータプレーン</strong>を呼ぶポート(<code>FOUNDRY_PROJECT_ENDPOINT</code> を使う critique-loop / travel-memory / hn-briefing-hosted / governed-agent / claim-voice-live)は、サインインユーザー自身にも Foundry User が要る(サブスクリプションの所有者・共同作成者だけでは足りない):</li>
+</ul>
+<pre><code>az role assignment create --assignee &lt;自分の UPN またはオブジェクト ID&gt; --role &quot;Foundry User&quot; \
+  --scope $(az cognitiveservices account show -n aif-$BASE -g $RG --query id -o tsv)</code></pre>
+<h3 id="5-5-env-への転記">5.5 <code>.env</code> への転記</h3>
+<p><code>labs/maf-ports/.env</code>(git 管理外。雛形 <code>labs/maf-ports/.env.example</code>)に、共有基盤の出力を次の対応で書く。</p>
+<div class="tablewrap"><table><thead><tr>
+<th><code>.env</code> 変数</th>
+<th>取得元</th>
+<th>使うポート</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>出力 <code>openaiV1Endpoint</code></td>
+<td>全ポート(モデル呼び出し)</td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>出力 <code>modelDeploymentName</code></td>
+<td>全ポート</td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td><code>az cognitiveservices account keys list -n aif-&lt;baseName&gt; -g &lt;rg&gt; --query key1 -o tsv</code>(出力には含めない)</td>
+<td>全ポート(api-key 認証)</td>
+</tr>
+<tr>
+<td><code>FOUNDRY_PROJECT_ENDPOINT</code></td>
+<td>出力 <code>projectEndpoint</code></td>
+<td>critique-loop / travel-memory / hn-briefing-hosted / governed-agent / claim-voice-live</td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>出力 <code>appInsightsConnectionString</code></td>
+<td>全ポート(任意。未設定ならトレース無効)</td>
+</tr>
+</tbody></table></div>
+<pre><code># 新規作成の例(既存の .env を上書きするので、ポート固有の変数があれば後で足し直す)
+RG=rg-maf-ports
+out() { az deployment group show -g $RG -n shared --query &quot;properties.outputs.$1.value&quot; -o tsv; }
+cat &gt; labs/maf-ports/.env &lt;&lt;EOF
+FOUNDRY_PROJECT_ENDPOINT=$(out projectEndpoint)
+FOUNDRY_OPENAI_V1_ENDPOINT=$(out openaiV1Endpoint)
+FOUNDRY_MODEL=$(out modelDeploymentName)
+FOUNDRY_API_KEY=$(az cognitiveservices account keys list -n $(out foundryName) -g $RG --query key1 -o tsv)
+APPLICATIONINSIGHTS_CONNECTION_STRING=$(out appInsightsConnectionString)
+EOF</code></pre>
+<p>ポート固有の変数(<code>AZURE_SEARCH_*</code>・<code>FOUNDRY_EMBEDDING_MODEL</code>・<code>MEMORY_STORE_NAME</code>・<code>GITHUB_*</code>・<code>VOICE_LIVE_*</code>・<code>FOUNDRY_PROPOSER_MODELS</code> など)は各ポートの実行ガイド・README を参照。</p>
+<h3 id="5-6-疎通スモーク">5.6 疎通スモーク</h3>
+<pre><code>set -a; . labs/maf-ports/.env; set +a
+curl -s -X POST &quot;$FOUNDRY_OPENAI_V1_ENDPOINT/responses&quot; \
+  -H &quot;Content-Type: application/json&quot; -H &quot;api-key: $FOUNDRY_API_KEY&quot; \
+  -d &quot;{\&quot;model\&quot;: \&quot;$FOUNDRY_MODEL\&quot;, \&quot;input\&quot;: \&quot;ping\&quot;}&quot; | head -c 400
+# 期待: &quot;status&quot;: &quot;completed&quot; を含む Responses API の JSON(v1 API は api-version 不要)
+
+cd labs/maf-ports/ports/trend-analysis &amp;&amp; uv sync --extra dev --extra live \
+  &amp;&amp; uv run trend-analysis-maf &quot;AI coding agents&quot;   # エンドツーエンド+トレース送信(→ trend-analysis の実行ガイド)</code></pre>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>第 1 段の成功</td>
+<td><code>az deployment group show -g &lt;rg&gt; -n shared --query &quot;{state:properties.provisioningState, outputs:keys(properties.outputs)}&quot;</code></td>
+<td><code>Succeeded</code>、出力 5 本</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>モデルデプロイ</td>
+<td><code>az cognitiveservices account deployment list -n aif-&lt;baseName&gt; -g &lt;rg&gt; -o table</code></td>
+<td>デプロイ名 = <code>modelName</code>、SKU <code>GlobalStandard</code>、容量 = <code>modelCapacity</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>v1 エンドポイントと api-key</td>
+<td>§5.6 の curl</td>
+<td>HTTP 200・<code>&quot;status&quot;: &quot;completed&quot;</code>。401 ならキー、404 ならデプロイ名(§9)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>第 2 段の割り当て</td>
+<td><code>az role assignment list --scope &lt;accountId&gt; -o table</code></td>
+<td>Cognitive Services OpenAI User と Foundry User が、アカウント MI・プロジェクト MI の 2 principal に 1 件ずつ(計 4 件)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>割り当て先が現在の MI か(孤児の有無)</td>
+<td>#4 の principalId を <code>az cognitiveservices account show --query identity.principalId</code> / <code>project show</code> の値と突き合わせる</td>
+<td>すべて一致。principal 名が空(削除済み principal)の割り当てが残っていれば <code>az role assignment delete --ids &lt;id&gt;</code> で消す</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>RBAC 伝播</td>
+<td>MI を使うポート(例: travel-memory のライブスモーク)を割り当て直後と 15 分後に実行</td>
+<td>直後は 401 になり得る。5〜15 分後に通れば伝播完了</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>トレースの経路</td>
+<td>§5.6 の trend-analysis 実行後、§7 の KQL</td>
+<td><code>invoke_agent ...</code> などのスパン名が並ぶ。ポータルのプロジェクト「トレース」でも同じ実行が見える(AppInsights 接続経由)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>秘密情報の扱い</td>
+<td><code>git status --short labs/maf-ports/</code> / デプロイ履歴</td>
+<td><code>.env</code> が差分に出ない(.gitignore 済み)。接続文字列はデプロイ出力に残る(取り込み専用キーだが共有範囲に注意)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>後片付けとコスト</td>
+<td>§8 の手順後に <code>az group show -n &lt;rg&gt;</code> と <code>az cognitiveservices account list-deleted -o table</code></td>
+<td>RG が存在しない。同じ名前で作り直す予定なら soft delete 中のアカウントを purge 済み</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<p>本基盤自体はスパンを出さない。トレースは各ポートの CLI が <code>APPLICATIONINSIGHTS_CONNECTION_STRING</code> 宛てに OTel で直接送り、プロジェクトの AppInsights 接続はポータルの「トレース」画面がそれを参照するためにある。</p>
+<pre><code>az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(1h) | summarize count() by cloud_RoleName, name | order by count_ desc&quot;</code></pre>
+<ul>
+<li>期待: 実行したポートの <code>workflow.run</code> / <code>executor.process ...</code> / <code>invoke_agent ...</code> / <code>chat &lt;デプロイ名&gt;</code> / <code>execute_tool ...</code> が並ぶ(スパン名の詳細は各ポートの実行ガイド §7)。</li>
+<li>クラウド評価(evals)はプロジェクト MI とユーザー双方の権限に依存する — 手順と罠は critique-loop の README。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code>az group delete -n rg-maf-ports --yes --no-wait
+# Foundry アカウントは 48 時間 soft delete され、その間は同じ名前(aif-&lt;baseName&gt;)で作り直せない
+az cognitiveservices account list-deleted -o table
+az cognitiveservices account purge -l japaneast -g rg-maf-ports -n aif-&lt;baseName&gt;   # すぐ同名で再作成したい場合のみ</code></pre>
+<ul>
+<li>別の <code>baseName</code> で作るなら purge は不要(Wave 2 は <code>mafportsw2</code> で作り直した)。</li>
+<li>コストの考え方: 本基盤のリソースはすべて従量課金で、放置しても時間課金される部品はない(Foundry アカウント・プロジェクト・接続は無料、GlobalStandard はトークン従量、App Insights / Log Analytics は取り込み量従量)。<strong>時間課金の部品はポート固有側</strong>にある(例: db-routing-iq の AI Search Basic)ので、各ポートの実行ガイドの片付けも合わせて行う。単価は書かない方針 — 見積りの手順は <a href="../../../../docs/survey/proposal/html/02-cost-estimation.html">proposal/02-cost-estimation.md</a>。</li>
+</ul>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td>第 1 段でアカウント名・カスタムサブドメインの衝突エラー</td>
+<td><code>aif-&lt;baseName&gt;</code> が他テナントで使用中、または soft delete 中</td>
+<td>§8 で purge するか <code>baseName</code> を変える</td>
+</tr>
+<tr>
+<td>モデルデプロイでクォータ不足のエラー</td>
+<td>GlobalStandard のクォータ不足</td>
+<td><code>modelCapacity</code> を下げる / 別リージョン / クォータ申請</td>
+</tr>
+<tr>
+<td>モデルデプロイで版・モデル名のエラー</td>
+<td><code>modelVersion</code> が現行カタログにない(リタイア・版上げ)</td>
+<td>§5.1 の <code>az cognitiveservices model list</code> で版を確認し直す</td>
+</tr>
+<tr>
+<td>第 2 段で <code>AuthorizationFailed</code>(roleAssignments/write)</td>
+<td>デプロイ実行者にロール割り当て権限がない</td>
+<td>RG の所有者(またはロールベースアクセス制御管理者)に実行してもらう</td>
+</tr>
+<tr>
+<td>Memory・評価が 401 / PermissionDenied</td>
+<td>RBAC 伝播待ち、または MI ローテーション後に第 2 段を流していない</td>
+<td>5〜15 分待つ。shared を再デプロイしたなら §5.3 をやり直し、#5 で孤児を確認</td>
+</tr>
+<tr>
+<td>評価 run が PermissionDenied(MI は正しい)</td>
+<td>提出ユーザー自身に Foundry User がない</td>
+<td>§5.4 のコマンドでユーザーに付与</td>
+</tr>
+<tr>
+<td>トレースがポータルの「トレース」に出ない(KQL では見える)</td>
+<td>AppInsights 接続が別リソースを指している / 表示の遅延</td>
+<td><code>az cognitiveservices account project connection list -n aif-&lt;baseName&gt; -g &lt;rg&gt; --project-name maf-ports -o table</code> で <code>AppInsights</code> 接続を確認</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>ラボ概要・進捗: <a href="../../README.md">maf-ports README</a> / 移植規約: <a href="../../PORTING.md">PORTING.md</a></li>
+<li>各ポートの実行ガイド(例): <a href="../../ports/trend-analysis/docs/runbook.html">trend-analysis</a> / <a href="../../ports/mixture-of-agents/docs/runbook.html">mixture-of-agents</a> / <a href="../../ports/research-handoff/docs/runbook.html">research-handoff</a></li>
+<li>閉域(VNet・Private Endpoint)構成の考え方: <a href="../../../../docs/survey/architecture/html/07-usecase-regulated-edge.html">architecture/07-usecase-regulated-edge.md</a></li>
+<li>アーキテクチャ図の生成: <a href="../../tools/README.md">tools/README.md</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(Bicep は変更なし。apiVersion・ロール ID を現行 docs と公式サンプルに照合し据え置きを判断)。構成図を v2(日本語・処理順バッジ)に更新し、対象ポート数を 14 に訂正</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/infra/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

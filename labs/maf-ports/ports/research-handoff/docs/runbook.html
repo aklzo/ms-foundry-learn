@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>research-handoff 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="runbook.html" class="current">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="research-handoff-実行ガイド">research-handoff 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/research-handoff/</code>(Port 3・パターン: handoff/トリアージ — 構造化出力の委譲判断+ switch-case エッジ)<br><strong>最終確認:</strong> 2026-09-29 オフライン(31 passed・ruff clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / openai 3.20.0)/ ライブ: 2026-07-31(当時の構成 core 1.12.1 / openai 2.51.0。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学び(HandoffBuilder を採用しなかった理由と 2026-09-29 の再評価を含む)は <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li>triage が<strong>計画+委譲先(<code>handoff_to</code>)+理由</strong>を 1 つの構造化出力(<code>TriageDecision</code>)で返し、<code>handoff_to == &quot;research&quot;</code> なら research → editor、それ以外(<code>&quot;editor&quot;</code>)なら editor 直行に<strong>グラフのエッジ条件で</strong>分岐すること。委譲判断は <code>[triage] handoff → ...</code> として必ず可視化される。</li>
+<li>handoff 先が受け取るコンテキストが型付きメッセージとして明示されること: research は計画のクエリ・focus areas、editor は元クエリ+research 要約+<code>save_important_fact</code> で保存されたファクト(元 SDK の「会話履歴の暗黙引き継ぎ」の置き換え)。</li>
+<li>構造化出力が崩れても止まらないこと: triage のパース失敗 → 既定計画で research に倒す / editor のパース失敗 → 生テキストを本文に(元アプリのフォールバックの踏襲)。</li>
+<li>技術選定上の意味: 委譲先を<strong>事前に列挙できる業務フロー</strong>なら構造化出力+条件エッジでテスト可能に書ける。列挙できない会話型なら HandoffBuilder(別パッケージ)や元 SDK が有利(README の学び 1・2、再評価節)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<pre><code>                  ┌─[handoff_to == &quot;research&quot;]─▶ Research ──▶ Editor ─▶ ResearchHandoffResult
+topic ─▶ Triage ──┤   (search_web +                (要約+facts を
+         (構造化出力)  save_important_fact)          プロンプトで受領)
+                  └─[Default(&quot;editor&quot; 直行)]──────▶ Editor
+進捗: HandoffDecided(triage)/ StageDone(research)→ type=&quot;intermediate&quot; → CLI の stderr</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>MAF Workflow(ローカル、<code>workflow.py</code>)</td>
+<td><code>add_switch_case_edge_group(triage, [Case(research), Default(editor)])</code> + <code>add_edge(research, editor)</code></td>
+<td>なし</td>
+</tr>
+<tr>
+<td>MAF <code>Agent</code> ×3(<code>agents.py</code>)</td>
+<td>triage_agent(<code>response_format=TriageDecision</code>)/ research_agent(ツール 2 種)/ editor_agent(<code>response_format=ResearchReport</code>)。<code>OpenAIChatClient</code>(Responses API)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>モデルデプロイ(共有基盤、既定 gpt-5.4-mini)</td>
+<td>3 役割で 1 デプロイを共用。構造化出力は <code>text.format = json_schema</code>(strict)で送られる</td>
+<td>トークン従量(editor は 1,000 語超の長文出力)</td>
+</tr>
+<tr>
+<td>search_web(<code>search.py</code> / <code>tools.py</code>)</td>
+<td>DuckDuckGo HTML をキーレスで検索(元の <code>WebSearchTool</code> の置き換え)</td>
+<td>なし(外部サイト)</td>
+</tr>
+<tr>
+<td>save_important_fact + <code>FactStore</code>(<code>tools.py</code>)</td>
+<td>research 中のファクトを実行単位のストアに保存(元の Streamlit session_state の置き換え)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>App Insights(共有基盤)</td>
+<td>OTel トレースの送信先(任意)</td>
+<td>取り込み量従量</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得。検証は 3.13)</td>
+<td>オフライン実行はこれだけ</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)のみ。本ポート固有のリソースはない</td>
+<td>トークン従量+トレース取り込み</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>モデル呼び出しは api-key なので<strong>データプレーンの RBAC は不要</strong></td>
+<td>roles.bicep(MI 向け)も不要</td>
+</tr>
+<tr>
+<td>ネットワーク(ライブのみ)</td>
+<td><code>html.duckduckgo.com</code> への外向き HTTPS</td>
+<td>research 分岐でのみ使う</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <code>.env.example</code>。<strong>ライブ実行時のみ必要</strong>。本ポート固有の変数はない):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>モデル呼び出し先。必須</td>
+<td>shared.bicep の出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>モデルデプロイ名。必須。構造化出力(json_schema strict)に対応したモデルであること</td>
+<td>shared.bicep の出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>api-key 認証。必須</td>
+<td><code>az cognitiveservices account keys list -n &lt;foundryName&gt; -g &lt;rg&gt; --query key1 -o tsv</code></td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>トレース送信先。任意</td>
+<td>shared.bicep の出力 <code>appInsightsConnectionString</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/research-handoff
+uv sync --extra dev
+uv run pytest            # 期待: 31 passed, 1 deselected(live は既定で除外。ネットワーク不要)
+uv run ruff check .      # 期待: All checks passed!(図生成スクリプト docs/architecture.py も対象)</code></pre>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> 両分岐: <code>research</code> なら triage → research → editor が 1 回ずつ、<code>editor</code> なら research を呼ばず直行し、直行プロンプトに <code>No web research was performed</code> が入る(<code>test_research_route_runs_research_then_editor</code> / <code>test_editor_route_skips_research</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> handoff 先のコンテキスト: research に計画のクエリと focus areas、editor に元クエリ・research 要約・保存ファクトと出典が渡る(<code>test_research_prompt_carries_plan_context</code> / <code>test_editor_prompt_carries_query_summary_and_facts</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 構造化出力の 3 経路: ネイティブ <code>.value</code> 優先 / 散文包み JSON の抽出 / パース失敗・未知の <code>handoff_to</code> は既定計画で research に fallback(<code>test_triage_native_value_path</code> / <code>test_triage_json_wrapped_in_prose</code> / <code>test_triage_parse_failure_falls_back_to_research</code> / <code>test_triage_unknown_route_falls_back</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> editor のレポートは構造化出力から取り、崩れたら生テキストを本文にする(<code>test_editor_report_parsed_from_structured_output</code> / <code>test_editor_parse_failure_falls_back_to_raw_report</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 進捗イベント: research 経由は <code>HandoffDecided</code> 1 件+<code>StageDone(&quot;research&quot;)</code> 1 件、editor 直行は <code>StageDone</code> なし(<code>test_progress_events_research_route</code> / <code>test_progress_events_editor_route</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 実 <code>Agent</code> での配線: triage / editor に <code>response_format</code>、research に <code>search_web</code> と <code>save_important_fact</code>(<code>tests/test_agents_build.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> <code>--json</code> 用の <code>to_dict()</code> が JSON 直列化できる(<code>test_result_to_dict_is_json_serializable</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code># 共有基盤が未作成なら先に作る(→ labs/maf-ports/infra/docs/runbook.md §5)。本ポート固有のリソースはない。
+cd labs/maf-ports/ports/research-handoff
+az deployment group create -g &lt;rg&gt; -f infra/main.bicep -p baseName=&lt;baseName&gt; \
+  --query properties.outputs -o json   # 任意: 共有基盤の存在確認(existing 参照+出力のみ)</code></pre>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code>uv sync --extra dev --extra live
+# research 分岐が期待されるトピック(鮮度依存)
+uv run research-handoff-maf &quot;best affordable espresso machines for a French press upgrader&quot;
+# editor 直行が期待されるトピック(教科書的知識)
+uv run research-handoff-maf &quot;Explain the difference between TCP and UDP for a junior engineer&quot;
+# 保存ファクトも表示 / 全出力を JSON で
+uv run research-handoff-maf --show-facts &quot;...&quot;
+uv run research-handoff-maf --json &quot;...&quot; &gt; result.json
+uv run pytest -m live   # ライブスモーク(topic &quot;Recent developments in AI coding agents for enterprises&quot;。1 passed が期待)</code></pre>
+<p>期待される出力の例(値は実行ごとに変わる。語数は 2026-07-31 のライブ実測):</p>
+<pre><code>[triage] handoff → research (&lt;triage が返した 1 文の理由&gt;)    ← stderr
+[research] done (&lt;N&gt; chars)                                   ← stderr(editor 直行では出ない)
+# &lt;レポートのタイトル&gt;                                          ← stdout
+## Outline
+1. ...
+&lt;本文(Markdown、長文)&gt;
+## Sources
+1. https://...
+(word count: 1684)                                            ← stderr</code></pre>
+<p><code>--json</code> の形: <code>{&quot;topic&quot;, &quot;handoff_to&quot;, &quot;reason&quot;, &quot;plan&quot;: {&quot;topic&quot;, &quot;search_queries&quot;, &quot;focus_areas&quot;}, &quot;research_md&quot;, &quot;facts&quot;: [{&quot;fact&quot;, &quot;source&quot;, &quot;timestamp&quot;}], &quot;report&quot;: {&quot;title&quot;, &quot;outline&quot;, &quot;report&quot;, &quot;sources&quot;, &quot;word_count&quot;}}</code>(editor 直行では <code>research_md</code> が <code>null</code>、<code>facts</code> が空)。</p>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: research 経由</td>
+<td>§5.2 の espresso トピック</td>
+<td>stderr に <code>[triage] handoff → research (...)</code> と <code>[research] done</code>、stdout にタイトル・Outline・本文・Sources のレポート</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>分岐: editor 直行</td>
+<td>§5.2 の TCP/UDP トピック</td>
+<td><code>[triage] handoff → editor (...)</code>、<code>[research] done</code> は出ない。<code>--json</code> で <code>research_md: null</code> / <code>facts: []</code>。Sources に架空の URL が並んでいないかも見る(eval の <code>no fabricated sources</code>)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>分岐の妥当性(評価データ)</td>
+<td><code>tests/eval_dataset.jsonl</code> の 6 トピックを順に実行し、<code>handoff_to</code> と <code>expected_route</code> を突き合わせる</td>
+<td>鮮度依存(価格・規制・旅行)は research、教科書的(TCP/UDP・TPS)は editor。境界ケースのぶれは記録する(合否ラインは設けない)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>handoff 先のコンテキスト</td>
+<td><code>--show-facts</code> / <code>--json</code> の <code>facts</code> と <code>report.sources</code></td>
+<td>research 中に保存されたファクト(出典 URL 付き)があり、レポートの Sources に反映されている</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>構造化出力の成立</td>
+<td><code>--json</code> の <code>report.outline</code> と <code>report.word_count</code></td>
+<td>outline が空でなく word_count が 1,000 前後以上(生テキスト fallback だと outline が空・title がトピック文そのものになる)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>異常系: fallback</td>
+<td>ライブでは狙って起こしにくい。オフラインの fallback テスト(§4)で担保し、ライブでは <code>reason</code> を見る</td>
+<td><code>reason</code> が <code>fallback: triage output was not parseable</code> なら triage の構造化出力が崩れた(既定計画で research 続行)。頻発するならモデルの構造化出力対応を確認</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>観測: トレース着信</td>
+<td>§7 の件数 KQL</td>
+<td><code>invoke_agent</code> 3 種(triage_agent / research_agent / editor_agent)、<code>execute_tool search_web</code> / <code>save_important_fact</code>、<code>edge_group.process SwitchCaseEdgeGroup</code> が出る(2026-07-31 実測: <code>invoke_agent</code> ×3・<code>search_web</code> ×8・<code>save_important_fact</code> ×5)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>コスト</td>
+<td>§7 のトークン集計 KQL</td>
+<td>research 経由は <code>chat</code> 呼び出しが多く(ツール往復分)、editor の出力トークンが最大。editor 直行は <code>chat</code> 2 回で最安</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>後片付け</td>
+<td>本ポート固有のリソースはない</td>
+<td>共有基盤を使い終えたら <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a> §8</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code># スパン名ごとの件数
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | summarize count() by name&quot;
+
+# トークン使用量(chat スパンの GenAI 属性)
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) and name startswith &#x27;chat&#x27; | summarize calls=count(), input=sum(toint(customDimensions[&#x27;gen_ai.usage.input_tokens&#x27;])), output=sum(toint(customDimensions[&#x27;gen_ai.usage.output_tokens&#x27;]))&quot;</code></pre>
+<ul>
+<li>期待するスパン名(2026-09-29 に agent-framework-core 1.19.0 のインメモリ OTel で確認): <code>workflow.run</code> / <code>executor.process triage|research|editor</code> / <code>edge_group.process SwitchCaseEdgeGroup</code> / <code>invoke_agent triage_agent|research_agent|editor_agent</code> / <code>chat &lt;デプロイ名&gt;</code> / <code>execute_tool search_web|save_important_fact</code> / <code>message.send</code>。</li>
+<li>委譲判断の理由はトレースでなく CLI の <code>[triage] handoff → ...</code> と <code>--json</code> の <code>reason</code> に残る(データとして残すのがこのパターンの利点)。</li>
+<li>評価: <code>tests/eval_dataset.jsonl</code>(6 ケース、<code>expected_route</code> + <code>expected_traits</code>)。クラウド評価は未実装(評価 API の使い方は Port 9 critique-loop)。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code># 本ポート固有のリソースはない。共有基盤ごと消す場合:
+az group delete -n &lt;rg&gt; --yes --no-wait</code></pre>
+<ul>
+<li>同じ <code>baseName</code> で作り直す場合の soft delete(48 時間)は <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a> §8。</li>
+<li>ローカルの生成物(<code>result.json</code> など)は手で削除する。</li>
+</ul>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>error: 環境変数が未設定: ...</code>(終了コード 2)</td>
+<td><code>labs/maf-ports/.env</code> がない / 変数名の誤り</td>
+<td><code>.env.example</code> をコピーして共有基盤の出力を転記</td>
+</tr>
+<tr>
+<td>400 で <code>response_format</code> / <code>json_schema</code> に関するエラー</td>
+<td>デプロイしたモデルが構造化出力(strict json_schema)に非対応</td>
+<td>構造化出力対応モデル(既定 gpt-5.4-mini)に戻す。モデルの対応状況は <a href="../../../../../docs/survey/features/html/02-models.html">features/02-models.md</a></td>
+</tr>
+<tr>
+<td>毎回 <code>fallback: triage output was not parseable</code></td>
+<td>triage の応答が <code>TriageDecision</code> に合わない(未知の <code>handoff_to</code> など)</td>
+<td><code>--json</code> の <code>plan</code> が既定計画(<code>Researching &lt;topic&gt;</code>)になっているか確認。モデル・プロンプトを見直す</td>
+</tr>
+<tr>
+<td>レポートの outline が空・タイトルがトピック文</td>
+<td>editor の構造化出力が崩れて生テキスト fallback</td>
+<td>上と同じ。レポート本文自体は出ているので致命ではない</td>
+</tr>
+<tr>
+<td>研究分岐で Sources が空・ファクト 0 件</td>
+<td>DDG が 202/403 でブロック(ツールは <code>Error: Function failed.</code> を返す)</td>
+<td>時間をおく / 別ネットワーク。研究なしでも editor までは完走する</td>
+</tr>
+<tr>
+<td>401 / 404 / 429</td>
+<td>キー誤り / <code>FOUNDRY_MODEL</code> とデプロイ名の不一致 / 容量超過</td>
+<td><a href="../../trend-analysis/docs/runbook.html">trend-analysis の実行ガイド</a> §9 と同じ</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び(HandoffBuilder 不採用の理由と 2026-09-29 再評価): <a href="../README.md">README</a></li>
+<li>HandoffBuilder を実際に組んだ比較: <a href="../../game-design-team/README.md">game-design-team(Port 7)の README</a></li>
+<li>共有基盤(デプロイ・.env・RBAC・削除): <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a></li>
+<li>前のパターン: <a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents(Port 2・並列+集約)</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版。構成図を v2(日本語・処理順バッジ)に更新(依存を agent-framework-core 1.19.0 / openai 3.20.0 に更新、コード改修なし。モックで両分岐・構造化出力の要求形・スパン名を確認。HandoffBuilder 1.2.0 を再評価し不採用を維持)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/research-handoff/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

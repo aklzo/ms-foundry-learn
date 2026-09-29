@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>game-design-team 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="runbook.html" class="current">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="game-design-team-実行ガイド">game-design-team 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/game-design-team/</code>(Port 7・パターン: Swarm 型ハンドオフのリング+ループエッジ。比較用に HandoffBuilder 変種あり)<br><strong>最終確認:</strong> 2026-09-29 オフライン(30 passed〈<code>--extra orchestrations</code> 込み〉・ruff clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / agent-framework-orchestrations 1.2.0 / openai 3.20.0)/ ライブ: 2026-07-31(主実装のスモーク 1 passed・54 秒。当時の構成。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li>4 役割(story → gameplay → visuals → tech)が<strong>リングを 2 周</strong>し、1 周目は 2〜3 文の要約、2 周目は <code>## X Design</code> の詳細セクションを書くこと。tech → story の<strong>ループエッジ</strong>が 1 回だけ発火し、4 セクションが揃ったら <code>deliver</code> に抜けること(終了は回数でなくデータ条件)。</li>
+<li>元アプリの「Swarm ハンドオフ」は委譲先が全部ハードコードで、LLM は一度も委譲先を選んでいない → <strong>明示グラフ(MAF core)で決定的に書ける</strong>こと。共有 context は型付きメッセージで Executor が決定的に書き足す(README 学び 1・3)。</li>
+<li>同じ協調を HandoffBuilder(agent-framework-orchestrations)に載せると、リング順・フェーズ・終了が<strong>プロンプト頼みの確率的な性質</strong>になること(README「HandoffBuilder 比較」・学び 5)。選定基準は「委譲先が仕様で決まるならグラフ、会話で決まるなら handoff 基盤」。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>MAF Workflow(ローカル、<code>workflow.py</code>)</td>
+<td>RoleExecutor ×4 のリング+tech の switch-case(全セクション完成 → deliver / それ以外 → story)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>モデルデプロイ gpt-5.4-mini(共有基盤)</td>
+<td>4 役割で共用。1 回の実行で 8 回呼ばれる(要約 4+詳細 4)</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>HandoffBuilder 変種(<code>handoff_variant.py</code>+<code>examples/</code>、live 専用)</td>
+<td>同じ 4 役割を <code>handoff_to_*</code> ツール呼び出しで回す比較実装</td>
+<td>トークン従量(最低 8 回+nudge ぶん)</td>
+</tr>
+<tr>
+<td>App Insights <code>appi-&lt;baseName&gt;</code>(共有基盤)</td>
+<td>OTel トレースの送信先</td>
+<td>取り込み量従量(少量)</td>
+</tr>
+</tbody></table></div>
+<p>本ポート固有の Azure リソースはない(<a href="../infra/main.bicep">infra/main.bicep</a> は共有基盤の existing 参照と出力だけ)。</p>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python は uv が取得。検証は 3.13)</td>
+<td>オフライン実行はこれだけ</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)のみ</td>
+<td>課金はモデルのトークンと App Insights の取り込み</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>実行時の認証は <strong>API キー</strong>(<code>FOUNDRY_API_KEY</code>)なのでデータプレーンの RBAC 付与は不要。デプロイには RG の共同作成者</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <a href="../../../.env.example">.env.example</a>。<strong>ライブ実行時のみ必要</strong>。本ポート固有の変数はない):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>モデルの呼び先(<code>https://&lt;foundry&gt;.openai.azure.com/openai/v1</code>)</td>
+<td>shared.bicep / main.bicep の出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>モデルのデプロイ名(例: <code>gpt-5.4-mini</code>)</td>
+<td>shared.bicep の出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>Foundry の API キー</td>
+<td><code>az cognitiveservices account keys list -n aif-&lt;baseName&gt; -g &lt;rg&gt;</code></td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code>(任意)</td>
+<td>トレース送信先。未設定ならトレース無効で実行は続く</td>
+<td>shared.bicep の出力 <code>appInsightsConnectionString</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/game-design-team
+uv sync --extra dev --extra orchestrations     # HandoffBuilder 構築テスト用に orchestrations も入れる
+uv run pytest                                  # 期待: 30 passed, 1 deselected(ネットワーク不要)
+uv run pytest -W error::DeprecationWarning     # 期待: 30 passed
+uv run ruff check .                            # 期待: All checks passed!</code></pre>
+<ul>
+<li><code>uv sync --extra dev</code> だけなら <code>26 passed, 1 skipped</code>(<code>tests/test_handoff_variant.py</code> がモジュールごと skip)。<code>uv sync</code> は指定しなかった extra をアンインストールするので、使う extra は毎回まとめて指定する。</li>
+</ul>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> リングが AfterWork 順に 2 周し、計 8 ターンで終わる(<code>test_ring_runs_two_laps_in_afterwork_order</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 1 周目は要約指示、2 周目は詳細セクション指示(原文の typo「You task is write」まで踏襲)(<code>test_first_lap_uses_summary_instruction</code> / <code>test_second_lap_uses_section_instruction</code> / <code>test_section_prompt_contains_original_wording_including_typo</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 先行役割の要約が後続のプロンプトに蓄積され、2 周目は全員が 4 要約を見る(<code>test_summary_accumulates_into_later_prompts</code> / <code>test_second_lap_prompts_carry_all_four_summaries</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 成果物は役割順の 4 セクション(<code>test_document_collects_four_sections_in_role_order</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> HandoffBuilder の制約: participants は実 <code>Agent</code> 限定(scripted fake は <code>TypeError</code>)・全参加者に <code>require_per_service_call_history_persistence=True</code> 必須(<code>tests/test_handoff_variant.py</code> の 4 件)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code># 共有基盤が未作成なら作る(詳細は labs/maf-ports/README.md「実行の前提」)
+cd labs/maf-ports
+az group create -n rg-maf-ports -l japaneast
+az deployment group create -g rg-maf-ports -f infra/shared.bicep \
+  -p baseName=mafports modelName=gpt-5.4-mini modelVersion=2026-03-17 modelCapacity=10
+#   モデル名・版は docs/survey/features/02-models.md で現行を確認(上は 2026-09-29 時点の例)
+
+# 本ポートの main.bicep は出力の再掲だけ(リソースを作らない)。.env の値の確認用
+cd ports/game-design-team
+az deployment group create -g rg-maf-ports -f infra/main.bicep -p baseName=mafports</code></pre>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code>uv sync --extra dev --extra live
+uv run game-design-team-maf                                  # 既定値(Epic fantasy with dragons / RPG / ...)
+uv run game-design-team-maf --vibe &quot;Cozy island life&quot; --game-type Simulation \
+    --mechanics &quot;Crafting,Exploration&quot; --mood &quot;Peaceful&quot; --depth Medium
+uv run game-design-team-maf --json &gt; gdd.json                # spec+task+summaries+sections
+uv run pytest -m live                                        # ライブスモーク(depth=Low で 8 ターン)
+
+# HandoffBuilder 変種(比較検証)
+uv sync --extra dev --extra live --extra orchestrations
+uv run python examples/handoff_builder_variant.py [--vibe ... --game-type ... --goal ...]</code></pre>
+<p>期待される出力の例(値は実行ごとに変わる。CLI の書式とテストの期待値から作った<strong>形の例</strong>):</p>
+<pre><code>$ uv run game-design-team-maf
+tracing: App Insights 有効
+[story] overview: A young dragon-rider must rekindle the ancient flame ...
+[gameplay] overview: ...
+[visuals] overview: ...
+[tech] overview: ...
+[story] section done (2140 chars)
+[gameplay] section done (2388 chars)
+[visuals] section done (1975 chars)
+[tech] section done (2203 chars)
+# Game Concept                    ← ここから stdout(Markdown 企画書)
+
+## Story Design
+...
+## Gameplay Design
+...
+
+$ uv run python examples/handoff_builder_variant.py
+----- story_agent -----
+&lt;要約&gt;
+[handoff] story_agent -&gt; gameplay_agent
+----- gameplay_agent -----
+...
+[handoff] visuals_agent -&gt; tech_agent
+----- tech_agent -----
+## Tech Design ...                ← 会話にこの見出しが出たら終了(termination_condition)</code></pre>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: 企画書の生成</td>
+<td><code>uv run game-design-team-maf</code></td>
+<td>stdout に <code># Game Concept</code> と <code>## Story Design</code> / <code>## Gameplay Design</code> / <code>## Visuals Design</code> / <code>## Tech Design</code> が<strong>この順で</strong>揃う。終了コード 0</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>リングとループエッジ</td>
+<td>同じ実行の stderr</td>
+<td><code>overview:</code> が story → gameplay → visuals → tech の順に 4 行、続いて <code>section done</code> が同じ順に 4 行(= tech → story のループエッジが 1 回だけ発火)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>共有 context の効き</td>
+<td><code>--game-type Simulation --mechanics &quot;Crafting,Exploration&quot; --json</code> を実行し <code>summaries</code> / <code>sections</code> を読む</td>
+<td>gameplay が story の要約を踏まえ、非戦闘ジャンルで既定の戦闘ループを出さない(<code>tests/eval_dataset.jsonl</code> の観点。合否ラインは設けず観察記録)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>異常系: 設定不足</td>
+<td><code>FOUNDRY_MODEL= uv run game-design-team-maf</code>(空文字は <code>.env</code> で上書きされない)</td>
+<td><code>error: 環境変数が未設定: FOUNDRY_MODEL(...)</code> が stderr に出て終了コード 2</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>観測: トレース</td>
+<td>§7 の KQL</td>
+<td><code>executor.process story</code> / <code>gameplay</code> / <code>visuals</code> / <code>tech</code> が<strong>各 2 件</strong>、<code>executor.process deliver</code> が 1 件、<code>invoke_agent *_agent</code> が計 8 件</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>パターン固有: HandoffBuilder 変種</td>
+<td><code>examples/handoff_builder_variant.py</code> を実行し stderr の <code>[handoff]</code> 行を数える</td>
+<td>正常なら <code>[handoff]</code> がリング順に 7 行出て tech の <code>## Tech Design</code> で止まる。呼び忘れがあると autonomous mode の nudge で余分なターンが入り、要約と詳細の数え方がずれることがある(主実装との差を記録)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>HandoffBuilder の構築制約(オフライン)</td>
+<td><code>uv run pytest tests/test_handoff_variant.py -v</code>(要 <code>--extra orchestrations</code>)</td>
+<td>4 passed(fake は <code>TypeError</code>、フラグなし Agent は <code>build()</code> で <code>ValueError</code>)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>コスト・後片付け</td>
+<td>1 回の主実装 = モデル呼び出し 8 回。変種は最低 8 回で、handoff を呼ばない応答が続くと 1 エージェントあたり既定 50 ターンまで autonomous に続く</td>
+<td>変種は 1 回ずつ試す(example は <code>--depth</code> を受けず既定の Low で走る)。使い終わったら §8</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code>az monitor app-insights query --app appi-mafports -g rg-maf-ports \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | where name startswith &#x27;executor.process&#x27; or name startswith &#x27;invoke_agent&#x27; | summarize count() by name | order by name asc&quot;</code></pre>
+<ul>
+<li>期待(主実装 1 回ぶん): <code>executor.process story</code> 2 / <code>executor.process gameplay</code> 2 / <code>executor.process visuals</code> 2 / <code>executor.process tech</code> 2 / <code>executor.process deliver</code> 1、<code>invoke_agent story_agent</code> 2 など計 8。<strong>ループエッジの発火がスパン数にそのまま出る</strong>のが本ポートの見どころ。</li>
+<li>HandoffBuilder 変種は <code>invoke_agent &lt;role&gt;_agent</code> が発話回数ぶん並び、nudge が入った役割だけ 3 件以上になる。</li>
+<li>評価を回すなら <code>--json</code> の <code>sections</code> を役割ごとに Foundry の Task Adherence / Coherence 評価器にかける(README「評価」)。</li>
+<li>取り込みには数分の遅延がある。0 件なら CLI の最初の行に <code>tracing: App Insights 有効</code> が出たかを確認。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code>az group delete -n rg-maf-ports --yes --no-wait   # 本ポート固有のリソースはないので、共有基盤を使い終わったら RG ごと削除</code></pre>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>26 passed, 1 skipped</code>(<code>could not import &#x27;agent_framework_orchestrations&#x27;</code>)</td>
+<td>orchestrations extra 未導入</td>
+<td><code>uv sync --extra dev --extra orchestrations</code></td>
+</tr>
+<tr>
+<td><code>uv run pytest</code> で pytest が見つからない</td>
+<td>直前の <code>uv sync</code> で dev extra を指定しなかった(指定外の extra は削除される)</td>
+<td>使う extra をまとめて <code>uv sync --extra dev --extra live --extra orchestrations</code></td>
+</tr>
+<tr>
+<td><code>error: 環境変数が未設定: ...</code>(終了コード 2)</td>
+<td><code>labs/maf-ports/.env</code> が無い / 値が空</td>
+<td><code>.env.example</code> をコピーして shared.bicep の出力を転記</td>
+</tr>
+<tr>
+<td>401 / 404(DeploymentNotFound)</td>
+<td>API キーの誤り / <code>FOUNDRY_MODEL</code> とデプロイ名の不一致</td>
+<td>キーを取り直す。デプロイ名は shared.bicep の出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>RuntimeError: deliver: セクション未完成のまま到達</code> / <code>要約もセクションも記入済みの context を受信</code></td>
+<td>リングの配線か終了条件を変更して壊した(通常の実行では起きない)</td>
+<td><code>workflow.py</code> の switch-case と <code>all_sections_done()</code> を確認。オフラインテストで再現できる</td>
+</tr>
+<tr>
+<td>変種が <code>[request_info] ユーザー入力要求 — one-shot 実行のため終了</code> で止まる</td>
+<td>あるエージェントが handoff を呼ばない応答を autonomous の上限(既定 50 ターン)まで続けた</td>
+<td>主実装との差として記録する(プロンプトで呼び出しを促すしかない = 学び 5)。<code>with_autonomous_mode(turn_limits=...)</code> で上限を下げるとコストを抑えられる</td>
+</tr>
+<tr>
+<td>変種の出力が細切れに見える</td>
+<td>2026-09-29 より前の example(ストリーミング断片ごとに見出しを出していた)</td>
+<td>最新の <code>examples/handoff_builder_variant.py</code> を使う</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a>(AG2 Swarm → MAF 対応表・HandoffBuilder 比較・Wave 1 handoff 系の総括)</li>
+<li>協調パターンの分水嶺(グラフ / handoff / agent-as-tool): <a href="../../../../../docs/tech-selection-guide.md">tech-selection-guide 1-1</a> / <a href="../../../../../docs/survey/architecture/html/11-decision-frameworks.html">architecture/11 判断フレームワーク</a></li>
+<li>関連ポート: <a href="../../research-handoff/README.md">research-handoff(Port 3)</a>・<a href="../../services-agency/docs/runbook.html">services-agency(Port 13)</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(agent-framework-core 1.13→1.19 / orchestrations 1.0.2→1.2.0 / openai 2.51→3.20 に更新、<code>src/</code> は変更なし。HandoffBuilder 不採用の理由を 1.2.0 で再確認し結論維持。example の表示を修正。図を v2〈日本語+処理順〉に更新)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/game-design-team/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

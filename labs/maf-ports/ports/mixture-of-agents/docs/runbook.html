@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mixture-of-agents 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="runbook.html" class="current">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="mixture-of-agents-実行ガイド">mixture-of-agents 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/mixture-of-agents/</code>(Port 2・パターン: ファンアウト/ファンイン — 同一質問を proposer N 体へ並列送信し、全回答を待って aggregator が統合)<br><strong>最終確認:</strong> 2026-09-29 オフライン(13 passed・ruff clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / openai 3.20.0)/ ライブ: 2026-07-31(当時の構成 core 1.12.1 / openai 2.51.0。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li>質問 1 つが dispatcher から proposer 4 体(既定はペルソナ analyst / creative / skeptic / pragmatist)に<strong>同時に</strong>配られ、4 体すべての完了を待ってから aggregator が <strong>1 回だけ</strong>呼ばれ、統合回答が出ること。</li>
+<li>fan-in で aggregator に届く <code>list[ProposerReply]</code> の並びは<strong>到着順でなくエッジ定義順</strong>(analyst → creative → skeptic → pragmatist)で決定的であること。aggregator には質問本文と proposer 名ラベル付きの回答が渡る(元アプリのカンマ結合を修正した点。README の学び 4)。</li>
+<li>技術選定上の意味: MoA の本質はモデル多様性だが、Foundry では「モデルを増やす」= デプロイ作業(容量・課金単位)になる。既定の同一モデル×ペルソナ(self-MoA)は共有基盤の制約による弱い代替(README の学び 2・3)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<pre><code>                ┌─▶ Proposer(analyst)    ─┐
+question ──▶ Dispatcher ─▶ Proposer(creative)   ─┼─▶ Aggregator ──▶ MoAResult
+                ├─▶ Proposer(skeptic)    ─┤      (list[ProposerReply] を合流)
+                └─▶ Proposer(pragmatist) ─┘
+進捗: 各 proposer の yield_output → type=&quot;intermediate&quot;(ProposerDone)→ CLI の stderr</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>MAF Workflow(ローカル、<code>workflow.py</code>)</td>
+<td><code>add_fan_out_edges</code>(dispatcher → proposer)+ <code>add_fan_in_edges</code>(proposer → aggregator)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>MAF <code>Agent</code>(<code>agents.py</code>)</td>
+<td>proposer ×4(ペルソナ)または ×N(モデル多様性モード)+ aggregator。<code>OpenAIChatClient</code>(Responses API)はモデルごとに 1 つを共有</td>
+<td>—</td>
+</tr>
+<tr>
+<td>モデルデプロイ(共有基盤、既定 gpt-5.4-mini)</td>
+<td>既定は全 proposer と aggregator が同じデプロイ</td>
+<td>トークン従量(1 回の実行で 5 呼び出し)</td>
+</tr>
+<tr>
+<td>追加モデルデプロイ(任意)</td>
+<td>モデル多様性モード用。共有基盤の Foundry アカウントに追加する(本ポートの Bicep には置かない)</td>
+<td>トークン従量(デプロイごと)</td>
+</tr>
+<tr>
+<td>App Insights(共有基盤)</td>
+<td>OTel トレースの送信先(任意)</td>
+<td>取り込み量従量</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得。検証は 3.13)</td>
+<td>オフライン実行はこれだけ</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)のみ。モデル多様性モードでは追加のモデルデプロイ(§5.1)</td>
+<td>トークン従量+トレース取り込み</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>モデル呼び出しは api-key なので<strong>データプレーンの RBAC は不要</strong>。追加デプロイを作る場合は Foundry アカウントへの書き込み権限(共同作成者など)</td>
+<td>roles.bicep(MI 向け)も不要</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <code>.env.example</code>。<strong>ライブ実行時のみ必要</strong>。シェルの値が <code>.env</code> より優先):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>モデル呼び出し先。必須</td>
+<td>shared.bicep の出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>既定のモデルデプロイ名。必須</td>
+<td>shared.bicep の出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>api-key 認証。必須</td>
+<td><code>az cognitiveservices account keys list -n &lt;foundryName&gt; -g &lt;rg&gt; --query key1 -o tsv</code></td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>トレース送信先。任意</td>
+<td>shared.bicep の出力 <code>appInsightsConnectionString</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_PROPOSER_MODELS</code></td>
+<td>本ポート固有・任意。カンマ区切りのデプロイ名。<strong>2 つ以上</strong>で「1 モデル = 1 proposer」(名前は <code>m1-&lt;slug&gt;</code>、<code>m2-&lt;slug&gt;</code> …、instructions は中立)。1 つだけならそのモデルでペルソナ 4 体</td>
+<td>追加したデプロイ名</td>
+</tr>
+<tr>
+<td><code>FOUNDRY_AGGREGATOR_MODEL</code></td>
+<td>本ポート固有・任意。aggregator のデプロイ名(既定 <code>FOUNDRY_MODEL</code>)</td>
+<td>同上</td>
+</tr>
+</tbody></table></div>
+<p>空文字(<code>FOUNDRY_PROPOSER_MODELS=</code>)は「未設定」と同じ扱いで、<code>.env</code> の値も上書きされない。</p>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/mixture-of-agents
+uv sync --extra dev
+uv run pytest            # 期待: 13 passed, 1 deselected(live は既定で除外。ネットワーク不要)
+uv run ruff check .      # 期待: All checks passed!(図生成スクリプト docs/architecture.py も対象)</code></pre>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> fan-out: 全 proposer が同じ質問で 1 回ずつ呼ばれる(<code>test_fan_out_calls_every_proposer_once_with_the_question</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 並列性: バリア同期(全員が開始するまで待つ fake。逐次なら 5 秒でタイムアウト)でも完走する(<code>test_proposers_run_concurrently</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> fan-in: aggregator は 1 回だけ呼ばれ、プロンプトに質問本文と <code>Response from &lt;name&gt;</code> ラベル付きの全回答が入る(<code>test_fan_in_aggregator_prompt_contains_all_proposals</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 出力の並びはエッジ定義順で決定的、進捗イベントは proposer ごとに 1 件(<code>test_final_output_structure_and_deterministic_order</code> / <code>test_progress_events_one_per_proposer</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 構成ロジック: 既定はペルソナ 4 体、複数モデル指定で 1 モデル = 1 proposer(重複モデルでも名前は一意)、1 モデル指定はペルソナに戻る(<code>tests/test_agents_config.py</code> の 3 件)</li>
+<li class="task"><input type="checkbox" class="chk"> 設定: カンマ区切りの空要素・前後空白を除去、空文字は既定に倒す(<code>test_from_env_parses_proposer_and_aggregator_models</code> / <code>test_from_env_defaults_when_optional_vars_empty</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> proposer 0 体は <code>ValueError</code> で組み立てを拒否(<code>test_empty_proposers_rejected</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code># 共有基盤が未作成なら先に作る(→ labs/maf-ports/infra/docs/runbook.md §5)。本ポート固有のリソースはない。
+cd labs/maf-ports/ports/mixture-of-agents
+az deployment group create -g &lt;rg&gt; -f infra/main.bicep -p baseName=&lt;baseName&gt; \
+  --query properties.outputs -o json   # 任意: 共有基盤の存在確認(existing 参照+出力のみ)
+
+# モデル多様性モードを試す場合のみ: 共有基盤の Foundry アカウントにデプロイを追加(課金単位が増える)
+az cognitiveservices account list-models -n &lt;foundryName&gt; -g &lt;rg&gt; -o table     # 使えるモデル・形式・版を確認
+az cognitiveservices account deployment create -n &lt;foundryName&gt; -g &lt;rg&gt; \
+  --deployment-name &lt;name&gt; --model-name &lt;model&gt; --model-version &lt;version&gt; \
+  --model-format &lt;OpenAI など、list-models の format&gt; --sku-name GlobalStandard --sku-capacity 10</code></pre>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code>uv sync --extra dev --extra live
+uv run mixture-of-agents-maf &quot;When should a team choose a monolith over microservices?&quot;
+uv run mixture-of-agents-maf --show-proposals &quot;...&quot;   # 個別回答(## Response from &lt;name&gt;)も表示
+uv run mixture-of-agents-maf --json &quot;...&quot; &gt; moa.json  # {question, proposals[], final_md}
+FOUNDRY_PROPOSER_MODELS=gpt-5.4-mini,&lt;追加デプロイ名&gt; uv run mixture-of-agents-maf &quot;...&quot;   # モデル多様性モード
+uv run pytest -m live   # ライブスモーク(4 体並列 → 集約。1 passed が期待)</code></pre>
+<p>期待される出力の例(値は実行ごとに変わる。文字数は 2026-07-31 のライブ実測):</p>
+<pre><code>proposers: analyst, creative, skeptic, pragmatist     ← stderr(構成の確認)
+[analyst] done (1305 chars)                            ← stderr。完了順なので並びは毎回変わる
+[pragmatist] done (1287 chars)
+[skeptic] done (1630 chars)
+[creative] done (2724 chars)
+&lt;統合回答の Markdown&gt;                                   ← stdout(final_md)</code></pre>
+<p><code>--show-proposals</code> では stdout に <code>## Response from analyst</code> … <code>## Response from pragmatist</code>(エッジ定義順)→ <code>## Aggregated response</code> → 統合回答の順で出る。</p>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: 並列 4 体+集約</td>
+<td>§5.2 の 1 行目を実行</td>
+<td>stderr に <code>proposers: analyst, creative, skeptic, pragmatist</code> と <code>[&lt;name&gt;] done</code> が 4 行、stdout に統合回答</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>並列に動いている</td>
+<td>§7 の時系列 KQL で <code>invoke_agent</code> の開始時刻と所要時間を見る</td>
+<td>proposer 4 体の開始時刻がほぼ同時で区間が重なり、<code>invoke_agent aggregator</code> は 4 体すべての終了後に始まる</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>fan-in の決定的な並び</td>
+<td><code>--json</code> の <code>proposals[].proposer</code> を複数回見比べる</td>
+<td>stderr の完了順が毎回変わっても、<code>proposals</code> は常に analyst → creative → skeptic → pragmatist</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>統合の質(移植での修正点)</td>
+<td><code>--show-proposals</code> で個別回答と統合回答を読み比べる</td>
+<td>統合回答が 1 体のコピーでなく、複数ペルソナの観点(誤りの指摘・具体手順など)を取り込んでいる。<code>tests/eval_dataset.jsonl</code> の <code>single_vs_aggregate</code> が比較の観点</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>モデル多様性モード</td>
+<td><code>FOUNDRY_PROPOSER_MODELS=a,b</code> と <code>FOUNDRY_AGGREGATOR_MODEL=c</code> で実行し、§7 で <code>chat</code> スパン名を見る</td>
+<td>stderr が <code>proposers: m1-a, m2-b</code>。<code>chat a</code> / <code>chat b</code> / <code>chat c</code> がそれぞれ出る(モックで振り分けを確認済み・ライブ未確認)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>異常系: proposer 1 体の失敗</td>
+<td><code>FOUNDRY_PROPOSER_MODELS=&lt;存在するデプロイ&gt;,nope</code> で実行</td>
+<td><strong>全体が失敗する</strong>(404 DeploymentNotFound の <code>ChatClientException</code> で終了し、aggregator は動かない。部分回答での集約はしない設計 — 2026-09-29 モックで確認)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>観測: トレース着信</td>
+<td>§7 の件数 KQL</td>
+<td><code>invoke_agent</code> 5 件(proposer 4 + aggregator)、<code>edge_group.process FanOutEdgeGroup</code> / <code>FanInEdgeGroup</code>、<code>executor.process proposer_&lt;name&gt;</code> 4 件</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>コスト</td>
+<td>§7 のトークン集計 KQL</td>
+<td>1 回 = <code>chat</code> 5 回。aggregator の入力トークンが最大(4 回答を全部受け取るため)。モデル多様性モードは追加デプロイ分の課金が別に立つ</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>後片付け</td>
+<td>追加デプロイの一覧</td>
+<td>モデル多様性モードで足したデプロイは <code>az cognitiveservices account deployment delete -n &lt;foundryName&gt; -g &lt;rg&gt; --deployment-name &lt;name&gt;</code> で消す(共有基盤ごと消すなら §8)</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code># スパン名ごとの件数
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | summarize count() by name&quot;
+
+# 並列性の確認(開始時刻と所要時間。proposer 4 体の区間が重なるか)
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) and name startswith &#x27;invoke_agent&#x27; | project timestamp, name, duration | order by timestamp asc&quot;
+
+# トークン使用量(chat スパンの GenAI 属性。モデル別)
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) and name startswith &#x27;chat&#x27; | summarize input=sum(toint(customDimensions[&#x27;gen_ai.usage.input_tokens&#x27;])), output=sum(toint(customDimensions[&#x27;gen_ai.usage.output_tokens&#x27;])) by name&quot;</code></pre>
+<ul>
+<li>期待するスパン名(2026-09-29 に agent-framework-core 1.19.0 のインメモリ OTel で確認): <code>workflow.run</code> / <code>executor.process dispatcher|proposer_&lt;name&gt;|aggregator</code> / <code>edge_group.process FanOutEdgeGroup|FanInEdgeGroup</code> / <code>invoke_agent &lt;proposer 名&gt;|aggregator</code> / <code>chat &lt;デプロイ名&gt;</code> / <code>message.send</code>。2026-07-31 のライブでは <code>invoke_agent</code> ×5 の着信を確認済み。</li>
+<li>評価: <code>tests/eval_dataset.jsonl</code> は各ケースに <code>single_vs_aggregate</code>(誤情報の抑制・観点カバレッジ・数値不一致の解決・集約が割に合わない対照ケース)を記述。クラウド評価は未実装(評価 API の使い方は Port 9 critique-loop)。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code># モデル多様性モードで追加したデプロイだけ消す
+az cognitiveservices account deployment delete -n &lt;foundryName&gt; -g &lt;rg&gt; --deployment-name &lt;name&gt;
+# 共有基盤ごと消す
+az group delete -n &lt;rg&gt; --yes --no-wait</code></pre>
+<p>同じ <code>baseName</code> で作り直す場合の soft delete(48 時間)は <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a> §8。</p>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>error: 環境変数が未設定: ...</code>(終了コード 2)</td>
+<td><code>labs/maf-ports/.env</code> がない / 変数名の誤り</td>
+<td><code>.env.example</code> をコピーして共有基盤の出力を転記</td>
+</tr>
+<tr>
+<td><code>ChatClientException ... 404 DeploymentNotFound</code></td>
+<td><code>FOUNDRY_PROPOSER_MODELS</code> / <code>FOUNDRY_AGGREGATOR_MODEL</code> に存在しないデプロイ名</td>
+<td><code>az cognitiveservices account deployment list -n &lt;foundryName&gt; -g &lt;rg&gt; -o table</code> の名前に合わせる。1 体でも失敗すると全体が止まる</td>
+</tr>
+<tr>
+<td>429 Too Many Requests</td>
+<td>5 呼び出しのうち 4 つが同時に飛ぶため、容量 10K TPM だと当たりやすい</td>
+<td>少し待って再実行。常用するなら shared.bicep の <code>modelCapacity</code> を上げるか、proposer ごとに別デプロイ</td>
+</tr>
+<tr>
+<td>temperature 等を足したら 400</td>
+<td>gpt-5 系(reasoning)モデルは temperature を受け付けない</td>
+<td>多様性はペルソナ(instructions)かモデル差で作る(README 学び 3)</td>
+</tr>
+<tr>
+<td><code>proposers:</code> が想定と違う</td>
+<td><code>FOUNDRY_PROPOSER_MODELS</code> が 1 つだけ(→ ペルソナ 4 体)、または <code>.env</code> の値が効いている</td>
+<td>2 つ以上カンマ区切りで指定。無効化はシェルで <code>FOUNDRY_PROPOSER_MODELS=</code></td>
+</tr>
+<tr>
+<td>KQL で 0 件</td>
+<td>着信遅延 / 接続文字列未設定 / <code>--extra live</code> 未導入</td>
+<td>数分待つ。<code>tracing: App Insights 有効</code> が stderr に出ているか確認</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a></li>
+<li>共有基盤(デプロイ・.env・RBAC・削除): <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a></li>
+<li>モデルの選定・デプロイ種別: <a href="../../../../../docs/survey/features/html/02-models.html">features/02-models.md</a></li>
+<li>前後のパターン: <a href="../../trend-analysis/docs/runbook.html">trend-analysis(Port 1・逐次)</a> / <a href="../../research-handoff/docs/runbook.html">research-handoff(Port 3・handoff)</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版。構成図を v2(日本語・処理順バッジ)に更新(依存を agent-framework-core 1.19.0 / openai 3.20.0 に更新、コード改修なし。モックで両モードの振り分け・proposer 失敗時の挙動・スパン名を確認)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/mixture-of-agents/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

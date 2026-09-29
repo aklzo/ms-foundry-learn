@@ -2,7 +2,8 @@
 
 scripts/setup_kb.py が PUT する JSON の形をここで固定する(実 PUT はライブ
 のみ)。ペイロードの形は Learn の REST リファレンス(2026-05-01-preview)の
-例に基づく(README の実装前調査参照)。
+例に基づく(README の実装前調査参照。2026-08-01-preview でも同じ形 —
+2026-09-29 に REST リファレンスで再確認)。
 """
 
 from db_routing_iq_maf.kb_setup import (

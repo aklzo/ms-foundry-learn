@@ -43,7 +43,7 @@ question ─▶ retrieve ─▶ grade_documents┤  (needs_web_search == False)
 ### Qdrant → Azure AI Search(**Free SKU**)
 
 - `infra/main.bicep` で `sku: { name: 'free' }` の検索サービスを作成(コスト最小・月額ゼロ)。
-- **Free の制約**: インデックス **3 個**まで・ストレージ **50 MB**・レプリカ/パーティション拡張不可・SLA なし・**セマンティックランカー使用不可**(1 サブスクリプションに 1 サービスまで)。本コーパス(11 チャンク)には十分。
+- **Free の制約**: インデックス **3 個**まで・ストレージ **50 MB**・レプリカ/パーティション拡張不可・SLA なし・セマンティックランカーは**無料プランの月間枠のみ**(従量の Standard プランは Basic 以上。※2026-09-29 訂正: 初版は「使用不可」と誤記)・長期間使わないと削除され得る(1 サブスクリプションに 1 サービスまで)。本コーパス(12 チャンク。2026-07-31 のライブ時点は 11)には十分。
 - **本番との差**: 本番は Basic 以上+**セマンティックランカー**(意味的リランキング)+ハイブリッド検索(BM25+ベクトルの RRF 融合)が定石。本ポートは元実装に合わせた純ベクトル検索だが、`AzureSearchClientAdapter.search` の `search_text=None` に質問文を渡すだけでハイブリッドになる(学び 2)。
 - インデックス定義+文書投入は **ARM/Bicep では書けない**(データプレーン API)ため `scripts/setup_index.py` に分離。
 
@@ -82,6 +82,8 @@ uv run corrective-rag-maf --json "Azure AI Search の Basic レベルは月額�
 uv run pytest -m live                     # ライブスモーク(インデックス存在前提)
 ```
 
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
+
 インフラ: 共有基盤(existing 参照)+固有リソース 2 つ — AI Search(Free)と text-embedding-3-small デプロイ。使わない期間はリソースグループごと削除可(インデックスは setup_index.py で再構築できるためステートレス)。
 
 ## 評価
@@ -108,10 +110,22 @@ az monitor app-insights query --app appi-mafports -g rg-maf-ports \
 - トレース: `executor.process`(retrieve/grade/transform_query/web_search/generate)+ `invoke_agent grader_agent`×6(**文書ごとの採点が個別スパン化**)を App Insights で確認
 - 修正: 非同期 azure-search-documents に `aiohttp` が必要(依存へ追加)
 
+## 検証結果(2026-09-29 最新化チェック)
+
+- 依存更新(`uv lock --upgrade`): agent-framework-core 1.12.1 → **1.19.0** / agent-framework-openai 1.11.0 → **1.14.4** / openai 2.51.0 → **3.20.0**(HTTP 層が httpx2 に)/ azure-search-documents 12.0.0(据え置き。PyPI 最新)/ azure-monitor-opentelemetry 1.8.9 → 1.8.10 / ruff 0.16.1 → 0.16.9。pyproject の下限を検証した版へ引き上げ(`agent-framework-core>=1.19.0` / `agent-framework-openai>=1.14.4` / live の `azure-search-documents>=12.0`・`openai>=3.20`)
+- オフライン **37 passed**(`-W error::DeprecationWarning` でも 37 passed = 非推奨 API の使用なし)/ `uv run ruff check .` clean(`docs/architecture.py` を v2 図〈日本語+処理順バッジ〉に書き直した際に、2026-07-31 の図追加時からあった I001 / RUF100 / ISC004 も解消)/ `az bicep build` OK
+- **コード変更なし(API 互換)**: MAF 1.14〜1.19 の [BREAKING](agent middleware の受け口・`SecretString`・MCP / HTTP Cookie・OTel GenAI semconv のモード整理 等)は本ポートの使用面に当たらない。`Agent` / `ChatOptions(response_format=...)` / `WorkflowBuilder`(`add_switch_case_edge_group`・`Case` / `Default`・`intermediate_output_from`)/ `OpenAIChatClient`(Responses API)は同一シグネチャ。スパン名 `executor.process` / `invoke_agent` / `execute_tool` と計装の既定有効も 1.19.0 の `observability.py` で不変を確認
+- 実 `Agent`+`OpenAIChatClient`+openai 3.20 の配線を、HTTP 層だけ差し替えたモック(`/openai/v1/responses` の応答を固定)で両経路とも通した: 直行 3 リクエスト / 補正 4 リクエスト、grader は `text.format` に `json_schema`(`GradeScore`・`strict: true`)を送出。`OpenAIEmbedder` も `/openai/v1/embeddings` への送出と応答の復元を同様に確認。azure-search-documents 12.0.0 のデータプレーン既定 api-version は GA の `2026-04-01`
+- 変更不要と判断: `Microsoft.Search/searchServices@2023-11-01` は現行も有効な GA 版(最新 GA は 2025-05-01。使うプロパティに差がないため据え置き)/ text-embedding-3-small v1 は GA・リタイア 2028-02-09(モデル引退表 2026-09-21 版)/ gpt-5.4-mini は GA・リタイア 2027-09-21 / OpenAI v1 エンドポイント(`/openai/v1`)+API キーの接続方式は現行どおり
+- **訂正(記述とコーパス)**: 「Free はセマンティックランカー不可」は現行ドキュメントと不一致だった — ティア別機能表に「Semantic ranker: Runs on the Free tier but not recommended for large workloads」、課金設定ページに無料プラン「Available on all pricing tiers」/ Standard プラン「Requires the Basic tier or higher」(https://learn.microsoft.com/en-us/azure/search/search-sku-tier ・ https://learn.microsoft.com/en-us/azure/search/semantic-how-to-enable-disable ・ Free の上限は https://learn.microsoft.com/en-us/azure/search/search-limits-quotas-capacity )。README の設計判断・学び 2、`infra/main.bicep` のコメント、コーパス `data/azure-ai-search-vector-tiers.md`、`tests/eval_dataset.jsonl` 1 件目の期待値を訂正した。コーパスは 11 → **12 チャンク**になるため、ライブ再開時は `setup_index.py --recreate` で入れ直す
+- 今後の選択肢: Free でもセマンティックランカーの無料枠が使えるので、`AzureSearchClientAdapter.search` に質問文(`search_text`)+`query_type="semantic"`(インデックスに semantic 構成を追加)を足せば「純ベクトル vs ハイブリッド+リランク」をこの構成のまま比較できる(ライブ未検証)
+- **ライブ未検証**: 以上はオフライン・静的確認のみ(Azure リソースは削除済み)。再デプロイ時に確認が要るのは、Free SKU の新規作成可否(リージョンの容量制約)、訂正後コーパスでの採点・回答の傾向(2026-07-31 は in-domain 質問でも grader が 3/4 を棄却して補正パスに入った)、openai 3.x 経由の実 Foundry 応答の解釈
+- 実行手順と確認観点を [docs/runbook.md](./docs/runbook.md) に新設
+
 ## 学び(MAF vs 元構成)
 
 1. **状態管理の差 — LangGraph は「全ノード共有の可変 dict」、MAF は「エッジを流れる型付きメッセージ」。**元コードの state は `{"keys": Dict[str, any]}` で、誰が question を上書きしたか(transform_query)、run_web_search がいつ立つか(grade)、generation がいつ入るか(generate)が**全部読まないと分からない**。MAF 移植では同じ情報が `RewriteOutcome(question, original_question)` のような型に落ち、暗黙の上書きが 2 フィールドの並置として顕在化した。代償は 2 つ: (a) メッセージ dataclass が 4 つ増える、(b) 合流ノード(generate)が経路ごとの handler を持つ必要がある(LangGraph は dict から取るだけなので 1 関数)。**「状態に何が入っているか」をスキーマとして固定したい業務システムでは MAF 型が向き、研究コードのように state の形を頻繁に変える探索フェーズでは LangGraph の dict が速い** — SI の技術選定ではこの開発フェーズの違いが効く。なお LangGraph も TypedDict/Pydantic で state を型付けできる(この元コードが使っていないだけ)ので、正確には「フレームワークの差」半分、「書き手の規律をフレームワークがどれだけ強制するか」の差が半分。MAF はハンドラ引数の型がルーティングに直結するため、無規律な状態共有が**構造的に書きにくい**。
-2. **Qdrant → Azure AI Search 置換は「検索コードは楽、周辺の運用設計が本題」。**楽だった点: インデックス定義(HNSW+ベクトルフィールド)は SDK で 30 行、クエリは `VectorizedQuery` 1 個で、LangChain の vectorstore 抽象がなくても困らなかった。element 数 11 の学習コーパスなら Free SKU で足り、月額ゼロで本物のマネージド検索が触れる。難しかった/考えることが増えた点: (a) LangChain `Qdrant.as_retriever()` は**埋め込みの存在自体を隠す**が、素の AI Search では埋め込みモデルのデプロイ(infra)・次元数の一致(setup_index.py とクエリ側)・呼び出しコストが全部自分の設計項目になる。(b) インデックスは ARM 外(データプレーン)なので、Bicep(サービス)+スクリプト(インデックス)の**2 段デプロイ**になり、Qdrant の「コード内で create_collection」より運用の段取りが増える — 引き換えに「インフラとデータの境界」が明確になり、これは本番では利点。(c) SKU 選定が検索品質に直結する(Free はセマンティックランカー不可。本番の Basic+ハイブリッド+リランカーは、元実装の純コサイン検索より品質の上げ幅が大きい)。**「ベクトル DB の置換」は API の置換ではなく、検索品質・コスト・運用のレバーがどこにあるかの再学習**だった。
+2. **Qdrant → Azure AI Search 置換は「検索コードは楽、周辺の運用設計が本題」。**楽だった点: インデックス定義(HNSW+ベクトルフィールド)は SDK で 30 行、クエリは `VectorizedQuery` 1 個で、LangChain の vectorstore 抽象がなくても困らなかった。element 数 11 の学習コーパスなら Free SKU で足り、月額ゼロで本物のマネージド検索が触れる。難しかった/考えることが増えた点: (a) LangChain `Qdrant.as_retriever()` は**埋め込みの存在自体を隠す**が、素の AI Search では埋め込みモデルのデプロイ(infra)・次元数の一致(setup_index.py とクエリ側)・呼び出しコストが全部自分の設計項目になる。(b) インデックスは ARM 外(データプレーン)なので、Bicep(サービス)+スクリプト(インデックス)の**2 段デプロイ**になり、Qdrant の「コード内で create_collection」より運用の段取りが増える — 引き換えに「インフラとデータの境界」が明確になり、これは本番では利点。(c) SKU 選定が検索品質に直結する(Free のセマンティックランカーは無料枠のみ〈2026-09-29 訂正。初版は「不可」〉。本番の Basic+ハイブリッド+リランカーは、元実装の純コサイン検索より品質の上げ幅が大きい)。**「ベクトル DB の置換」は API の置換ではなく、検索品質・コスト・運用のレバーがどこにあるかの再学習**だった。
 3. **「補正ループ」という名前と実装のズレが、グラフを書き直すと露呈する。**CRAG は論文的には「評価→補正を繰り返す」印象を与えるが、この元実装は再採点なしの単発 DAG で、Web 結果は無検証で生成に入る。LangGraph の dict-state だとこのズレは読み流しやすいが、MAF でエッジを 1 本ずつ張り直すと「web_search → generate が無条件」であることを設計判断として書かされる(README にも書いた)。research-handoff の学び 3(宣言と実挙動のズレの洗い出し)と同型で、**移植とは元アプリの本当の制御フローを確定させる作業**。おまけに「検索 0 件だと Web 検索に行かず空コンテキスト生成」という quirk もテストで固定できた — 元の Streamlit 実装ではまず気づけない挙動。
 4. **grader の「regex で JSON を拾う」が、response_format+lenient パーサの 3 段構えに正規化できた。**元実装の `re.search(r'\{.*\}')` は素朴だが思想は正しい(LLM は JSON を散文で包む)。MAF では `ChatOptions(response_format=GradeScore)` のネイティブ構造化出力を第 1 経路にし、balanced-slice 抽出→「エラー時は文書を残す」安全側フォールバックまで全経路をオフラインテストで固定した。さらに `score: Literal["yes","no"]` にしたことで、元実装なら黙って no 扱いになる `"maybe"` が明示的にエラー経路(=文書温存)に落ちる。**実行時の自己採点(grader)とオフライン評価(Foundry の Retrieval / Groundedness 評価器)は同じ関心事の実行時/開発時の分担**であり、この対応関係を押さえると RAG の品質改善の議論が整理される(評価セクション参照)。
 5. **tenacity のような「デコレータでリトライ」は、そのまま移植せず sleep 注入の関数に開くとテスト資産になる。**`@retry(stop_after_attempt(3), wait_exponential(...))` は 1 行だが、テストで実際に 4 秒待つか mock で時間を偽装するかの二択になりがち。`search_with_retry(fn, query, sleep=...)` に開けば、試行回数・待ち秒列(4s/8s)・最終失敗の伝播をネットワークなしで 3 テストに固定できた。挙動は元と同一で、依存が 1 つ減る。

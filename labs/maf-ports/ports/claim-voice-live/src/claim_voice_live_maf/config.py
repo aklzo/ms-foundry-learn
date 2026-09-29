@@ -12,9 +12,12 @@ FOUNDRY_API_KEY)は他ポートと同一。本ポート固有分(すべて Voice
   モデル。**共有基盤の FOUNDRY_MODEL(gpt-5.4-mini)とは別** — 実装前調査
   (2026-07)で gpt-5.4-mini は Voice Live では BYOM 扱い(pre-deploy なし)、
   かつ Japan East では gpt-realtime 系が提供されないことを確認したため、
-  Japan East で Global standard 提供の gpt-4.1-mini(Voice Live basic 価格帯)
-  を既定にした。
-- ``VOICE_LIVE_API_VERSION``(既定 ``2026-04-10``): 安定版 API。
+  Japan East で Global standard 提供の gpt-4.1-mini(Voice Live basic 価格帯。
+  2026-09-29 にティア名が Basic → **Standard** に改称)を既定にした。
+- ``VOICE_LIVE_API_VERSION``(既定 ``2026-04-10``): 安定版 API。2026-09-29 時点で
+  GA の最新は ``2026-07-15``(azure-ai-voicelive 1.3.0 の ``connect()`` 既定値)だが、
+  ライブ検証済みの 2026-04-10 を明示ピンしている(GA のまま・現行 how-to の例も
+  2026-04-10。SDK を上げても既定値の変化に引きずられない)。
 - ``VOICE_LIVE_VOICE``(既定 ``en-US-AvaNeural``): azure-standard 音声。
 """
 

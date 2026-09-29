@@ -82,5 +82,6 @@ def test_foundry_openai_resource_uri_tolerates_trailing_slash() -> None:
 
 def test_api_version_is_the_preview_that_supports_llm_routing() -> None:
     """2026-04-01(GA)は最小抽出検索のみ。LLM クエリプランニング
-    (サービス側ルーティング=本ポートの核心)には preview が必要。"""
-    assert SEARCH_API_VERSION == "2026-05-01-preview"
+    (サービス側ルーティング=本ポートの核心)には preview が必要。
+    2026-09-29 に現行最新プレビュー(2026-08-01-preview)へ更新(config.py 参照)。"""
+    assert SEARCH_API_VERSION == "2026-08-01-preview"

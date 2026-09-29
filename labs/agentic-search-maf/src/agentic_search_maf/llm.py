@@ -3,14 +3,22 @@
 The Rust version defined its own ``LlmClient`` trait plus one hand-written
 HTTP client per provider (Ollama / Claude / OpenAI). MAF already ships that
 abstraction as a chat-client protocol, so this module shrinks to a factory
-around a single client class — ``OpenAIChatClient`` (agent-framework 1.10
-folded Azure OpenAI into it via the v1 API):
+around the two OpenAI-protocol client classes of ``agent-framework-openai``:
 
-- ``ollama``  → OpenAI-compatible endpoint ``http://localhost:11434/v1``
-- ``claude``  → Anthropic's OpenAI SDK compatibility endpoint
-- ``openai``  → SDK defaults
-- ``azure``   → ``azure_endpoint`` (Azure OpenAI / Microsoft Foundry Models;
-  ``AZURE_OPENAI_ENDPOINT`` / ``AZURE_OPENAI_API_KEY``)
+- ``ollama``  → ``OpenAIChatCompletionClient`` on the OpenAI-compatible
+  endpoint ``http://localhost:11434/v1`` (Chat Completions: the surface every
+  OpenAI-compatible server implements, incl. ``response_format`` since v0.5)
+- ``claude``  → ``OpenAIChatCompletionClient`` on Anthropic's OpenAI SDK
+  compatibility endpoint, which only implements Chat Completions (no
+  Responses API)
+- ``openai``  → ``OpenAIChatClient`` (Responses API), SDK defaults
+- ``azure``   → ``OpenAIChatClient`` (Responses API) with ``azure_endpoint``
+  (Azure OpenAI / Microsoft Foundry Models, ``/openai/v1``;
+  ``AZURE_OPENAI_ENDPOINT`` + ``AZURE_OPENAI_API_KEY``, or Entra ID via
+  ``DefaultAzureCredential`` when no key is set)
+
+``OpenAIChatClient`` is the *Responses* client since agent-framework 1.10;
+Chat Completions lives in ``OpenAIChatCompletionClient``.
 
 Each LLM *role* of the original (planner / extractor / evaluator / reporter)
 becomes a stateless ``Agent`` with fixed instructions and, where the
@@ -50,25 +58,30 @@ class ResearchAgents:
 
 def build_chat_client(config: LlmConfig) -> Any:
     """Build the MAF chat client for the configured provider."""
-    from agent_framework.openai import OpenAIChatClient
+    from agent_framework.openai import OpenAIChatClient, OpenAIChatCompletionClient
 
     if config.provider is LlmProviderKind.AZURE:
         endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
         if not endpoint:
             raise ConfigError("provider azure requires AZURE_OPENAI_ENDPOINT")
+        api_key = os.environ.get("AZURE_OPENAI_API_KEY") or None
         return OpenAIChatClient(
             model=config.model or None,  # deployment name
             azure_endpoint=endpoint,
-            api_key=os.environ.get("AZURE_OPENAI_API_KEY") or None,
+            api_key=api_key,
+            # MAF does not fall back to Entra ID on its own: without a key it
+            # raises SettingNotFoundError, so pass a credential explicitly
+            # (Foundry resources often have key auth disabled).
+            credential=None if api_key else _entra_credential(),
         )
     if config.provider is LlmProviderKind.OLLAMA:
-        return OpenAIChatClient(
+        return OpenAIChatCompletionClient(
             model=config.model,
             api_key="ollama",  # the endpoint ignores it, the SDK requires it
             base_url=config.base_url,
         )
     if config.provider is LlmProviderKind.CLAUDE:
-        return OpenAIChatClient(
+        return OpenAIChatCompletionClient(
             model=config.model,
             api_key=config.api_key.expose(),
             base_url=config.base_url,
@@ -78,6 +91,18 @@ def build_chat_client(config: LlmConfig) -> Any:
         api_key=config.api_key.expose(),
         base_url=config.base_url or None,
     )
+
+
+def _entra_credential() -> Any:
+    """Keyless Azure auth (``az login`` / managed identity), optional extra."""
+    try:
+        from azure.identity import DefaultAzureCredential
+    except ImportError as exc:
+        raise ConfigError(
+            "provider azure without AZURE_OPENAI_API_KEY uses Entra ID: "
+            "install the 'azure' extra (uv sync --extra azure) and run `az login`"
+        ) from exc
+    return DefaultAzureCredential()
 
 
 def build_agents(

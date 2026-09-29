@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>labs 実行ガイド索引</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="runbooks.html" class="current">索引</a><span class="grp">labs:</span><a href="agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="maf-ports/infra/docs/runbook.html">共有基盤</a><a href="maf-ports/ports/claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="maf-ports/ports/corrective-rag/docs/runbook.html">corrective-rag</a><a href="maf-ports/ports/critique-loop/docs/runbook.html">critique-loop</a><a href="maf-ports/ports/data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="maf-ports/ports/db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="maf-ports/ports/game-design-team/docs/runbook.html">game-design-team</a><a href="maf-ports/ports/github-mcp/docs/runbook.html">github-mcp</a><a href="maf-ports/ports/governed-agent/docs/runbook.html">governed-agent</a><a href="maf-ports/ports/hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="maf-ports/ports/mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="maf-ports/ports/research-handoff/docs/runbook.html">research-handoff</a><a href="maf-ports/ports/services-agency/docs/runbook.html">services-agency</a><a href="maf-ports/ports/travel-memory/docs/runbook.html">travel-memory</a><a href="maf-ports/ports/trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="labs-実行ガイド索引">labs 実行ガイド索引</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#使い方">使い方</a></li><li><a href="#共通の前提">共通の前提</a></li><li><a href="#一覧">一覧</a></li><li><a href="#2026-09-29-の最新化チェックで変わったこと-要点">2026-09-29 の最新化チェックで変わったこと(要点)</a></li></ul></div>
+<blockquote><p><strong>最終更新:</strong> 2026-09-29(全ラボに実行ガイドを新設。同日に全ラボを agent-framework 1.19 / openai 3.20 系でオフライン再検証)<br><strong>正は各 <code>docs/runbook.md</code>(Markdown)。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>、本ページは <code>runbooks.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する。HTML は直接編集しない。</p></blockquote>
+<p>各ラボ・ポートの「どう動かすか」と「何が確認できれば OK か」をまとめた実行ガイドの一覧。設計判断や移植の学びは各 README にあり、実行ガイドはそこから<strong>手順と確認観点だけ</strong>を切り出している。</p>
+<h2 id="使い方">使い方</h2>
+<ul>
+<li><strong>HTML で読む</strong>: ブラウザで各 <code>runbook.html</code> を開く。「確認観点」の表と一覧のチェックボックスは<strong>ブラウザ内に保存</strong>される(ページ右上に「確認済み n / N」)。確認作業の途中経過用で、共有はされない</li>
+<li><strong>まずオフライン</strong>: どのラボも Azure なしのオフラインテスト(またはオフライン検証)から始められる。ライブ実行は Azure リソースの再作成が必要で<strong>課金が発生する</strong>(検証後に全リソースを削除済みのため)</li>
+<li><strong>Markdown と HTML の同期確認</strong>: <code>python3 labs/tools/build_runbooks.py --check</code>(差分があれば終了コード 1)</li>
+</ul>
+<h2 id="共通の前提">共通の前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>項目</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td><a href="https://docs.astral.sh/uv/">uv</a>(Python は uv が取得)。ライブ実行は Azure CLI(<code>az login</code>)も</td>
+</tr>
+<tr>
+<td>Azure</td>
+<td>maf-ports は<strong>共有基盤を先に作る</strong>(<a href="maf-ports/infra/docs/runbook.html">共有基盤の実行ガイド</a>)。他のラボは各ラボの <code>infra/</code> で個別に作る。検証後は RG ごと削除する運用(ステートレス設計)</td>
+</tr>
+<tr>
+<td>接続情報</td>
+<td>maf-ports は <code>labs/maf-ports/.env</code>(雛形 <code>.env.example</code>。git 管理外)。他のラボは各ラボの README / 実行ガイドを参照</td>
+</tr>
+<tr>
+<td>検証状態</td>
+<td>オフライン: 2026-09-29 に全ラボ再検証済み。ライブ: 2026-07〜09 の各ラボ初回検証時のみ(<strong>最新依存でのライブ再検証は未実施</strong> — 各ガイドの「ライブ未検証で残るリスク」参照)</td>
+</tr>
+</tbody></table></div>
+<h2 id="一覧">一覧</h2>
+<h3 id="maf-ports-awesome-llm-apps-の-maf-foundry-移植-14-パターン">maf-ports(awesome-llm-apps の MAF + Foundry 移植、14 パターン)</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>対象</th>
+<th>パターン</th>
+<th>Azure 固有リソース(共有基盤以外)</th>
+<th>オフライン検証</th>
+<th>実行ガイド</th>
+</tr></thead><tbody>
+<tr>
+<td>0</td>
+<td>共有基盤</td>
+<td>Foundry+プロジェクト+モデル+App Insights</td>
+<td>—(これ自体が共有基盤)</td>
+<td><code>az bicep build</code></td>
+<td><a href="maf-ports/infra/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>1</td>
+<td>trend-analysis</td>
+<td>逐次ワークフロー</td>
+<td>なし</td>
+<td>9 passed</td>
+<td><a href="maf-ports/ports/trend-analysis/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>2</td>
+<td>mixture-of-agents</td>
+<td>並列+集約(fan-out / fan-in)</td>
+<td>なし</td>
+<td>13 passed</td>
+<td><a href="maf-ports/ports/mixture-of-agents/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>3</td>
+<td>research-handoff</td>
+<td>ルーティング(構造化出力+switch-case)</td>
+<td>なし</td>
+<td>31 passed</td>
+<td><a href="maf-ports/ports/research-handoff/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>4</td>
+<td>corrective-rag</td>
+<td>補正ループ RAG</td>
+<td>AI Search(Free)+埋め込みデプロイ</td>
+<td>37 passed</td>
+<td><a href="maf-ports/ports/corrective-rag/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>5</td>
+<td>travel-memory</td>
+<td>Foundry Memory</td>
+<td>Memory ストア(スクリプトで作成)</td>
+<td>23 passed</td>
+<td><a href="maf-ports/ports/travel-memory/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>6</td>
+<td>github-mcp</td>
+<td>リモート MCP</td>
+<td>なし(GitHub PAT)</td>
+<td>21 passed</td>
+<td><a href="maf-ports/ports/github-mcp/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>7</td>
+<td>game-design-team</td>
+<td>Swarm 型ハンドオフ</td>
+<td>なし</td>
+<td>30 passed(orchestrations extra 込み)</td>
+<td><a href="maf-ports/ports/game-design-team/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>8</td>
+<td>data-analysis-ci</td>
+<td>Code Interpreter</td>
+<td>なし</td>
+<td>24 passed</td>
+<td><a href="maf-ports/ports/data-analysis-ci/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>9</td>
+<td>critique-loop</td>
+<td>評価駆動ループ+クラウド評価</td>
+<td>なし(評価はプロジェクト上)</td>
+<td>44 passed</td>
+<td><a href="maf-ports/ports/critique-loop/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>10</td>
+<td>db-routing-iq</td>
+<td>Foundry IQ(ナレッジベース)</td>
+<td>AI Search(Basic)+ナレッジベース</td>
+<td>54 passed</td>
+<td><a href="maf-ports/ports/db-routing-iq/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>11</td>
+<td>hn-briefing-hosted</td>
+<td>hosted agent+Routines</td>
+<td>hosted agent・Routine</td>
+<td>48 passed</td>
+<td><a href="maf-ports/ports/hn-briefing-hosted/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>12</td>
+<td>claim-voice-live</td>
+<td>Voice Live</td>
+<td>なし(マネージドモデル)</td>
+<td>77 passed</td>
+<td><a href="maf-ports/ports/claim-voice-live/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>13</td>
+<td>services-agency</td>
+<td>通信グラフ制約(agent-as-tool)</td>
+<td>なし</td>
+<td>69 passed</td>
+<td><a href="maf-ports/ports/services-agency/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>14</td>
+<td>governed-agent</td>
+<td>middleware によるガバナンス・監査</td>
+<td>なし</td>
+<td>65 passed</td>
+<td><a href="maf-ports/ports/governed-agent/docs/runbook.html">runbook</a></td>
+</tr>
+</tbody></table></div>
+<h3 id="その他の検証ラボ">その他の検証ラボ</h3>
+<div class="tablewrap"><table><thead><tr>
+<th>対象</th>
+<th>内容</th>
+<th>オフライン検証</th>
+<th>実行ガイド</th>
+</tr></thead><tbody>
+<tr>
+<td>agentic-search-maf</td>
+<td>自己評価型リサーチエージェント(Rust 版の MAF 移植。ScriptedAgent テストパターンの出典)</td>
+<td>50 passed</td>
+<td><a href="agentic-search-maf/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>foundry-probes</td>
+<td>maf-ports に乗らなかった Foundry 機能 9 本の挙動確認 probe</td>
+<td>静的検証(py_compile・ruff・SDK シグネチャ照合)</td>
+<td><a href="foundry-probes/docs/runbook.html">runbook</a></td>
+</tr>
+<tr>
+<td>cu-video-rag</td>
+<td>Content Understanding 動画 × AI Search × RAG の精度検証</td>
+<td>コーパス検証+オフライン指標の再計算(2026-09-03 版とバイト一致)</td>
+<td><a href="cu-video-rag/docs/runbook.html">runbook</a></td>
+</tr>
+</tbody></table></div>
+<h2 id="2026-09-29-の最新化チェックで変わったこと-要点">2026-09-29 の最新化チェックで変わったこと(要点)</h2>
+<ul>
+<li><strong>依存</strong>: agent-framework-core 1.12〜1.13 → <strong>1.19</strong>、openai 2.5x → <strong>3.20</strong>(cu-video-rag は langchain 0.3 系の制約で openai 2.x のまま)。<code>mcp&lt;2</code> は MAF 1.19 自身の要求で維持。<code>agent-framework-foundry</code> 1.13.1 は <code>azure-ai-projects&lt;2.7.0</code> を要求するため、hn-briefing-hosted は 2.6.1 止まり</li>
+<li><strong>コード改修</strong>: Routines の <code>Foundry-Features: Routines=V1Preview</code> ヘッダーを削除(Port 11。Routines は GA)/ MCP の認証ヘッダーを MAF 1.19 の <code>static_headers</code> に移行(Port 6・10)/ Foundry IQ の Search API を <code>2026-08-01-preview</code> に(Port 10)/ hosted agent のコンテナ依存を明示ピン(Port 11)/ Claude・Ollama を Chat Completions クライアントに(agentic-search-maf の潜在バグ)/ 継続評価 probe を公式の形に修正(foundry-probes 09、要再実測)</li>
+<li><strong>記述の訂正</strong>: AI Search Free でもセマンティックランカーの無料枠が使える(Port 4)/ <code>AgentThread</code> → <code>AgentSession</code>(Port 13)ほか。詳細は各 README の「検証結果(2026-09-29 最新化チェック)」</li>
+<li><strong>アーキ図</strong>: 各ポートの <code>docs/architecture.png</code> を日本語+処理番号の v2 スタイルに更新(ヘルパーは <a href="./maf-ports/tools/README.md">tools/README</a>)</li>
+</ul>
+</main>
+<footer>この HTML は labs/runbooks.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

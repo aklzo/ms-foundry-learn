@@ -38,9 +38,20 @@ FOUNDRY_PROPOSER_MODELS=gpt-5.4-mini,phi-4 uv run mixture-of-agents-maf "..."  #
 uv run pytest -m live         # ライブスモーク
 ```
 
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
+
 インフラ: 共有基盤のみで動作(`infra/main.bicep` は existing 参照+出力のみ)。モデル多様性モードを使う場合の追加モデルデプロイは共有基盤(`infra/shared.bicep`)側の変更。
 
 評価: `tests/eval_dataset.jsonl` は各ケースに `single_vs_aggregate`(proposer 単体と集約後をどう比べるか: 誤情報の抑制・観点カバレッジの和集合・数値不一致の解決・集約が割に合わない対照ケース)を明記。
+
+## 検証結果(2026-09-29 最新化チェック)
+
+- **依存更新**(`uv lock --upgrade`): agent-framework-core 1.12.1 → **1.19.0** / agent-framework-openai 1.11.0 → **1.14.4** / openai 2.51.0 → **3.20.0**(HTTP 層が httpx2 になり、本ポートの依存木から httpx 自体が外れた)/ azure-monitor-opentelemetry 1.8.9 → 1.8.10。pyproject の下限を検証版に引き上げ
+- オフライン **13 passed**(DeprecationWarning なし。バリア同期の並列性証明も 1.19 で通る)/ ruff clean(`uv run ruff check .`。旧図スクリプトの既存指摘は図の v2 化で解消)/ `az bicep build` OK
+- 構成図(`docs/architecture.png`)を v2 スタイル(日本語ラベル・処理順バッジ・処理の流れパネル・タグ付き注記)に描き直し、内容を現行実装(core 1.19 / openai 3.x・api-key・スパン名)に合わせた
+- **コード改修なし**。`add_fan_out_edges` / `add_fan_in_edges` / `WorkflowBuilder(start_executor=, output_from=, intermediate_output_from=)` は 1.19 でシグネチャ同一。追加確認として、実 `Agent` + `OpenAIChatClient` を `/openai/v1/responses` のモックに向けて両モード(ペルソナ 4 体 / `FOUNDRY_PROPOSER_MODELS=gpt-5.4-mini,phi-4` + `FOUNDRY_AGGREGATOR_MODEL=gpt-5.4`)をリポジトリ外のスクラッチで完走させ、リクエストの `model` がデプロイ名どおりに振り分けられること、スパン(`invoke_agent` ×5・`edge_group.process FanOutEdgeGroup` / `FanInEdgeGroup`)が出ることを確認
+- 変更不要と判断した点: v1 エンドポイントと api-key 認証は現行 docs どおり / gpt-5.4-mini は 2027-09-21 まで GA / MAF 1.14→1.19 の破壊的変更は本ポートの使用 API に該当なし / fan-in の並び順(エッジ定義順)も 1.19 のテストで維持
+- **ライブ未検証**: openai 3.x 経由の実 Foundry 呼び出しと App Insights 着信(Azure リソース削除済み)。手順は [docs/runbook.md](./docs/runbook.md)
 
 ## 検証結果(2026-07-31)
 

@@ -13,19 +13,25 @@ args=["run", ..., "ghcr.io/github/github-mcp-server"], env={...}))`` — PAT は
 - ``X-MCP-Toolsets: repos,issues,pull_requests``(元の GITHUB_TOOLSETS と 1:1)
 - ``X-MCP-Readonly: true``(リモート版で追加できる読み取り専用ガード)
 
-ヘッダーの渡し方(installed agent_framework 1.12.1 の _mcp.py 精読の結論):
+ヘッダーの渡し方(2026-09-29 に agent-framework-core 1.19.0 の _mcp.py で再確認):
 
-- ``header_provider`` は **call_tool 時のみ**ヘッダーを注入する(接続時の
-  initialize / tools/list には付かない)。全リクエストに認証を要求する
-  GitHub リモートサーバーでは接続段階で 401 になるため使えない
-- よって **自前 ``httpx.AsyncClient(headers=...)`` を ``http_client`` に渡す**。
-  _mcp.py の docstring は「custom http_client のヘッダーのオリジン制限は利用者
-  責務」とするため、リダイレクト追従は無効(httpx 既定)のままにして別
-  オリジンへの PAT 漏出を防ぐ。クライアントの後始末(aclose)も呼び出し側の
-  責務(CLI / ライブスモークが finally で閉じる)
+- **``static_headers``(1.19.0 で追加)を使う。** 固定ヘッダーを構築時にコピーし、
+  接続中の全リクエスト(initialize / tools/list / ping / tools/call)に付ける。
+  注入は設定した ``url`` と同一オリジンのリクエストに限られ、別オリジンへの
+  リダイレクトでは外される — PAT 漏出防止をフレームワークが肩代わりする
+- 旧実装(2026-07-31)は ``httpx.AsyncClient(headers=...)`` を ``http_client`` に
+  渡していた。当時(1.12.1)の ``header_provider`` は call_tool 時にしか注入され
+  ず、接続段階で 401 になったため。1.13.0 で header_provider も接続時に呼ばれる
+  ようになり、1.19.0 で static_headers が入ったので回避策は不要になった
+  (_mcp.py の docstring も「自前クライアントでヘッダーを付けるとオリジン制限は
+  利用者責務」と注意している)
+- HTTP クライアントは MCP ツールが自前で生成・破棄する(タイムアウト 30 秒 /
+  SSE 読み取り 300 秒、レスポンス Cookie 非保持)。接続・切断は
+  ``async with agent:``(または Agent の run 時自動接続)が担う
 
 オフラインテストは実サーバーへ接続せず、``tool_cls`` のコンストラクタ注入で
-組み立て引数(URL / ヘッダー / 名前)を検証する。
+組み立て引数(URL / ヘッダー / 名前)を検証し、httpx の MockTransport で
+ハンドシェイク(initialize / tools/list)にヘッダーが載ることを固定する。
 """
 
 from __future__ import annotations
@@ -33,12 +39,6 @@ from __future__ import annotations
 from typing import Any
 
 from .config import GithubMcpSettings
-
-#: MAF の MCPStreamableHTTPTool が自前クライアントを作るときの既定と同値
-#: (MCP_DEFAULT_TIMEOUT=30 / MCP_DEFAULT_SSE_READ_TIMEOUT=300)。ヘッダー付き
-#: クライアントを差し替えてもタイムアウト特性が変わらないよう明示する。
-HTTP_TIMEOUT_SECONDS = 30
-SSE_READ_TIMEOUT_SECONDS = 300
 
 #: エージェントから見た MCP ツール群の論理名
 TOOL_NAME = "github"
@@ -54,25 +54,10 @@ def build_headers(settings: GithubMcpSettings) -> dict[str, str]:
     return headers
 
 
-def make_http_client(settings: GithubMcpSettings) -> Any:
-    """PAT ヘッダー付きの httpx.AsyncClient を作る。
-
-    follow_redirects は httpx 既定の False のまま(オリジン外への PAT 漏出
-    防止)。呼び出し側が ``await client.aclose()`` すること。
-    """
-    from httpx import AsyncClient, Timeout
-
-    return AsyncClient(
-        headers=build_headers(settings),
-        timeout=Timeout(HTTP_TIMEOUT_SECONDS, read=SSE_READ_TIMEOUT_SECONDS),
-    )
-
-
 def build_github_mcp_tool(
     settings: GithubMcpSettings,
-    http_client: Any,
     *,
-    tool_cls: type | None = None,
+    tool_cls: Any | None = None,
 ) -> Any:
     """GitHub リモート MCP サーバーを指す MAF MCP ツールを組み立てる。
 
@@ -88,6 +73,6 @@ def build_github_mcp_tool(
         TOOL_NAME,
         settings.mcp_url,
         description="GitHub repositories, issues and pull requests via the official remote MCP server",
-        http_client=http_client,
+        static_headers=build_headers(settings),
         load_prompts=False,  # 元アプリ(agno MCPTools)同様、公開面はツールのみ
     )

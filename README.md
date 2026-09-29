@@ -14,10 +14,11 @@ Microsoft Foundry(旧 Azure AI Foundry)のキャッチアップと、SI 案件�
 | [docs/survey/architecture/](docs/survey/architecture/README.md) | **アーキテクチャ設計ガイド** — 公式リファレンス、レイヤー別の「Foundry 機能 vs 自前実装」、ユースケース別構成、運用・移行。四半期更新 |
 | [docs/survey/proposal/](docs/survey/proposal/README.md) | **提案実務ガイド** — 要件ヒアリングシート、コスト見積もり手順、日本規制対応メモ、前提 Azure 知識マップ |
 | [docs/survey/casebook/](docs/survey/casebook/README.md) | **SI ケースブック** — 要件シナリオ別プレイブック(12 本)、詰まりどころ索引(公式 / 実測 / 公開記事の 3 出典、約 160 項目、URL 実在確認済み)、外部案件事例(Foundry フル活用 → 意図的撤退 → hosted agent 再挑戦の判断変遷と 2026-08-30 実測)。「この要件が来たら何を決め、どこで詰まるか」を引く。02 は月次更新 |
-| [docs/slides/](docs/slides/README.md) | **SI チーム向け共有スライド** — survey / labs の要点を 42 枚に再構成した勉強会資料(Marp。HTML / PDF 同梱) |
+| [docs/slides/](docs/slides/README.md) | **SI チーム向け共有スライド** — survey / labs の要点を 47 枚(本編 38+付録 9)に再構成した勉強会資料(Marp。HTML / PDF 同梱。第 4 版 2026-09-29: アーキ図を日本語+処理番号の全幅図に刷新) |
 | [docs/tech-selection-guide.md](docs/tech-selection-guide.md) | **技術選定ガイド(実装検証ベース)** — labs の実装で実証したナレッジのみを集約(調査由来の survey とは出典分離) |
 | [labs/agentic-search-maf/](labs/agentic-search-maf/README.md) | 検証ラボ: 自己評価型リサーチエージェントを MAF で実装した学習用プロジェクト |
-| [labs/maf-ports/](labs/maf-ports/README.md) | 検証ラボ: awesome-llm-apps の7パターンを MAF+Foundry へ移植(Wave 1 完了。Azure リソースは検証後削除済み) |
+| [labs/runbooks.md](labs/runbooks.md) | **ラボ実行ガイド索引** — 全ラボ・全ポートの実行手順と確認観点(Markdown が正、人間用 HTML `labs/runbooks.html` はチェックボックスで確認状況を記録できる)。`python3 labs/tools/build_runbooks.py` で生成 |
+| [labs/maf-ports/](labs/maf-ports/README.md) | 検証ラボ: awesome-llm-apps の 14 パターンを MAF+Foundry へ移植(Wave 1〜3 完了。2026-09-29 に agent-framework 1.19 / openai 3.20 でオフライン再検証。Azure リソースは検証後削除済み) |
 | [labs/foundry-probes/](labs/foundry-probes/README.md) | 検証ラボ: maf-ports に乗らなかった Foundry 機能 9 本の挙動確認 probe(実測済み。リソース削除済み) |
 | [labs/cu-video-rag/](labs/cu-video-rag/README.md) | 検証ラボ: Content Understanding video × AI Search × RAG の精度検証(104 本・111 問+ragas。ラウンド 3〈評価設計是正後〉で CER 0.44% / カスタムフィールドで hit@3 0.937・画面のみ情報の ans@3 0.672。PDF レポート同梱。リソース削除済み) |
 
@@ -28,6 +29,13 @@ Microsoft Foundry(旧 Azure AI Foundry)のキャッチアップと、SI 案件�
 ```bash
 # HTML の再生成(features / architecture / proposal / casebook の全セット)
 python3 docs/survey/tools/md2html.py
+
+# ラボ実行ガイド(labs/**/docs/runbook.md → runbook.html と索引)の再生成 / 同期確認
+python3 labs/tools/build_runbooks.py
+python3 labs/tools/build_runbooks.py --check
+
+# アーキ図の再生成(survey 用+スライド用切り出し。日本語フォントは自動検出)
+for f in docs/survey/architecture/diagrams/*.py; do uv run --with diagrams,pillow python "$f"; done
 ```
 
 - 更新手順・ウォッチすべき一次情報(What's new / Feature readiness at GA / model retirement schedule)は [docs/survey/features/README.md](docs/survey/features/README.md) の「更新運用ガイド」を参照。

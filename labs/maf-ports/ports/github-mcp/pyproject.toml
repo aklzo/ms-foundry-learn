@@ -4,16 +4,21 @@ version = "0.1.0"
 description = "awesome-llm-apps github_mcp_agent の MAF + Foundry 移植(stdio Docker → GitHub 公式リモート MCP)"
 requires-python = ">=3.11"
 dependencies = [
-    "agent-framework-core>=1.10",
-    "agent-framework-openai>=1.10",
-    "httpx>=0.27",  # PAT ヘッダー付き AsyncClient(MCP transport が使う。mcp 経由でも入るが直接 import するため明示)
-    "mcp>=1.24,<2",    # MAF の MCPStreamableHTTPTool が要求(agent-framework-core では optional 依存)
+    "agent-framework-core>=1.19",  # MCPStreamableHTTPTool(static_headers=...) は 1.19.0 で追加
+    "agent-framework-openai>=1.14.4",
+    # MAF の MCPStreamableHTTPTool が要求(agent-framework-core では optional 依存。上限ピン必須)。
+    # 2026-09-29 再確認: agent-framework-core 1.19 も extra 経由で mcp<2 を宣言し、mcp 2.2.0 と
+    # 組み合わせるとローカル MCP サーバーへの接続で initialize 時に
+    # 'InitializeResult' object has no attribute 'protocolVersion' → ToolException になる
+    # (_mcp.py が camelCase 属性を参照。mcp 2.x は snake_case に改名)
+    "mcp>=1.30,<2",
     "python-dotenv>=1.0",
     "typing-extensions>=4.10",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "httpx>=0.28",  # テストの MockTransport(スタブ MCP サーバーでハンドシェイクのヘッダーを検証)
     "pytest>=8",
     "pytest-asyncio>=0.24",
     "ruff>=0.14",

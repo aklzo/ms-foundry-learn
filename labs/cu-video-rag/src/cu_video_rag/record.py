@@ -20,7 +20,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 from . import tts
-from .pagegen import generate_page, render_page
+from .pagegen import generate_page
 from .corpus import SCENARIOS
 from .scenarios import Scenario
 

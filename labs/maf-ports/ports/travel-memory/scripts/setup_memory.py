@@ -14,7 +14,9 @@ corrective-rag のインデックス作成と同じ「2 段デプロイ」構成
   共有基盤の gpt-5.4-mini と、corrective-rag ポートがデプロイ済みの
   text-embedding-3-small を指す(どちらもデプロイ済みであること)
 - user_profile / chat_summary / procedural の 3 種を有効化
-- default_ttl_seconds=0(無期限。mem0 版に TTL がないことに合わせる)
+- default_ttl_seconds=timedelta(0)(無期限。mem0 版に TTL がないことに合わせる。
+  azure-ai-projects 2.3.0 以降の型は ``datetime.timedelta`` — int の 0 でも同じ
+  JSON(``"default_ttl_seconds": 0``)になるが、SDK の型宣言と公式 how-to に揃える)
 
 実行(要 ``az login``。Memory API は Entra ID 認証のみ):
 
@@ -30,6 +32,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 PORT_ROOT = Path(__file__).resolve().parents[1]
@@ -100,7 +103,7 @@ def main() -> None:
             user_profile_enabled=True,
             chat_summary_enabled=True,
             procedural_memory_enabled=True,
-            default_ttl_seconds=0,  # 無期限(mem0 版に TTL がないことに合わせる)
+            default_ttl_seconds=timedelta(0),  # 無期限(mem0 版に TTL がないことに合わせる)
         ),
     )
     store = stores.create(

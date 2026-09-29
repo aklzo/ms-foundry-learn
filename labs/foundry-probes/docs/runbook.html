@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>foundry-probes 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="runbook.html" class="current">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../maf-ports/infra/docs/runbook.html">共有基盤</a><a href="../../maf-ports/ports/claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../maf-ports/ports/corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../maf-ports/ports/critique-loop/docs/runbook.html">critique-loop</a><a href="../../maf-ports/ports/data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../maf-ports/ports/db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../maf-ports/ports/game-design-team/docs/runbook.html">game-design-team</a><a href="../../maf-ports/ports/github-mcp/docs/runbook.html">github-mcp</a><a href="../../maf-ports/ports/governed-agent/docs/runbook.html">governed-agent</a><a href="../../maf-ports/ports/hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../maf-ports/ports/mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../maf-ports/ports/research-handoff/docs/runbook.html">research-handoff</a><a href="../../maf-ports/ports/services-agency/docs/runbook.html">services-agency</a><a href="../../maf-ports/ports/travel-memory/docs/runbook.html">travel-memory</a><a href="../../maf-ports/ports/trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="foundry-probes-実行ガイド">foundry-probes 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このラボで確かめること">1. このラボで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン確認-azure-不要・無料">4. オフライン確認(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-probe-別の確認ポイント">6. probe 別の確認ポイント</a></li><li><a href="#7-確認観点">7. 確認観点</a></li><li><a href="#8-トレース・評価の確認">8. トレース・評価の確認</a></li><li><a href="#9-片付け">9. 片付け</a></li><li><a href="#10-トラブルシューティング">10. トラブルシューティング</a></li><li><a href="#11-関連・更新履歴">11. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/foundry-probes/</code>(Foundry 機能の挙動確認 probe 9 本。アプリではなく「観点ごとにリクエストを投げて生の応答を記録する」ラボ)<br><strong>最終確認:</strong> 2026-09-29 オフライン(自動テストなし。9 本の <code>py_compile</code>・<code>ruff check</code> clean・SDK 呼び出しの AST シグネチャ照合で不一致 0。依存 openai 3.20.0 / azure-ai-projects 2.7.0)/ ライブ: 2026-08-04(japaneast・gpt-5.4-mini v2026-03-17・当時は openai 2.53.0 / azure-ai-projects 2.4.0。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。発見の一次記録は各 probe の <code>NOTES.md</code>、一覧と検証対象外の理由は <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このラボで確かめること">1. このラボで確かめること</h2>
+<ul>
+<li>maf-ports の 13 ポートに乗らなかった Foundry 機能(Conversations・prompt agents・File Search・Web search・Model router・Structured outputs・ガードレール・埋め込みのルーティング・継続評価)が、<strong>単純な入力に対して実際にどう振る舞うか</strong>。</li>
+<li>各 probe は観点(A, B, C…)ごとに「リクエスト → 応答の要点」を対で標準出力に出す。<strong>失敗(<code>!!</code> 行)も観察結果</strong>で、スクリプトは例外で止まらず次の観点に進む。</li>
+<li>出力(<code>logs/&lt;probe&gt;.log</code>)が <code>NOTES.md</code> の根拠になる。再実測では「NOTES の発見と同じ形が出るか / 変わったか」を見る。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p>図(<code>architecture.png</code>)は本ラボには未作成(probe はクライアントから Foundry の各 API を直接叩くだけで、構成要素間の流れがない)。</p>
+<pre><code>probes/NN-*/probe.py ──(Entra ID: az login / DefaultAzureCredential)──┬─▶ プロジェクト openai/v1  {project}/openai/v1        … 01〜07, 09
+                                                                      ├─▶ エージェントエンドポイント {project}/agents/&lt;name&gt;/endpoint/protocols/openai … 02, 09
+                                                                      ├─▶ プロジェクト REST(agents / evaluation_rules) … 02, 09
+                                                                      └─▶ アカウント openai/v1  https://&lt;foundry&gt;.openai.azure.com/openai/v1 … 01(A), 08</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>probe スクリプト(ローカル、<code>uv run python ...</code>)</td>
+<td>観点別リクエストと結果表示</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>Foundry リソース <code>aif-&lt;baseName&gt;</code> + プロジェクト <code>probes</code>(<code>infra/main.bicep</code>)</td>
+<td>全 probe の接続先</td>
+<td>リソース自体は無料</td>
+</tr>
+<tr>
+<td>モデルデプロイ gpt-5.4-mini(GlobalStandard, cap 10)</td>
+<td>01〜07, 09 の推論</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>model-router デプロイ(<code>deployRouter=true</code> 時)</td>
+<td>01(G)・05</td>
+<td>ルーティング先モデルの単価で従量</td>
+</tr>
+<tr>
+<td>text-embedding-3-small(CLI で追加)</td>
+<td>08</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>File Search のベクトルストア</td>
+<td>03(probe 内で作成・削除)</td>
+<td>ストレージ従量(削除忘れ注意)</td>
+</tr>
+<tr>
+<td>Web search ツール</td>
+<td>04</td>
+<td>ツール呼び出し単位の別課金・<strong>DPA 対象外</strong></td>
+</tr>
+<tr>
+<td>Log Analytics + Application Insights(接続済み)</td>
+<td>09 の継続評価結果・手動 KQL</td>
+<td>取り込み従量</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得)、Azure CLI(<code>az login</code> 済み)</td>
+<td>オフライン確認は uv だけ</td>
+</tr>
+<tr>
+<td>Azure</td>
+<td><code>infra/main.bicep</code> + <code>infra/roles.bicep</code> + 埋め込みデプロイ(§5.1)</td>
+<td>課金あり。使い終わったら RG ごと削除</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>署名ユーザーに Cognitive Services OpenAI User + Foundry User(旧 Azure AI User)— main.bicep が付与。プロジェクト/アカウント MI に同 2 ロール — roles.bicep が付与(09 の継続評価の前提)</td>
+<td>RBAC 伝播に 5〜15 分</td>
+</tr>
+<tr>
+<td>データ取り扱い</td>
+<td>04 は検索クエリが Microsoft のコンプライアンス境界外(Bing)へ出る。05 は既定で非 OpenAI モデル(Grok 等)へ流れる</td>
+<td>機微データを入力しない</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/foundry-probes/.env</code>。雛形は <code>.env.example</code>。<strong>ライブ実行時のみ必要</strong>。<code>.env</code> は git 管理外):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_PROJECT_ENDPOINT</code></td>
+<td>プロジェクト経由の openai client / agents / evaluation_rules</td>
+<td>main.bicep 出力 <code>projectEndpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>アカウント直下の openai/v1(01 の A、08)</td>
+<td>main.bicep 出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>推論モデルのデプロイ名</td>
+<td>main.bicep 出力 <code>modelDeploymentName</code>(例 <code>gpt-5.4-mini</code>)</td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>空なら Entra ID(既定・推奨)。アカウント openai/v1 にだけ効く</td>
+<td>ポータルのキー(通常は空のまま)</td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>probe のコードは使わない(手動 KQL 用のメモ)</td>
+<td>main.bicep 出力 <code>appInsightsConnectionString</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン確認-azure-不要・無料">4. オフライン確認(Azure 不要・無料)</h2>
+<p>probe はライブ専用スクリプトで、自動テスト(pytest)はない。オフラインでは「現行 SDK で読み込めて、呼び出しの形が合っているか」までを確認する。</p>
+<pre><code>cd labs/foundry-probes
+uv sync
+uv run ruff check .                                          # 期待: All checks passed!
+for f in probes/*/probe.py; do uv run python -m py_compile &quot;$f&quot; || echo &quot;NG $f&quot;; done   # 期待: 何も出ない
+uv run python -c &quot;from foundry_probes.common import Settings, make_project_client; print(&#x27;import ok&#x27;)&quot;</code></pre>
+<p>オフラインで確認済みの事項(2026-09-29):</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> 全 probe の <code>client.&lt;...&gt;.create(...)</code> 等の呼び出し先とキーワード引数が openai 3.20.0 / azure-ai-projects 2.7.0 のシグネチャに存在する(AST 照合で不一致 0)</li>
+<li class="task"><input type="checkbox" class="chk"> <code>get_openai_client()</code> → <code>{project}/openai/v1/</code>、<code>get_openai_client(agent_name=...)</code> → <code>{project}/agents/&lt;name&gt;/endpoint/protocols/openai/</code> を向く(<code>Settings</code> にダミー値を入れて生成した client の <code>base_url</code> で確認)</li>
+<li class="task"><input type="checkbox" class="chk"> 09 の <code>EvaluationRule(...)</code> がワイヤ形式 <code>{&quot;eventType&quot;: &quot;responseCompleted&quot;, &quot;filter&quot;: {&quot;agentName&quot;: ...}, &quot;action&quot;: {&quot;type&quot;: &quot;continuousEvaluation&quot;, ...}}</code> にシリアライズされる</li>
+<li class="task"><input type="checkbox" class="chk"> <code>az bicep build --file infra/main.bicep --stdout &gt; /dev/null</code>(roles.bicep も)が警告なしで通る</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code>cd labs/foundry-probes
+az group create -n rg-foundry-probes -l japaneast
+az deployment group create -g rg-foundry-probes -f infra/main.bicep \
+  -p baseName=fprobes modelName=gpt-5.4-mini modelVersion=2026-03-17 \
+     userObjectId=$(az ad signed-in-user show --query id -o tsv) \
+     deployRouter=true routerVersion=2025-11-18
+# 第 2 段: MI へのロール(principalId ローテーション対策で分離)
+PID=$(az rest --method get --url &quot;https://management.azure.com$(az cognitiveservices account show -n aif-fprobes -g rg-foundry-probes --query id -o tsv)/projects/probes?api-version=2025-06-01&quot; --query identity.principalId -o tsv)
+AID=$(az cognitiveservices account show -n aif-fprobes -g rg-foundry-probes --query identity.principalId -o tsv)
+az deployment group create -g rg-foundry-probes -f infra/roles.bicep -p baseName=fprobes accountPrincipalId=$AID projectPrincipalId=$PID
+# 08 用の埋め込みデプロイ
+az cognitiveservices account deployment create -n aif-fprobes -g rg-foundry-probes \
+  --deployment-name text-embedding-3-small --model-name text-embedding-3-small --model-version 1 \
+  --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10</code></pre>
+<p><code>main.bicep</code> の出力(<code>projectEndpoint</code> / <code>openaiV1Endpoint</code> / <code>modelDeploymentName</code>)を <code>.env</code> に転記する(<code>cp .env.example .env</code> してから編集)。</p>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code>uv sync
+./run_all.sh                                          # 全 9 本を順に実行し logs/&lt;probe&gt;.log に保存(tee で画面にも出る)
+uv run python probes/05-model-router/probe.py         # 1 本だけ(例)</code></pre>
+<p>出力の読み方: <code>== &lt;観点&gt;</code> が見出し、<code>--- &lt;ラベル&gt;</code> の下が観察値(長文は <code>…(全N文字)</code> で切り詰め)、<code>!! &lt;例外型&gt;: &lt;内容&gt;</code> はその観点で返ったエラー(観察対象。スクリプトは続行する)。</p>
+<h2 id="6-probe-別の確認ポイント">6. probe 別の確認ポイント</h2>
+<p>各節の「期待(2026-08-04 実測)」は NOTES の記録。<strong>値(id・トークン数・ルーティング先)は実行ごとに変わる</strong>ので形で比べる。</p>
+<h3 id="6-1-01-conversations-api">6.1 01 Conversations API</h3>
+<ul>
+<li><strong>確かめること</strong>: サービス側会話状態の使えるサーフェス、多ターン継続、items の粒度、<code>store=False</code> との併用、別モデルでの継続、エラー形。</li>
+<li><strong>コマンド</strong>: <code>uv run python probes/01-conversations/probe.py</code></li>
+<li><strong>出力で見る所</strong>: A で <code>!! NotFoundError ... 404</code>(アカウント直下は不可)、A' で <code>conv_...</code> が作成される / C の turn2 が「青」/ F が <code>items 件数: 0</code> / G の「実際に使われたモデル」/ H が 400 <code>Malformed identifier</code>。</li>
+<li><strong>主要な発見</strong>: Conversations は<strong>プロジェクト経由のみ</strong>。会話に TTL フィールドはなく明示削除まで残る。<code>store=False</code> を conversation と同時指定するとそのターンは会話に残らない(エラーも出ない)。</li>
+<li>詳細: <a href="../probes/01-conversations/NOTES.md">01 NOTES</a></li>
+</ul>
+<h3 id="6-2-02-prompt-agents">6.2 02 Prompt agents</h3>
+<ul>
+<li><strong>確かめること</strong>: <code>agents.create_version</code> の版採番、エージェントエンドポイント経由の呼び出し、conversation との組み合わせ、function ツールの返り先、<code>instructions</code> 上書き、削除。</li>
+<li><strong>コマンド</strong>: <code>uv run python probes/02-prompt-agents/probe.py</code></li>
+<li><strong>出力で見る所</strong>: A の <code>&quot;id&quot;: &quot;probe-prompt-agent:1&quot;</code> と <code>instance_identity</code>(エージェントごとの Entra ID)/ B で <code>v1.version=1 -&gt; v2.version=2</code> / D が川柳で返る(既定は最新版)/ F の最終 item が <code>function_call</code> / G が <code>!! BadRequestError ... Not allowed when agent is specified</code>。</li>
+<li><strong>主要な発見</strong>: 版は自動採番の upsert(typo が新エージェントになる)。function ツールはクライアント実行ループ。呼び出し時の <code>instructions</code> 上書きは 400。エンドポイントの既定ルーティングは「常に最新版」(公式 configure-agent 2026-09-11 版とも一致)。</li>
+<li>詳細: <a href="../probes/02-prompt-agents/NOTES.md">02 NOTES</a></li>
+</ul>
+<h3 id="6-3-03-file-search-ベクトルストア">6.3 03 File Search + ベクトルストア</h3>
+<ul>
+<li><strong>確かめること</strong>: ファイル登録・ベクトルストアのチャンク既定値・インデックス待ち・根拠付き回答と引用・明示 TTL・削除時のファイル残存。</li>
+<li><strong>コマンド</strong>: <code>uv run python probes/03-file-search/probe.py</code></li>
+<li><strong>出力で見る所</strong>: B の <code>chunking_strategy</code> が <code>max_chunk_size_tokens: 800 / chunk_overlap_tokens: 400</code> / C が数秒で <code>status=completed</code> / D が「3 年間」/ E に <code>file_citation</code> / F に <code>expires_at</code> が入る / G で「store 削除後もファイルは残る」。</li>
+<li><strong>主要な発見</strong>: 埋め込みモデルの自前デプロイ不要(サービス管理・変更不可)。自作ストアの既定は無期限。<strong>ストアを消してもファイルは残る</strong>ので <code>files.delete</code> を別に行う(probe は最後に削除する)。</li>
+<li>詳細: <a href="../probes/03-file-search/NOTES.md">03 NOTES</a></li>
+</ul>
+<h3 id="6-4-04-web-search-ツール">6.4 04 Web search ツール</h3>
+<ul>
+<li><strong>確かめること</strong>: ツール型名、<code>web_search_call</code> の中身(外に出た検索クエリ)、引用の形、<code>tool_choice</code> 強制。</li>
+<li><strong>コマンド</strong>: <code>uv run python probes/04-web-search/probe.py</code>(<strong>DPA 対象外・別課金。4 リクエストのみ</strong>)</li>
+<li><strong>出力で見る所</strong>: A で <code>type=&#x27;web_search&#x27; -&gt; 受理</code> / B の <code>action.queries</code>(モデルが組み立てた実クエリ)/ C の <code>url_citation</code> / D で挨拶だけでも <code>output types=[&#x27;web_search_call&#x27;, &#x27;message&#x27;]</code>。</li>
+<li><strong>主要な発見</strong>: 接続リソース不要でツール指定だけで動く。<code>action.queries</code> が「コンプライアンス境界外へ出た文字列」の実体。<code>tool_choice</code> 強制は無駄な検索と課金を生む。</li>
+<li>詳細: <a href="../probes/04-web-search/NOTES.md">04 NOTES</a></li>
+</ul>
+<h3 id="6-5-05-model-router">6.5 05 Model router</h3>
+<ul>
+<li><strong>確かめること</strong>: japaneast での動作、難易度別のルーティング先、usage の見え方、<code>temperature</code> の受理。</li>
+<li><strong>コマンド</strong>: <code>uv run python probes/05-model-router/probe.py</code>(要 <code>deployRouter=true</code>)</li>
+<li><strong>出力で見る所</strong>: B/C の各行 <code>-&gt; model=&lt;実モデル名&gt;</code>(2026-08-04 は 5 件中 4 件が <code>grok-4-1-fast-reasoning</code>、挨拶のみ <code>gpt-5-mini-2025-08-07</code>)/ D の <code>reasoning_tokens</code> / E が <code>temperature=0.2 -&gt; OK</code>。</li>
+<li><strong>主要な発見</strong>: 絞り込みなしのルーターは既定で非 OpenAI モデル(Grok)に流れる。<code>response.model</code> で監査可能。<strong>データガバナンス要件がある案件では model subset 設定が必須</strong>。現行ドキュメントでは非 OpenAI ルーティングの preview 表記が消え、正式仕様の挙動になっている。</li>
+<li>詳細: <a href="../probes/05-model-router/NOTES.md">05 NOTES</a></li>
+</ul>
+<h3 id="6-6-06-structured-outputs-json_schema">6.6 06 Structured outputs(json_schema)</h3>
+<ul>
+<li><strong>確かめること</strong>: Responses <code>text.format</code>(strict)と Chat Completions <code>response_format</code> の両面、enum 矯正、<code>additionalProperties</code> 省略時の扱い。</li>
+<li><strong>コマンド</strong>: <code>uv run python probes/06-structured-outputs/probe.py</code></li>
+<li><strong>出力で見る所</strong>: A の <code>パース成功。currency=JPY 明細数=2</code> / B の <code>currency=JPY ... 余計なキー=set()</code> / C が JSON 文字列 / D が 400 にならず JSON を返す。</li>
+<li><strong>主要な発見</strong>: 両 API 面で strict が効き、プロンプトで指示しても schema が勝つ。Foundry は <code>additionalProperties</code> 省略の strict スキーマも受理(OpenAI 本家より緩い → 本家へ戻すと落ちうる)。</li>
+<li>詳細: <a href="../probes/06-structured-outputs/NOTES.md">06 NOTES</a></li>
+</ul>
+<h3 id="6-7-07-guardrails-コンテンツフィルター">6.7 07 Guardrails / コンテンツフィルター</h3>
+<ul>
+<li><strong>確かめること</strong>: 既定ポリシー下の注釈(<code>content_filter_results</code> / <code>prompt_filter_results</code>)、有害依頼と jailbreak 入力の扱い。</li>
+<li><strong>コマンド</strong>: <code>uv run python probes/07-guardrails/probe.py</code>。D は手動: <code>az cognitiveservices account deployment show -n aif-fprobes -g rg-foundry-probes --deployment-name gpt-5.4-mini --query properties.raiPolicyName -o tsv</code>(期待: <code>Microsoft.DefaultV2</code>)</li>
+<li><strong>出力で見る所</strong>: A にカテゴリ別 <code>severity</code> と入力側 <code>jailbreak</code>/ B は「ブロックされず応答が返った」(モデルの refusal)/ C が <code>BadRequestError ... 400</code>(content_filter)。</li>
+<li><strong>主要な発見</strong>: 防御は 2 レイヤ — jailbreak は Prompt Shields が入力段で 400、素朴な有害依頼はモデル refusal(200)。アプリは両方を安全側の結果として扱う。</li>
+<li>詳細: <a href="../probes/07-guardrails/NOTES.md">07 NOTES</a></li>
+</ul>
+<h3 id="6-8-08-埋め込みのエンドポイントルーティング">6.8 08 埋め込みのエンドポイントルーティング</h3>
+<ul>
+<li><strong>確かめること</strong>: embeddings がアカウント / プロジェクトのどちらのエンドポイントで使えるか。</li>
+<li><strong>コマンド</strong>: <code>uv run python probes/08-embeddings-routing/probe.py</code>(要 text-embedding-3-small デプロイ)</li>
+<li><strong>出力で見る所</strong>: A が <code>&quot;dims&quot;: 1536</code> で成功 / B が <code>NotFoundError 404</code>(<code>base_url=.../api/projects/probes/openai/v1/</code>)/ C が成功。</li>
+<li><strong>主要な発見</strong>: <strong>embeddings はプロジェクト経由 404・アカウント経由のみ成功</strong>(chat/responses は両方 OK)。接続情報はプロジェクトとアカウントの 2 本を持つ。</li>
+<li>詳細: <a href="../probes/08-embeddings-routing/NOTES.md">08 NOTES</a></li>
+</ul>
+<h3 id="6-9-09-継続評価-evaluation_rules">6.9 09 継続評価(evaluation_rules)</h3>
+<ul>
+<li><strong>確かめること</strong>: prompt agent に <code>RESPONSE_COMPLETED</code> 駆動の継続評価ルールを掛け、自動評価ランが発火・観測できるか。</li>
+<li><strong>コマンド</strong>: <code>uv run python probes/09-continuous-eval/probe.py</code>(最大 300 秒ポーリング)</li>
+<li><strong>出力で見る所</strong>: A の <code>eval_...</code> / B のルール(<code>action.type=continuousEvaluation</code>・<code>filter.agentName</code>)/ C の一覧(<code>event=None</code> になる表現揺れがある)/ D の <code>自動ラン検出: continuousevalrun_... status=...</code> と <code>report_url</code>。</li>
+<li><strong>主要な発見</strong>: ルールは <strong>prompt agent スコープ必須</strong>(filter なしは <code>Filter.AgentName is required</code>)。2026-08-04 は自動ランが <code>evals.runs.list</code> に出なかったが、eval のデータソースが公式の継続評価の形(<code>azure_ai_source</code> / <code>scenario: responses</code>)と違っていたため、2026-09-29 に probe を修正した。<strong>修正後は未実測</strong> — 再実測で D にランが出れば NOTES の「つまりどころ」を訂正する。</li>
+<li>詳細: <a href="../probes/09-continuous-eval/NOTES.md">09 NOTES</a></li>
+</ul>
+<h2 id="7-確認観点">7. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: 全 probe の完走</td>
+<td><code>./run_all.sh</code> 後に <code>grep -c &#x27;^== &#x27; logs/*.log</code></td>
+<td>9 本すべてにログがあり、各 probe の観点見出しが最後(01 は I、09 は E)まで出ている</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>想定どおりのエラー(分岐・異常系)</td>
+<td><code>grep -n &#x27;^!!&#x27; logs/*.log</code></td>
+<td>01 A の 404(アカウント直下)・01 H の 400・02 G の 400 のように、NOTES が「つまりどころ」として記録したものだけが出る。それ以外の <code>!!</code>(401/403 等)は §10 へ</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>エンドポイント非対称(08・01)</td>
+<td><code>logs/08-embeddings-routing.log</code> の B、<code>logs/01-conversations.log</code> の A</td>
+<td>どちらも 404。変わっていたら survey 08 / 03 の記述更新候補</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>データガバナンス(05)</td>
+<td><code>grep &#x27;model=&#x27; logs/05-model-router.log</code></td>
+<td>ルーティング先のモデル名が出る。OpenAI 以外(grok 等)が混ざるなら、その環境で router を使う前に subset 設定が要る</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>外部送信の実体(04)</td>
+<td><code>logs/04-web-search.log</code> の <code>action.queries</code></td>
+<td>ユーザー入力由来の検索クエリ文字列が見える(= Bing に出た文字列)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>継続評価の再実測(09)</td>
+<td><code>logs/09-continuous-eval.log</code> の D</td>
+<td><code>自動ラン検出: continuousevalrun_...</code> と <code>report_url</code> が出れば 2026-09-29 の修正で解消。出なければポータルの Monitor → Recurring evaluations を確認し NOTES に記録</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>観測: 継続評価の結果の見え先</td>
+<td>ポータル Build → Evaluations(または Monitor タブ)/ D の <code>report_url</code></td>
+<td>probe-ce-agent の応答に対する coherence 評価が表示される</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>後片付け(probe 内)</td>
+<td>各 probe の最後の観点(02 H・03 G・09 E)</td>
+<td>エージェント・ベクトルストア・ファイル・ルール・eval の削除が <code>OK</code> / <code>files.delete 済み</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>コスト・後片付け(基盤)</td>
+<td><code>az group show -n rg-foundry-probes</code></td>
+<td>検証後は §9 で削除し、<code>ResourceGroupNotFound</code> になる</td>
+</tr>
+</tbody></table></div>
+<h2 id="8-トレース・評価の確認">8. トレース・評価の確認</h2>
+<p>probe はトレース(OpenTelemetry)を送らない(観察はすべて標準出力と <code>logs/</code>)。Application Insights は 09 の継続評価の結果と、必要時の手動確認のために接続してある。</p>
+<pre><code>az monitor app-insights query --app appi-fprobes -g rg-foundry-probes \
+  --analytics-query &quot;union traces, customEvents, dependencies | where timestamp &gt; ago(1h) | summarize count() by itemType, name | top 20 by count_&quot;</code></pre>
+<ul>
+<li>09 の評価結果の一次確認は <code>evals.runs.list</code> の <code>report_url</code>(ポータルの評価レポート)。App Insights 側に何が出るかは未実測。</li>
+</ul>
+<h2 id="9-片付け">9. 片付け</h2>
+<pre><code>az group delete -n rg-foundry-probes --yes --no-wait   # ステートレス設計。router / Web search は従量なので放置しない</code></pre>
+<ul>
+<li>probe が途中で落ちた場合は、残骸(<code>probe-prompt-agent</code> / <code>probe-ce-agent</code>・ベクトルストア <code>probe-store*</code>・<code>assistant-</code> ファイル・ルール <code>probe-continuous-rule</code>)が残り得る。RG ごと削除すればまとめて消える。</li>
+</ul>
+<h2 id="10-トラブルシューティング">10. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>ConfigError: FOUNDRY_PROJECT_ENDPOINT / ... を .env に設定</code></td>
+<td><code>.env</code> 未作成・未記入</td>
+<td><code>.env.example</code> をコピーして main.bicep の出力を転記</td>
+</tr>
+<tr>
+<td><code>DefaultAzureCredential failed to retrieve a token</code></td>
+<td><code>az login</code> していない / テナント違い</td>
+<td><code>az login</code>(必要なら <code>--tenant</code>)</td>
+</tr>
+<tr>
+<td>401 / 403 <code>PermissionDenied</code></td>
+<td>RBAC 伝播待ち、または roles.bicep 未実行</td>
+<td>5〜15 分待つ / §5.1 の第 2 段を実行</td>
+</tr>
+<tr>
+<td>01 A・08 B の 404</td>
+<td>仕様(アカウント直下に Conversations なし・プロジェクト経由に embeddings なし)</td>
+<td>正常。NOTES の発見どおり</td>
+</tr>
+<tr>
+<td>02 G の 400 <code>Not allowed when agent is specified</code></td>
+<td>仕様(エージェント指定時は <code>instructions</code> 上書き不可)</td>
+<td>正常</td>
+</tr>
+<tr>
+<td><code>extra_body={&quot;agent&quot;: ...}</code> で 400</td>
+<td>旧名称</td>
+<td><code>agent_reference</code> を使う</td>
+</tr>
+<tr>
+<td>05 で <code>DeploymentNotFound</code></td>
+<td><code>deployRouter=true</code> でデプロイしていない</td>
+<td>main.bicep を <code>deployRouter=true routerVersion=2025-11-18</code> で再デプロイ</td>
+</tr>
+<tr>
+<td>08 A も失敗</td>
+<td>text-embedding-3-small 未デプロイ</td>
+<td>§5.1 の <code>deployment create</code></td>
+</tr>
+<tr>
+<td>09 B で 403 <code>preview_feature_required</code></td>
+<td>継続評価(プレビュー)に opt-in ヘッダーが必要になった</td>
+<td><code>AIProjectClient(..., allow_preview=True)</code> にする(SDK が <code>Foundry-Features: Evaluations=V1Preview</code> を付ける)</td>
+</tr>
+<tr>
+<td>09 D で自動ランが出ない</td>
+<td>非同期遅延・プロジェクト MI のロール不足・App Insights 未接続</td>
+<td>roles.bicep の実行を確認し、ポータルの Monitor で確認。NOTES 09 の 2026-09-29 追記を参照</td>
+</tr>
+<tr>
+<td><code>RequestConflict</code>(デプロイ時)</td>
+<td>アカウント配下のサブリソースを並行作成</td>
+<td>main.bicep は直列化済み。手動追加(埋め込み)は前のデプロイ完了後に</td>
+</tr>
+</tbody></table></div>
+<h2 id="11-関連・更新履歴">11. 関連・更新履歴</h2>
+<ul>
+<li>一覧・検証対象外の理由・最新化チェック結果: <a href="../README.md">README</a></li>
+<li>機能の GA/プレビュー状況: <a href="../../../docs/survey/features/html/03-agent-service.html">features/03 Agent Service</a> / <a href="../../../docs/survey/features/html/04-tools-knowledge.html">features/04 ツール・ナレッジ</a> / <a href="../../../docs/survey/features/html/02-models.html">features/02 モデル</a> / <a href="../../../docs/survey/features/html/05-observability-evaluation.html">features/05 観測・評価</a> / <a href="../../../docs/survey/features/html/06-safety-guardrails.html">features/06 安全性</a> / <a href="../../../docs/survey/features/html/08-developer-experience.html">features/08 開発者サーフェス</a></li>
+<li>ユースケース実装例: <a href="../../maf-ports/README.md">labs/maf-ports</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(openai 2.53→3.20 / azure-ai-projects 2.4→2.7。09 の eval データソースを公式の継続評価の形に修正・要再実測)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/foundry-probes/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

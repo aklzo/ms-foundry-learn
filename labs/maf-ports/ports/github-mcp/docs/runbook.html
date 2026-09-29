@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>github-mcp 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="runbook.html" class="current">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="github-mcp-実行ガイド">github-mcp 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/github-mcp/</code>(Port 6・パターン: リモート MCP — MAF クライアントから GitHub 公式リモート MCP サーバーへ streamable HTTP 接続)<br><strong>最終確認:</strong> 2026-09-29 オフライン(21 passed・<code>ruff check .</code> clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / openai 3.20.0 / mcp 1.30.0)/ ライブ: 2026-07-31(当時の構成 core 1.13.0 / mcp 1.29.0、PAT は自前 httpx クライアントのヘッダー。<strong>2026-09-29 に <code>static_headers</code> へ切り替えた後のライブは未実施</strong>。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li>Docker(stdio)なしで、GitHub 公式リモート MCP サーバー(<code>https://api.githubcopilot.com/mcp/</code>)に PAT ヘッダー付きで接続し(initialize / tools/list)、エージェントがそのツール(<code>list_issues</code> / <code>search_pull_requests</code> など)を呼んで実データに基づく Markdown 回答を返すこと。</li>
+<li>元アプリの環境変数(<code>GITHUB_PERSONAL_ACCESS_TOKEN</code> / <code>GITHUB_TOOLSETS</code>)が <strong>HTTP ヘッダー</strong>(<code>Authorization: Bearer</code> / <code>X-MCP-Toolsets</code>)に移り、<code>X-MCP-Readonly: true</code>(既定 on)でサーバー側から書き込みツールが消えること。</li>
+<li>技術選定上の意味: MCP 呼び出しの実行点と秘密の置き場所がクライアント側(開発者マシン / 自前ランタイム)にある構成。Foundry Agent Service の MCP ツールや Toolbox(GA)に寄せると PAT をサービス側の接続に移せる(README の学び 3 と「今後の選択肢」)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<pre><code>質問(+ --repo)─▶ build_full_query(&quot;{質問} in {repo}&quot;)
+             ─▶ github_agent(MAF Agent)────────────────▶ Responses API(共有基盤のモデル、api-key)
+                   └─ MCPStreamableHTTPTool(&quot;github&quot;, https://api.githubcopilot.com/mcp/)
+                        └─ static_headers: Authorization / X-MCP-Toolsets / X-MCP-Readonly(同一オリジンのみ注入)
+             ─▶ tools/call(list_issues / search_pull_requests / ...)× n ─▶ Markdown 回答</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>CLI / <code>query.run_query</code>(ローカル)</td>
+<td>リポジトリ連結と 120 秒タイムアウト(元アプリと同値)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>MAF <code>Agent</code> github_agent(<code>agents.py</code>)</td>
+<td><code>OpenAIChatClient</code>(Responses API)。MCP ツールは <code>agent.mcp_tools</code> に分離保持され、<code>async with agent:</code> で接続・切断</td>
+<td>—</td>
+</tr>
+<tr>
+<td>モデルデプロイ(共有基盤、既定 gpt-5.4-mini)</td>
+<td>ツール選択と回答生成</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td><code>MCPStreamableHTTPTool</code>(<code>tools.py</code>)</td>
+<td>リモート MCP への streamable HTTP クライアント。HTTP クライアントはツールが生成・破棄(タイムアウト 30 秒 / SSE 300 秒)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>GitHub 公式リモート MCP サーバー(GitHub ホスト、GA)</td>
+<td>GitHub API をツールとして公開</td>
+<td>なし(PAT のレート制限のみ)</td>
+</tr>
+<tr>
+<td>App Insights(共有基盤)</td>
+<td>OTel トレースの送信先(任意)</td>
+<td>取り込み量従量</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得。検証は 3.13)</td>
+<td>オフライン実行はこれだけ</td>
+</tr>
+<tr>
+<td>ツール(ライブ)</td>
+<td>GitHub CLI(<code>gh auth login</code> 済み)または PAT</td>
+<td>2026-07-31 は <code>gh auth token</code>(gh の OAuth トークン)で接続実績あり</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)のみ。本ポート固有のリソースはない</td>
+<td>モデルのトークン従量+トレース取り込み</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>モデル呼び出しは api-key なので<strong>データプレーンの RBAC は不要</strong>。GitHub 側は対象リポジトリの読み取り権限(公開リポジトリなら通常の PAT で可)</td>
+<td>roles.bicep(MI 向け)も本ポートには不要</td>
+</tr>
+<tr>
+<td>ネットワーク(ライブのみ)</td>
+<td><code>api.githubcopilot.com</code> への外向き HTTPS</td>
+<td>社内プロキシで SSE / 長時間接続が切られると tools/call が失敗する</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <code>.env.example</code>。<strong>ライブ実行時のみ必要</strong>。読み込み順はカレントの <code>.env</code> → lab ルートの <code>.env</code> で、既にシェルにある値が優先):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>モデル呼び出し先(<code>https://&lt;foundry&gt;.openai.azure.com/openai/v1</code>)。必須</td>
+<td>shared.bicep の出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>モデルデプロイ名(既定 gpt-5.4-mini)。必須</td>
+<td>shared.bicep の出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>api-key 認証。必須</td>
+<td><code>az cognitiveservices account keys list -n &lt;foundryName&gt; -g &lt;rg&gt; --query key1 -o tsv</code></td>
+</tr>
+<tr>
+<td><code>GITHUB_TOKEN</code></td>
+<td>リモート MCP の PAT(<code>Authorization: Bearer</code>)。必須。<code>.env</code> に書かずシェルで渡すのを推奨</td>
+<td><code>export GITHUB_TOKEN=&quot;$(gh auth token)&quot;</code> または PAT を発行</td>
+</tr>
+<tr>
+<td><code>GITHUB_MCP_URL</code></td>
+<td>接続先。任意(既定 <code>https://api.githubcopilot.com/mcp/</code>)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>GITHUB_TOOLSETS</code></td>
+<td><code>X-MCP-Toolsets</code> の値。任意(既定 <code>repos,issues,pull_requests</code> — 元アプリと同値)。空文字でヘッダーを送らない</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>GITHUB_MCP_READONLY</code></td>
+<td><code>X-MCP-Readonly</code>。任意(既定 true。<code>false</code> / <code>0</code> / <code>no</code> / <code>off</code> で解除)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>トレース送信先。任意(未設定ならトレース無効で実行は続く)</td>
+<td>shared.bicep の出力 <code>appInsightsConnectionString</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/github-mcp
+uv sync --extra dev
+uv run pytest            # 期待: 21 passed, 1 deselected(live は既定で除外。ネットワーク不要)
+uv run ruff check .      # 期待: All checks passed!(図スクリプト docs/architecture.py を含む)</code></pre>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> ヘッダーの対応: PAT → <code>Authorization: Bearer</code>、<code>GITHUB_TOOLSETS</code> → <code>X-MCP-Toolsets</code>、readonly → <code>X-MCP-Readonly: true</code>(off / 空なら送らない)(<code>test_build_headers_*</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> ツールは <code>static_headers</code> で組み立てられ、自前 <code>http_client</code> は渡さない。<code>load_prompts=False</code>(<code>test_tool_cls_injection_receives_name_url_and_static_headers</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> <strong>接続段階(initialize / tools/list)にも 3 ヘッダーが載る</strong> — httpx MockTransport のスタブ MCP サーバーで検証(<code>test_static_headers_reach_initialize_and_tools_list</code>。旧版の「header_provider では接続時 401」の回帰防止)</li>
+<li class="task"><input type="checkbox" class="chk"> MCP ツールは <code>agent.mcp_tools</code> に分離保持され、instructions は元アプリ原文(<code>test_agent_holds_mcp_tool_separately_from_plain_tools</code> / <code>test_agent_instructions_match_original_app</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> <code>--repo</code> は質問文に含まれないときだけ <code> in &lt;repo&gt;</code> を連結、既定タイムアウト 120 秒、空応答は例外にしない(<code>test_repo_is_*</code> / <code>test_default_timeout_matches_original_app</code> / <code>test_run_query_empty_reply_returns_empty_string</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> <code>GITHUB_TOKEN</code> 欠落時のエラーに <code>gh auth token</code> の案内が出る(<code>test_missing_github_token_mentions_gh_auth_token</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code># 共有基盤が未作成なら先に作る(→ labs/maf-ports/infra/docs/runbook.md)。本ポート固有のリソースはない。
+# 任意: 共有基盤の存在確認とエンドポイント取得(existing 参照+出力のみのテンプレート)
+cd labs/maf-ports/ports/github-mcp
+az deployment group create -g &lt;rg&gt; -f infra/main.bicep -p baseName=&lt;baseName&gt; \
+  --query properties.outputs -o json   # 期待: openaiV1Endpoint / projectEndpoint が返る</code></pre>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code>uv sync --extra dev --extra live          # live = azure-monitor-opentelemetry(トレース送信)
+export GITHUB_TOKEN=&quot;$(gh auth token)&quot;    # または PAT
+uv run github-mcp-maf --repo microsoft/agent-framework &quot;Show me recent merged PRs&quot;
+uv run github-mcp-maf &quot;Find issues labeled as bugs in microsoft/agent-framework&quot;
+uv run pytest -m live                     # ライブスモーク(1 passed が期待。2026-07-31 は 18.8 秒)</code></pre>
+<p>期待される出力の例(値は実行ごとに変わる。PR の中身は実リポジトリの状態次第):</p>
+<pre><code>tracing: App Insights 有効                                                    ← stderr(任意)
+[mcp] https://api.githubcopilot.com/mcp/ (toolsets=repos,issues,pull_requests, readonly=on)   ← stderr
+## Recently merged PRs in microsoft/agent-framework                            ← stdout(Markdown)
+| # | Title | Merged | Link |
+| --- | --- | --- | --- |
+| 1234 | ... | 2026-09-.. | https://github.com/microsoft/agent-framework/pull/1234 |</code></pre>
+<p>終了コードは 正常 0 / 環境変数不足 2 / タイムアウト 1(<code>error: request timed out after 120 seconds</code>)。MCP 接続の失敗(401 など)は <code>ToolException</code>(<code>MCP server failed to initialize: ...</code>)のトレースバックで終わる。</p>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: リモート MCP 経由の回答</td>
+<td>§5.2 の 1 本目</td>
+<td>stderr に <code>[mcp] ... readonly=on</code>、stdout にマージ済み PR のタイトルと <code>https://github.com/...</code> リンク(表形式が多い)。捏造でなく実在の PR 番号</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>パターン固有: <code>static_headers</code> での接続(2026-09-29 の改修点)</td>
+<td><code>uv run pytest -m live</code></td>
+<td>1 passed。テスト内で <code>tool.is_connected</code> と <code>tool.functions</code>(非空)を確認している = PAT 付きで initialize / tools/list が通った。<strong>切り替え後の初回ライブで必ず確認する</strong></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>読み取り専用ガード</td>
+<td><code>uv run github-mcp-maf --repo microsoft/agent-framework &quot;Close issue #1&quot;</code></td>
+<td>書き込みは実行されず、書き込みツールが公開されていない旨の説明+代替案。§7 のトレースで <code>tools/call</code> に create / update / close 系が 1 件もない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>ツール面の絞り込み</td>
+<td><code>GITHUB_TOOLSETS=repos uv run github-mcp-maf &quot;Find issues labeled as bugs in microsoft/agent-framework&quot;</code></td>
+<td>issues 系ツールが tools/list に現れないため、issue を列挙できない旨の回答になる(または repos 系だけで答える)。<code>tools/list</code> の結果が既定より少ない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>異常系: トークン未設定</td>
+<td><code>GITHUB_TOKEN= uv run github-mcp-maf x</code>(空文字はシェル側の値が優先され .env で上書きされない)</td>
+<td>終了コード 2、stderr に <code>error: 環境変数が未設定: GITHUB_TOKEN(labs/maf-ports/.env を確認。GITHUB_TOKEN は …</code> で始まり、<code>gh auth token</code> での取得方法が案内される</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>異常系: 無効なトークン</td>
+<td><code>GITHUB_TOKEN=ghp_invalid uv run github-mcp-maf --repo microsoft/agent-framework &quot;hi&quot;</code></td>
+<td>initialize が 401 で失敗し <code>ToolException: MCP server failed to initialize ...</code> で終了(モデルは呼ばれない。ライブ未確認)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>異常系: タイムアウト</td>
+<td><code>uv run github-mcp-maf --timeout 5 --repo microsoft/agent-framework &quot;Show repository health metrics and activity patterns&quot;</code></td>
+<td>終了コード 1、<code>error: request timed out after 5 seconds</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>観測: トレース着信</td>
+<td>§7 の KQL</td>
+<td><code>invoke_agent github_agent</code> / <code>chat &lt;デプロイ名&gt;</code> / <code>initialize</code> / <code>tools/list</code> / <code>tools/call &lt;ツール名&gt;</code> / <code>execute_tool &lt;ツール名&gt;</code> が出る</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>コスト・後片付け</td>
+<td>ポータルのデプロイのトークンメトリック。テスト用に PAT を発行した場合は GitHub 側で失効</td>
+<td>Azure 側の追加リソース・課金はゼロ(モデルのトークンのみ)。1 質問 = chat 2〜6 回程度(ツール往復回数次第)</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code># スパン名ごとの件数(送信から着信まで数分かかることがある)
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | summarize count() by name&quot;
+
+# どの MCP ツールが呼ばれたか
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) and name startswith &#x27;tools/call&#x27; | summarize count() by name&quot;</code></pre>
+<ul>
+<li>期待するスパン名(agent-framework-core 1.19.0 のソースで確認。MCP スパンは <code>{mcp.method.name} {target}</code> 形式の CLIENT スパン): <code>invoke_agent github_agent</code> / <code>chat &lt;デプロイ名&gt;</code> / <code>initialize</code> / <code>tools/list</code> / <code>tools/call list_issues</code> など / <code>execute_tool list_issues</code> など。azure-monitor-opentelemetry 1.8.10 は httpx を既定で計装するため、<code>api.githubcopilot.com</code> と Responses API への HTTP 呼び出しも依存関係として並ぶ(1.8.9 時代のライブより行が増える。名前はライブ未確認)。</li>
+<li>評価: <a href="../tests/eval_dataset.jsonl">tests/eval_dataset.jsonl</a>(5 ケース: Issues / PRs / Repository Activity / レビュー待ち PR / readonly ガード)。回答は実リポジトリに依存するため期待値は traits(実データ準拠・リンク付与・表形式・捏造なし)で記述。上の <code>tools/call</code> の列と突き合わせる。クラウド評価の実装はない。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code># 本ポート固有のリソースはない。共有基盤ごと消す場合:
+az group delete -n &lt;rg&gt; --yes --no-wait
+unset GITHUB_TOKEN   # シェルに残したトークンを消す</code></pre>
+<ul>
+<li><code>.env</code> に PAT を書いた場合は削除する(共有 <code>.env</code> は全ポートが読む)。</li>
+</ul>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>error: 環境変数が未設定: GITHUB_TOKEN ...</code>(終了コード 2)</td>
+<td>トークン未設定</td>
+<td><code>export GITHUB_TOKEN=&quot;$(gh auth token)&quot;</code></td>
+</tr>
+<tr>
+<td><code>MCP server failed to initialize: &#x27;InitializeResult&#x27; object has no attribute &#x27;protocolVersion&#x27;</code></td>
+<td>mcp 2.x が入った(agent-framework-core 1.19 は mcp 1.x 前提)</td>
+<td>pyproject の <code>mcp&gt;=1.30,&lt;2</code> を外していないか確認し <code>uv sync --extra dev</code></td>
+</tr>
+<tr>
+<td><code>MCP server failed to initialize</code>(401 / 403)</td>
+<td>PAT が無効・期限切れ・権限不足</td>
+<td><code>gh auth status</code> で確認、トークンを再取得</td>
+</tr>
+<tr>
+<td>PAT は正しいのに initialize が 401</td>
+<td>agent-framework-core が 1.19 未満(1.18 以前の <code>MCPStreamableHTTPTool</code> は未知の引数を <code>**kwargs</code> で黙って捨てるため、<code>static_headers</code> が無視されて<strong>無認証で接続</strong>する)</td>
+<td><code>uv sync --extra dev</code>(pyproject の下限は 1.19)。オフラインの <code>test_static_headers_reach_initialize_and_tools_list</code> が落ちるのが検知の目印</td>
+</tr>
+<tr>
+<td><code>error: request timed out after 120 seconds</code></td>
+<td>ツール往復が多い質問 / GitHub 側の遅延</td>
+<td><code>--timeout 300</code> で再実行、質問を絞る</td>
+</tr>
+<tr>
+<td>401 / <code>invalid api key</code>(モデル側)</td>
+<td><code>FOUNDRY_API_KEY</code> の誤り、または <code>disableLocalAuth: true</code></td>
+<td>キーを再取得。共有基盤は <code>disableLocalAuth: false</code> が前提</td>
+</tr>
+<tr>
+<td>回答が「ツールがない」と言う</td>
+<td><code>GITHUB_TOOLSETS</code> で必要な toolset を外している / readonly で書き込み系が消えている(想定どおり)</td>
+<td>既定の <code>repos,issues,pull_requests</code> に戻す</td>
+</tr>
+<tr>
+<td>KQL で MCP スパンが 0 件</td>
+<td>着信遅延 / <code>--extra live</code> 未導入 / 別の App Insights を見ている</td>
+<td>数分待つ。<code>uv sync --extra dev --extra live</code> と接続文字列を確認</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び(<code>static_headers</code> への切り替え理由、mcp&lt;2 の上限ピン、Toolbox という今後の選択肢): <a href="../README.md">README</a></li>
+<li>共有基盤(デプロイ・.env・削除): <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a></li>
+<li>MCP / Toolbox の機能状況: <a href="../../../../../docs/survey/features/html/04-tools-knowledge.html">features/04-tools-knowledge.md</a></li>
+<li>前後のパターン: <a href="../../travel-memory/docs/runbook.html">travel-memory(Port 5・Foundry Memory)</a> / <a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci(Port 8・Code Interpreter)</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(依存を agent-framework-core 1.19.0 / openai 3.20.0 / mcp 1.30.0 に更新。PAT の載せ方を自前 httpx クライアントから <code>static_headers</code> に改修。mcp 2.2.0 は引き続き非互換を実測。構成図を v2(日本語・処理順バッジ・タグ付き注記)に更新し、図スクリプトも ruff clean に)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/github-mcp/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

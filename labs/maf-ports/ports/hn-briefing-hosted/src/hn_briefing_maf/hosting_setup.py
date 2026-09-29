@@ -11,10 +11,13 @@ kb_setup.py と同じ「ペイロード組み立ては純関数・オフライ�
 - ``create_version_from_code`` の定義は HostedAgentDefinition(cpu/memory +
   CodeConfiguration(runtime, entry_point, dependency_resolution=REMOTE_BUILD)
   + environment_variables + protocol_versions)。**コンテナプロトコルは
-  responses 2.0.0**(1.0.0 は非推奨・猶予期間後ブロック)
+  responses 2.0.0**(1.0.0 はサポート終了・ブロック済み。2026-09-29 に
+  quickstart / deploy-hosted-agent-code で 2.0.0 が現行のままと再確認)
 - 環境変数がコンテナへの唯一の構成手段(バージョンごとに不変)。
   App Insights 接続文字列はプラットフォームが自動注入するため渡さない
 - サンドボックスは 0.5vCPU/1GiB で十分(HN GET 1 本+モデル呼び出しのみ)
+- idle timeout(``session_configuration.idle_timeout_seconds``、120〜3600 秒)は
+  指定しない = サービス既定 900 秒(15 分)。日次 1 回の起動では既定で足りる
 """
 
 from __future__ import annotations
@@ -30,7 +33,7 @@ PORT_ROOT = Path(__file__).resolve().parents[2]
 #: zip ルートに置くファイル(hosted agent コードデプロイの必須規約)
 REQUIRED_ZIP_ROOT_FILES = ("main.py", "requirements.txt")
 
-#: コンテナプロトコル(2.0.0 必須 — 1.0.0 は非推奨)
+#: コンテナプロトコル(2.0.0 必須 — 1.0.0 はサポート終了)
 RESPONSES_PROTOCOL_VERSION = "2.0.0"
 
 

@@ -87,6 +87,8 @@ scripts/voice_session.py(実 WebSocket: 接続 → session.update →
 
 ## 実行
 
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
+
 ```bash
 uv sync --extra dev                # コア+テキスト対話層(Voice Live 依存なし)
 uv run pytest                      # オフライン(ネットワーク不要・77 件)
@@ -108,7 +110,7 @@ CLAIM_VOICE_TOOL_SMOKE=1 uv run pytest -m live -k tool         # ツール完全
 
 環境変数(すべて省略可・lab ルート `.env` に追記): `VOICE_LIVE_ENDPOINT`(既定: `FOUNDRY_PROJECT_ENDPOINT` から導出)/ `VOICE_LIVE_MODEL`(既定 `gpt-4.1-mini`)/ `VOICE_LIVE_API_VERSION`(既定 `2026-04-10`)/ `VOICE_LIVE_VOICE`(既定 `en-US-AvaNeural`。日本語なら `ja-JP-NanamiNeural` 等)。
 
-**検証範囲の制約(明記)**: 本環境にはマイク/スピーカーが無いため、Voice Live のライブ検証は**接続確立+テキストイベント往復**(`conversation.item.create` の `input_text` → `response.audio_transcript.delta` / `response.audio.delta` 受信)までとする。音声入力(`input_audio_buffer.append`)への拡張点は `scripts/voice_session.py` に TODO で明示済み。音声チャンクは受信して破棄(バイト数のみ計上)する。**コスト注意**: Voice Live はセッション中のトークン+音声で課金(gpt-4.1-mini = basic 価格帯)。スモークは短文 1〜2 往復に留める。
+**検証範囲の制約(明記)**: 本環境にはマイク/スピーカーが無いため、Voice Live のライブ検証は**接続確立+テキストイベント往復**(`conversation.item.create` の `input_text` → `response.audio_transcript.delta` / `response.audio.delta` 受信)までとする。音声入力(`input_audio_buffer.append`)への拡張点は `scripts/voice_session.py` に TODO で明示済み。音声チャンクは受信して破棄(バイト数のみ計上)する。**コスト注意**: Voice Live はセッション中のトークン+音声で課金(gpt-4.1-mini = Standard 価格帯〈2026-09-29 に Basic から改称〉)。スモークは短文 1〜2 往復に留める。
 
 ## 評価
 
@@ -131,6 +133,20 @@ CLAIM_VOICE_TOOL_SMOKE=1 uv run pytest -m live -k tool         # ツール完全
   2. **Voice Live 実接続**: WebSocket 確立(安定版 api-version 2026-04-10、マネージド gpt-4.1-mini、api-key 認証)+テキストイベント往復
   3. **ツール完全ループ**: Voice Live のセッションから FNOL コアが関数ツールとして呼ばれ、応答が返る
 - 環境制約: マイク/スピーカーなしのため音声入出力の実検証は未実施(接続・イベント・ツールループまで)。音声検証手順は scripts/voice_session.py に記載
+
+## 検証結果(2026-09-29 最新化チェック)
+
+オフラインのみ(Azure リソースは削除済み・ライブ未実施)。
+
+- **依存更新**(`uv lock --upgrade`): agent-framework-core 1.13.0 → **1.19.0** / agent-framework-openai 1.12.0 → 1.14.4 / azure-ai-voicelive 1.2.0 → **1.3.0** / openai 2.51.0 → 3.20.0 / azure-monitor-opentelemetry 1.8.9 → 1.8.10。pyproject の下限を実テスト版へ引き上げ
+- オフラインテスト **77 passed**(DeprecationWarning なし)/ `ruff check .` clean(図生成スクリプト `docs/architecture.py` を v2 スタイルに書き直し、2026-07-31 からの既存指摘 8 件も解消)/ `az bicep build` OK(変更なし)
+- `scripts/voice_session.py` のモジュールロードと実 MAF `Agent` 構築をオフラインで再確認。azure-ai-voicelive 1.3.0 の `connect()` は既存引数(`credential` / `endpoint` / `model` / `api_version`)がそのまま、`send()` は引き続き `Mapping` を受け、`recv_bytes()` も存続 — **コード変更なし**
+- **変更不要と判断した点**:
+  - **api-version `2026-04-10`**: GA の最新は `2026-07-15`(2026-07 リリース。SDK 1.3.0 の `connect()` 既定値)だが、2026-04-10 も GA のままで、現行の [voice-live-how-to](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-how-to)(2026-09-24 版)の接続例も 2026-04-10。2026-07-15 の破壊的変更は画像 content part の `url` → `image_url` だけで本ポートは画像を送らない。ライブ検証済みの値を明示ピンしているので SDK の既定変更にも引きずられない([release notes](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/releasenotes?pivots=voice-live))
+  - **モデル `gpt-4.1-mini`**: Voice Live のマネージドモデル一覧に存続(ティアは 2026-09-29 に Basic → **Standard** へ改称、価格帯の中身は同じ枠)。Japan East は gpt-4.1 系が Global standard で提供、gpt-realtime 系(2.1 / 1.5 / 無印 / mini)と azure-realtime は引き続き非提供 → 既定モデルの選定理由は変わらない([voice-live](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live) / [regions](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions?tabs=voice-live))
+  - **入力転写 `azure-speech`**: 非マルチモーダルモデルの既定として現行 docs に存続。`mai-transcribe` エイリアスの MAI-Transcribe-2 切替と MAI-Transcribe-1 のリタイア(2026-09-15)は、本ポートが MAI Transcribe を使っていないため影響なし
+- **ライブ未検証で残るリスク**: openai 3.x / agent-framework 1.19 の組での実モデル呼び出し(構造化出力 2 段)と Voice Live 実接続は 2026-07-31 以降未再測。音声入出力の実検証は環境制約で従来どおり未実施
+- **今後の選択肢**: api-version `2026-07-15` の parallel tool calls 制御・ストリーミングテキスト入力・セッション有効期限の通知は、テキストターン中心の本ポートでは必須ではない / 2026-09-29 に GA になった `gpt-realtime-2.1-mini`(Standard)はネイティブ音声モデルだが Japan East 非提供のため、使うなら Voice Live 対応の別リージョンにリソースを置く構成になる
 
 ## 学び(MAF/Foundry vs 元構成)
 

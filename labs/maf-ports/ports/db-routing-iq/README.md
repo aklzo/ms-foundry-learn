@@ -21,7 +21,7 @@
 | 段 2: agno ルーティングエージェント(1 語で DB 名を返す) | `retrievalReasoningEffort: low` の **LLM クエリプランニング**がソースを選択。判断材料はインデックス/KS の `description` と KB の `retrievalInstructions`(元 instructions 1〜3 をここへ移植) |
 | 段 3: LangGraph ReAct + DuckDuckGo | MAF エージェントの `web_search` 関数ツール(自前 DDG。**web knowledge source を使わない判断**は下記) |
 | `create_retrieval_chain` の回答生成 | MAF エージェント(gpt-5.4-mini)が MCP ツール結果から回答統合(KB の `answerSynthesis` は使わない判断は下記) |
-| エージェント→検索の接続 | **MCP 経由**: KB ごとの `{search-endpoint}/knowledgebases/{kb}/mcp?api-version=...` に公開ツール `knowledge_base_retrieve`。MAF の `MCPStreamableHTTPTool` + `http_client`(api-key ヘッダー)— Port 6 のパターン流用 |
+| エージェント→検索の接続 | **MCP 経由**: KB ごとの `{search-endpoint}/knowledgebases/{kb}/mcp?api-version=...` に公開ツール `knowledge_base_retrieve`。MAF の `MCPStreamableHTTPTool` + `static_headers`(api-key ヘッダー。2026-09-29 に `http_client` 方式から変更)— Port 6 のパターン流用 |
 | Streamlit の PDF アップロード | `scripts/setup_kb.py`(data/*.md → インデックス+KS+KB の一括構築) |
 
 ## 実装前調査の結果(2026-07、Learn ドキュメント精読)
@@ -37,7 +37,7 @@
 ### knowledge base 作成 API の要点
 
 - オブジェクトは 3 層: **knowledge source**(コンテンツ定義。searchIndex / azureBlob / web / MCP server 等 12 種)→ **knowledge base**(KS 束+モデル+検索既定)→ **retrieve アクション / MCP エンドポイント**(実行)。KS が先、KB が後(名前参照)。削除は逆順
-- api-version の分水嶺: **2026-04-01(GA)は最小限の抽出検索のみ**。LLM クエリプランニング(=本ポートの核心)・answer synthesis・reasoning effort は **2026-05-01-preview** が必要。**「ルーティングの委譲」はまだプレビュー機能**である点が本番採用判断の要注意点
+- api-version の分水嶺(2026-09-29 注: 現行の最新プレビューは **2026-08-01-preview** で、本ポートも移行済み — 後述「検証結果(2026-09-29 最新化チェック)」): **2026-04-01(GA)は最小限の抽出検索のみ**。LLM クエリプランニング(=本ポートの核心)・answer synthesis・reasoning effort は **2026-05-01-preview** が必要。**「ルーティングの委譲」はまだプレビュー機能**である点が本番採用判断の要注意点
 - インデックス側の必須要件: searchable+retrievable な文字列フィールド+**semantic configuration(prioritizedContentFields)**。ベクトルは推奨(vectorizer 必須)であって必須ではない
 - KB の `models[]`(azureOpenAI・resourceUri+deploymentId+apiKey/MI)は low/medium effort のプランニングに使われる。gpt-5.4-mini は 2026-05-01-preview のサポートモデル表に含まれる
 
@@ -46,7 +46,7 @@
 - KB ごとに `{search-endpoint}/knowledgebases/{kb}/mcp?api-version=2026-05-01-preview` が**単体の MCP サーバー**として立ち、公開ツールは **`knowledge_base_retrieve` の 1 つだけ**
 - 認証は `Authorization: Bearer`(Search Index Data Reader ロール・推奨)か **`api-key`(管理キー・開発用)**ヘッダー。ラボはキーで統一
 - MCP ツール結果は retrieve アクションの `response/activity/references` 封筒**ではなく**、`result.content[].text` に**グラウンディングデータの JSON 文字列**が入る平坦な形(activity ログは取れない — 学び 4)
-- Foundry Agent Service から繋ぐ場合は project connection(`RemoteTool` カテゴリ+`ProjectManagedIdentity`)がヘッダーを注入する。本ポートは MAF クライアント実行なので Port 6 の `http_client` パターン(接続時からヘッダーが要るため `header_provider` 不可)をそのまま流用
+- Foundry Agent Service から繋ぐ場合は project connection(`RemoteTool` カテゴリ+`ProjectManagedIdentity`)がヘッダーを注入する。本ポートは MAF クライアント実行なので Port 6 の `http_client` パターン(接続時からヘッダーが要るため `header_provider` 不可)をそのまま流用(2026-09-29 注: agent-framework-core 1.19.0 の `static_headers` に置き換え済み — 接続時を含む全リクエストに同一オリジン限定で付く)
 
 ## 移植後の構成
 
@@ -55,7 +55,7 @@
 ```
 質問 ─▶ db_routing_agent(MAF Agent, gpt-5.4-mini)
           ├─ knowledge_base_retrieve(MCPStreamableHTTPTool)─▶ AI Search knowledge base
-          │     └ httpx.AsyncClient(api-key ヘッダー)          ├ LLM クエリプランニング(low)
+          │     └ static_headers(api-key ヘッダー)             ├ LLM クエリプランニング(low)
           │                                                    ├ products / support / finance KS へ副クエリ並列
           │                                                    └ L2 セマンティックリランク → グラウンディング返却
           └─ web_search(自前 DDG 関数ツール)← KB が空振りのときだけ(instructions で制御)
@@ -82,12 +82,12 @@ KB の `answerSynthesis`(サービス側で回答文まで生成)は使わず、
 
 ### SDK ではなく REST(httpx)で KB を作る
 
-knowledge base 系を扱える azure-search-documents は **preview 版(`pip install --pre`)が必要**。プレビュー SDK のピン管理より、REST ペイロード(Learn のリファレンスの JSON と 1:1)を純関数で組み立てるほうがテスト容易性と可搬性が高い(critique-loop の evals API で確立した「素の dict」方針)。依存も httpx だけで済む。
+knowledge base 系を扱える azure-search-documents は **preview 版(`pip install --pre`)が必要**(2026-09-29 注: 安定版 12.x は 2026-04-01 GA 面=最小抽出検索のみ対応。本ポートが使う LLM クエリプランニングは引き続き preview SDK 側)。プレビュー SDK のピン管理より、REST ペイロード(Learn のリファレンスの JSON と 1:1)を純関数で組み立てるほうがテスト容易性と可搬性が高い(critique-loop の evals API で確立した「素の dict」方針)。依存も httpx だけで済む。
 
 ### その他
 
 - インデックス/KS/KB は**データプレーン**のため Bicep では書けない → `infra/main.bicep`(AI Search Basic のみ)+ `scripts/setup_kb.py` の 2 段デプロイ(tech-selection-guide §2-2 の定型)
-- `mcp>=1.24,<2` の上限ピン(Port 6 で実測した罠)を pyproject に明記
+- `mcp>=1.24,<2` の上限ピン(Port 6 で実測した罠)を pyproject に明記(2026-09-29 に `mcp>=1.30,<2` へ。MAF 1.19 でも mcp 2.x は initialize 時に AttributeError になることを再確認)
 - 全体タイムアウト(180s)は元アプリに無い運用上の追加(Streamlit の spinner 任せだったもの)
 
 ## 実行
@@ -109,6 +109,8 @@ uv run db-routing-iq-maf "2026 年現在の日本の首相は誰ですか?"     
 
 uv sync --extra dev --extra live && uv run pytest -m live   # ライブスモーク(4 問)
 ```
+
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
 
 **コスト注意**: AI Search **Basic は時間課金**(検証が終わったらリソースグループごと削除する。`setup_kb.py` で再構築可能)。加えて KB のクエリプランニングは共有デプロイ(gpt-5.4-mini)への**トークン課金**、リトリーバル(リランク)は AI Search 側のトークン課金(月次無料枠内で収まる規模)。
 
@@ -136,6 +138,18 @@ uv sync --extra dev --extra live && uv run pytest -m live   # ライブスモー
 - infra デプロイ(AI Search Basic: srch-mafportsw2-iq)→ `setup_kb.py` 一発成功(インデックス×3 → KS×3 → KB。preview API がペイロード受理 — 残リスク1解消)
 - ライブスモーク **4 passed(37.3s)**: 製品(1.2kg)/サポート(30日以内)/財務(84億円)の各一意ファクトが正しいソース由来で回答され、ドメイン外質問はフォールバック動作。**アプリ側ルーティングコードゼロで三段カスケード相当が成立**
 - sourceData の domain 伝搬・fallback 安定性も上記で確認(残リスク2・3解消)
+
+## 検証結果(2026-09-29 最新化チェック)
+
+オフラインのみ(Azure リソースは削除済みのため**ライブ未検証**)。
+
+- 依存更新: agent-framework-core 1.13.0 → **1.19.0** / agent-framework-openai 1.12.0 → **1.14.4** / openai 2.51.0 → **3.20.0**(httpx2 ベース)/ mcp 1.29.0 → **1.30.0**(`<2` ピン維持)/ ruff 0.16.1 → 0.16.9。pyproject の下限を検証版に引き上げ(`agent-framework-core>=1.19` / `agent-framework-openai>=1.14.4` / `mcp>=1.30,<2` / `httpx>=0.28`)
+- オフラインテスト **54 passed**(件数は同じ。`make_http_client` のテスト 1 件を削除し、実 `MCPStreamableHTTPTool` のハンドシェイクを MockTransport の偽 KB サーバーで回すテスト 1 件を追加)/ `ruff check .` clean(図生成スクリプト `docs/architecture.py` も v2 に書き直し、ruff 0.16 の既存指摘 I001 / RUF100 / ISC004 を解消)/ `az bicep build` OK
+- **改修 1: Search REST の api-version を `2026-05-01-preview` → `2026-08-01-preview`**(`config.SEARCH_API_VERSION`。KB/KS/インデックス作成と MCP エンドポイントの両方に効く)。理由: Learn の KB 作成・retrieve・Foundry IQ 接続ページのプレビュー例がすべて 2026-08-01-preview に移り(https://learn.microsoft.com/en-us/azure/search/agentic-retrieval-how-to-create-knowledge-base 2026-08-12 版 / https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/foundry-iq-connect 2026-08-07 版)、移行ガイド(https://learn.microsoft.com/en-us/azure/search/agentic-retrieval-how-to-migrate 2026-08-20 版)の破壊的変更 — Work IQ KS の認証・一覧のカーソルページング化・activity の `model` オブジェクト化・MCP サーバー KS の `inclusionMode` 廃止 — は本ポートのペイロードに該当しない。KB 定義(`retrievalInstructions` / `models[].azureOpenAIParameters.apiKey` / `retrievalReasoningEffort: {kind: low}`)と searchIndex KS(`sourceDataFields` / `semanticConfigurationName`)が 2026-08-01-preview の REST リファレンスに存在することも確認。gpt-5.4-mini は同版のサポートモデル表に残っている。2026-05-01-preview の廃止告知は見当たらない — 新版で問題が出たら定数を戻せば検証済み構成に戻る
+- **改修 2: MCP の api-key を `http_client` のヘッダーから `static_headers` へ**(Port 6 github-mcp と同じ判断)。agent-framework-core 1.19.0 で追加された(1.18.0 には無い)固定ヘッダー注入で、接続時(initialize / tools/list)を含む全リクエストに**設定 URL と同一オリジンのときだけ**付き、クロスオリジンのリダイレクトでは外れる。自前 `httpx.AsyncClient(headers=...)` だとオリジン制限は利用者責務(_mcp.py の docstring)なので、フレームワーク側に寄せた。CLI・ライブスモークから api-key 用クライアントの生成と `aclose` が消えた。接続時にヘッダーが付くことはオフラインのハンドシェイクテストで固定
+- 変更不要と判断: (1) `mcp<2` ピン — agent-framework-core 1.19.0 も extra `all` で `mcp>=1.24.0,<2` を宣言し、`_mcp.py` の initialize 処理が `InitializeResult.protocolVersion` を読む(mcp 2.x では `protocol_version` に改名)ため、mcp 2.2.0 では接続時に AttributeError → ToolException になることを使い捨て venv で確認 (2) `OpenAIChatClient(model=, api_key=, base_url=)` は 1.14.4 でも同じ引数で警告なし (3) AI Search の Bicep(`Microsoft.Search/searchServices@2023-11-01`・Basic)— 本ポートは Serverless(Developer tier、プレビュー)を使わないので、**2026-09-13 からの Serverless 課金開始の影響はない**(Basic の時間課金は従来どおり)。agentic retrieval の課金同意は 2026-04-01 以降は管理プレーンの `knowledgeRetrieval` プロパティ(既定 `free` = 月次無料枠のみ)で、ラボ規模では変更不要
+- ライブ未検証で残るリスク: (1) 2026-08-01-preview での KB 作成と MCP 応答の形(`knowledge_base_retrieve` の結果に `domain` が入ること)(2) MAF 1.19 の MCP 結果の既定 `tool_result_content="structured_first"` — KB の MCP 応答が `structuredContent` を持つ場合、モデルに見えるのは `content[].text` ではなくそちらになる(学び 3 の「平坦な JSON 文字列」の観察が変わり得る)(3) `static_headers` での実サービス接続
+- 今後の選択肢(本ポートでは採用しない): 2026-08-01-preview の `retrievalReasoningEffort: {kind: "auto"}`(最安の段から必要なだけ上げる)と KB の `retrieveDefaults`(retrieve の上限値の永続化)/ Foundry の **Toolbox(GA)** に KB の MCP と Web 検索を束ねれば、エージェント側は 1 つの MCP エンドポイント+集中認証+toolbox 単位のガードレールで済む(ただし KB 側のプレビュー依存は変わらない)
 
 ## 学び(MAF/Foundry vs 元構成)
 

@@ -1,8 +1,15 @@
-# hosted agent コンテナの依存(REMOTE_BUILD がこのファイルを zip ルートから読む)。
+# hosted agent コンテナの依存(REMOTE_BUILD がこのファイルを zip ルートから読み pip で解決する)。
 # pyproject の hosting extra と揃えること(test_hosted_wiring がインポート網羅を固定)。
-agent-framework-core>=1.10
-agent-framework-foundry>=1.10
-agent-framework-foundry-hosting>=1.0.0b260730
-azure-identity>=1.17
-httpx>=0.27
+agent-framework-core>=1.19
+agent-framework-foundry>=1.13.1
+agent-framework-foundry-hosting>=1.0.0b260918
+# Responses protocol ライブラリは stable 2.2.0 を明示する。無指定だと pip は
+# stable の invocations 1.1.0(core<2.2.0 上限)を優先し、responses 2.2.0b1 + core 2.1.0 に
+# 落ちる(uv.lock = オフラインテストの組と食い違う)。invocations 1.2.0b1 は core 2.2 系と
+# 組める唯一の版(本ポートは Invocations protocol を使わないが hosting パッケージの必須依存)。
+azure-ai-agentserver-core>=2.2.0
+azure-ai-agentserver-responses>=2.2.0
+azure-ai-agentserver-invocations>=1.2.0b1
+azure-identity>=1.25
+httpx>=0.28
 python-dotenv>=1.0

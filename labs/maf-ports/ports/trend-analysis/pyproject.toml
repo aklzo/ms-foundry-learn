@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "awesome-llm-apps ai_startup_trend_analysis_agent の MAF + Foundry 移植(逐次ワークフロー最小形)"
 requires-python = ">=3.11"
 dependencies = [
-    "agent-framework-core>=1.10",
-    "agent-framework-openai>=1.10",
+    "agent-framework-core>=1.19",  # 2026-09-29 最新化チェックで検証した版
+    "agent-framework-openai>=1.14.4",  # openai 3.x(httpx2 ベース)で検証
     "httpx>=0.27",
     "beautifulsoup4>=4.12",
     "python-dotenv>=1.0",
@@ -19,7 +19,7 @@ dev = [
     "ruff>=0.14",
 ]
 live = [
-    "azure-monitor-opentelemetry>=1.6",
+    "azure-monitor-opentelemetry>=1.8.10",
 ]
 
 [project.scripts]

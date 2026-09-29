@@ -133,7 +133,7 @@ async for event in workflow.run(question, stream=True):
 |---|---|
 | ループを Workflow グラフで表現(素の while でも書けた) | 本ラボの目的が MAF 学習であることに加え、checkpoint(中断再開)・`WorkflowViz`・DevUI 等のグラフ前提機能への足場になる |
 | 4 ロールを `Agent` に分離(1 クライアント直叩きでも書けた) | instructions と response_format をロールに固定でき、プロンプトとロジックの分離(prompts.py 集約)が保てる |
-| `OpenAIChatClient` 単一クラスで 4 プロバイダー | 1.10 で Azure OpenAI が統合済み。Ollama / Anthropic は OpenAI 互換エンドポイントに乗せ、自作 HTTP クライアントをゼロにする |
+| `agent-framework-openai` の 2 クラスで 4 プロバイダー | openai / azure は `OpenAIChatClient`(Responses API。1.10 で Azure OpenAI が統合済み)、Ollama / Anthropic は OpenAI 互換エンドポイントが Chat Completions しか持たないため `OpenAIChatCompletionClient`(2026-09-29 修正)。自作 HTTP クライアントはゼロ |
 | httpx + 手動リダイレクト | httpx にはリダイレクトポリシーのフックがなく、SSRF ガードの「全ホップ再検証」を保つには手動ループが必要 |
 | readability-lxml + BeautifulSoup | Rust 版 dom_smoothie(Readability 系)+ scraper と同じ二段構え(本文抽出 → 全 DOM フォールバック) |
 | 構造化出力 + 寛容パースの二重化 | プロバイダーが response_format を無視/失敗しても Rust 版と同じプロンプト経路で動く |

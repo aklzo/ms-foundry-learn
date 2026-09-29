@@ -1,4 +1,4 @@
-"""Routines(プレビュー)の作成・操作(REST・ライブ専用)。
+"""Routines(GA)の作成・操作(REST・ライブ専用)。
 
     uv sync --extra dev --extra hosting
     az login
@@ -9,16 +9,19 @@
     uv run python scripts/setup_routine.py show | disable | enable | delete
     uv run python scripts/setup_routine.py create --dry-run       # ペイロード確認のみ
 
-契約(実装前調査 how-to/use-routines、2026-07): PUT
-``{project_endpoint}/routines/{name}``、全リクエストに
-``Foundry-Features: Routines=V1Preview`` ヘッダー、トークンのリソースは
-``https://ai.azure.com``。ペイロード組み立ては routine_setup.py の純関数
-(オフラインテストで固定)。SDK 代替は
-``client.beta.routines.create_or_update``(azure-ai-projects>=2.2)だが、
-プレビュー機能はフィーチャーヘッダー含め REST が一次契約なので REST で書く。
+契約(how-to/use-routines、2026-08-27 版): PUT
+``{project_endpoint}/routines/{name}?api-version=v1``、トークンのリソースは
+``https://ai.azure.com``。GA 後は ``Foundry-Features`` ヘッダーを送らない
+(プレビュー期の ``Routines=V1Preview`` は仕様から削除済み。経緯は
+routine_setup.py の docstring)。URL・ヘッダー・ペイロードの組み立ては
+routine_setup.py の純関数(オフラインテストで固定)。SDK 代替は
+``client.beta.routines.create_or_update``(azure-ai-projects>=2.4。GA 後も
+beta 名前空間のままで、任意ヘッダー ``Routines=V2Preview`` を自動付与する)。
+実装当時の「REST が一次契約」という判断と、ヘッダーを自分で制御できる利点から
+REST のまま残す。
 
 前提: hosted agent がデプロイ済み(hosting/deploy_hosted_agent.py)。
-Japan East は Routines プレビュー対応リージョン(routine_setup.py 参照)。
+Japan East は Routines の対応リージョン(routine_setup.py 参照)。
 """
 
 from __future__ import annotations
@@ -39,15 +42,16 @@ from hn_briefing_maf.routine_setup import (
     DEFAULT_INPUT,
     DEFAULT_ROUTINE_NAME,
     DEFAULT_TIME_ZONE,
-    ROUTINES_FEATURE_HEADER,
     TOKEN_SCOPE,
     build_routine_payload,
+    routine_request_headers,
     routine_url,
+    routines_collection_url,
 )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="hn-briefing の日次 Routine(プレビュー)")
+    parser = argparse.ArgumentParser(description="hn-briefing の日次 Routine")
     parser.add_argument(
         "command",
         choices=["create", "show", "list", "enable", "disable", "dispatch", "runs", "delete"],
@@ -86,7 +90,7 @@ def main() -> None:
     from azure.identity import DefaultAzureCredential
 
     token = DefaultAzureCredential().get_token(TOKEN_SCOPE).token
-    headers = {"Authorization": f"Bearer {token}", **ROUTINES_FEATURE_HEADER}
+    headers = routine_request_headers(token)
     endpoint = settings.project_endpoint
 
     with httpx.Client(headers=headers, timeout=30.0) as http:
@@ -95,7 +99,7 @@ def main() -> None:
         elif args.command == "show":
             response = http.get(routine_url(endpoint, args.name))
         elif args.command == "list":
-            response = http.get(f"{endpoint.rstrip('/')}/routines?api-version=v1")
+            response = http.get(routines_collection_url(endpoint))
         elif args.command == "runs":
             response = http.get(routine_url(endpoint, args.name, suffix="/runs"))
         elif args.command == "delete":

@@ -34,8 +34,16 @@ DEFAULT_KB_NAME = "db-routing-kb"
 #: agentic retrieval(knowledge source / knowledge base / MCP)の API バージョン。
 #: 2026-04-01(GA)は最小限の抽出検索のみ。**LLM クエリプランニング
 #: (= 本ポートの核心であるサービス側ルーティング)を非 Web ソースで使うには
-#: 2026-05-01-preview が必要**(実装前調査の結論。README 参照)。
-SEARCH_API_VERSION = "2026-05-01-preview"
+#: プレビュー版が必要**(実装前調査の結論。README 参照)。
+#:
+#: 2026-07-31 のライブ検証は 2026-05-01-preview で実施。2026-09-29 に現行の
+#: 最新プレビュー 2026-08-01-preview へ更新した — Learn の KB 作成 / retrieve /
+#: Foundry IQ 接続ページのプレビュー例がすべてこの版に移っており、移行ガイド
+#: (agentic-retrieval-how-to-migrate 2026-08-20 版)の破壊的変更(Work IQ KS・
+#: 一覧ページング・activity の model オブジェクト化・MCP サーバー KS の
+#: inclusionMode 廃止)は本ポートのペイロードに該当しないため。**ライブ未検証**:
+#: 問題が出たら "2026-05-01-preview" に戻せば検証済みの構成に戻る。
+SEARCH_API_VERSION = "2026-08-01-preview"
 
 
 class ConfigError(RuntimeError):

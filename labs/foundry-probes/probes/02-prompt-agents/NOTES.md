@@ -23,3 +23,10 @@
 
 - maf-ports(MAF)のようにクライアント側に定義を持つ構成と違い、prompt agent は**プロンプト改訂をデプロイなしで版管理**できる。定義変更の主体が非エンジニア(業務側)になる案件では prompt agent 優位。
 - ただしツール実行を伴う業務ロジックはどのみちクライアント(または hosted agent)に残るので、「prompt agent = プロンプト+Foundry 管理ツールの範囲」で線を引くのが実務的。
+
+## 2026-09-29 追記(最新化チェック・ライブ未検証)
+
+- azure-ai-projects 2.7.0 / openai 3.20.0 で probe の呼び出しはすべてそのまま解決する(静的確認)。`get_openai_client(agent_name=...)` の向き先は 2.4 と同じ **エージェントエンドポイント** `{project}/agents/{name}/endpoint/protocols/openai`(`api-version=v1` と `Foundry-Features` ヘッダーを SDK が自動付与)。
+- 公式クイックスタート(get-started-code 2026-09-03 版)もこの `get_openai_client(agent_name=...)` 経路を主経路にしている。configure-agent(2026-09-11 版)によると、エンドポイントはエージェント作成時点で有効・既定の版ルーティングは **Always use latest**(= D の「既定で最新版」と一致)。
+- **今後の選択肢**: 版固定は `extra_body.agent_reference.version` のほか、エンドポイント側で `agents.update_details(agent_endpoint=AgentEndpointConfig(version_selector=VersionSelector([FixedRatioVersionSelectionRule(agent_version="2", traffic_percentage=100)])))` とピン留めする方法が公式化された(Teams / M365 公開時はこちらが前提)。呼び出し側の権限は **Foundry Agent Consumer**(以上)ロール。
+- `FunctionTool` の `strict` は SDK の型上 2.4 から必須だが、省略しても 2026-08-04 は動作した。probe は実測時の要求を変えないため省略のまま。

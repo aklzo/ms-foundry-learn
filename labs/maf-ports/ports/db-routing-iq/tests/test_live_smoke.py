@@ -36,20 +36,19 @@ async def ask(settings: DbRoutingIqSettings, question: str) -> tuple[str, list[s
     from db_routing_iq_maf.observability import setup_tracing
     from db_routing_iq_maf.query import response_text, run_query, summarize_tool_calls
     from db_routing_iq_maf.search import default_http_client
-    from db_routing_iq_maf.tools import build_kb_mcp_tool, make_http_client, make_web_search_tool
+    from db_routing_iq_maf.tools import build_kb_mcp_tool, make_web_search_tool
 
     setup_tracing(settings.app_insights_connection_string)
 
-    kb_http = make_http_client(settings)
     web_http = default_http_client()
     try:
-        kb_tool = build_kb_mcp_tool(settings, kb_http)
+        kb_tool = build_kb_mcp_tool(settings)
         agent = build_routing_agent(
             build_chat_client(settings), kb_tool, make_web_search_tool(web_http)
         )
         async with agent:
-            # 接続確認: api-key ヘッダー付きで initialize / tools/list が通り、
-            # allow-list 後も knowledge_base_retrieve が展開されている
+            # 接続確認: api-key ヘッダー(static_headers)付きで initialize /
+            # tools/list が通り、allow-list 後も knowledge_base_retrieve が展開されている
             assert kb_tool.is_connected
             names = [f.name for f in kb_tool.functions]
             assert "knowledge_base_retrieve" in names, f"KB の MCP ツールが未展開: {names}"
@@ -57,7 +56,6 @@ async def ask(settings: DbRoutingIqSettings, question: str) -> tuple[str, list[s
             response = await run_query(agent, question)
     finally:
         await web_http.aclose()
-        await kb_http.aclose()
 
     return response_text(response), summarize_tool_calls(response)
 

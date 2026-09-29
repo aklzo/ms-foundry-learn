@@ -138,6 +138,8 @@ uv sync --extra dev --extra live && uv run pytest -m live   # スモーク 2 本
 uv run governed-agent-maf --verify runs/audit.json   # 改ざんがあれば exit 1
 ```
 
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
+
 主なオプション: `--threshold`(信頼ゲート閾値、既定 40)/ `--auto-approve-limit`(既定 $1,000)/ `--hard-limit`(既定 $5,000)/ `--now 2026-08-01T22:00`(営業時間ルールのデモ用に時刻固定)/ `--json --output`。
 
 営業時間ポリシーは意図的に naive なローカル時刻(組織の壁時計)で判定する(`clock` 注入で決定論化。実運用では zoneinfo で tz-aware 化する)。
@@ -164,6 +166,24 @@ uv run governed-agent-maf --verify runs/audit.json   # 改ざんがあれば exi
 
 - オフライン **65 passed** / ruff clean / bicep build OK
 - ライブスモーク **2 passed(20.1s)**: 実モデルで (1) 正常経費が承認まで完走し監査台帳が検証可能(`--verify` exit 0)、(2) 上限超過がポリシー middleware で**実行前遮断**され、拒否理由がモデルに戻り会話が継続(short-circuit の result 方式が実機で機能)
+
+## 検証結果(2026-09-29 最新化チェック)
+
+オフラインのみ(Azure リソースは削除済みのため**ライブ未検証**)。
+
+- 依存更新: agent-framework-core 1.13.0 → **1.19.0** / agent-framework-openai 1.12.0 → **1.14.4** / openai 2.51.0 → **3.20.0**(httpx2 ベース)/ ruff 0.16.1 → 0.16.9。pyproject の下限を検証版に引き上げ(`agent-framework-core>=1.19` / `agent-framework-openai>=1.14.4`)
+- オフラインテスト **65 passed**(変化なし)/ `ruff check .` clean(図生成スクリプト `docs/architecture.py` も v2 に書き直し、ruff 0.16 の既存指摘 I001 / RUF100 / ISC004 を解消)/ `az bicep build` OK。DeprecationWarning は agent_framework / azure / openai 由来ゼロ
+- **コード改修なし**。middleware まわりの README の記述(実装前調査・学び 1/3)が 1.19.0 でも成り立つことを installed package で再確認した:
+  - `AgentMiddleware` / `ChatMiddleware` / `FunctionMiddleware` と各 context、`process(context, call_next)` のオニオン合成、`context.result` による short-circuit(ツール非実行・ループ続行)、`MiddlewareTermination` の function パイプラインでの伝播(`_tools.py` の "MiddlewareTermination bubbles up to signal loop termination")はすべて同じ — middleware 10 件を含む全テストが実 `Agent` + 実パイプラインで無修正のまま通る
+  - `from __future__ import annotations` 下の関数形態 middleware の型推定の罠は**残っている**(`_determine_middleware_type` が第 1 引数の注釈の `__name__` を見るため、文字列注釈だと `MiddlewareException`。デコレータなしの関数で再現を確認)
+  - ネイティブ承認 `approval_mode` は引き続き `Literal["always_require", "never_require"]` の静的宣言 — 引数依存の動的判定(金額帯で承認)は middleware 実装のままが正解
+  - チャットクライアントの層合成は 1.19 で `FunctionInvocationLayer → ChatMiddlewareLayer → ChatTelemetryLayer → Raw...Client → BaseChatClient`(Telemetry が明示の層になった)。テスト用 `ScriptedChatClient`(Telemetry 層なし)はそのまま有効
+- 1.19 で増えた関連機能(採用しない・今後の選択肢):
+  - `MiddlewareFailure`: function middleware 内の通常の例外はツールエラー結果に変換されてループが続く(= ガードレールとしては fail-open)が、これを投げると**ループを確実に中断して呼び出し元へ伝播**する fail-closed 用の脱出口。ポリシーエンジン自体が壊れたとき(判定不能)の扱いを「拒否して続行」から「run ごと中断」に変えたい場合の選択肢
+  - `MiddlewareBundle` と実験的な AGENT-HOOKS-0.1 実装(`create_agent_hooks_middleware`、`@experimental`)— agent / chat / function の 3 面にまたがる制御を**部分導入できない 1 単位**として束ねる。本ポートの「監査(外)+ポリシー(内)」の組を分割不能にする用途に合うが experimental
+  - `agent_framework.security`(実験的・FIDES): 内容に信頼度・機密度ラベルを付けて追跡し、`PolicyEnforcementFunctionMiddleware` が「信頼できない文脈でのツール実行」を遮断する情報フロー制御型のプロンプトインジェクション対策。名前は本ポートの middleware と似ているが判定軸はラベルで、金額上限・営業時間のような業務ルールは書けない — 積層するなら本ポートのポリシー middleware の外側/内側どちらに置くかの設計が要る
+  - Foundry 側: エージェント向けガードレール(Tool call / Tool response 介入点)は 2026-09-29 時点でも**プレビュー**のままで、上の対比表の結論(業務ルールはアプリ層)は不変。**Toolbox(GA)**経由でツールを公開すれば toolbox 単位のガードレール(RAI ポリシー)を掛けられるが、判定語彙は Content Safety 系で、本ポートの 3 ルールの代替にはならない
+- ライブ未検証で残るリスク: openai 3.x(httpx2)経由の実モデル呼び出しで、7 月のスモーク 2 本(正常承認・上限超過の実行前遮断)が同じ結果になること
 
 ## 学び(MAF/Foundry vs 元構成)
 

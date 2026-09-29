@@ -54,9 +54,11 @@ Rust 版の planner/extractor/evaluator/reporter は「システムプロンプ�
 - 対応プロバイダーでは JSON スキーマがサーバー側で強制され、Rust 版 `llm/json.rs` の「プロンプトで JSON を頼み、寛容にパースする」戦略は不要になる。
 - ただし **`response.value` はパース失敗時に例外を投げる**(1.10 実測)ため、また `response_format` を無視するプロバイダーもあるため、寛容パース(`json_utils.py`)はフォールバックとして残した。小型ローカルモデル対策という元の設計意図はそのまま。
 
-### 3.3 プロバイダー抽象 → チャットクライアント 1 クラス
+### 3.3 プロバイダー抽象 → チャットクライアント 2 クラス
 
-Rust 版は trait + 自作 HTTP クライアント 3 実装(約 500 行)。MAF 1.10 では `OpenAIChatClient` が OpenAI / Azure OpenAI(v1 API, `azure_endpoint`)を単一クラスで扱い、Ollama と Anthropic は各社の OpenAI 互換エンドポイントで同じクラスに乗る。結果、`llm.py` は設定→コンストラクタ引数の写像だけになった。
+Rust 版は trait + 自作 HTTP クライアント 3 実装(約 500 行)。MAF 1.10 以降は `OpenAIChatClient`(**Responses API**)が OpenAI / Azure OpenAI(v1 API, `azure_endpoint`)を単一クラスで扱い、Ollama と Anthropic は各社の OpenAI 互換エンドポイントに `OpenAIChatCompletionClient`(Chat Completions)で乗る。結果、`llm.py` は設定→コンストラクタ引数の写像だけになった。
+
+> 2026-09-29 訂正: 初版は 4 プロバイダーとも `OpenAIChatClient` に載せていたが、これは Responses API のクライアントで、Anthropic の OpenAI 互換層には `/v1/responses` がない(Chat Completions のみ。出典: https://platform.claude.com/docs/en/api/openai-sdk )。Ollama も `response_format` の実績があるのは Chat Completions 側のため、両者を `OpenAIChatCompletionClient` に切り替えた。
 
 ### 3.4 イベント → Workflow の intermediate output
 
@@ -86,8 +88,8 @@ Rust 版の `EventSink`(コールバック型)は、core にイベント基盤�
 
 ### 4.2 Anthropic ネイティブ対応 — 部分的
 
-- **理由**: MAF に Anthropic 公式チャットクライアントがない。
-- **代替**: Anthropic の OpenAI SDK 互換エンドポイント(`https://api.anthropic.com/v1/`)を `OpenAIChatClient` で叩く。ただし互換レイヤーは `response_format` を保証しないため、claude プロバイダー選択時は構造化出力を無効化し、プロンプト + 寛容パース(= Rust 版と同じ経路)に自動フォールバックする(`supports_structured_output`)。
+- **理由**: MAF に Anthropic 公式チャットクライアントがない(2026-09 時点で `agent-framework-anthropic` はベータ版のみ。GA したら今後の選択肢)。
+- **代替**: Anthropic の OpenAI SDK 互換エンドポイント(`https://api.anthropic.com/v1/`)を `OpenAIChatCompletionClient`(Chat Completions)で叩く。ただし互換レイヤーは `response_format` を保証しないため、claude プロバイダー選択時は構造化出力を無効化し、プロンプト + 寛容パース(= Rust 版と同じ経路)に自動フォールバックする(`supports_structured_output`)。
 - **別案(不採用)**: `BaseChatClient` を継承して Anthropic Messages API クライアントを自作すれば trait 実装追加という Rust 版の拡張ポイントを忠実に再現できるが、学習目的に対しコストが見合わないため見送り。拡張ポイントが存在すること自体は確認済み。
 
 ### 4.3 言語・ランタイム由来の非機能特性 — 埋まらない差

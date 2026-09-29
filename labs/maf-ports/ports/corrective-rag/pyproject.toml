@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "awesome-llm-apps corrective_rag の MAF + Foundry 移植(補正ループ RAG + Azure AI Search)"
 requires-python = ">=3.11"
 dependencies = [
-    "agent-framework-core>=1.10",
-    "agent-framework-openai>=1.10",
+    "agent-framework-core>=1.19.0",
+    "agent-framework-openai>=1.14.4",
     "httpx>=0.27",
     "beautifulsoup4>=4.12",
     "pydantic>=2.7",
@@ -22,8 +22,8 @@ dev = [
 live = [
     "azure-monitor-opentelemetry>=1.6",
     "aiohttp>=3.9",
-    "azure-search-documents>=11.5",
-    "openai>=1.40",
+    "azure-search-documents>=12.0",
+    "openai>=3.20",
 ]
 
 [project.scripts]

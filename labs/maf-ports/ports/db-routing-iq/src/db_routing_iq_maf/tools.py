@@ -6,13 +6,22 @@
    ``Authorization: Bearer``(Search Index Data Reader ロール)または
    ``api-key``(管理キー)ヘッダー。ラボはキー認証で統一する。
 
-   ヘッダーの渡し方は Port 6(github-mcp)で確立したパターンを流用:
-   MAF の ``header_provider`` は **call_tool 時のみ**で接続時(initialize /
-   tools/list)に付かないため、全リクエスト認証が要る本サーバーでは
-   ``httpx.AsyncClient(headers=...)`` を ``http_client`` に渡す。
-   リダイレクト追従は無効(httpx 既定)のままにしてキーのオリジン外漏出を
-   防ぎ、クライアントの後始末(aclose)は呼び出し側(CLI / ライブスモーク)
-   の責務。
+   ヘッダーの渡し方(2026-09-29 に agent-framework-core 1.19.0 の _mcp.py で
+   再確認 — Port 6 github-mcp と同じ結論):
+
+   - **``static_headers``(1.19.0 で追加。1.18.0 には無い)を使う。** 固定
+     ヘッダーを構築時にコピーし、接続中の全リクエスト(initialize /
+     tools/list / ping / tools/call)に付ける。注入は設定した URL と同一
+     オリジンのリクエストに限られ、別オリジンへのリダイレクトでは外される
+     — キー漏出防止をフレームワークが肩代わりする
+   - 旧実装(2026-07-31 ライブ検証時)は ``httpx.AsyncClient(headers=...)`` を
+     ``http_client`` に渡していた(Port 6 が精読した 1.12.1 の
+     ``header_provider`` は call_tool 時にしか付かず、接続段階で認証が通らな
+     かったため)。自前クライアントのヘッダーはオリジン制限が利用者責務
+     (_mcp.py の docstring)なので、フレームワーク側の仕組みに寄せた
+   - HTTP クライアントは MCP ツールが自前で生成・破棄する(タイムアウト 30 秒 /
+     SSE 読み取り 300 秒)。接続・切断は ``async with agent:`` が担う。
+     ``http_client`` 引数はオフラインテストの MockTransport 注入用に残す
 
 2. **Web fallback ツール**: 元アプリ第三段の DuckDuckGo 検索。knowledge base
    の web knowledge source(Bing・プレビュー・別課金・Azure 境界外への
@@ -28,12 +37,6 @@ from typing import Any
 
 from .config import DbRoutingIqSettings
 from .search import ddg_search
-
-#: MAF が自前クライアントを作るときの既定と同値(MCP_DEFAULT_TIMEOUT=30 /
-#: MCP_DEFAULT_SSE_READ_TIMEOUT=300)。ヘッダー付きクライアントに差し替えても
-#: タイムアウト特性が変わらないよう明示する。
-HTTP_TIMEOUT_SECONDS = 30
-SSE_READ_TIMEOUT_SECONDS = 300
 
 #: エージェントから見た MCP ツール群の論理名
 KB_TOOL_NAME = "knowledge_base"
@@ -55,29 +58,18 @@ def build_kb_headers(settings: DbRoutingIqSettings) -> dict[str, str]:
     return {"api-key": settings.search_api_key}
 
 
-def make_http_client(settings: DbRoutingIqSettings) -> Any:
-    """api-key ヘッダー付きの httpx.AsyncClient を作る。
-
-    follow_redirects は httpx 既定の False のまま(オリジン外へのキー漏出
-    防止)。呼び出し側が ``await client.aclose()`` すること。
-    """
-    from httpx import AsyncClient, Timeout
-
-    return AsyncClient(
-        headers=build_kb_headers(settings),
-        timeout=Timeout(HTTP_TIMEOUT_SECONDS, read=SSE_READ_TIMEOUT_SECONDS),
-    )
-
-
 def build_kb_mcp_tool(
     settings: DbRoutingIqSettings,
-    http_client: Any,
     *,
+    http_client: Any | None = None,
     tool_cls: type | None = None,
 ) -> Any:
     """knowledge base の MCP エンドポイントを指す MAF MCP ツールを組み立てる。
 
-    ``tool_cls`` はテスト用の注入シーム(既定は MAF の MCPStreamableHTTPTool)。
+    api-key は ``static_headers`` で渡す(同一オリジン限定の注入はフレーム
+    ワークが保証)。``http_client`` は通常 None(MAF が生成・破棄)で、
+    オフラインテストが MockTransport 付きクライアントを差し込むためのシーム。
+    ``tool_cls`` もテスト用の注入シーム(既定は MAF の MCPStreamableHTTPTool)。
     接続はここでは行わない — ``async with agent:``(または run)がツールを
     enter した時点で initialize / tools/list が走り、knowledge_base_retrieve が
     ``tool.functions`` に展開される。
@@ -92,6 +84,7 @@ def build_kb_mcp_tool(
             "Foundry IQ knowledge base over product / support / finance sources "
             "(agentic retrieval via Azure AI Search)"
         ),
+        static_headers=build_kb_headers(settings),
         http_client=http_client,
         allowed_tools=[KB_RETRIEVE_TOOL],
         load_prompts=False,  # 公開面はツールのみ(github-mcp と同じ方針)

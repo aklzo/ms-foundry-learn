@@ -15,7 +15,8 @@
 //   az deployment group create -g rg-maf-ports -f main.bicep -p baseName=mafports
 //
 // 評価は Entra ID 認証のみのため、実行者(az login ユーザー)に
-// プロジェクトの Azure AI User ロールが必要(共有基盤のデプロイ者なら既定で満たす)。
+// プロジェクトの Foundry User ロール(旧名 Azure AI User。ロール ID は不変)が必要
+// (共有基盤のデプロイ者なら既定で満たす)。
 
 @description('共有基盤の baseName(shared.bicep と同じ値)')
 param baseName string

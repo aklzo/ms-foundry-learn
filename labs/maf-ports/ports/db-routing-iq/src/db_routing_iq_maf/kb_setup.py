@@ -13,9 +13,10 @@
 
 すべて REST ペイロード(dict)を返す純関数で、ネットワークは触らない。
 実際の PUT / 文書投入は scripts/setup_kb.py(ライブ専用)が行う。
-azure-search-documents SDK は使わない — knowledge base 系は
-2026-05-01-preview の preview SDK(--pre)が必要になるため、REST +
-httpx で API 面を直接扱う(設計判断は README)。
+azure-search-documents SDK は使わない — LLM クエリプランニング等の
+プレビュー機能は preview SDK(--pre)が必要になるため(安定版 12.x は
+2026-04-01 GA 面のみ)、REST + httpx で API 面を直接扱う(設計判断は
+README)。api-version は config.SEARCH_API_VERSION(2026-08-01-preview)。
 
 インデックスにベクトルフィールドは持たせない(テキスト+セマンティック
 ランカー L2 のみ。設計判断は README)。semantic configuration は agentic
@@ -208,7 +209,7 @@ def build_knowledge_source_payload(config: DomainConfig) -> dict:
     既存インデックスを包む「bring your own index」形。sourceDataFields で
     retrieve 応答に含めるフィールドを指定する(domain を含めることで、
     どのソースから引いたかを応答側で検証できる)。semanticConfigurationName
-    は 2026-05-01-preview では省略可だが、インデックス側の
+    は 2026-05-01-preview 以降のプレビューでは省略可だが、インデックス側の
     defaultSemanticConfiguration を明示的に指す。
     """
     return {

@@ -10,8 +10,8 @@
 
 knowledge source / knowledge base はデータプレーン API のため Bicep では
 作れない(infra/main.bicep はサービスのみ。2 段デプロイの定型 —
-tech-selection-guide §2-2)。REST(api-version 2026-05-01-preview)+httpx
-で直接呼ぶ。ペイロードは src/db_routing_iq_maf/kb_setup.py の純関数が組み立て
+tech-selection-guide §2-2)。REST(api-version は config.SEARCH_API_VERSION =
+2026-08-01-preview。ライブ検証時は 2026-05-01-preview)+httpx で直接呼ぶ。ペイロードは src/db_routing_iq_maf/kb_setup.py の純関数が組み立て
 (オフラインテスト済)、本スクリプトは HTTP を貼るだけの薄い実行層。
 
 実行(要 labs/maf-ports/.env — FOUNDRY_* + AZURE_SEARCH_*):

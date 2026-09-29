@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "awesome-llm-apps mixture_of_agents の MAF + Foundry 移植(ファンアウト/ファンイン並列合議)"
 requires-python = ">=3.11"
 dependencies = [
-    "agent-framework-core>=1.10",
-    "agent-framework-openai>=1.10",
+    "agent-framework-core>=1.19",  # 2026-09-29 最新化チェックで検証した版
+    "agent-framework-openai>=1.14.4",  # openai 3.x(httpx2 ベース)で検証
     "python-dotenv>=1.0",
     "typing-extensions>=4.10",
 ]
@@ -17,7 +17,7 @@ dev = [
     "ruff>=0.14",
 ]
 live = [
-    "azure-monitor-opentelemetry>=1.6",
+    "azure-monitor-opentelemetry>=1.8.10",
 ]
 
 [project.scripts]

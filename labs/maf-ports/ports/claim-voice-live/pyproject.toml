@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "awesome-llm-apps insurance_claim_live_agent_team の MAF + Foundry 移植(Gemini Live → Voice Live API、音声非依存 FNOL コアの 3 層設計)"
 requires-python = ">=3.11"
 dependencies = [
-    "agent-framework-core>=1.10",
-    "agent-framework-openai>=1.10",
+    "agent-framework-core>=1.19",
+    "agent-framework-openai>=1.14.4",
     "pydantic>=2.7",
     "python-dotenv>=1.0",
     "typing-extensions>=4.10",
@@ -20,11 +20,11 @@ dev = [
 # Voice Live 層(scripts/voice_session.py とライブスモークの WebSocket テストのみが使う)。
 # コア(FNOL ワークフロー)とテキスト対話層はこの extra なしで完動する。
 voice = [
-    "azure-ai-voicelive[aiohttp]>=1.0",
-    "azure-identity>=1.17",
+    "azure-ai-voicelive[aiohttp]>=1.3",
+    "azure-identity>=1.25",
 ]
 live = [
-    "azure-monitor-opentelemetry>=1.6",
+    "azure-monitor-opentelemetry>=1.8",
 ]
 
 [project.scripts]

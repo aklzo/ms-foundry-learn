@@ -76,7 +76,7 @@ CLI: services-agency-maf "プロジェクト依頼文" [--name/--type/--budget/.
 
 ### 元との差分(意図的)
 
-- **ペア別会話スレッドの永続なし**: Agency Swarm は sender-recipient ペアごとに会話スレッドを保持し、2 回目の相談は続きから始まる。移植の talk は毎回 one-shot の `Agent.run`(メッセージに全文脈を含めるよう instructions で指示)。本アプリの使い方(単発分析)では差が出ないため省いたが、長い協調では `AgentThread` をペアごとに Agency が保持する拡張が対応点になる
+- **ペア別会話スレッドの永続なし**: Agency Swarm は sender-recipient ペアごとに会話スレッドを保持し、2 回目の相談は続きから始まる。移植の talk は毎回 one-shot の `Agent.run`(メッセージに全文脈を含めるよう instructions で指示)。本アプリの使い方(単発分析)では差が出ないため省いたが、長い協調では `AgentSession`(初版の表記は `AgentThread`。現行 MAF 1.19 には `AgentThread` は無い)をペアごとに Agency が保持する拡張が対応点になる
 - `additional_instructions`(実行時の指示追記)は `Agent.run(message)` に相当口が無いため、メッセージ末尾の「Additional instructions:」に翻訳
 
 ## 実行
@@ -84,7 +84,7 @@ CLI: services-agency-maf "プロジェクト依頼文" [--name/--type/--budget/.
 ```bash
 uv sync --extra dev
 uv run pytest              # オフライン(ネットワーク不要・69 件)
-uv run ruff check src tests
+uv run ruff check .
 
 # --- ライブ(要 共有基盤 + ../../.env)---
 uv run services-agency-maf "AI-assisted note sharing SaaS for university students." \
@@ -92,6 +92,8 @@ uv run services-agency-maf "AI-assisted note sharing SaaS for university student
 uv run services-agency-maf "..." --json --output runs/report.json
 uv sync --extra dev --extra live && uv run pytest -m live   # スモーク
 ```
+
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
 
 インフラは共有基盤のみで動く(`infra/main.bicep` は existing 参照+出力のみ。`az deployment group create -g rg-maf-ports -f infra/main.bicep -p baseName=mafportsw3`)。
 
@@ -114,10 +116,21 @@ uv sync --extra dev --extra live && uv run pytest -m live   # スモーク
 - ライブスモーク **1 passed(75s)**: 実モデルが 5 ターンのプロジェクト遂行中に `talk_to_*` ツールを自発的に選択し、**許可グラフ内の通信のみ**が発生(CommLog で全通信を検証)
 - トレース: `execute_tool talk_to_*` の中に `invoke_agent <役割>` が入れ子になるスパン構造で「誰が誰に相談したか」がそのまま可視化(下記クエリで確認)
 
+## 検証結果(2026-09-29 最新化チェック)
+
+- 依存更新(`uv lock --upgrade`): agent-framework-core 1.13.0 → **1.19.0** / agent-framework-openai 1.12.0 → **1.14.4** / openai 2.51.0 → **3.20.0**(推移依存。HTTP 層が httpx2 に)/ azure-monitor-opentelemetry 1.8.9 → 1.8.10 / ruff 0.16.1 → 0.16.9。pyproject の下限を検証した版へ引き上げ(`agent-framework-core>=1.19.0` / `agent-framework-openai>=1.14.4`)
+- オフライン **69 passed**(`-W error::DeprecationWarning` でも 69 passed)/ `uv run ruff check .` clean(`docs/architecture.py` を v2 図〈日本語+処理順バッジ〉に書き直した際に、2026-07-31 の図追加時からあった I001 / RUF100 / ISC004 も解消)/ `az bicep build` OK
+- **コード変更なし(API 互換)**: 本ポートが依存する MAF の挙動 — 素の callable の `__name__` / docstring からのツールスキーマ推論、`Literal` → enum、ツール例外を `"Error: Function failed."` に丸める既定(`include_detailed_errors=False`)、関数呼び出しループの `max_iterations` 既定 40 — は 1.19.0 の `_tools.py` でも同じ。よって「ツールは raise せず同文言を return」「深度は ContextVar・幅は max_iterations」の設計判断はそのまま有効。スパン名 `invoke_agent` / `execute_tool` と計装の既定有効も不変
+- 実 `Agent`×5 を HTTP 層だけ差し替えたモックで実行: CEO が `analyze_project`+`talk_to_cto` を呼び、CTO が入れ子で `create_technical_spec`+`talk_to_developer` を呼ぶ流れで、CommLog に depth 1 / 2 の入れ子通信、共有状態に `project_analysis` / `technical_specification` が書かれることを確認(計 11 リクエスト)。モデルへ送られるツールは CEO 5 本・CTO 2 本・PM 2 本・Dev / CS 0 本で、`project_type` は enum として送出。同じモックで `max_depth=1` にすると 2 ホップ目(ceo→cto の中の cto→developer)が `BLOCKED` になり、ブロック通知を受けた後も 5 ターンが完走する — 検証結果(2026-07-31 オフライン)の残リスク 3「深度打ち切りはライブでは観察対象外」は、CLI の `--max-depth 1` を使えば実グラフのままライブでも観察できる(手順は runbook)
+- 記述の更新: `AgentThread` → 現行 MAF の `AgentSession`(1.19.0 のトップレベルに `AgentThread` は存在しない)
+- 今後の選択肢(A2A): 役割エージェントを別プロセス・別チームの持ち物に分けるなら、talk_to_* の中身を A2A 呼び出し(Foundry の `a2a` ツール型 = A2A プロトコル v1.0、2026-09 に GA)へ差し替えられる — ただし通信グラフ制約(ツール不在)・深度制御・CommLog は呼び出し側に残す前提で、v1.0 はテキストのみ・ストリーミング非対応・Entra 認証必須(ライブ未検証)
+- **ライブ未検証**: 以上はオフライン・静的確認のみ(Azure リソースは削除済み)。openai 3.x 経由の実 Foundry 応答で talk_to_* が自発的に選ばれるか、並列ツール呼び出し時の深度追跡は再デプロイ時に要確認
+- 実行手順と確認観点を [docs/runbook.md](./docs/runbook.md) に新設
+
 ## 学び(MAF/Foundry vs 元構成)
 
 1. **「動的通信 × グラフ制約」は MAF ではグラフ Workflow でなく agent-as-tool になる — 理由は制御の所在と呼び出し規約の 2 点。**MAF Workflow のエッジは「どこへ送るか」をコード(Executor / switch-case 条件)が決める静的経路であり、①本アプリの「相談するかどうか・誰に・何度でも」という**実行時の LLM 裁量**をエッジに載せるには、全許可ペア分のエッジ+選択を構造化出力で返させる Executor を書くことになり、それはもはや「LLM がツールを選ぶ」ことのグラフによる再実装でしかない。②さらに致命的なのは呼び出し規約: エッジはメッセージが**一方向に流れて戻らない**が、本アプリの通信は「聞いて、答えが**返ってきて**、自分の応答に統合する」**関数呼び出し**の形をしている。関数呼び出しの意味論を持つ器は MAF では関数ツールそのもので、だから `talk_to_x(message) -> str` の中で相手 `Agent.run` を await する 20 行(`agency.call`)が全部になる。逆に言えば、Port 3(research-handoff)で「handoff をグラフ化して得をした」のは委譲が**戻らない**one-way だったから — **戻るか戻らないかが Workflow に載るかの試金石**というのが本ポートの最大の発見。
 2. **三つ巴比較(グラフ Workflow / HandoffBuilder / agent-as-tool)は「制御が誰にあり、応答がどこへ行くか」の 2 軸で整理できる。**グラフ Workflow: 制御=コード、応答=次ノードへ(戻らない)。決定的・型付き・スパン自動 — 委譲先が仕様で決まるとき最強(Port 1-12 の主力)。HandoffBuilder(orchestrations): 制御=LLM、応答=**会話全体**へ(handoff_to_* を呼ぶと制御ごと相手に移り、元エージェントには戻らない)。会話の主導権交代を表現する器であり、human-in-loop 既定で one-shot には向かない(Port 7 で実証)。agent-as-tool(本ポート): 制御=LLM、応答=**呼び出し元へ戻る**。相談された側は主導権を持たず、聞かれたことに答えるだけ — 組織のメタファーで言えば handoff は「担当交代」、agent-as-tool は「部下への相談」。Agency Swarm の communication_flows は後者で、HandoffBuilder で真似ようとすると「CEO に必ず戻ってくる handoff」をプロンプトで祈ることになる。**協調パターンの語彙は handoff 1 語では足りず、consultation(相談型)を別の型として扱うべき**。
-3. **Agency Swarm との表現力差: フレームワークの「装置」は 3 つの手書きに分解されたが、失ったのは行数でなくスレッド永続だった。**Agency Swarm の `communication_flows=[(a,b)]` 1 行は、(i) SendMessage ツールの生成・注入、(ii) 通信可能な相手のプロンプト案内、(iii) ペア別の**会話スレッド管理**、を自動でやる。MAF 移植では (i) がクロージャ生成 20 行、(ii) が instructions への明示追記(書き忘れるとツールが使われない=移植の罠)、(iii) は **one-shot の `Agent.run` に落とした**(2 回目の相談が続きから始まらない)。(i)(ii) は手書きになった分、「モデルに何が見えているか」がコードから読め、CommLog・深度制御・グラフ検証テストを差し込む場所ができた — ScriptedAgent での多段会話フロー 69 テストがネットワークなしで回るのは Agency Swarm 側では難しい。(iii) だけは本質的な損失で、長期協調を移植するなら `AgentThread` のペア別保持を自作することになる。**「フレームワークの魔法 1 行 vs 分解された 20 行×3」の選択は、テスト可能性とスレッド管理のどちらを買うかのトレードオフ**。
+3. **Agency Swarm との表現力差: フレームワークの「装置」は 3 つの手書きに分解されたが、失ったのは行数でなくスレッド永続だった。**Agency Swarm の `communication_flows=[(a,b)]` 1 行は、(i) SendMessage ツールの生成・注入、(ii) 通信可能な相手のプロンプト案内、(iii) ペア別の**会話スレッド管理**、を自動でやる。MAF 移植では (i) がクロージャ生成 20 行、(ii) が instructions への明示追記(書き忘れるとツールが使われない=移植の罠)、(iii) は **one-shot の `Agent.run` に落とした**(2 回目の相談が続きから始まらない)。(i)(ii) は手書きになった分、「モデルに何が見えているか」がコードから読め、CommLog・深度制御・グラフ検証テストを差し込む場所ができた — ScriptedAgent での多段会話フロー 69 テストがネットワークなしで回るのは Agency Swarm 側では難しい。(iii) だけは本質的な損失で、長期協調を移植するなら `AgentSession`(初版表記 `AgentThread`)のペア別保持を自作することになる。**「フレームワークの魔法 1 行 vs 分解された 20 行×3」の選択は、テスト可能性とスレッド管理のどちらを買うかのトレードオフ**。
 4. **tech-selection-guide 1-1(handoff 分水嶺)の更新提案: 分水嶺は 2 値でなく 3 値にすべき。**現行の「委譲先が仕様で決まるならグラフ、会話の流れで決まるなら handoff 基盤」に、本ポートで第 3 の型が加わった: **「会話の流れで決まるが、制御が呼び出し元に戻る(相談型)なら agent-as-tool」**。判定手順の提案 — ①委譲先は実行時に LLM が決めるか? No → グラフ Workflow。②Yes: 応答は呼び出し元に戻るか? 戻る(相談・諮問・下請け)→ agent-as-tool(MAF core の Agent+関数ツールだけで組める。orchestrations 不要)。戻らない(担当交代・エスカレーション)→ HandoffBuilder / OpenAI Agents SDK 系。付記として「元アプリの多くの『マルチエージェント通信』は相談型」も価値がある — Agency Swarm 系のアプリはこの分類で全部 agent-as-tool に落ち、グラフ化(決定論化)も handoff 基盤も要らない。
 5. **深度制御と可観測性は「フレームワークが隠すもの」を移植側で一級市民にする好例。**再帰 agent-as-tool は原理的に無限再帰し得るが(循環グラフ+従順なモデル)、ContextVar 1 本で並列ツール呼び出しにも安全な深度追跡ができ、打ち切りを「例外」でなく「ブロック通知の return」にすることで**モデル自身が打ち切りを知って続行できる**(MAF がツール例外を "Error: Function failed." に丸める仕様への適応でもある — 罠 12 点に追加候補)。CommLog は同じ情報の CLI/JSON 表現、App Insights の execute_tool→invoke_agent 入れ子スパンはトレース表現で、「通信グラフの発火経路」という本ポート固有の関心事が 3 面すべてで見える。元 Agency Swarm ではこのどれも外から見えない。

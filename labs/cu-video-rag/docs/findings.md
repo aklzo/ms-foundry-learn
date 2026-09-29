@@ -37,7 +37,7 @@ ans@k ③チャンクの時間ずれ、の 3 点で数値が歪んでいた(§1-
   AI Search Basic の稼働は計 3.8 時間($0.5)。実課金 API(Cost Management)は当日分が未反映で未取得。
   詳細はレポート §10.2 / `logs/usage_cost.json` / [report/cost_rounds.json](./report/cost_rounds.json)
 
-## 1. 実装で詰まった点(実際に踏んだ順)## 1. 実装で詰まった点(実際に踏んだ順)
+## 1. 実装で詰まった点(実際に踏んだ順)
 
 ### 1-1. defaults のモデル登録は「モデル名」では足りない(エイリアス解決)
 
@@ -63,6 +63,13 @@ ans@k ③チャンクの時間ずれ、の 3 点で数値が歪んでいた(§1-
 
 **教訓**: ①エラーは analyze 実行時まで遅延する(PATCH 時に検証されない)。
 ②prebuilt アナライザーを使う前に定義を GET して `models` キーを確認する。
+
+> 2026-09-29 追記: 実測当時は公式に記載がなかったこのエイリアスは、現在
+> [Model deployment options](https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/concepts/models-deployments)
+> (ms.date 2026-09-15)に表で明記されている — `prebuilt-analyzer-completion`(大半の prebuilt の既定)/
+> `prebuilt-analyzer-completion-mini`(`prebuilt-*Search` など)/ `prebuilt-analyzer-embedding`。
+> 本ラボは `prebuilt-videoSearch` しか使わないので `-completion-mini` と `-embedding` の登録で足りるが、
+> 他の prebuilt も使うなら `prebuilt-analyzer-completion` も登録しておく。
 
 ### 1-2. カスタムアナライザー作成の 400 連発(スキーマ制約)
 

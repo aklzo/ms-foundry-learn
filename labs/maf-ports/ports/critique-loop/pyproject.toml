@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "awesome-llm-apps gpt_oss_critique_improvement_loop の MAF + Foundry 移植(並列候補→統合→批評→改訂のサイクリックグラフ+クラウド評価)"
 requires-python = ">=3.11"
 dependencies = [
-    "agent-framework-core>=1.10",
-    "agent-framework-openai>=1.10",
+    "agent-framework-core>=1.19",   # 2026-09-29 最新化チェックで検証した版
+    "agent-framework-openai>=1.14.4",
     "pydantic>=2.7",
     "python-dotenv>=1.0",
     "typing-extensions>=4.10",
@@ -21,8 +21,10 @@ live = [
     "azure-monitor-opentelemetry>=1.6",
 ]
 eval = [
-    "azure-ai-projects>=2.4",
-    "azure-identity>=1.17",
+    # 2.5.0 以降は openai>=3(httpx2 ベース)を要求。evals の経路
+    # (get_openai_client().evals)は 2.7.0 でも不変(2026-09-29 確認)
+    "azure-ai-projects>=2.7",
+    "azure-identity>=1.25",
 ]
 
 [project.scripts]

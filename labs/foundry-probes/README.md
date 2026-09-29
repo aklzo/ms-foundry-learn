@@ -16,7 +16,7 @@
 | 06 | Structured outputs / json_schema | **未収録** | Responses/Chat 両面で strict 動作・enum 矯正が効く・`additionalProperties` 省略でも通る(本家より緩い) | [NOTES](./probes/06-structured-outputs/NOTES.md) |
 | 07 | Guardrails / コンテンツフィルター | 06 / モデル=GA | 既定 `Microsoft.DefaultV2`・jailbreak は入力段 400・素朴な有害依頼はモデル refusal 任せ(2 レイヤ) | [NOTES](./probes/07-guardrails/NOTES.md) |
 | 08 | 埋め込みのエンドポイントルーティング | 08 の注記 | **embeddings はプロジェクト経由 404 / アカウント経由のみ成功**(chat は両方 OK)。接続情報 2 本持ちが必須 | [NOTES](./probes/08-embeddings-routing/NOTES.md) |
-| 09 | 継続評価(evaluation_rules) | 05 / プレビュー | **prompt agent スコープ必須(生 response 不可)**・配線は SDK 完結・自動ランは evals.runs に出ず Monitor 側集計 | [NOTES](./probes/09-continuous-eval/NOTES.md) |
+| 09 | 継続評価(evaluation_rules) | 05 / プレビュー | **prompt agent スコープ必須(生 response 不可)**・配線は SDK 完結・自動ランは evals.runs に出ず Monitor 側集計(※2026-09-29: eval のデータソースが公式の継続評価の形と違っていたため probe を修正。**要再実測**) | [NOTES](./probes/09-continuous-eval/NOTES.md) |
 
 ## 検証対象外(理由つき — 今後の候補)
 
@@ -54,6 +54,8 @@
    ```
 2. **`.env` 作成**(`main.bicep` の出力を転記。雛形 `.env.example`)。認証は `az login` 済みの Entra ID を既定とする。
 3. **probe 実行**: `uv sync` → `uv run python probes/<NN>-<name>/probe.py`(結果は `logs/` に保存して NOTES の根拠にする)。`./run_all.sh` で全 probe を一括実行。
+
+   詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
 4. **撤去**: `az group delete -n rg-foundry-probes`(ステートレス設計。model router / Web search は従量課金なので放置しない)。
 
 ## 注意
@@ -61,6 +63,17 @@
 - **Web search(04)は DPA 対象外・データがコンプライアンス境界外へ出る**。probe は最小リクエストに絞ってある。
 - **Model router(05)は既定で非 OpenAI モデル(Grok 等)に流れる**。データガバナンス要件のある環境で無設定デプロイしない。
 - 実測は 2026-08-04・japaneast・gpt-5.4-mini v2026-03-17 時点。プレビュー機能は仕様変更があり得るので、NOTES の日付を見て再実測すること。
+
+## 検証結果(2026-09-29 最新化チェック)
+
+Azure リソースは削除済みのため**オフライン(静的)確認のみ・ライブ未検証**。probe はライブ専用スクリプトなので、全 9 本を `py_compile`・`ruff check` し、呼び出している SDK メソッドとキーワード引数を installed SDK(openai 3.20.0 / azure-ai-projects 2.7.0)のシグネチャと AST で突き合わせた(不一致 0)。
+
+- **依存更新**: openai 2.53.0 → **3.20.0**、azure-ai-projects 2.4.0 → **2.7.0**、azure-identity 1.25.3(据え置き)、ruff 0.16.9。pyproject の下限を検証版に引き上げ、未使用だった `httpx` 依存を削除(openai 3.x は HTTP クライアントが httpx2 に変わり、azure-ai-projects 2.5.0 以降も追随。probe は httpx を直接使わない)。`uv.lock` は従来どおり git 管理外(`.gitignore`)。
+- **改修(09 継続評価)**: eval 定義を公式の継続評価の形 `data_source_config={"type": "azure_ai_source", "scenario": "responses"}`(data_mapping なし)に変更し、ラン検出のポーリングを 300 秒・`report_url` 表示に拡張。旧版はバッチ評価用の `custom` + `data_mapping` で作っており、公式手順(ランは `evals.runs.list` に `continuousevalrun_*` として現れる)と食い違っていた → NOTES の「evals.runs に出ない」は**要再実測**。出典: https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard (2026-09-03 版)
+- **変更不要(01〜08)**: Conversations / Responses / Files / Vector stores / Chat Completions / Embeddings / Evals の呼び出しは openai 3.20.0 でシグネチャ・戻り値フィールド(`output_text`・`content_filter_results` 等の拡張フィールド含む)とも互換。02 の `get_openai_client(agent_name=...)` は 2.7.0 でも同じエージェントエンドポイントを向き、公式クイックスタート(2026-09-03 版)の主経路と一致。
+- **現行ドキュメントとの差分(挙動の再解釈が要るもの)**: 05 — Model router ページから「非 OpenAI ルーティングはプレビュー」の表記が消え、既定で Grok 等に流れる挙動は正式仕様側になった(2025-11-18 版は 2027-05-20 リタイア予定)。04 — Responses の `web_search_preview` は「サポートされるが非推奨」、prompt agent 用 `WebSearchTool` には `external_web_access`(SDK 2.6.0+)が追加。
+- **Bicep**: `az bicep build` で main / roles とも警告なし。`Microsoft.CognitiveServices/accounts@2025-06-01` は他ラボと同じ GA API のため据え置き。RBAC ロール名は「Foundry User(旧 Azure AI User)」の改名をコメントに反映済み(ロール ID は不変)。
+- **今後の選択肢**: 02 の版固定は `agent_reference.version` に加え、エージェントエンドポイントの `version_selector` でピン留めする方法が公式化(configure-agent 2026-09-11 版)。
 
 ## 関連
 

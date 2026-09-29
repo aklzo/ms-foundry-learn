@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>claim-voice-live 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="runbook.html" class="current">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="claim-voice-live-実行ガイド">claim-voice-live 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/claim-voice-live/</code>(Port 12・パターン: 音声非依存コアの 3 層設計 — FNOL コア(MAF 7 段直列ワークフロー)/ テキスト対話層 / Voice Live 層(関数ツールでコアを呼ぶ))<br><strong>最終確認:</strong> 2026-09-29 オフライン(77 passed・<code>ruff check .</code> clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / azure-ai-voicelive 1.3.0 / openai 3.20.0)/ ライブ: 2026-07-31(当時の構成 core 1.13 / azure-ai-voicelive 1.2.0 / openai 2.51。3 passed。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li><strong>FNOL コア(層 1)</strong>: 請求者発話の全文から <code>extract</code>(LLM・構造化出力)→ <code>validate</code> → <code>classify</code>(LLM・構造化出力)→ <code>rules</code> → <code>checklist</code> → <code>gate</code> → <code>packet</code> が毎ターン直列に動き、ルート(<code>emergency_escalation</code> / <code>special_investigation</code> / <code>needs_docs</code> / <code>ready_for_adjuster</code>)と<strong>決定論の次質問</strong>が出ること。</li>
+<li><strong>テキスト対話層(層 2)</strong>: 音声なしでもスクリプト再生だけで FNOL パケットが完成し、負傷シナリオが <code>emergency_escalation</code> に到達すること(ライブスモークの主経路)。</li>
+<li><strong>Voice Live 層(層 3)</strong>: WebSocket 接続 → <code>session.update</code> → テキストターン → 応答(テキスト+音声チャンク)の往復が成立し、モデルが <code>process_claim_turn</code> ツールでコアを呼んで決定論の次質問を踏まえて話すこと。</li>
+<li>技術選定上の意味: 音声 API の移植コストは「コアがどれだけ音声を知らないか」で決まる。Voice Live は Realtime API 互換+Azure 拡張で、テキストモデル+STT/TTS 構成ならリージョン制約(Japan East に gpt-realtime 系なし)を回避できる(README の学び 1〜3)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<pre><code>【層 1: FNOL コア(MAF Workflow・音声非依存)】
+ClaimTurn(請求者発話の全文)─▶ extract ─▶ validate ─▶ classify ─▶ rules ─▶ checklist ─▶ gate ─▶ packet ─▶ IntakeState
+【層 2: テキスト対話層】ClaimIntakeConversation(ターン蓄積 → コア実行 → 次質問)/ CLI claim-voice-live-maf
+【層 3: Voice Live 層】scripts/voice_session.py: wss://&lt;res&gt;.services.ai.azure.com/voice-live/realtime?api-version=2026-04-10&amp;model=gpt-4.1-mini
+   session.update(instructions / azure-standard voice / azure_semantic_vad / azure-speech 転写 / tools=process_claim_turn)
+   → テキストターン → response.function_call_arguments.done → コア実行 → function_call_output → 応答音声+テキスト</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>MAF Workflow(ローカル、<code>workflow.py</code>)</td>
+<td>7 Executor 直列(LLM 2 段+決定論 5 段)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>MAF <code>Agent</code> ×2(<code>agents.py</code>)</td>
+<td><code>claim_narrative_extractor</code> / <code>claim_type_classifier</code>(構造化出力)。共有基盤のモデルを api-key で呼ぶ</td>
+<td>—</td>
+</tr>
+<tr>
+<td>モデルデプロイ(共有基盤、既定 gpt-5.4-mini)</td>
+<td>層 1 の LLM 2 段</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>Voice Live(共有基盤の Foundry リソースのデータプレーン)</td>
+<td>マネージドモデル <code>gpt-4.1-mini</code>(デプロイ不要)+ Azure STT(<code>azure-speech</code>)/ TTS(<code>en-US-AvaNeural</code>)</td>
+<td>Voice Live <strong>Standard</strong> 価格帯(2026-09-29 に Basic から改称)のトークン+音声</td>
+</tr>
+<tr>
+<td>App Insights(共有基盤)</td>
+<td>層 1 のトレース送信先(任意)</td>
+<td>取り込み量従量</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得。検証は 3.13)</td>
+<td>オフライン実行はこれだけ。マイク/スピーカーは不要(音声は受信して破棄)</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)のみ。<strong>Voice Live 用の追加リソース・モデルデプロイはない</strong>(<code>infra/main.bicep</code> は existing 参照+出力だけ)</td>
+<td>テキスト層はトークン従量、Voice Live はセッション中のトークン+音声</td>
+</tr>
+<tr>
+<td>リージョン</td>
+<td>Japan East は Voice Live 対応。<code>gpt-4.1-mini</code> は Global standard で提供(処理リージョンはグローバル)。gpt-realtime 系・azure-realtime は Japan East 非提供</td>
+<td>データ所在が論点なら Data Zone 提供のモデル/リージョンを選び直す</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>既定は api-key(<code>FOUNDRY_API_KEY</code> = Foundry リソースキー)なので RBAC 不要。<code>--entra</code> 時は Cognitive Services User + Foundry User</td>
+<td>RBAC 伝播に 5〜15 分</td>
+</tr>
+<tr>
+<td>ネットワーク</td>
+<td><code>*.services.ai.azure.com</code> への WSS(443)と、テキスト層の <code>*.openai.azure.com</code> への HTTPS</td>
+<td>WebSocket を遮断するプロキシ下では層 3 だけ失敗する</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <code>.env.example</code>。<strong>ライブ実行時のみ必要</strong>。読み込み順はカレントの <code>.env</code> → lab ルートの <code>.env</code> で、既にシェルにある値が優先):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>層 1 の LLM 呼び出し先。<strong>必須</strong></td>
+<td>shared.bicep の出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>層 1 のモデルデプロイ名。<strong>必須</strong>(Voice Live のモデルとは別)</td>
+<td>shared.bicep の出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>api-key 認証(層 1 と Voice Live の両方)。<strong>必須</strong></td>
+<td><code>az cognitiveservices account keys list -n &lt;foundryName&gt; -g &lt;rg&gt; --query key1 -o tsv</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_PROJECT_ENDPOINT</code></td>
+<td>Voice Live 接続先の導出元(ホスト部 <code>https://&lt;res&gt;.services.ai.azure.com/</code> を使う)</td>
+<td>shared.bicep の出力 <code>projectEndpoint</code></td>
+</tr>
+<tr>
+<td><code>VOICE_LIVE_ENDPOINT</code></td>
+<td>Voice Live 接続先の明示指定(省略時は上から導出)</td>
+<td>port の <code>infra/main.bicep</code> 出力 <code>voiceLiveEndpoint</code></td>
+</tr>
+<tr>
+<td><code>VOICE_LIVE_MODEL</code></td>
+<td>Voice Live のマネージドモデル(既定 <code>gpt-4.1-mini</code>)</td>
+<td>任意</td>
+</tr>
+<tr>
+<td><code>VOICE_LIVE_API_VERSION</code></td>
+<td>Voice Live API バージョン(既定 <code>2026-04-10</code>。GA 最新は <code>2026-07-15</code>)</td>
+<td>任意</td>
+</tr>
+<tr>
+<td><code>VOICE_LIVE_VOICE</code></td>
+<td>Azure TTS 音声(既定 <code>en-US-AvaNeural</code>。日本語なら <code>ja-JP-NanamiNeural</code> 等)</td>
+<td>任意</td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>層 1 のトレース送信先(任意)</td>
+<td>shared.bicep の出力 <code>appInsightsConnectionString</code></td>
+</tr>
+<tr>
+<td><code>CLAIM_VOICE_TOOL_SMOKE</code></td>
+<td><code>1</code> のときだけツール完全ループのライブスモークを実行</td>
+<td>手で設定</td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/claim-voice-live
+uv sync --extra dev                 # コア+テキスト対話層(Voice Live SDK なしで全テストが通る)
+uv run pytest                       # 期待: 77 passed, 3 deselected(live は既定で除外。ネットワーク不要)
+uv run ruff check .                 # 期待: All checks passed!(図生成スクリプト docs/architecture.py を含む)</code></pre>
+<p>Voice Live 層のスクリプトが新しい SDK で読み込めるかの確認(接続はしない):</p>
+<pre><code>uv sync --extra dev --extra voice
+uv run python scripts/voice_session.py --help   # 期待: usage に --probe / --text / --script / --no-audio / --entra</code></pre>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> 決定論ルール: 負傷 → SAFE-002 エスカレーション、水害の危険語 → SAFE-001、高額(≥$25k)→ LOSS-001、高額かつ証憑なし → EVID-001(SIU)、報告日が事故日より前 → TIMING-001、90 日超 → TIMING-002。緊急は SIU より優先(<code>test_policies.py</code> の各テスト、<code>test_emergency_beats_siu_in_final_route</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 次質問は決定論: 緊急時は質問より人間への引継ぎ、それ以外はブロッキング項目 → 非ブロッキング → 書類の順(<code>test_next_message_emergency_overrides_questions</code> / <code>test_next_message_asks_blocking_field_first</code> / <code>test_next_message_falls_back_to_non_blocking_then_documents</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 元実装の癖の保存: 書類名の先頭 3 語照合で「提出済み」になる "or" 癖、盗難で「police report をまだ出していない」と言うと THEFT-001 が消える(<code>test_document_provided_or_fallback_quirk_is_preserved</code> / <code>test_theft_unfiled_police_report_signals_theft_002</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> ワークフロー: 7 段が順に進捗イベントを出し、空の発話は LLM を呼ばずに初期状態を返す。抽出・分類の失敗は空クレーム / 初期分類にフォールバック(<code>test_stage_events_flow_in_order</code> / <code>test_empty_transcript_short_circuits_without_llm</code> / <code>test_extraction_failure_falls_back_to_blank_claim</code> / <code>test_classification_failure_falls_back_to_initial</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 構造化出力: ネイティブの構造化出力を優先し、散文に包まれた JSON も拾う(<code>test_native_structured_output_value_is_preferred</code> / <code>test_json_wrapped_in_prose_is_parsed</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 会話層: ターンを蓄積して毎回<strong>全文</strong>をコアに渡し、ルートと次質問がターンごとに変わる(<code>test_multi_turn_passes_accumulated_transcript_to_core</code> / <code>test_route_and_question_evolve_across_turns</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> Voice Live 契約: <code>session.update</code> の既定(azure-standard 音声・<code>azure_semantic_vad</code>・<code>azure-speech</code> 転写・ツール宣言)、WebSocket URL が docs の形、テキスト/音声トランスクリプト両方の delta を同じ種別に畳む、関数呼び出しイベントの解釈(<code>test_session_config_defaults</code> / <code>test_websocket_url_matches_documented_contract</code> / <code>test_parse_response_text_from_both_modalities</code> / <code>test_parse_function_call_event</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 評価データセット 8 ケース(書類未提出 / 負傷 / 盗難未届け / 曖昧 / タイミング 2 / 高額無証憑 / 完備)が決定論パイプラインの期待ルート・シグナルと一致する(<code>test_deterministic_pipeline_matches_expectations</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<p>共有基盤(Foundry アカウント+プロジェクト+モデル+App Insights)が未作成なら先に <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a> §5 で作り、§5.5 の手順で <code>.env</code> に転記する。本ポート固有のリソースはない。</p>
+<pre><code>cd labs/maf-ports/ports/claim-voice-live
+az deployment group create -g &lt;rg&gt; -f infra/main.bicep -p baseName=&lt;baseName&gt; \
+  --query properties.outputs -o json
+# 期待: openaiV1Endpoint / projectEndpoint / voiceLiveEndpoint /
+#       voiceLiveWebSocketUrl(wss://&lt;res&gt;.services.ai.azure.com/voice-live/realtime?api-version=2026-04-10&amp;model=gpt-4.1-mini)</code></pre>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code># 層 2: テキスト対話層(スモークの主経路)
+uv sync --extra dev --extra voice --extra live
+uv run claim-voice-live-maf --script tests/data/fnol_auto_injury.txt
+uv run claim-voice-live-maf --script tests/data/fnol_auto_injury.txt --json --output runs/state.json
+uv run claim-voice-live-maf                                   # 対話(/packet で現在のパケット、/quit で終了)
+uv run pytest -m live -k intake                               # 事故シナリオ → emergency_escalation(1 passed)
+
+# 層 3: Voice Live
+uv run python scripts/voice_session.py --probe                # 接続確立+session.updated だけ
+uv run python scripts/voice_session.py --text &quot;I need to file a claim for my flooded basement.&quot;
+uv run python scripts/voice_session.py --script tests/data/fnol_auto_injury.txt
+uv run pytest -m live -k websocket                            # WebSocket 接続+テキスト往復(1 passed)
+CLAIM_VOICE_TOOL_SMOKE=1 uv run pytest -m live -k tool        # ツール完全ループ(任意。モデルのツール判断に依存)</code></pre>
+<p>期待される出力の例(テキスト層。発話ごとに <code>[route=...]</code> が変わる。値は実行ごとに変わる):</p>
+<pre><code>Agent&gt; I can start the claim while we talk. First, are you and everyone else in a safe place?
+Claimant&gt; I need to file an auto claim. My name is Jordan Lee, policy AUTO-90210. ...
+  [route=needs_docs type=... missing=...]                                  ← stderr(情報不足の間は needs_docs)
+Agent&gt; &lt;決定論の次質問&gt;
+...
+Claimant&gt; My passenger has neck pain and went to urgent care. ...
+  [route=emergency_escalation type=auto_collision missing=0]               ← stderr
+Agent&gt; Your claim mentions injury, safety, or habitability concerns. A human representative ...
+
+# Insurance Claim Intake Packet
+...
+**Routing decision:** Emergency Escalation</code></pre>
+<p>期待される出力の例(Voice Live 層):</p>
+<pre><code>[connect] wss://&lt;res&gt;.services.ai.azure.com/voice-live/realtime?api-version=2026-04-10&amp;model=gpt-4.1-mini   ← stderr
+[session] updated (connection established)                                                               ← stderr
+PROBE OK: connection + session.update round trip succeeded                                               ← --probe のとき
+(--text / --script のとき) エージェント発話のテキストが流れ、ツール呼び出し時に
+[core] route=... missing=... next=&#x27;...&#x27;                                                                  ← stderr
+[audio] discarded &lt;N&gt; base64 chars                                                                       ← stderr(音声は破棄)
+[final route] emergency_escalation                                                                       ← stderr(スクリプト再生時)</code></pre>
+<p>終了コード: CLI は 正常 0 / 設定不足 2 / Ctrl-C 130。1 ターンのタイムアウトは既定 120 秒(<code>--timeout</code>)。</p>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: テキスト層でパケット完成</td>
+<td><code>claim-voice-live-maf --script tests/data/fnol_auto_injury.txt --json</code></td>
+<td><code>claim.policy_number</code> に <code>90210</code>、<code>classification.claim_type</code> が <code>auto_collision</code>、最終ルート <code>emergency_escalation</code>、<code>gate.signals</code> に <code>SAFETY-001</code>、パケット Markdown に <code>**Routing decision:** Emergency Escalation</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>正常系: Voice Live 接続</td>
+<td><code>voice_session.py --probe</code></td>
+<td><code>[session] updated</code> と <code>PROBE OK</code> が出る(<code>error</code> イベントなし)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>正常系: Voice Live のテキスト往復</td>
+<td><code>voice_session.py --text &quot;...&quot;</code> / <code>pytest -m live -k websocket</code></td>
+<td>応答テキスト(<code>response.text.delta</code> または <code>response.audio_transcript.delta</code>)が空でない。音声チャンクは <code>[audio] discarded</code> で件数だけ出る</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>パターン固有: ツールでコアを呼ぶ</td>
+<td><code>voice_session.py --script tests/data/fnol_auto_injury.txt</code></td>
+<td>stderr に <code>[core] route=...</code> が出て、最後に <code>[final route] emergency_escalation</code>。モデルの発話が決定論の次質問(人間への引継ぎ)を踏まえている</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>分岐: ルートの遷移</td>
+<td>対話モードで 1 発話ずつ入力し <code>/packet</code> を見る</td>
+<td>情報不足の間は <code>needs_docs</code>、負傷の言及で <code>emergency_escalation</code> に変わる(負傷を否定する言い方ではエスカレーションしない)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>異常系: 設定不足</td>
+<td><code>FOUNDRY_API_KEY= uv run claim-voice-live-maf</code>(空文字はシェルの値が優先される)</td>
+<td>終了コード 2、stderr に <code>error: 環境変数が未設定: FOUNDRY_API_KEY(labs/maf-ports/.env を確認)</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>異常系: Voice Live の設定エラー</td>
+<td><code>VOICE_LIVE_MODEL=gpt-realtime</code> で <code>--probe</code>(Japan East 非提供のモデル)</td>
+<td><code>Voice Live error: ...</code> で停止する(<code>error</code> イベントの <code>message</code> がそのまま出る。応答内容はライブ未確認)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>観測: トレース着信</td>
+<td>§7 の KQL</td>
+<td>層 1 の `executor.process extract</td>
+<td>validate</td>
+<td>classify</td>
+<td>rules</td>
+<td>checklist</td>
+<td>gate</td>
+<td>packet<code> と </code>invoke_agent claim_narrative_extractor</td>
+<td>claim_type_classifier`</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>コスト・後片付け</td>
+<td>実行後にスクリプトが終了しているか(WebSocket が閉じているか)</td>
+<td>Voice Live はセッション中のトークン+音声で課金。スモークは短文 1〜2 往復に留め、使わない期間は RG ごと削除(§8)</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code>az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | summarize count() by name&quot;</code></pre>
+<ul>
+<li>期待するスパン名(層 1。<code>APPLICATIONINSIGHTS_CONNECTION_STRING</code> と live extra があるときだけ送信): <code>workflow.run</code> / <code>executor.process extract|validate|classify|rules|checklist|gate|packet</code> / <code>invoke_agent claim_narrative_extractor|claim_type_classifier</code> / <code>chat &lt;デプロイ名&gt;</code>。</li>
+<li>Voice Live の WebSocket セッションは本ポートでは計装していない(Voice Live 側の組み込みテレメトリは未構成)。層 3 の確認はスクリプトの stderr(<code>[connect]</code> / <code>[session]</code> / <code>[core]</code> / <code>[final route]</code>)で行う。</li>
+<li>評価: <code>tests/eval_dataset.jsonl</code>(8 ケース)で LLM 2 段の後段すべてを決定論として固定済み。ライブで見るべき残余は「transcript からこの claim / classification を抽出できるか」だけ(= <code>pytest -m live -k intake</code> のアサーション)。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code># 本ポート固有のリソースはない(Voice Live は共有基盤のデータプレーン)。共有基盤ごと消す場合:
+az group delete -n &lt;rg&gt; --yes --no-wait</code></pre>
+<ul>
+<li>同じ <code>baseName</code> で作り直す場合は Foundry アカウントの soft delete に注意 — <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a> §8。</li>
+<li>ローカルの生成物(<code>runs/state.json</code> など)は手で削除する。</li>
+</ul>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td><code>error: VOICE_LIVE_ENDPOINT か FOUNDRY_PROJECT_ENDPOINT を設定してください</code></td>
+<td>Voice Live の接続先を導出できない</td>
+<td><code>.env</code> に <code>FOUNDRY_PROJECT_ENDPOINT</code>(または <code>VOICE_LIVE_ENDPOINT</code>)を追記</td>
+</tr>
+<tr>
+<td><code>error: azure-ai-voicelive 未導入(uv sync --extra voice)</code></td>
+<td>voice extra なしで層 3 を実行</td>
+<td><code>uv sync --extra dev --extra voice</code>(live と併用するなら extra を全部並べる。<code>uv sync</code> は指定しない extra を外す)</td>
+</tr>
+<tr>
+<td><code>Voice Live error: ...</code>(モデル関連)</td>
+<td>指定モデルがリージョンで提供されていない、または BYOM 対象(gpt-5.5 / gpt-5.4-mini / gpt-5.4-nano)を指定</td>
+<td>既定の <code>gpt-4.1-mini</code> に戻す。gpt-realtime 系を使うなら提供リージョンにリソースを置く</td>
+</tr>
+<tr>
+<td>401 / 接続拒否</td>
+<td>キーの誤り、またはアカウントでローカル認証が無効</td>
+<td>キーを再取得。Entra で試すなら <code>--entra</code>(Cognitive Services User + Foundry User)</td>
+</tr>
+<tr>
+<td>ツールが呼ばれない(<code>[core]</code> が出ない)</td>
+<td>ツール呼び出しはモデルの裁量</td>
+<td>テキストターンを具体的にする。確実性が要る設計なら入力転写イベントでコアを裏実行する方式を併用(README の学び 4)</td>
+</tr>
+<tr>
+<td>テキストのみ(<code>--no-audio</code>)で応答が来ない</td>
+<td>テキスト単独モダリティの受理はライブ未検証</td>
+<td>既定の <code>[&quot;text&quot;,&quot;audio&quot;]</code>(音声は破棄)で実行する</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a></li>
+<li>Voice Live の機能・GA 状況: <a href="../../../../../docs/survey/features/html/07-foundry-tools.html">features/07-foundry-tools.md</a></li>
+<li>公式: <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live">Voice Live 概要(モデルと価格帯)</a> / <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-how-to">voice-live-how-to</a> / <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/releasenotes?pivots=voice-live">リリースノート</a> / <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/regions?tabs=voice-live">リージョン</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(依存を agent-framework-core 1.19 / azure-ai-voicelive 1.3.0 / openai 3.20 へ更新。api-version 2026-04-10・gpt-4.1-mini・azure-speech は現行 docs で有効と確認しコード変更なし。構成図を v2 スタイル(日本語・処理順バッジ)に更新し <code>ruff check .</code> を clean に)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/claim-voice-live/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

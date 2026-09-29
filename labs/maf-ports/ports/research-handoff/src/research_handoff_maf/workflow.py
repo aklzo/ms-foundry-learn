@@ -12,7 +12,7 @@ switch-case エッジ」で表現する。
                       │    save_important_fact)         プロンプトで受領)
                       └─[Default("editor" 直行)]──────▶ Editor ─▶ 結果
 
-- MAF core 1.10/1.12 に handoff の first-class API はない(別パッケージ
+- MAF core(1.10〜1.19 で確認)に handoff の first-class API はない(別パッケージ
   agent-framework-orchestrations の HandoffBuilder。調査結果と不採用理由は
   README)。ここでは core の ``add_switch_case_edge_group`` を使う。
 - 「handoff 先が何を受け取るか」(元 SDK では会話履歴が暗黙に引き継がれる)

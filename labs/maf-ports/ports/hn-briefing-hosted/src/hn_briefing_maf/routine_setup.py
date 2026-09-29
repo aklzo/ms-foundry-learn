@@ -1,29 +1,34 @@
-"""Routines(プレビュー)のペイロード組み立て(純関数)。
+"""Routines(2026-09 GA)のペイロード・URL・ヘッダー組み立て(純関数)。
 
 REST を貼るのは scripts/setup_routine.py のみ。契約は Learn の
-how-to/use-routines(2026-07 版)から:
+how-to/use-routines(2026-08-27 版)から:
 
-- ``PUT {project_endpoint}/routines/{name}``(api-version クエリなし)
-- 全リクエストに **``Foundry-Features: Routines=V1Preview``** ヘッダー必須
+- ``PUT {project_endpoint}/routines/{name}?api-version=v1``(**api-version=v1 必須**
+  — 2026-07 のライブ実測で判明し、現行 Learn の REST 例にも明記された)
 - Bearer トークンのリソースは ``https://ai.azure.com``
 - trigger: ``{"type": "schedule", "cron_expression": ..., "time_zone": ...}``
   (cron_expression / time_zone は必須。**最小間隔 5 分**)
 - action: ``{"type": "invoke_agent_responses_api", "agent_name": ..., "input": ...}``
-- 操作系: POST ``:enable`` / ``:disable`` / ``:dispatch_async``(手動テスト
-  実行の公開契約はこれのみ)、GET ``/runs``(実行履歴)
+- 操作系: POST ``:enable`` / ``:disable`` / ``:dispatch_async``、GET ``/runs``(実行履歴)
 
-リージョン制約(実装前調査): Routines のプレビュー対応リージョンは
-East US / East US 2 / West US / West US 2 / West Central US /
-North Central US / Sweden Central / **Japan East** の 8 つ。
-**共有基盤の Japan East は対応リージョンに含まれる**(README 参照)。
+**フィーチャーヘッダーは送らない(2026-09-29 変更)**: プレビュー期(2026-07)は
+``Foundry-Features: Routines=V1Preview`` を全リクエストに付けていたが、GA 後の
+Learn の REST 例からヘッダーは消えている。REST 仕様(azure-rest-api-specs の
+routines/routes.tsp)でも ``Routines=V1Preview`` キーは 2026-08 に削除され、
+後継の ``Routines=V2Preview`` は**任意(conditional)ヘッダー**扱い
+(azure-ai-projects の ``client.beta.routines`` は自動付与する)。本ポートは
+GA 範囲の要素(schedule トリガー+Responses API アクション)しか使わないので
+ヘッダーなしが正。存在しないキー ``V1Preview`` を送り続けると拒否される恐れが
+あるため削除した(ライブ未検証)。
+
+リージョン: GA 時点で「UK West / Switzerland West / Japan West / UAE North /
+Norway East **以外の全 Foundry リージョン**」(プレビュー期は Japan East を含む
+8 リージョン)。共有基盤の Japan East はそのまま使える。
 """
 
 from __future__ import annotations
 
 from typing import Any
-
-#: Routines プレビューの全リクエストに必須のフィーチャーヘッダー
-ROUTINES_FEATURE_HEADER = {"Foundry-Features": "Routines=V1Preview"}
 
 #: Bearer トークンのリソース(az account get-access-token --resource 相当)
 TOKEN_SCOPE = "https://ai.azure.com/.default"
@@ -42,7 +47,18 @@ DEFAULT_INPUT = (
 DEFAULT_ROUTINE_NAME = "hn-briefing-daily"
 
 
+#: Routines の data-plane api-version(GA 後も ``v1``。SDK の既定値と同じ)
 ROUTINES_API_VERSION = "v1"
+
+
+def routine_request_headers(token: str) -> dict[str, str]:
+    """Routines REST 呼び出しのヘッダー(Bearer のみ。フィーチャーヘッダーなし — 冒頭 docstring)。"""
+    return {"Authorization": f"Bearer {token}"}
+
+
+def routines_collection_url(project_endpoint: str, *, api_version: str = ROUTINES_API_VERSION) -> str:
+    """ルーチン一覧(GET)の URL。"""
+    return f"{project_endpoint.rstrip('/')}/routines?api-version={api_version}"
 
 
 def routine_url(

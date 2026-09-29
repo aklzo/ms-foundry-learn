@@ -12,6 +12,15 @@ response_completed イベントで自動的に評価ランが作られる仕組�
   E. 後片付け
 
 注意: 自動ランは非同期。observ できなくても「配線の仕方と観測可否」自体が記録価値。
+
+2026-09-29 改訂: eval のデータソースを公式の継続評価の形
+(`{"type": "azure_ai_source", "scenario": "responses"}`、data_mapping なし)に変更。
+2026-08-04 実測時は custom(item_schema + data_mapping)で作っており、自動ランが
+evals.runs に現れなかった一因と考えられる(公式サンプルではランが
+continuousevalrun_* として evals.runs.list に出て report_url を持つ)。
+前提: プロジェクト MI に Foundry User(旧 Azure AI User)— roles.bicep で付与済み。
+出典: https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard
+      azure-sdk-for-python samples/evaluations/sample_continuous_evaluation_rule.py
 """
 
 from __future__ import annotations
@@ -48,22 +57,16 @@ def main() -> int:
     try:
         ev = client.evals.create(
             name=EVAL_NAME,
-            data_source_config={
-                "type": "custom",
-                "item_schema": {
-                    "type": "object",
-                    "properties": {"query": {"type": "string"}, "response": {"type": "string"}},
-                    "required": ["query", "response"],
-                },
-                "include_sample_schema": False,
-            },
+            # 継続評価は「エージェントの応答」を入力にする azure_ai_source / responses
+            # シナリオで定義する(custom + data_mapping はバッチ評価用の形)。
+            data_source_config={"type": "azure_ai_source", "scenario": "responses"},
             testing_criteria=[
                 {
                     "type": "azure_ai_evaluator",
                     "name": "coherence",
                     "evaluator_name": "builtin.coherence",
+                    # AI 支援評価器なので判定用のモデルデプロイを渡す
                     "initialization_parameters": {"deployment_name": settings.model},
-                    "data_mapping": {"query": "{{item.query}}", "response": "{{item.response}}"},
                 }
             ],
         )
@@ -116,17 +119,18 @@ def main() -> int:
             store=True,
         )
         print(f"  response {i} 生成: {r.id}")
-    print("  自動ラン発火をポーリング(最大 120s)...")
+    print("  自動ラン発火をポーリング(最大 300s)...")
     t0 = time.monotonic()
     seen_runs: list[str] = []
-    while time.monotonic() - t0 < 120:
+    while time.monotonic() - t0 < 300:
         try:
-            runs = list(client.evals.runs.list(eval_id))
+            runs = list(client.evals.runs.list(eval_id, order="desc", limit=10))
             if runs:
                 for run in runs:
                     if run.id not in seen_runs:
                         seen_runs.append(run.id)
                         print(f"  {time.monotonic()-t0:5.1f}s 自動ラン検出: {run.id} status={run.status}")
+                        print(f"    report_url={getattr(run, 'report_url', None)}")
                 break
         except Exception as exc:
             print(f"  runs.list エラー: {type(exc).__name__}: {str(exc)[:150]}")

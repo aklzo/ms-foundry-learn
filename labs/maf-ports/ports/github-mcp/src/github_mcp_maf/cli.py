@@ -9,8 +9,9 @@ Foundry 設定(labs/maf-ports/.env)。Docker は不要 — 接続先は GitHub �
 リモート MCP サーバー(既定 https://api.githubcopilot.com/mcp/)。
 
 ``async with agent:`` が MCP 接続のライフサイクルを担う(enter で initialize +
-tools/list、exit で切断)。PAT ヘッダー付き httpx クライアントの後始末は
-こちら(finally)の責務。
+tools/list、exit で切断)。PAT は MCP ツールの ``static_headers`` に載り、
+HTTP クライアントもツールが生成・破棄する(2026-09-29 以降。旧版は自前
+httpx クライアントを finally で閉じていた — tools.py 参照)。
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ from .agents import build_chat_client, build_github_agent
 from .config import ConfigError, GithubMcpSettings
 from .observability import setup_tracing
 from .query import DEFAULT_TIMEOUT_SECONDS, build_full_query, run_query
-from .tools import build_github_mcp_tool, make_http_client
+from .tools import build_github_mcp_tool
 
 
 def main() -> None:
@@ -64,20 +65,16 @@ async def _run(args: argparse.Namespace) -> None:
         file=sys.stderr,
     )
 
-    http = make_http_client(settings)
+    tool = build_github_mcp_tool(settings)
+    agent = build_github_agent(build_chat_client(settings), tool)
+    full_query = build_full_query(args.question, args.repo)
     try:
-        tool = build_github_mcp_tool(settings, http)
-        agent = build_github_agent(build_chat_client(settings), tool)
-        full_query = build_full_query(args.question, args.repo)
-        try:
-            async with agent:  # enter で MCP 接続、exit で切断
-                answer = await run_query(agent, full_query, timeout=args.timeout)
-        except TimeoutError:
-            # 元アプリの "Error: Request timed out after 120 seconds" に対応
-            print(f"error: request timed out after {args.timeout:.0f} seconds", file=sys.stderr)
-            sys.exit(1)
-    finally:
-        await http.aclose()
+        async with agent:  # enter で MCP 接続、exit で切断(HTTP クライアントも破棄)
+            answer = await run_query(agent, full_query, timeout=args.timeout)
+    except TimeoutError:
+        # 元アプリの "Error: Request timed out after 120 seconds" に対応
+        print(f"error: request timed out after {args.timeout:.0f} seconds", file=sys.stderr)
+        sys.exit(1)
 
     print(answer)
 

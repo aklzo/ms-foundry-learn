@@ -23,6 +23,9 @@
 // リージョン適合(実装前調査): hosted agents は 31 リージョン、Routines
 // (プレビュー)は 8 リージョンで、**どちらも Japan East を含む** — 共有基盤
 // (japaneast)のままで両機能を使える。
+// ※2026-09-29: Routines は GA(2026-09)で「UK West / Switzerland West /
+// Japan West / UAE North / Norway East 以外の全リージョン」に拡大。ARM の
+// リソース型がない(データプレーンのみ)点は GA 後も変わらない。
 //
 //   az deployment group create -g rg-maf-ports -f main.bicep -p baseName=mafportsw2
 //

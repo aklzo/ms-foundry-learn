@@ -68,7 +68,9 @@ def build_hosted_briefing_agent(chat_client: Any, http: httpx.AsyncClient) -> An
 
     ``default_options={"store": False}``: 会話履歴は Responses protocol の
     ホスティング基盤(conversation ID)が管理するため、モデル側の保存を
-    切る(foundry-samples の 01-basic と同じ指定)。
+    切る(foundry-samples の 01-basic と同じ指定)。2026-09 以降の
+    agent-framework-foundry-hosting(``history_source="agent_server"`` 既定)は
+    サーバー側でも ``store=False`` を強制するため冗長だが、サンプル準拠で残す。
     """
     from agent_framework import Agent
 

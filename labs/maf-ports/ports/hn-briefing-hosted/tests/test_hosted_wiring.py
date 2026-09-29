@@ -110,6 +110,8 @@ def test_hosting_entrypoint_files_exist_with_container_contract() -> None:
         "agent-framework-core",
         "agent-framework-foundry",
         "agent-framework-foundry-hosting",
+        # Responses protocol ライブラリ(REMOTE_BUILD の pip 解決を uv.lock と揃えるため明示)
+        "azure-ai-agentserver-responses",
         "azure-identity",
         "httpx",
     ):

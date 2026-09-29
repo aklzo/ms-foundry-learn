@@ -6,7 +6,7 @@
 
 - 実体は分割パッケージ。本ラボが使うのは 2 つだけ:
   - `agent-framework-core` … `Agent` / Workflow / `ChatOptions` など全コア
-  - `agent-framework-openai` … `OpenAIChatClient`(**Azure OpenAI もこれ**。1.10 で統合済み)
+  - `agent-framework-openai` … `OpenAIChatClient`(**Responses API**。Azure OpenAI もこれ。1.10 で統合済み)と `OpenAIChatCompletionClient`(Chat Completions)。Ollama / Anthropic の OpenAI 互換エンドポイントは Chat Completions しか持たないので後者を使う(2026-09-29 追記)
 - メタパッケージ `agent-framework` は全コネクタを引き込むので、依存を絞るなら個別指定が良い。
 - コネクタは **lazy import**。未インストールのクラスに触ると、必要な pip パッケージ名を教えてくれる:
 
@@ -95,7 +95,8 @@ print(inspect.signature(WorkflowBuilder.__init__))
 
   小型ローカルモデルや response_format を無視するプロバイダー(Anthropic の OpenAI 互換層など)を混ぜるなら、このフォールバックは必須(本ラボの `schemas.parse_structured`)。
 - `Agent` はスレッド(会話履歴)を渡さなければ **呼び出しごとにステートレス**。単発補完ロール(planner/評価など)には素のまま使ってよく、同一インスタンスへの並行 `run()` も問題なかった(extractor をページ並列で共有)。
-- Ollama / Anthropic 用の `OpenAIChatClient` には `api_key` が必須(SDK 側の要求)。Ollama はダミー文字列で通る。
+- Ollama / Anthropic 用のクライアント(`OpenAIChatCompletionClient`)には `api_key` が必須(SDK 側の要求)。Ollama はダミー文字列で通る。
+- Azure で `api_key` も `credential` も渡さないと `SettingNotFoundError: Azure OpenAI client requires either an API key or an Azure AD token provider.`(Entra ID への自動フォールバックはない)。キーレスにするなら `credential=DefaultAzureCredential()` を明示する(本ラボは `AZURE_OPENAI_API_KEY` 未設定時にそうする。`azure` extra が必要)。2026-09-29、agent-framework-openai 1.14.4 のソースで確認
 
 ## 5. エラー対処クックブック
 
@@ -108,6 +109,8 @@ print(inspect.signature(WorkflowBuilder.__init__))
 | `.value` 参照で `ValidationError` / `ValueError` | 構造化出力の遅延パース失敗 | try/except + テキストからのフォールバックパース |
 | `DeprecationWarning`(output_from / WorkflowEvent.emit) | 旧 API 使用 | §3.3 の新方式へ。回帰防止に `pytest -W error::DeprecationWarning` |
 | stderr に `ExperimentalWarning: [SKILLS]/[HARNESS]` | 実験的機能の予告 | 無害。必要ならログフィルタ |
+| OpenAI 互換サーバーで 404(`/v1/responses`) | `OpenAIChatClient` は Responses API のクライアント | 互換サーバーには `OpenAIChatCompletionClient` を使う |
+| Azure で `SettingNotFoundError: ... API key or an Azure AD token provider` | キーなし・credential なし | `credential=DefaultAzureCredential()` を渡す |
 | ハンドラが呼ばれない / メッセージが流れない | `@handler` 引数の型アノテーション欠落・不一致 | 送信側の型と受信ハンドラの型を一致させる(共用体可) |
 
 ## 6. テスト戦略(オフラインで MAF グラフを検証する)
@@ -122,4 +125,6 @@ print(inspect.signature(WorkflowBuilder.__init__))
 - 実 LLM(Ollama / Azure OpenAI)でのエンドツーエンド実行と、Ollama の `response_format`(json_schema)実挙動
 - checkpoint(`checkpoint_storage`)による中断再開 — 循環グラフとの組み合わせ
 - `WorkflowViz` / DevUI によるグラフ可視化
-- Foundry Agent Service(Hosted Agents)へのデプロイ経路(`agent-framework-azure-ai` 系)
+- Foundry Agent Service(Hosted Agents)へのデプロイ経路(2026-09 時点のパッケージは `agent-framework-foundry`。`agent-framework-azure-ai` は rc のまま)
+
+> 2026-09-29 最新化チェック: agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / openai 3.20.0 で本書の §2〜§6 の API(`Agent`・`ChatOptions`・`WorkflowBuilder(start_executor=, output_from=, intermediate_output_from=)`・`run(stream=True)`・`ev.type`)はそのまま動作(`pytest -W error::DeprecationWarning` で非推奨警告なし)。

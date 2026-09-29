@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>hn-briefing-hosted 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="runbook.html" class="current">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="hn-briefing-hosted-実行ガイド">hn-briefing-hosted 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/hn-briefing-hosted/</code>(Port 11・パターン: hosted agent + Routines — 同じ決定論ロジックを「クライアント実行の MAF ワークフロー」と「Foundry 上の hosted agent(スケジュール起動)」の二形態で動かす)<br><strong>最終確認:</strong> 2026-09-29 オフライン(48 passed・<code>ruff check .</code> clean・依存 agent-framework-core 1.19.0 / agent-framework-foundry-hosting 1.0.0b260918 / azure-ai-agentserver-responses 2.2.0 / azure-ai-projects 2.6.1)/ ライブ: 2026-07-31(当時の構成 core 1.13 / hosting 1.0.0b260730 / Routines プレビュー+<code>Routines=V1Preview</code> ヘッダー。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li><strong>ロジック層(CLI)</strong>: <code>collect</code>(HN Algolia・httpx)→ <code>rank</code>(元実装の決定論スコア式)→ <code>brief</code>(MAF <code>Agent</code>)が直列に 1 回ずつ動き、スコア降順の記事 + LLM が編集したブリーフ本文(<code>brief_md</code>)が出ること。</li>
+<li><strong>ホスティング層</strong>: 同じ決定論コードを関数ツール <code>collect_ranked_stories</code> に包んだエージェントが <strong>hosted agent(Responses protocol 2.0.0)</strong>として動き、コンテナ内の httpx で HN を取りに行けること(= 「hosted はツールを定義に直付けできない」制約は Foundry 管理ツールの話で、自前コードのツールには効かない)。</li>
+<li><strong>Routine(2026-09 GA)</strong>: schedule トリガーの Routine が hosted agent を Responses API 経由で起動し、手動発火(<code>:dispatch_async</code>)の結果が run history に <code>FINISHED</code> で残ること。</li>
+<li>技術選定上の意味: 常時稼働の運用グルー(HTTP サーバー・スケジューラ・認証)が Foundry 側へ移り、代わりに「zip 規約+provisioning ポーリング+不変バージョン」というデプロイ語彙とコールドスタートを引き受ける(README の学び 1・2・4)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<pre><code>【ロジック層(CLI・ローカル実行)】
+BriefingRequest ─▶ collect(HN Algolia)─▶ rank(決定論)─▶ brief(MAF Agent)─▶ Brief
+                   └ StageDone 進捗(collect / rank)→ stderr
+
+【ホスティング層(Foundry)】
+Routine hn-briefing-daily(schedule 0 9 * * 1-5, Asia/Tokyo, api-version=v1)
+  └─▶ invoke_agent_responses_api ─▶ hosted agent hn-briefing-agent
+        hosting/main.py: ResponsesHostServer(Agent(FoundryChatClient(agent identity)))
+          └ 関数ツール collect_ranked_stories(コンテナ内 httpx → Algolia → 決定論ランク → digest)</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>MAF Workflow(ローカル、<code>workflow.py</code>)</td>
+<td><code>collect</code> / <code>rank</code> / <code>brief</code> の 3 Executor 直列</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>HN Algolia API(<code>hn.algolia.com</code>)</td>
+<td><code>tags=front_page</code> の JSON をキーレスで取得</td>
+<td>なし(外部サイト)</td>
+</tr>
+<tr>
+<td>モデルデプロイ(共有基盤、既定 gpt-5.4-mini)</td>
+<td>CLI のブリーフ本文 / hosted エージェントの推論</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>hosted agent <code>hn-briefing-agent</code>(0.5 vCPU / 1 GiB・<code>python_3_13</code>・REMOTE_BUILD)</td>
+<td><code>ResponsesHostServer</code> が :8088 で Responses を受け、関数ツールで digest を取って応答</td>
+<td>アクティブセッション中の CPU/メモリ(idle timeout 既定 15 分でスケールゼロ)</td>
+</tr>
+<tr>
+<td>Routine <code>hn-briefing-daily</code></td>
+<td>平日 9:00 JST に hosted agent を起動(1 トリガー+1 アクション)</td>
+<td>起動ごとに hosted のセッション+トークン</td>
+</tr>
+<tr>
+<td>App Insights(共有基盤)</td>
+<td>CLI は <code>configure_azure_monitor</code>、hosted はプラットフォームが接続文字列を自動注入</td>
+<td>取り込み量従量</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得。検証は 3.13)。ライブは Azure CLI(<code>az login</code>)</td>
+<td>オフライン実行は uv だけ</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)のみ。<strong>本ポート固有の ARM リソースはない</strong>(hosted agent と Routine はデータプレーンのオブジェクト。<code>infra/main.bicep</code> は existing 参照+出力だけ)</td>
+<td>hosted のセッション課金+トークン</td>
+</tr>
+<tr>
+<td>リージョン</td>
+<td>共有基盤の Japan East で両機能とも可(hosted agents 対応リージョン / Routines は UK West・Switzerland West・Japan West・UAE North・Norway East <strong>以外</strong>)</td>
+<td>Japan West を選ぶと Routines 不可</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>デプロイ実行者: <strong>Foundry Project Manager</strong>(プロジェクト。<code>create_version_from_code</code> / <code>update_details</code>)。Routine 操作: <strong>Foundry User</strong> 以上。hosted の agent identity はプロジェクト内のモデル推論に暗黙アクセスがありロール割り当て不要。CLI のモデル呼び出しは api-key</td>
+<td>RBAC 伝播に 5〜15 分</td>
+</tr>
+<tr>
+<td>ネットワーク</td>
+<td>ローカルとコンテナの双方から <code>hn.algolia.com</code> への外向き HTTPS</td>
+<td>egress controls(プレビュー)を使う場合はこのホストを Allow</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <code>.env.example</code>。読み込み順はカレントの <code>.env</code> → lab ルートの <code>.env</code> で、既にシェルにある値が優先):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>CLI のモデル呼び出し先。<strong>必須</strong>(deploy / routine スクリプトも起動時に検証する)</td>
+<td>shared.bicep の出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>モデルデプロイ名。<strong>必須</strong>。deploy 時はコンテナの <code>FOUNDRY_MODEL_NAME</code> にも転記される</td>
+<td>shared.bicep の出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>CLI の api-key 認証。<strong>必須</strong>(hosted には渡さない)</td>
+<td><code>az cognitiveservices account keys list -n &lt;foundryName&gt; -g &lt;rg&gt; --query key1 -o tsv</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_PROJECT_ENDPOINT</code></td>
+<td>hosted のデプロイ・Routine 操作・hosted スモーク。CLI には不要</td>
+<td>shared.bicep の出力 <code>projectEndpoint</code></td>
+</tr>
+<tr>
+<td><code>HN_BRIEFING_AGENT_NAME</code></td>
+<td>hosted agent 名(既定 <code>hn-briefing-agent</code>)。デプロイ・Routine・スモークで共有</td>
+<td>任意</td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>CLI のトレース送信先(任意。hosted は自動注入)</td>
+<td>shared.bicep の出力 <code>appInsightsConnectionString</code></td>
+</tr>
+<tr>
+<td><code>HN_BRIEFING_HOSTED_SMOKE</code></td>
+<td><code>1</code> のときだけ hosted のライブスモークを実行</td>
+<td>手で設定</td>
+</tr>
+</tbody></table></div>
+<p>コンテナ側の環境変数(<code>.env</code> ではなくデプロイ定義で渡る。バージョンごとに不変): <code>FOUNDRY_PROJECT_ENDPOINT</code> / <code>FOUNDRY_MODEL_NAME</code>(<code>hosting/main.py</code> は <code>AZURE_AI_MODEL_DEPLOYMENT_NAME</code> も受ける)。API キーは渡さない。</p>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/hn-briefing-hosted
+uv sync --extra dev --extra hosting     # hosting = ResponsesHostServer の実構築テストに必要(無いと 1 件 skip)
+uv run pytest                           # 期待: 48 passed, 2 deselected(live は既定で除外。ネットワーク不要)
+uv run ruff check .                     # 期待: All checks passed!(図生成スクリプト docs/architecture.py を含む)</code></pre>
+<p>送信せずに中身だけ確かめる(Azure 呼び出しなし。ただし設定検証のため必須 3 変数+<code>FOUNDRY_PROJECT_ENDPOINT</code> は要る — 未作成ならダミー値でよい):</p>
+<pre><code>uv run python hosting/deploy_hosted_agent.py --dry-run    # zip 内容とバージョン定義
+uv run python scripts/setup_routine.py create --dry-run   # Routine のペイロード</code></pre>
+<p>期待される出力の例(<code>--dry-run</code>。エンドポイントはダミー):</p>
+<pre><code>zip: 14 files — hn_briefing_maf/__init__.py, hn_briefing_maf/agents.py, ... ← stderr
+{
+  &quot;agent_name&quot;: &quot;hn-briefing-agent&quot;,
+  &quot;cpu&quot;: &quot;0.5&quot;,
+  &quot;memory&quot;: &quot;1Gi&quot;,
+  &quot;runtime&quot;: &quot;python_3_13&quot;,
+  &quot;entry_point&quot;: [&quot;python&quot;, &quot;main.py&quot;],
+  &quot;environment_variables&quot;: {&quot;FOUNDRY_PROJECT_ENDPOINT&quot;: &quot;https://...&quot;, &quot;FOUNDRY_MODEL_NAME&quot;: &quot;gpt-5.4-mini&quot;},
+  &quot;protocols&quot;: [[&quot;responses&quot;, &quot;2.0.0&quot;]]
+}</code></pre>
+<p>コンテナ相当をローカルで起動する(<code>/readiness</code> まではオフラインで確認できる。<code>POST /responses</code> はモデル呼び出しに Entra 認証と共有基盤が要る):</p>
+<pre><code>PORT=8088 FOUNDRY_PROJECT_ENDPOINT=https://&lt;foundry&gt;.services.ai.azure.com/api/projects/maf-ports \
+  FOUNDRY_MODEL_NAME=gpt-5.4-mini uv run python hosting/main.py &amp;
+curl -sS -i http://localhost:8088/readiness   # 期待: HTTP 200、x-platform-server に azure-ai-agentserver-core/2.2.0 … responses/2.2.0
+# 共有基盤があり az login 済みなら本物の応答も取れる:
+curl -sS -H &quot;Content-Type: application/json&quot; -X POST http://localhost:8088/responses \
+  -d &#x27;{&quot;input&quot;: &quot;Give me today&#x27;\&#x27;&#x27;s brief (top 3).&quot;, &quot;stream&quot;: false}&#x27;</code></pre>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> 収集: Algolia の hit を <code>Story</code> に写像して応答順で rank を振り、<code>url</code> が null なら HN の URL に、HTTP エラーは <code>CollectError</code> にする(<code>test_parse_maps_hit_fields_and_assigns_positional_rank</code> / <code>test_parse_falls_back_to_hn_url_when_url_is_null</code> / <code>test_fetch_raises_collect_error_on_http_error</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> ランキング: 元実装を実行して採ったゴールデンスコアを再現し、入力順をシャッフルしても結果が同じ。ノイズ除去と <code>top_n</code> を守る(<code>test_golden_scores_match_original_implementation</code> / <code>test_curate_is_deterministic_under_input_shuffle</code> / <code>test_curate_drops_noise_and_respects_top_n</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 元実装の癖の保存: キーワード 0 件の記事も fallback summary 経由でフィルタを通る(<code>test_keywordless_story_passes_filter_via_fallback_summary</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> ワークフロー: <code>collect → rank → brief</code> の順に動き、進捗 <code>StageDone</code> が流れ、<code>CollectError</code> は握りつぶさず伝播する(<code>test_sequential_flow_collect_rank_brief</code> / <code>test_collect_error_propagates</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> hosted 配線: 関数ツールが digest を返し <code>top_n</code> を 1〜10 にクランプ、エージェントは instructions+ツール 1 本+<code>store=False</code>、<code>hosting/main.py</code> を実 import して <code>ResponsesHostServer</code> を構築できる(<code>test_collect_tool_returns_ranked_digest</code> / <code>test_agent_wires_instructions_and_collect_tool</code> / <code>test_hosting_main_imports_and_builds_server_without_running</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> デプロイ zip 規約: zip ルートに <code>main.py</code> / <code>requirements.txt</code> / <code>hn_briefing_maf/</code>、<code>__pycache__</code> と deploy スクリプトは入れない。定義は responses <strong>2.0.0</strong>、コンテナ環境変数はエンドポイントとモデル名だけ(<code>test_staged_zip_places_entrypoint_and_package_at_root</code> / <code>test_definition_kwargs_encode_container_protocol_2_and_keyless_env</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> Routine 契約: schedule トリガー+<code>invoke_agent_responses_api</code>、既定 cron は平日 9:00 JST、URL は <code>?api-version=v1</code>、ヘッダーは Bearer のみ(<code>Foundry-Features</code> なし)(<code>test_routine_payload_matches_rest_schema</code> / <code>test_routine_url_and_headers</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 評価データセット 8 ケース(keyword 4 / noise 2 / rank_order 2)がランキング実装と一致する(<code>test_eval_dataset.py</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<p>共有基盤(Foundry アカウント+プロジェクト+モデル+App Insights)が未作成なら先に <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a> §5 で作り、§5.5 の手順で <code>.env</code> に転記する。</p>
+<pre><code># 共有基盤が未作成なら先に作る(→ labs/maf-ports/infra/docs/runbook.md)。本ポート固有の ARM リソースはない。
+cd labs/maf-ports/ports/hn-briefing-hosted
+az deployment group create -g &lt;rg&gt; -f infra/main.bicep -p baseName=&lt;baseName&gt; \
+  --query properties.outputs -o json      # 期待: openaiV1Endpoint / projectEndpoint(.env に転記)
+
+az login                                  # Foundry Project Manager 以上
+uv sync --extra dev --extra hosting --extra live
+uv run python hosting/deploy_hosted_agent.py --invoke &quot;Give me today&#x27;s brief (top 3).&quot;</code></pre>
+<p>期待される出力の例(provisioning は数分。REMOTE_BUILD が <code>hosting/requirements.txt</code> を pip で解決する):</p>
+<pre><code>zip: 14 files — hn_briefing_maf/__init__.py, ...            ← stderr
+created version 1 — provisioning...                          ← stderr
+  status=creating                                            ← stderr(10 秒間隔でポーリング)
+  status=active
+routed 100% -&gt; version 1                                     ← stderr
+agent endpoint: {...version_selector... FixedRatio 100 ...}   ← stdout
+(--invoke の応答: digest の順に並んだ 3 記事の解説+ &quot;Next actions&quot;)</code></pre>
+<h3 id="5-2-実行">5.2 実行</h3>
+<pre><code># ロジック層(CLI・クライアント実行)
+uv run hn-briefing-maf --top-n 3
+uv run hn-briefing-maf --json --output runs/brief.json
+uv run pytest -m live -k workflow                      # 実 HN + 実モデル(1 passed が期待)
+
+# ホスティング層(デプロイ済みの hosted agent を 1 回叩く)
+HN_BRIEFING_HOSTED_SMOKE=1 uv run pytest -m live -k hosted
+
+# Routine(GA)
+uv run python scripts/setup_routine.py create          # 平日 9:00 JST(--cron / --time-zone / --input で変更)
+uv run python scripts/setup_routine.py dispatch        # 手動発火(:dispatch_async)
+uv run python scripts/setup_routine.py runs            # 実行履歴
+uv run python scripts/setup_routine.py disable         # 検証後は必ず停止(delete で削除、enable で再開)</code></pre>
+<p>期待される出力の例(値は実行ごとに変わる):</p>
+<pre><code>[collect] 30 stories                                   ← stderr(Algolia の hitsPerPage=30)
+[rank] 3 stories                                       ← stderr
+AgentScout Hacker News brief - 2026-09-29              ← stdout(日付は America/Los_Angeles 基準)
+
+## 1. &lt;記事タイトル&gt; ...                                ← brief_md(digest の順を保った解説+ Next actions)</code></pre>
+<pre><code>HTTP 200                                               ← setup_routine.py create(201 もありうる。stderr)
+{ &quot;name&quot;: &quot;hn-briefing-daily&quot;, &quot;enabled&quot;: true, &quot;triggers&quot;: {...}, &quot;created_at&quot;: ..., ... }
+HTTP 200                                               ← dispatch
+{ &quot;dispatch_id&quot;: &quot;...&quot;, &quot;action_correlation_id&quot;: &quot;...&quot;, &quot;task_id&quot;: &quot;...&quot; }
+HTTP 200                                               ← runs
+{ &quot;data&quot;: [ { &quot;status&quot;: &quot;FINISHED&quot;, &quot;phase&quot;: &quot;completed&quot;, &quot;trigger_type&quot;: ..., &quot;started_at&quot;: ..., &quot;ended_at&quot;: ..., &quot;dispatch_id&quot;: ..., &quot;response_id&quot;: ... } ] }</code></pre>
+<p>終了コード: CLI は 正常 0 / 設定不足 2 / 収集失敗・タイムアウト(既定 180 秒)・ブリーフなし 1。スクリプトは HTTP 4xx/5xx で 1、設定不足で 2。</p>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: CLI のブリーフ生成</td>
+<td><code>uv run hn-briefing-maf --json --output runs/brief.json</code></td>
+<td><code>stories</code> がスコア降順(<code>test_live_workflow_generates_brief</code> と同じ判定)、<code>brief_md</code> が digest の記事順を守り(並べ替え・追加なし)、末尾に Next actions</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>正常系: hosted のデプロイと応答</td>
+<td>§5.1 の <code>--invoke</code> / hosted スモーク</td>
+<td>version が <code>active</code> になり、応答にランク付き記事(<code>1.</code> やポイント数)が現れる。コンテナに API キーを渡していない(定義の環境変数はエンドポイントとモデル名だけ)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>正常系: Routine の手動発火</td>
+<td><code>dispatch</code> → 数十秒後に <code>runs</code></td>
+<td>最新の run が <code>status: FINISHED</code> / <code>phase: completed</code>。<code>response_id</code> からエージェント応答とトレースに辿れる</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>Routine のタイムアウト余裕</td>
+<td><code>runs</code> の <code>started_at</code> / <code>ended_at</code>、または ポータルの Routines 画面の所要時間</td>
+<td>1 試行 30 秒以内に収まる(docs の既定は 1 試行 30 秒・最大 3 試行)。超えると失敗・再試行で hosted が重複実行されうる — コールドスタート込みで測る</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>異常系: 設定不足</td>
+<td><code>FOUNDRY_PROJECT_ENDPOINT</code> を空にして <code>setup_routine.py show</code>(空文字はシェルの値が優先される)</td>
+<td>終了コード 2、stderr に <code>error: FOUNDRY_PROJECT_ENDPOINT が未設定(...)</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>異常系: HN 取得失敗</td>
+<td>ネットワーク遮断下で <code>uv run hn-briefing-maf</code>(オフラインでは <code>test_fetch_raises_collect_error_on_http_error</code> が同じ経路)</td>
+<td>終了コード 1、stderr に <code>error: Could not fetch Hacker News (Algolia): ...</code> または <code>HN Algolia API returned HTTP &lt;code&gt;</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>観測: トレース着信</td>
+<td>§7 の KQL</td>
+<td>CLI: `executor.process collect</td>
+<td>rank</td>
+<td>brief<code> と </code>invoke_agent hn_briefing_writer<code>。hosted: Responses ホストの </code>invoke_agent<code> スパンと MAF の </code>execute_tool collect_ranked_stories`(ライブ未確認)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>パターン固有: ツールはコンテナ内で動く</td>
+<td>hosted 応答の記事タイトルを当日の HN と照合、またはトレースの <code>execute_tool</code></td>
+<td>Toolbox なしでコンテナ内 httpx の関数ツールが実行されている(Foundry 管理ツールの直付け制約に該当しない)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>コスト・後片付け</td>
+<td><code>setup_routine.py show</code> の <code>enabled</code>、ポータルのエージェント一覧</td>
+<td>検証後は Routine が <code>enabled: false</code>(または削除)。使わない期間は RG ごと削除(§8)</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code>az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | summarize count() by name&quot;</code></pre>
+<ul>
+<li>CLI(クライアント実行)で期待するスパン名(2026-09-29 にインメモリ OTel で確認。<code>invoke_agent</code> / <code>chat</code> は実モデル時のみ): <code>workflow.build</code> / <code>workflow.run</code> / <code>executor.process collect|rank|brief</code> / <code>invoke_agent hn_briefing_writer</code> / <code>chat &lt;デプロイ名&gt;</code> / <code>edge_group.process ...</code> / <code>message.send</code>。</li>
+<li>hosted: 接続文字列はプラットフォームが注入し、protocol ライブラリが OTel を既定発信する(配線コードなし)。Responses ホストの <code>invoke_agent</code> スパン(<code>gen_ai.system=responses</code>)と MAF の <code>invoke_agent hn_briefing_agent</code> / <code>execute_tool collect_ranked_stories</code> / <code>chat</code> が期待値。<strong>azure-ai-agentserver-core 2.2 系は既定で HTTPX / Azure SDK の計装を無効化</strong>したため、コンテナ内の Algolia GET は dependency として出ない見込み(ライブ未確認。必要なら <code>configure_observability</code> に <code>instrumentation_options={&quot;httpx&quot;: {&quot;enabled&quot;: True}}</code>)。</li>
+<li>評価: <code>tests/eval_dataset.jsonl</code>(8 ケース)は決定論部分のデータ駆動検証。LLM 部分は <code>--output</code> の Brief を「digest に忠実か」の rubric 1 本で評価する想定(評価 API の使い方は Port 9 critique-loop)。</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code>uv run python scripts/setup_routine.py disable   # まず無人起動を止める(delete で定義ごと削除)
+az group delete -n &lt;rg&gt; --yes --no-wait           # 使わない期間は共有基盤の RG ごと削除(hosted agent・Routine も消える)</code></pre>
+<ul>
+<li>再構築は §5.1 の 2 コマンド(deploy → <code>setup_routine.py create</code>)で戻る(ステートレス)。共有基盤を同じ <code>baseName</code> で作り直すときの soft delete の注意は <a href="../../../infra/docs/runbook.html">共有基盤の実行ガイド</a> §8。</li>
+<li>hosted agent だけ消す場合、アクティブなセッションがあると DELETE が 409 になる(アイドル化を待つか <code>force=true</code>)。</li>
+</ul>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td>Routine の REST が HTTP 400</td>
+<td><code>?api-version=v1</code> の欠落</td>
+<td><code>routine_url()</code> / <code>routines_collection_url()</code> を通す(直書きしない)</td>
+</tr>
+<tr>
+<td>Routine の REST が 4xx で <code>Foundry-Features</code> の値に言及(想定・未観測)</td>
+<td>旧版のスクリプトが <code>Routines=V1Preview</code> を送っている(2026-08 に REST 仕様から削除されたキー)</td>
+<td>ヘッダーを外す(本ポートは 2026-09-29 に削除済み)。SDK <code>client.beta.routines</code> は任意ヘッダー <code>Routines=V2Preview</code> を自動付与する</td>
+</tr>
+<tr>
+<td>ポータルに Routines が出ない / create が失敗</td>
+<td>リージョン・サブスクリプションで未有効</td>
+<td>対応リージョン(§3)を確認。出ない場合はアカウントチームへ</td>
+</tr>
+<tr>
+<td>version が <code>failed</code></td>
+<td>zip レイアウト、または REMOTE_BUILD の pip 解決失敗</td>
+<td><code>get_version</code> の <code>error.message</code>(pip の最終エラー行が入る)を見る。依存は <code>hosting/requirements.txt</code> と pyproject の hosting extra を揃える</td>
+</tr>
+<tr>
+<td>version が <code>creating</code> のまま 10 分超</td>
+<td>リモートビルドが <code>requirements.txt</code> を解決できない</td>
+<td><code>dependency_resolution=&quot;bundled&quot;</code> でローカルビルドした依存を同梱する(docs の Troubleshooting)</td>
+</tr>
+<tr>
+<td><code>--invoke</code> / スモークが 401・403</td>
+<td>デプロイ実行者のロール不足、または RBAC 伝播待ち</td>
+<td>Foundry Project Manager(プロジェクト)を付与して 5〜15 分待つ</td>
+</tr>
+<tr>
+<td>Routine の run が FAILED(タイムアウト)</td>
+<td>1 試行 30 秒を超過(コールドスタート+HN+ブリーフ生成)</td>
+<td>run history で所要時間を確認。<code>--input</code> で記事数を減らす等で短縮</td>
+</tr>
+<tr>
+<td>ローカルの <code>hosting/main.py</code> が起動しない</td>
+<td><code>FOUNDRY_PROJECT_ENDPOINT</code> / <code>FOUNDRY_MODEL_NAME</code> 未設定、または hosting extra 未導入</td>
+<td>両変数を渡し、<code>uv sync --extra dev --extra hosting</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a></li>
+<li>hosted agent / Routines の機能・GA 状況: <a href="../../../../../docs/survey/features/html/03-agent-service.html">features/03-agent-service.md</a></li>
+<li>詰まりどころ(P-A11 Routines / P-H13 コールドスタート / P-H20 プレリリースのホスティングライブラリ / P-N07 egress controls): <a href="../../../../../docs/survey/casebook/html/02-pitfalls-index.html">casebook/02-pitfalls-index.md</a></li>
+<li>公式: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-routines">use-routines</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/deploy-hosted-agent-code">deploy-hosted-agent-code</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/manage-hosted-sessions">manage-hosted-sessions</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(依存を agent-framework-core 1.19 / foundry-hosting b260918 / agentserver 2.2 へ更新。Routines GA に合わせて <code>Foundry-Features</code> ヘッダーを削除、hosted の requirements に agentserver 3 点を明示。構成図を v2 スタイル(日本語・処理順バッジ)に更新し <code>ruff check .</code> を clean に)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/hn-briefing-hosted/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

@@ -26,6 +26,18 @@ installed package(agent-framework-core 1.10 / 1.12)を調査した結論:
 
 代わりに**トリアージの構造化出力(`TriageDecision.handoff_to`)+ core の `add_switch_case_edge_group`(Case / Default)**で表現した。表現力の差は「学び 1」参照。
 
+### 再評価(2026-09-29、agent-framework-core 1.19.0 / agent-framework-orchestrations 1.2.0)
+
+wheel のソース(`agent_framework_orchestrations/_handoff.py`)を読み、スクラッチ環境で実 `Agent` 3 体+`/openai/v1/responses` のモック(`handoff_to_<name>` ツール呼び出しを台本化)で HandoffBuilder を動かして確かめた結論: **不採用判断は維持**(ポートは書き換えない)。
+
+| 当初の理由 | 1.2.0 での実態 | 判定 |
+| --- | --- | --- |
+| 1. 参加者は実 `Agent` 限定で scripted fake を使えない | 変わらず。protocol 実装を渡すと `TypeError: Participants must be Agent instances`(docstring も「`SupportsAgentRun` 実装は非対応。clone・ツール注入・middleware が要るため」と明記)。さらに **全参加者に `require_per_service_call_history_persistence=True` が必須**になった(未設定だと `build()` が ValueError)。ただし「オフラインテスト不能」は言い過ぎだった: 実 `Agent` + モックのチャットクライアント(HTTP)なら handoff 経路をオフラインで完走できる。正確には **ScriptedAgent パターンが使えず、テストの台本が「LLM のツール呼び出し JSON」レベルまで下がる** | 維持(表現を修正) |
+| 2. 会話型の semantics が一発パイプラインに合わない | 変わらず。既定は human-in-loop で、最後の editor が handoff せずに応答すると `request_info(HandoffAgentUserRequest)` を出して `IDLE_WITH_PENDING_REQUESTS` で止まる(実測)。一発完結には `with_autonomous_mode()` + `with_termination_condition()` が要る。出力は各エージェントの `AgentResponse` がそのまま `output` イベントになり型付きの最終成果物はない。clone 時に `allow_multiple_tool_calls=False` が強制され、research の並列ツール呼び出しも直列化される | 維持 |
+| 3. core 外の追加依存(1.0.x) | 1.2.0 で **Development Status: Production/Stable**、`agent-framework-core>=1.19.0,<2` に追従。成熟度の懸念は薄れたが、追加パッケージであること・core と版を揃える運用が要ることは同じ | 弱まった |
+
+core 1.19 にも handoff の first-class API はない(`agent_framework.orchestrations` は引き続き別パッケージへの lazy re-export)。委譲先を事前に列挙できる本ポートでは switch-case の方が素直、という「学び 1」の整理はそのまま有効。HandoffBuilder を実際に組んで主実装と比べた記録は Port 7 の [HandoffBuilder 比較](../game-design-team/README.md#handoffbuilder-比較agent-framework-orchestrations)。
+
 ## 移植後の構成
 
 ![architecture](./docs/architecture.png)
@@ -55,9 +67,21 @@ uv run research-handoff-maf --show-facts --json "..." # ファクト含む全出
 uv run pytest -m live         # ライブスモーク
 ```
 
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
+
 インフラ: 共有基盤のみで動作(`infra/main.bicep` は existing 参照+出力のみ)。
 
 評価: `tests/eval_dataset.jsonl` は各ケースに `expected_route`(research / editor)を明記。鮮度依存トピック(価格・規制動向)は research、教科書的知識(TCP/UDP、TPS)は editor が期待値。editor 直行なら幻覚価格が出る「分岐ミスの実害」ケースと、どちらでも書ける境界ケースを含む。
+
+## 検証結果(2026-09-29 最新化チェック)
+
+- **依存更新**(`uv lock --upgrade`): agent-framework-core 1.12.1 → **1.19.0** / agent-framework-openai 1.11.0 → **1.14.4** / openai 2.51.0 → **3.20.0** / pydantic 2.13.4 → 2.13.5 / azure-monitor-opentelemetry 1.8.9 → 1.8.10。pyproject の下限を検証版に引き上げ
+- オフライン **31 passed**(DeprecationWarning なし)/ ruff clean(`uv run ruff check .`。旧図スクリプトの既存指摘は図の v2 化で解消)/ `az bicep build` OK
+- 構成図(`docs/architecture.png`)を v2 スタイル(日本語ラベル・処理順バッジ・処理の流れパネル・タグ付き注記)に描き直し、内容を現行実装(core 1.19 / openai 3.x・api-key・スパン名)に合わせた
+- **コード改修なし**(`workflow.py` の docstring の確認版表記のみ更新)。`Case` / `Default` / `add_switch_case_edge_group`、`Agent(default_options=ChatOptions(response_format=...))` は 1.19 でも同じ。追加確認として、実 `Agent` + `OpenAIChatClient` を `/openai/v1/responses` のモックに向けて両分岐(research 経由 / editor 直行)をリポジトリ外のスクラッチで完走させ、triage / editor のリクエストが `text.format = json_schema`(`name: TriageDecision`、`strict: true`)で送られること、research の `search_web` / `save_important_fact` の function_call 往復で FactStore にファクトが入ることを確認。スパンは `invoke_agent` / `execute_tool` / `edge_group.process SwitchCaseEdgeGroup` が出る
+- HandoffBuilder(agent-framework-orchestrations 1.2.0)の再評価: 不採用判断を維持(上の「再評価」節)
+- 変更不要と判断した点: v1 エンドポイントと api-key 認証は現行 docs どおり / gpt-5.4-mini は 2027-09-21 まで GA / MAF 1.14→1.19 の破壊的変更は本ポートの使用 API に該当なし
+- **ライブ未検証**: openai 3.x 経由の実 Foundry 呼び出し(特に構造化出力の strict スキーマが実モデルで通るか)と App Insights 着信(Azure リソース削除済み)。手順は [docs/runbook.md](./docs/runbook.md)
 
 ## 検証結果(2026-07-31)
 

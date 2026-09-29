@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>governed-agent 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="runbook.html" class="current">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="governed-agent-実行ガイド">governed-agent 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/governed-agent/</code>(Port 14・パターン: MAF middleware によるガバナンス層 — ツール実行前の決定論ポリシー + 段間の信頼ゲート / HITL + ハッシュ連鎖監査)<br><strong>最終確認:</strong> 2026-09-29 オフライン(65 passed・ruff clean・依存 agent-framework-core 1.19.0 / agent-framework-openai 1.14.4 / openai 3.20.0)/ ライブ: 2026-07-31(当時の構成 = agent-framework-core 1.13 / openai 2.51。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と移植の学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li>経費申請 1 件が intake(構造化)→ 信頼ゲート ① → inspector(構造化)→ 信頼ゲート ② → approver(ツール付き)と流れ、<strong>approver のツール呼び出しは実行前に <code>PolicyEnforcementMiddleware</code> が判定</strong>すること: 許可 → 支払い / 拒否(<code>TOOL-001</code> 非許可ツール・<code>HOURS-001</code> 営業時間外・<code>AMT-001</code> ハード上限超過・<code>AMT-003</code> 不正金額)→ ツール本体は実行されず、拒否理由が<strong>ツール結果としてモデルに戻って会話が続く</strong> / 承認必須(<code>AMT-002</code> 自動承認上限超過)→ HITL チケット発行。</li>
+<li>全操作(ケース開閉・各エージェント実行・ゲート判定・遮断を含む全ツール呼び出し)が 1 本の SHA-256 ハッシュ連鎖に載り、エクスポート JSON を<strong>モデルも Foundry もなしで</strong>後から <code>--verify</code> で検証できること(改ざん・削除・並べ替えを検知)。</li>
+<li>技術選定上の意味: 金額上限・営業時間のような<strong>決定論の業務ルールは Foundry ガードレール(Content Safety 系の判定語彙)では書けず、アプリ層(middleware)に残る</strong>。ガードレールとは代替ではなく積層(<a href="../README.md">README の対比表・学び 2</a>)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>MAF Agent ×3(ローカル: intake / inspector / approver)</td>
+<td>構造化出力 2 段 + ツール付き承認。approver に middleware 3 つ(外 → 内: <code>AgentAuditMiddleware</code> → <code>ToolAuditMiddleware</code> → <code>PolicyEnforcementMiddleware</code>)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>ガバナンスランタイム(ローカル、プロセス内)</td>
+<td><code>PolicyEngine</code>・<code>TrustGate</code>・<code>ApprovalQueue</code>(HITL スタブ)・<code>ExpenseLedger</code>(支払い台帳)・<code>AuditTrail</code>(ハッシュ連鎖)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>モデルデプロイ(共有基盤、gpt-5.4-mini)</td>
+<td>3 エージェントの呼び出し(1 ケース 3〜5 回程度。ゲートで止まれば減る)</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>Application Insights(共有基盤)</td>
+<td>OTel トレース</td>
+<td>取り込み量従量</td>
+</tr>
+<tr>
+<td>本ポート固有の Azure リソース</td>
+<td><strong>なし</strong>(<code>infra/main.bicep</code> は existing 参照と出力のみ)</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。uv が取得。検証は 3.13)</td>
+<td>オフライン実行と <code>--verify</code> はこれだけ</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)。本ポート固有リソースなし</td>
+<td>課金あり</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>API キー(<code>FOUNDRY_API_KEY</code>)のみ</td>
+<td>Entra ID の RBAC は不要</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(<code>labs/maf-ports/.env</code>。雛形は <code>labs/maf-ports/.env.example</code>。<strong>ライブ実行時のみ必要</strong>):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>FOUNDRY_OPENAI_V1_ENDPOINT</code></td>
+<td>チャット呼び出し先(<code>https://&lt;foundry&gt;.openai.azure.com/openai/v1</code>)</td>
+<td>shared.bicep 出力 <code>openaiV1Endpoint</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_MODEL</code></td>
+<td>モデルデプロイ名</td>
+<td>shared.bicep 出力 <code>modelDeploymentName</code></td>
+</tr>
+<tr>
+<td><code>FOUNDRY_API_KEY</code></td>
+<td>API キー</td>
+<td><code>az cognitiveservices account keys list -n aif-&lt;baseName&gt; -g &lt;rg&gt;</code></td>
+</tr>
+<tr>
+<td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td>
+<td>トレース送信先(未設定ならトレース無効)</td>
+<td>shared.bicep 出力 <code>appInsightsConnectionString</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/governed-agent
+uv sync --extra dev
+uv run pytest                # 期待: 65 passed, 2 deselected(ネットワーク不要)
+uv run ruff check .          # 期待: All checks passed!</code></pre>
+<p>オフラインテストは fake を<strong>チャットクライアント境界</strong>に置く(<code>tests/conftest.py</code> の <code>ScriptedChatClient</code>)ので、実 <code>Agent</code> + 本物の function-calling ループ + 本物の middleware パイプラインが回る。固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> 拒否されたツールは本体が実行されず(台帳の <code>executed_calls</code> が空)、2 回目のモデル呼び出しに構造化拒否が function_result として渡る(<code>test_denied_tool_is_never_executed</code> / <code>test_hard_limit_denial_blocks_payment</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 営業時間外は <code>HOURS-001</code>、承認バンドは HITL チケット付きの保留(<code>test_after_hours_denial</code> / <code>test_approval_band_enqueues_hitl_ticket</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> middleware の発火順序 <code>agent_pre → [chat_pre → chat_post](モデル呼び出しごと)→ function_pre/post(ツールごと)→ agent_post</code>(<code>test_middleware_firing_order</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> <code>MiddlewareTermination</code> は short-circuit と違い function-calling ループ全体を止める(<code>test_middleware_termination_stops_the_whole_loop</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 監査は遮断された呼び出しも記録し、ポリシー判定は <code>context.metadata</code> で内 → 外に渡る(<code>test_audit_chain_records_denied_and_allowed_calls</code> / <code>test_pending_call_detail_includes_ticket_id</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> ハッシュ連鎖は改ざん・削除・並べ替えを検知し、エクスポート単体で再検証できる(<code>tests/test_audit.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> ルール評価順は「許可リスト → 営業時間 → 金額」の first-terminal-wins(<code>test_allowlist_wins_over_amount</code> / <code>test_business_hours_wins_over_amount</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 評価データ 7 ケースの決定論経路(ゲート・ポリシー・最終ステータス)と実行経路の一致(<code>tests/test_eval_dataset.py</code> / <code>tests/test_pipeline.py</code>)</li>
+</ul>
+<p>監査連鎖の検証だけはモデルなしで試せる(エクスポート JSON はライブ実行の <code>--audit-export</code> で作る):</p>
+<pre><code>uv run governed-agent-maf --verify runs/audit.json   # 期待: chain OK: &lt;N&gt; entries, no tampering detected(exit 0)</code></pre>
+<h2 id="5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</h2>
+<h3 id="5-1-デプロイ">5.1 デプロイ</h3>
+<pre><code># 共有基盤が未作成なら先に作る(labs/maf-ports/README.md「実行の前提」と infra/shared.bicep 冒頭コメント)
+cd labs/maf-ports
+az group create -n &lt;rg&gt; -l japaneast
+az deployment group create -g &lt;rg&gt; -f infra/shared.bicep \
+  -p baseName=&lt;baseName&gt; modelName=gpt-5.4-mini modelVersion=&lt;版&gt; modelCapacity=10
+
+# 本ポートの Bicep は existing 参照と出力だけ(新規リソースなし)
+cd ports/governed-agent
+az deployment group create -g &lt;rg&gt; -f infra/main.bicep -p baseName=&lt;baseName&gt;</code></pre>
+<p>出力を <code>labs/maf-ports/.env</code> に転記する(§3 の表)。</p>
+<h3 id="5-2-実行">5.2 実行</h3>
+<p><strong>営業時間ルール(平日 9〜18 時、ローカルの壁時計)があるので、夜間・週末に既定のまま実行すると支払いが全部 <code>HOURS-001</code> で遮断される。</strong>再現性のため <code>--now</code> で平日の昼に固定するのが基本。</p>
+<pre><code>cd labs/maf-ports/ports/governed-agent
+uv sync --extra dev --extra live
+
+# 1 件
+uv run governed-agent-maf --now 2026-07-29T10:30 \
+  --request &quot;Client dinner \$180 on 2026-07-24, receipt RCPT-2201, employee E-1042, sales, meals.&quot;
+
+# デモ 4 件(正常 / 承認バンド / ハード上限超過 / 曖昧な申請)+ 監査連鎖のエクスポート → 独立検証
+uv run governed-agent-maf --now 2026-07-29T10:30 --script tests/data/expense_requests.txt \
+  --audit-export runs/audit.json --json --output runs/cases.json
+uv run governed-agent-maf --verify runs/audit.json
+
+# 対話(1 行 = 1 申請。/audit で連鎖の要約、/queue で承認待ち、/quit で終了)
+uv run governed-agent-maf --now 2026-07-29T10:30
+
+uv run pytest -m live   # 期待: 2 passed(7 月の実測 20.1 秒。時刻は内部で平日昼に固定済み)</code></pre>
+<p>主なオプション: <code>--threshold</code>(信頼ゲート閾値、既定 40)/ <code>--auto-approve-limit</code>(既定 1000 USD)/ <code>--hard-limit</code>(既定 5000 USD)/ <code>--now</code>(ISO 形式の現在時刻)/ <code>--timeout</code>(1 ケースの秒数、既定 180)/ <code>--json</code> / <code>--output</code> / <code>--audit-export</code> / <code>--verify</code>。</p>
+<p>期待される出力の例(書式は CLI どおり。値はオフラインの scripted 実行で作った<strong>例</strong> — approver の文面はモデル次第):</p>
+<pre><code>=== case-001: paid ===
+  claim: E-1042 / meals / $180.00
+  intake trust: 75 (gold) -&gt; pass:75
+  inspection: approve / trust 70 (gold) -&gt; pass:70
+  payment: PAY-0001 $180.00
+  approver: Approved and paid (PAY-0001).
+  audit: 8 entries, chain OK</code></pre>
+<p>デモスクリプト 4 件の期待ステータス(平日昼に固定した場合):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>申請</th>
+<th>期待ステータス</th>
+<th>決め手</th>
+</tr></thead><tbody>
+<tr>
+<td>client dinner $180(領収書あり)</td>
+<td><code>paid</code>(<code>PAY-0001</code>)</td>
+<td>全ルール通過(<code>allow:POLICY-DEFAULT</code>)</td>
+</tr>
+<tr>
+<td>conference trip $3,200</td>
+<td><code>pending_human_approval</code>(<code>HITL-0001</code>)</td>
+<td><code>AMT-002</code>(自動承認上限 $1,000 超)</td>
+</tr>
+<tr>
+<td>workstation $12,000</td>
+<td><code>blocked_by_policy</code></td>
+<td><code>AMT-001</code>(ハード上限 $5,000 超)— 支払いツールは実行されない</td>
+</tr>
+<tr>
+<td>"I spent some money on stuff..."</td>
+<td><code>escalated_low_trust</code></td>
+<td>信頼ゲート ① で減点(金額・社員 ID・領収書なし)→ inspector に進まない</td>
+</tr>
+</tbody></table></div>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: 承認まで完走</td>
+<td>§5.2 の 1 件実行(<code>--now</code> 付き)</td>
+<td><code>=== case-001: paid ===</code>、<code>payment: PAY-0001 $180.00</code>、<code>audit: ... chain OK</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>分岐: 実行前遮断</td>
+<td>デモ 3 件目($12,000)</td>
+<td><code>blocked_by_policy</code>。<code>payment:</code> 行がなく、approver の返答が <code>AMT-001</code> と理由に触れている(拒否がツール結果としてモデルに戻り会話が続いた証拠)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>分岐: HITL</td>
+<td>デモ 2 件目($3,200)→ 対話モードなら <code>/queue</code></td>
+<td><code>pending_human_approval</code> と <code>HITL: HITL-0001 [tool_call] Amount $3,200.00 exceeds the auto-approve limit ...</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>分岐: 信頼ゲート</td>
+<td>デモ 4 件目(曖昧な申請)</td>
+<td><code>escalated_low_trust</code>、<code>inspection:</code> 行が出ない(ゲート ① で止まる)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>分岐: 営業時間</td>
+<td><code>--now 2026-08-01T22:00</code> で 1 件目を実行</td>
+<td><code>blocked_by_policy</code>(<code>HOURS-001</code>)。同じ申請が時刻だけで結果を変える</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>監査連鎖の独立検証</td>
+<td><code>--verify runs/audit.json</code> → JSON の任意エントリの <code>detail</code> を 1 文字書き換えて再度 <code>--verify</code></td>
+<td>1 回目 <code>chain OK: ...</code>(exit 0)、改ざん後 <code>chain BROKEN: ...</code>(exit 1)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>パターン固有: 監査とトレースの違い</td>
+<td><code>runs/audit.json</code> の <code>tool:submit_reimbursement</code> エントリと §7 の KQL を突き合わせる</td>
+<td>監査連鎖には <code>deny:AMT-001</code> のエントリがあるのに、トレースには遮断した呼び出しの <code>execute_tool</code> スパンが<strong>ない</strong>(実行されていないから)— README 学び 4</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>観測: トレース到達</td>
+<td>§7 の KQL</td>
+<td><code>invoke_agent expense_intake</code> / <code>expense_inspector</code> / <code>expense_approver</code> と、支払えたケースの <code>execute_tool submit_reimbursement</code></td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>コスト・後片付け</td>
+<td>§8</td>
+<td>本ポート固有リソースはない。使わない期間は共有基盤の RG ごと削除</td>
+</tr>
+</tbody></table></div>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code>az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;dependencies | where timestamp &gt; ago(30m) | summarize count() by name | order by name asc&quot;</code></pre>
+<ul>
+<li>期待するスパン名: <code>invoke_agent expense_intake</code> / <code>invoke_agent expense_inspector</code> / <code>invoke_agent expense_approver</code>、<code>chat &lt;モデル名&gt;</code>(approver は function-calling ループの反復ごとに複数)、<code>execute_tool submit_reimbursement</code>(許可されたときだけ)/ <code>execute_tool lookup_expense_policy</code> / <code>execute_tool check_budget</code>(モデルが呼んだとき)</li>
+<li>ハッシュ連鎖には生の入出力は入らない(ハッシュのみ)。内容を追うのはトレース、順序と非改ざんの証明は連鎖、という役割分担</li>
+<li>評価: <code>tests/eval_dataset.jsonl</code>(7 ケース)はオフラインの決定論検証用(§4)。クラウド評価は本ポートでは実施していない</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code>az group delete -n &lt;rg&gt; --yes --no-wait   # 共有基盤ごと削除(ステートレス。Bicep で再現可)</code></pre>
+<p>ローカルの <code>runs/*.json</code>(申請テキストを含むケース結果と監査連鎖)は不要なら削除する。</p>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td>全ケースが <code>blocked_by_policy</code> になる</td>
+<td>営業時間外に <code>--now</code> なしで実行した(<code>HOURS-001</code>)</td>
+<td><code>--now 2026-07-29T10:30</code> のように平日の昼を指定</td>
+</tr>
+<tr>
+<td>1 件目が <code>paid</code> にならず <code>no_action</code></td>
+<td>approver が <code>submit_reimbursement</code> を呼ばなかった(ツール選択はモデル裁量)、または inspector が <code>needs_information</code> を出した</td>
+<td><code>--json</code> で <code>report.recommendation</code> と approver の返答を確認。申請文に社員 ID・金額・日付・領収書番号を揃える</td>
+</tr>
+<tr>
+<td>意図せず <code>escalated_low_trust</code> になる</td>
+<td>inspector の確信度が低い・critical 所見でゲート ② が落ちた</td>
+<td><code>--threshold 30</code> などで閾値を下げて挙動を比較(既定 40)</td>
+</tr>
+<tr>
+<td>自作の関数 middleware を足したら <code>MiddlewareException: Cannot determine middleware type</code></td>
+<td><code>from __future__ import annotations</code> 下では第 1 引数の型注釈で種別を判定できない(1.19 でも同じ)(<a href="../../../../../docs/survey/casebook/html/02-pitfalls-index.html#i-maf-とフレームワーク">casebook P-F04</a>)</td>
+<td><code>@function_middleware</code> / <code>@agent_middleware</code> / <code>@chat_middleware</code> を明示するかクラス形態にする</td>
+</tr>
+<tr>
+<td><code>error: 環境変数が未設定: ...</code></td>
+<td><code>labs/maf-ports/.env</code> に 3 点がない</td>
+<td>§3 の表どおり転記(<code>--verify</code> だけなら不要)</td>
+</tr>
+<tr>
+<td><code>TimeoutError</code>(1 ケース 180 秒超)</td>
+<td>モデル応答の遅延</td>
+<td><code>--timeout 300</code> で再実行</td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a></li>
+<li>ガードレール(サービス層)の GA / プレビューと介入ポイント: <a href="../../../../../docs/survey/features/html/06-safety-guardrails.html">features/06 安全性・ガードレール</a></li>
+<li>詰まりどころ(middleware の型推定・short-circuit の 2 方式): <a href="../../../../../docs/survey/casebook/html/02-pitfalls-index.html#i-maf-とフレームワーク">casebook 02 I. MAF とフレームワーク</a></li>
+<li>今後の選択肢(README「検証結果(2026-09-29 最新化チェック)」): MAF 1.19 の <code>MiddlewareFailure</code>(fail-closed の中断)・<code>MiddlewareBundle</code> / AGENT-HOOKS(実験的)・<code>agent_framework.security</code>(実験的)</li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-29</td>
+<td>初版(依存を agent-framework-core 1.19.0 / openai 3.20.0 に更新。middleware API は 1.13 と同一でコード改修なし。構成図を v2(日本語・処理順バッジ・注記帯)に更新)</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/governed-agent/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

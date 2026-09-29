@@ -4,11 +4,12 @@ version = "0.1.0"
 description = "Foundry 未検証機能の挙動確認 probe 集(実装例に乗らない機能を単純例で検証)"
 requires-python = ">=3.11"
 dependencies = [
-    "openai>=1.60",
-    "azure-identity>=1.19",
-    "azure-ai-projects>=2.0.0b1",
-    "httpx>=0.27",
-    "python-dotenv>=1.0",
+    # 2026-09-29 検証版を下限に。openai 3.x は HTTP クライアントが httpx2 に変わった
+    # (probe は httpx を直接使わないので影響なし。未使用だった httpx 依存は削除)
+    "openai>=3.20",
+    "azure-identity>=1.25.3",
+    "azure-ai-projects>=2.7.0",
+    "python-dotenv>=1.2",
 ]
 
 [build-system]
@@ -19,7 +20,7 @@ build-backend = "hatchling.build"
 packages = ["src/foundry_probes"]
 
 [dependency-groups]
-dev = ["ruff>=0.8"]
+dev = ["ruff>=0.16"]
 
 [tool.ruff]
 line-length = 100

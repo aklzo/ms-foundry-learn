@@ -29,6 +29,8 @@
 
 ## evals API 調査(azure-ai-projects 2.4.0 精読)と採った経路
 
+(2026-09-29 注: azure-ai-projects 2.7.0 + openai 3.20.0 でも以下の経路・型はそのまま有効 — 後述「検証結果(2026-09-29 最新化チェック)」)
+
 実装前調査の結論 — **`AIProjectClient` に evals 操作群はない**(あるのは evaluation_rules / datasets / indexes 等)。evals は OpenAI 互換クライアント側に露出する:
 
 - **クライアント取得**: `AIProjectClient(project_endpoint, DefaultAzureCredential()).get_openai_client()`(`_patch.py` 211 行)が、base_url = プロジェクトエンドポイント + `/openai/v1`、api_key = `get_bearer_token_provider(credential, "https://ai.azure.com/.default")` の **openai SDK クライアント**を返す。evals はその `.evals`(`evals.create` → `evals.runs.create` → `evals.runs.output_items.list`)
@@ -95,6 +97,8 @@ uv run python scripts/run_cloud_eval.py runs/*.json --dry-run   # 送信内容�
 uv run python scripts/run_cloud_eval.py runs/*.json             # 実行(builtin.coherence/fluency + rubric)
 ```
 
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
+
 **課金注意**: クラウド評価は評価器の判定モデルがサーバー側で実行され、**プロジェクト側にトークン課金**が発生する(1 ランの規模は「版数 × 評価器 3 つ」の判定呼び出し)。評価は Entra ID 認証のみ(`get_openai_client()` の bearer token provider)。インフラ: 共有基盤のみ(existing 参照)— 評価グループ/ランはデータプレーンのため**本ポート固有の Azure リソースはゼロ**。
 
 ## 評価
@@ -128,6 +132,22 @@ uv run python scripts/run_cloud_eval.py runs/*.json             # 実行(builtin
   2. プロジェクト/アカウント MI への割り当てが**孤児化**していた(MI ローテーション+guid 固定名。infra/roles.bicep へ分離で恒久対応)
   3. **評価 run は提出ユーザーの権限でも動く**: 提出者に Foundry User(データプレーン)が必要。しかもセッション中にテナントのロール改名が完了し「Azure AI User」名が解決不能に(改名ロールアウトを実地で観測)
 - rubric(score_model)は切り分け中に単体でも PermissionDenied を確認済みのため、権限解決後の再実行は未実施(手順は scripts/run_cloud_eval.py デフォルトで rubric 込み)
+
+## 検証結果(2026-09-29 最新化チェック)
+
+オフラインのみ(Azure リソースは削除済みのため**ライブ未検証**)。
+
+- 依存更新: agent-framework-core 1.13.0 → **1.19.0** / agent-framework-openai 1.12.0 → **1.14.4** / openai 2.51.0 → **3.20.0**(httpx2 ベース)/ extra `eval`: azure-ai-projects 2.4.0 → **2.7.0**・azure-identity 1.25.3(変化なし)/ extra `live`: azure-monitor-opentelemetry 1.8.9 → 1.8.10 / ruff 0.16.1 → 0.16.9。pyproject の下限を検証版に引き上げ(`agent-framework-core>=1.19` / `agent-framework-openai>=1.14.4` / `azure-ai-projects>=2.7` / `azure-identity>=1.25`)
+- オフラインテスト **44 passed**(変化なし)/ `ruff check .` clean(図生成スクリプト `docs/architecture.py` も v2 に書き直し、ruff 0.16 の既存指摘 I001 / RUF100 / ISC004 を解消)/ `az bicep build` OK。DeprecationWarning は agent_framework / azure / openai 由来ゼロ(残るのは pytest-asyncio の設定警告のみ)
+- **evals API(クラウド評価)は変更不要**。確認したこと:
+  - azure-ai-projects 2.5〜2.7 の変更履歴に evals 経路の変更はない(2.5.0 で依存が `openai>=3.0.0` に上がったのが唯一の影響)。`AIProjectClient` の操作群は 2.7.0 でも agents / connections / datasets / deployments / evaluation_rules / indexes / telemetry / toolboxes + `beta.*` で、evals は引き続き `get_openai_client()`(base_url = プロジェクト + `/openai/v1`、bearer token provider)側
+  - openai 3.20.0 の `evals.create` / `evals.runs.create` / `evals.runs.retrieve(run_id, eval_id=)` / `evals.runs.output_items.list(run_id, eval_id=)` のシグネチャ、`RunRetrieveResponse.report_url`、`OutputItemListResponse.results[].name/score/passed` は 2.x と同じ。`TestingCriterionAzureAIEvaluator` TypedDict(`evaluator_name` / `initialization_parameters` / `data_mapping`)も 2.7.0 で不変
+  - **配線の実地確認(オフライン)**: `get_openai_client(http_client=httpx2.Client(transport=MockTransport))` で `evals.create` → `evals.runs.create` を送り、`POST {project}/openai/v1/evals` と `.../evals/{id}/runs` に Bearer 付きで、testing_criteria(azure_ai_evaluator ×2 + score_model)とインライン JSONL(3 アイテム)が dict のまま載ることを確認
+  - Learn の評価器ページ(https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/general-purpose-evaluators 2026-06-02 版)の `builtin.coherence`(query+response)/ `builtin.fluency`(response)の testing_criteria 例は本ポートと同じ形(`initialization_parameters.deployment_name` 必須)。クラウド評価の入門ページ(https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/cloud-evaluation 2026-08-31 版)も `get_openai_client()` + `DataSourceConfigCustom` + `CreateEvalJSONLRunDataSourceParam` の同じ経路
+- 改修(コメントのみ): `infra/main.bicep` の必要ロール名を「Azure AI User」→「Foundry User(旧名 Azure AI User。ロール ID は不変)」に更新(改名ロールアウトは 7 月のライブで観測済み — 上記「到達までの躓き 3」)
+- 変更不要と判断: ループ本体(`WorkflowBuilder(start_executor=, output_from=, intermediate_output_from=)` / fan-out・fan-in / switch-case / `ChatOptions(response_format=)`)は 1.19.0 で同じ API。gpt-5.4-mini は 2027-09-21 まで GA でモデル変更不要
+- ライブ未検証で残るリスク: (1) openai 3.x(httpx2)経由の evals 送信が実サービスで通ること(2) 7 月に未完だった rubric(score_model)の権限解決後の再実行(3) ループ本体の実モデル挙動(構造化 verdict)は 1.19 + openai 3.x で未再確認
+- 今後の選択肢(本ポートでは採用しない): `project.beta.evaluators.list(type="builtin")`(beta)で組み込み評価器のカタログを実行前に列挙できる — 学び 2 の「評価器名は SDK に enum がなく typo は実行時まで分からない」を事前チェックで補える(ライブ未検証)
 
 ## 学び(MAF/Foundry vs 元構成)
 

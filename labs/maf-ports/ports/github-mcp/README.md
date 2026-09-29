@@ -16,7 +16,7 @@
 
 | 元(stdio / Docker) | 移植後(リモート / streamable HTTP) | 備考 |
 | --- | --- | --- |
-| `StdioServerParameters(command="docker", args=[...])` | `MCPStreamableHTTPTool(name, url="https://api.githubcopilot.com/mcp/", http_client=...)` | Docker デーモン・イメージ pull・コンテナ起動待ちが全部消える |
+| `StdioServerParameters(command="docker", args=[...])` | `MCPStreamableHTTPTool(name, url="https://api.githubcopilot.com/mcp/", static_headers=...)`(2026-07-31 版は `http_client=...`) | Docker デーモン・イメージ pull・コンテナ起動待ちが全部消える |
 | PAT: `GITHUB_PERSONAL_ACCESS_TOKEN` 環境変数(コンテナへ) | PAT: `Authorization: Bearer <PAT>` **HTTP ヘッダー**(全リクエスト) | env `GITHUB_TOKEN`(未設定は ConfigError で `gh auth token` を案内) |
 | `GITHUB_TOOLSETS=repos,issues,pull_requests` 環境変数 | `X-MCP-Toolsets: repos,issues,pull_requests` **ヘッダー** | 同名・同値の設定が「プロセス env → HTTP ヘッダー」へ移る 1:1 対応 |
 | (相当なし。read-only はフラグ `--read-only`) | `X-MCP-Readonly: true` ヘッダー(既定 on) | 読み取り分析専用ポートなので書き込みツールをサーバー側で外す |
@@ -32,6 +32,7 @@
 - **ヘッダーの渡し方が 2 系統**あり、ここが最大の落とし穴だった(設計判断参照):
   - `header_provider=Callable[[kwargs], dict]` — **call_tool 時のみ**注入(オリジン一致チェック付き)。ミドルウェアで注入する per-request コンテキスト向け
   - `http_client=httpx.AsyncClient(headers=...)` — 全リクエスト(initialize / tools/list 含む)に付く。**静的な PAT はこちらでないと接続できない**。オリジン制限は利用者責務と docstring に明記
+- **2026-09-29 追記(agent-framework-core 1.19.0 で再確認)**: 上の「call_tool 時のみ」は **1.12.1 固有の挙動で、既に解消済み**。1.13.0(2026-07-30)で `header_provider` は接続時の initialize / tools/list / ping にも(空 kwargs で)呼ばれるようになり、1.19.0(2026-09-18)で固定ヘッダー用の **`static_headers=`** が追加された(設定した `url` と同一オリジンのリクエストにだけ注入し、別オリジンへのリダイレクトでは除去)。本ポートは `static_headers` に切り替えた(設計判断参照)
 - セキュリティ既定が堅い: サーバー起点の sampling は**既定で全拒否**(`sampling_approval_callback` で明示 opt-in)、`approval_mode` / `allowed_tools` でツール実行の承認・許可リスト制御ができる
 
 ## 移植後の構成
@@ -42,7 +43,7 @@
 質問(+ --repo)─▶ build_full_query("{query} in {repo}")
              ─▶ github_agent(MAF Agent, gpt-5.4-mini)
                    └─ MCPStreamableHTTPTool("github", https://api.githubcopilot.com/mcp/)
-                        └─ httpx.AsyncClient(headers: Authorization / X-MCP-Toolsets / X-MCP-Readonly)
+                        └─ static_headers: Authorization / X-MCP-Toolsets / X-MCP-Readonly(同一オリジンのみ注入)
              ─▶ ツール呼び出し(list_issues / search_pull_requests / ...)× n ─▶ markdown 回答
 ```
 
@@ -52,9 +53,13 @@
 
 ## 設計判断
 
-### PAT は header_provider ではなく自前 http_client に載せる
+### PAT は MCP ツールの `static_headers` に載せる(2026-09-29 更新。旧: 自前 http_client)
 
-MAF の `MCPStreamableHTTPTool` には per-call の `header_provider` があるが、精読の結果 **connect 時(initialize / tools/list)にはヘッダーが付かない**(注入フックは call_tool が設定する ContextVar / スナップショットだけを読む)。GitHub リモートサーバーは全リクエストに認証を要求するため、header_provider だけだと接続段階で 401 になる。よって静的 PAT は `httpx.AsyncClient(headers=...)` を `http_client` に渡す方式にした。docstring は「custom http_client のヘッダーはオリジン制限が利用者責務」とするため、**リダイレクト追従は無効(httpx 既定)のまま**にして別オリジンへの PAT 漏出を防ぎ、クライアントの後始末(`aclose`)も CLI / ライブスモークの finally で明示的に行う。
+**現行(agent-framework-core 1.19 以降)**: `MCPStreamableHTTPTool(..., static_headers=build_headers(settings))` で渡す。固定ヘッダーは構築時にコピーされ、接続中の全リクエスト(initialize / tools/list / ping / tools/call)に付く。注入は設定した `url` と同一オリジンのリクエストに限られ、別オリジンへのリダイレクトでは外されるので、**PAT の漏出防止をフレームワークが肩代わり**する。HTTP クライアントもツールが生成・破棄する(タイムアウト 30 秒 / SSE 読み取り 300 秒 — 旧実装で明示していた値と同じ。1.19.0 以降はレスポンス Cookie を保持しない)ため、CLI / ライブスモークから `aclose` の後始末が消えた。接続段階にヘッダーが載ることは httpx MockTransport のスタブ MCP サーバーでオフラインテスト化した(`test_static_headers_reach_initialize_and_tools_list`)。
+
+**旧実装(2026-07-31、1.12.1 時点)の判断と理由(履歴として残す)**: MAF の `MCPStreamableHTTPTool` には per-call の `header_provider` があるが、精読の結果 **connect 時(initialize / tools/list)にはヘッダーが付かない**(注入フックは call_tool が設定する ContextVar / スナップショットだけを読む)。GitHub リモートサーバーは全リクエストに認証を要求するため、header_provider だけだと接続段階で 401 になる。よって静的 PAT は `httpx.AsyncClient(headers=...)` を `http_client` に渡す方式にした。docstring は「custom http_client のヘッダーはオリジン制限が利用者責務」とするため、**リダイレクト追従は無効(httpx 既定)のまま**にして別オリジンへの PAT 漏出を防ぎ、クライアントの後始末(`aclose`)も CLI / ライブスモークの finally で明示的に行う。
+
+→ 1.13.0 で header_provider の接続時注入、1.19.0 で `static_headers` が入り、この回避策(と「オリジン制限は利用者責務」という注意書きの対象になるパターン)は不要になった。**注意: 1.18 以前の `MCPStreamableHTTPTool` は未知のキーワード引数を `**kwargs` で黙って捨てる**ため、下限を割ると `static_headers` が無視されて無認証で接続(→ 401)になる。pyproject の下限 `agent-framework-core>=1.19` はこのための必須条件で、オフラインの `test_static_headers_reach_initialize_and_tools_list` が回帰検知を兼ねる。
 
 ### 接続ライフサイクルは `async with agent:` に委ねる
 
@@ -66,7 +71,7 @@ agno は `async with MCPTools(...)` をユーザーコードに書かせる。MA
 
 ### オフラインテストの境界は「ツールクラスのコンストラクタ」
 
-実 MCP サーバーへの接続はライブスモークのみ。オフラインでは (a) `build_headers` / `make_http_client`(URL・ヘッダー・タイムアウト・リダイレクト無効)、(b) `tool_cls` に記録フェイクを注入した組み立て引数の検証+実 `MCPStreamableHTTPTool` の未接続構築(`functions == []`)、(c) 実 `Agent` の配線(`agent.mcp_tools` 分離、instructions 原文一致)、(d) ScriptedAgent での応答パス(連結・タイムアウト・空応答)を固定する。
+実 MCP サーバーへの接続はライブスモークのみ。オフラインでは (a) `build_headers`(URL・ヘッダー)と、`static_headers` が接続段階(initialize / tools/list)に載ること(httpx MockTransport のスタブ MCP サーバー。2026-09-29 に `make_http_client` のテストから置き換え)、(b) `tool_cls` に記録フェイクを注入した組み立て引数の検証+実 `MCPStreamableHTTPTool` の未接続構築(`functions == []`)、(c) 実 `Agent` の配線(`agent.mcp_tools` 分離、instructions 原文一致)、(d) ScriptedAgent での応答パス(連結・タイムアウト・空応答)を固定する。
 
 ## 実行
 
@@ -87,6 +92,8 @@ uv sync --extra dev --extra live && uv run pytest -m live   # ライブスモー
 ```
 
 インフラ: 共有基盤のみ(existing 参照)。MCP はクライアント側接続のため**本ポート固有の Azure リソースはゼロ**。GitHub 側の課金もなし(PAT のレート制限のみ)。
+
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
 
 ## 評価
 
@@ -111,9 +118,23 @@ az monitor app-insights query --app appi-mafports -g rg-maf-ports \
   `gh auth login`(または PAT を発行)→ `GITHUB_TOKEN=$(gh auth token) uv run pytest -m live`
   期待動作: microsoft/agent-framework への読み取り質問 1 件が完走し、`invoke_agent` + MCP ツール呼び出しがトレースに乗る
 
+## 検証結果(2026-09-29 最新化チェック)
+
+- **依存更新**: agent-framework-core 1.13.0 → **1.19.0** / agent-framework-openai 1.12.0 → **1.14.4** / openai 2.51.0 → **3.20.0** / mcp 1.29.0 → **1.30.0**(1.x 最新)/ azure-monitor-opentelemetry 1.8.10。pyproject の下限を検証版に引き上げ(`agent-framework-core>=1.19` は `static_headers` の要件)
+- オフラインテスト **21 passed**(`test_make_http_client_carries_headers_without_redirects` を削除し、`test_static_headers_reach_initialize_and_tools_list` を追加)/ `ruff check .` clean / `az bicep build` OK(生成 json なし)。ruff 0.16 の既定ルール拡大で `docs/architecture.py` が I001 / RUF100 / ISC004 に掛かっていた件は、図の v2 化(下記)で解消し、`uv run ruff check .` をそのまま使える状態に戻した
+- **構成図を v2 に更新**([docs/architecture.png](./docs/architecture.png)。日本語ラベル+処理順バッジ 1〜5+タグ付き注記)。改修を反映: PAT は `MCPStreamableHTTPTool` の `static_headers`(MCP の URL と同一オリジンだけに注入)、旧注記「header_provider では接続時 401 になるので http_client ヘッダー」を削除し、「1.18 以前は static_headers を黙って無視」「mcp<2 固定」を注意として追加
+- **改修: PAT の載せ方を自前 `httpx.AsyncClient(headers=...)` → `MCPStreamableHTTPTool(static_headers=...)` に変更**。理由: 旧実装の前提「`header_provider` は call_tool 時のみ注入」は 1.12.1 固有で、1.13.0 で接続時にも注入されるよう変わり、1.19.0 で同一オリジン限定・クロスオリジンリダイレクトで除去される固定ヘッダー API が入った。MAF の docstring は「自前クライアント+`AsyncClient(headers=...)` はオリジン制限が利用者責務で漏出し得る」と明記しているため、回避策を残す理由がなくなった。CLI / ライブスモークの `aclose` 後始末も不要に(出典: agent-framework-core 1.19.0 `agent_framework/_mcp.py` の `MCPStreamableHTTPTool.__init__` docstring と `get_mcp_client`、1.12.1 / 1.13.0 の wheel と比較)
+- **mcp 2.x は依然不可 → `mcp>=1.30,<2` の上限ピンを維持**。agent-framework-core 1.19.0 のメタデータも `mcp>=1.24.0,<2`(extra `all`)のまま。scratch venv で agent-framework-core 1.19.0 + **mcp 2.2.0** をローカル MCP サーバー(mcp 1.30 の FastMCP)へ接続すると、2026-07-31 と同じ **`'InitializeResult' object has no attribute 'protocolVersion'` → ToolException** で initialize に失敗することを実測。同じスクリプトを mcp 1.30.0 で流すと `static_headers` / `header_provider` / 自前 `http_client` の 3 方式とも initialize・notifications/initialized・ping・tools/list・tools/call・DELETE の**全リクエストに Authorization / X-MCP-Toolsets が付く**ことも確認(ローカルのみ、GitHub へは未接続)
+- 1.19.0 のその他の MCP 変更で本ポートに効くもの: 内部生成の httpx クライアントはレスポンス Cookie を保持しない(GitHub リモート MCP のセッションは `Mcp-Session-Id` ヘッダー方式のため影響はない想定 — **ライブ未検証**)/ MCP sampling が MCP 仕様 2026-07-28 で deprecated になり、sampling 関連引数を指定すると DeprecationWarning(本ポートは未使用・既定の全拒否のまま)。pytest の警告サマリに agent_framework / openai / azure 由来の DeprecationWarning はなし
+- **変更不要**: GitHub 公式リモート MCP の URL(`https://api.githubcopilot.com/mcp/`)と `X-MCP-Toolsets` / `X-MCP-Readonly` ヘッダー(Foundry の toolbox how-to 2026-08-26 版も同じ URL を `remote-tool` 接続の例に使用)/ `OpenAIChatClient(model=, api_key=, base_url=)`(1.14.4 でも Responses API クライアントとして存続。CROSS 調査で 1.14→1.19 のクラス削除 0 件)/ infra/main.bicep(existing 参照のみ。`Microsoft.CognitiveServices/accounts@2025-06-01` は現行でも有効で、読むのは `customSubDomainName` だけ)
+- ライブ未検証で残るリスク: `static_headers` 経由の PAT で実 GitHub リモート MCP の initialize が通ること(ローカルスタブと FastMCP では確認済み)/ openai 3.x 上での Responses API ツールループ(オフラインテストはモデルを呼ばない)
+- **今後の選択肢**: PAT をクライアントから消すなら、GitHub リモート MCP を Foundry **Toolbox(GA)** の `remote-tool` 接続(`azd ai connection create --kind remote-tool --auth-type custom-keys --custom-key "Authorization=Bearer $GITHUB_PAT"`)に登録し、MAF 側は `agent_framework.foundry.FoundryToolbox(credential, url="{project}/toolboxes/<name>/mcp?api-version=v1")` で消費する形がある(toolbox how-to 2026-08-26 版にこの GitHub 例あり。toolbox 単位の RAI ガードレールも付く。prompt agent からの toolbox 利用は Azure ブログ 2026-09-24 で preview 表記)。Managed MCP servers(コネクタ名前空間)はプレビューのため現時点では候補外
+
 ## 学び(MAF/Foundry vs 元構成)
 
 1. **stdio → リモート MCP 移行で消えるのは「プロセス管理」、残るのは「秘密と設定」— ただし置き場所が env から HTTP ヘッダーへ移る。**消えるもの: Docker デーモン依存、イメージ pull、クエリごとのコンテナ起動(元アプリは実行のたびに `docker run --rm` していた)、stdio の生存管理。残るもの: PAT の管理(むしろ**毎リクエスト送信**になるので漏出面は広がる)、ツールセット選択(`GITHUB_TOOLSETS` env → `X-MCP-Toolsets` ヘッダーの 1:1 対応)、タイムアウト設計。「ヘッダーが設定チャネルになる」ことの含意は大きく、認証(Authorization)・機能選択(X-MCP-Toolsets)・安全性(X-MCP-Readonly)が全部同じ場所に並ぶ。そして MAF ではそのヘッダーの注入経路が 2 系統(`http_client` / `header_provider`)あり、**静的 PAT は http_client でないと接続段階(initialize / tools/list)で 401 になる** — `header_provider` は call_tool 時のみ注入という実装を `_mcp.py` の精読で確認してから書いたので一発で正しく組めたが、ドキュメントだけでは踏む罠だと思う。SI 的には「リモート MCP の認証方式(静的キーか per-user トークンか)」が最初に確認すべき分岐点になる。
 2. **MAF の MCP ツール DX は agno よりも「Agent に溶けている」— 接続管理を書かなくてよい代わりに、ライフサイクルの所有者を意識する必要がある。**agno は `async with MCPTools(server_params) as tools` → `Agent(tools=[tools])` と、接続スコープをユーザーコードが持つ。MAF は `Agent(client, tools=[MCPStreamableHTTPTool(...)])` と書くだけで、Agent が MCPTool を通常ツールと分離保持し(`agent.mcp_tools`)、**run 時に未接続なら自動接続してサーバーのツール群を `FunctionTool` として展開**する。1 行少なくなる一方、「いつ繋がり、いつ切れるか」が Agent の exit stack に隠れるので、CLI では `async with agent:` で明示した。また MAF はセキュリティ既定が agno より硬い: サーバー起点 sampling は既定全拒否、`approval_mode` / `allowed_tools` / progressive disclosure が最初から用意され、per-call ヘッダーはオリジン一致チェック付き。「MCP サーバーは信頼できない第三者」という前提がフレームワーク設計に織り込まれているのは、野良 MCP サーバーが増えている現状では選定理由になり得る。
 3. **同じ「リモート MCP(GA)」でも、MAF クライアント実行と Foundry Agent Service の MCP ツール(サーバー側実行)は別物**([04-tools-knowledge.md](../../../../docs/survey/features/04-tools-knowledge.md) の MCP 行)。本ポートの構成では MCP 接続はローカルプロセスから GitHub へ直接張られ、PAT はクライアント環境(env)にあり、Azure 側リソースはゼロ(main.bicep が existing 参照のみなのはこのため)。Agent Service の MCP ツールでは接続定義とシークレット(キー / Entra マネージド ID / OAuth ID パススルー)が**プロジェクト接続としてサービス側**に置かれ、ツール呼び出しも Azure 内から実行される — エグレス制御・監査・シークレット管理を Azure に寄せられる代わりに、long-running 操作はまだプレビューという成熟度差がある。使い分けの軸は「MCP 呼び出しの実行点と秘密の置き場所をどこにしたいか」: 開発者マシン / 自前ランタイムなら MAF クライアント(本ポート)、マネージドエージェントに寄せるなら Agent Service ツール。**コードの書き換えなしに両者を行き来できるわけではない**(MAF はツールオブジェクト、Agent Service はエージェント定義)ことも、アーキテクチャ選定時に見落としやすい点。
 4. **「ツール面をどこで絞るか」に 3 層できた: サーバー(ヘッダー)/ クライアント(allowed_tools)/ モデル(instructions)。**元アプリは `GITHUB_TOOLSETS` の 1 層だけだった。リモート化で `X-MCP-Toolsets` + `X-MCP-Readonly`(サーバーが tools/list 自体を絞る)、MAF 側で `allowed_tools` / `approval_mode`(クライアントが公開・承認を絞る)、instructions(モデルの振る舞いを絞る)の 3 層が明示的に選べる。強度はサーバー > クライアント > モデルの順で、本ポートは最強のサーバー側(readonly ヘッダー既定 on)を採った。eval の「Close issue #1」ケースはこの層構造の検証で、Foundry Agent Service でも同じ問い(接続定義で絞るか、エージェント定義で絞るか)が出る — MCP 統合の設計レビューで最初に描くべき図だと分かった。
+
+**2026-09-29 追記**: 学び 1 の「静的 PAT は http_client でないと接続段階で 401」は **agent-framework-core 1.12.1 固有**で、1.13.0 で header_provider が接続時にも呼ばれるよう修正され、1.19.0 で `static_headers` が追加された(本ポートは切り替え済み)。「ドキュメントだけでは踏む罠」だったものが半年足らずでフレームワーク側に吸収された形で、**MAF の MCP 周りは minor 版ごとに挙動が変わる前提で、罠の記録には版番号を必ず添える**のが教訓。学び 2 の「sampling 既定全拒否」は維持されているが、MCP sampling 自体が MCP 仕様 2026-07-28 で deprecated(MAF 1.19.0 は sampling 関連引数に DeprecationWarning、2027-07-28 までに削除予定)。

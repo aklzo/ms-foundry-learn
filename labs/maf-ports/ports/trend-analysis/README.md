@@ -34,7 +34,18 @@ uv run trend-analysis-maf "AI coding agents for enterprises"   # 要 ../../.env
 uv run pytest -m live         # ライブスモーク
 ```
 
+詳細な実行手順と確認観点は [docs/runbook.md](./docs/runbook.md)(人間用 HTML: `docs/runbook.html`)。
+
 インフラ: 共有基盤のみで動作(`infra/main.bicep` は existing 参照+出力のみ)。
+
+## 検証結果(2026-09-29 最新化チェック)
+
+- **依存更新**(`uv lock --upgrade`): agent-framework-core 1.12.1 → **1.19.0** / agent-framework-openai 1.11.0 → **1.14.4** / openai 2.51.0 → **3.20.0** / azure-monitor-opentelemetry 1.8.9 → 1.8.10。pyproject の下限を検証版(core>=1.19・openai 連携>=1.14.4・azure-monitor>=1.8.10)に引き上げ
+- オフライン **9 passed**(DeprecationWarning なし)/ ruff clean(`uv run ruff check .`。旧図スクリプトの既存指摘は図の v2 化で解消)/ `az bicep build` OK
+- 構成図(`docs/architecture.png`)を v2 スタイル(日本語ラベル・処理順バッジ・処理の流れパネル・タグ付き注記)に描き直し、内容を現行実装(core 1.19 / openai 3.x・api-key・スパン名)に合わせた
+- **コード改修なし**。追加確認として、実 `Agent` + `OpenAIChatClient` を `/openai/v1/responses` のモック(openai 3.x の HTTP 層 httpx2 の MockTransport)に向けて 3 段+ツール 2 種(search_news / read_article の function_call 往復)をリポジトリ外のスクラッチで完走させ、要求形(`instructions` / `tools` / `function_call_output`)とツールスキーマ推論が 1.19 でも変わらないことを確認。インメモリ OTel で `invoke_agent` ×3・`execute_tool` ×2・`executor.process` ×3・`chat gpt-5.4-mini` ×5・`workflow.run` のスパンが出ることも確認
+- 変更不要と判断した点: openai 3.x は HTTP 層が httpx → httpx2 に変わったが、本ポートは OpenAI クライアントに独自 `http_client` を渡しておらず(自前ツールの httpx は別系統)影響なし / v1 エンドポイント(`<resource>.openai.azure.com/openai/v1`、api-version 不要)は現行 docs どおり / gpt-5.4-mini は 2027-09-21 まで GA / MAF 1.14→1.19 の破壊的変更(agent middleware のシーケンス化・`SecretString` の非 str 化・MCP の Cookie 既定など)は本ポートの使用 API に該当なし / Bicep の `accounts@2025-06-01` は公式 00-basic サンプルと同版(新しい GA もあるが使う機能に差がない)
+- **ライブ未検証**: openai 3.x 経由の実 Foundry 呼び出しと App Insights 着信(Azure リソース削除済み)。再デプロイ時は [docs/runbook.md](./docs/runbook.md) §5〜§7 で確認する
 
 ## 検証結果(2026-07-31)
 

@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "awesome-llm-apps ai_agent_governance + trust_gated_agent_team の MAF + Foundry 移植(MAF middleware によるポリシー強制・信頼ゲート・ハッシュ連鎖監査)"
 requires-python = ">=3.11"
 dependencies = [
-    "agent-framework-core>=1.10",
-    "agent-framework-openai>=1.10",
+    "agent-framework-core>=1.19",   # 2026-09-29 最新化チェックで検証した版(middleware API は 1.13 と同一)
+    "agent-framework-openai>=1.14.4",
     "pydantic>=2.7",
     "python-dotenv>=1.0",
     "typing-extensions>=4.10",
