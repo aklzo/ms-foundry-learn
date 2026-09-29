@@ -1,81 +1,92 @@
-"""Architecture diagram for corrective-rag (Port 4).
+"""corrective-rag(Port 4)のアーキテクチャ図(v2 スタイル: 日本語+処理順バッジ)。
 
-Regenerate:  uv run --with diagrams,pillow python ports/corrective-rag/docs/architecture.py
+Regenerate(labs/maf-ports で):  uv run --with diagrams,pillow python ports/corrective-rag/docs/architecture.py
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 _here = Path(__file__).resolve()
 for _p in _here.parents:
     if (_p / "tools" / "archdiagram.py").exists():
         sys.path.insert(0, str(_p / "tools"))
         break
-from archdiagram import BLUE, ORANGE, TELEM, Diagram, icon  # noqa: E402
+from archdiagram import BLUE, ORANGE, TELEM, Diagram, icon, std_azure
 
 d = Diagram(
-    "corrective-rag — CRAG loop + Azure AI Search (Port 4)",
-    width=1400,
-    height=820,
-    subtitle="retrieve -> per-doc grading -> (single, non-looping) corrective pass; Qdrant replaced by "
-    "AI Search Free, client-side embeddings",
+    "corrective-rag — 補正ループ RAG + Azure AI Search(Port 4)",
+    width=1560,
+    height=1010,
+    subtitle="検索 → 文書ごとの採点 → 低関連なら 1 回だけクエリ書換+Web 検索 → 生成。"
+    "Qdrant を AI Search(Free)に置き換え、埋め込みはクライアント側で行う",
 )
 
-local = d.cluster(40, 100, 720, 520, "Local machine (uv + MAF)", kind="local")
-wf = d.cluster(170, 150, 700, 430, "MAF workflow (switch-case)", kind="sub")
-ext = d.cluster(40, 545, 360, 690, "External web (outside Azure)", kind="external")
+# --- ローカル PC ---------------------------------------------------------------
+local = d.cluster(40, 100, 730, 655, "ローカル PC(uv + MAF)", kind="local")
+wf = d.cluster(180, 145, 710, 470, "MAF ワークフロー(switch-case 分岐)", kind="focus")
 
-cli = d.node(100, 280, icon("cli"), "CLI\ncorrective-rag-maf")
-retrieve = d.box(260, 215, 130, 48, "retrieve\n(vector top-4)")
-grade = d.box(440, 215, 150, 48, "grade\n(per-doc yes/no)")
-transform = d.box(285, 350, 150, 48, "transform_query\n(rewrite)")
-websearch = d.box(465, 350, 140, 48, "web_search\n(DDG, 3 tries)")
-generate = d.box(625, 283, 100, 48, "generate")
-setup = d.box(555, 472, 230, 40, "scripts/setup_index.py (one-time)")
-ddg = d.node(180, 600, icon("browser"), "DuckDuckGo HTML", note="keyless HTTPS")
+cli = d.node(105, 225, icon("cli"), "CLI\ncorrective-rag-maf")
+retrieve = d.box(270, 225, 130, 46, "retrieve\n(上位 4 件を取得)")
+grade = d.box(445, 225, 158, 46, "grade_documents\n(文書ごとに yes/no)")
+generate = d.box(632, 225, 118, 46, "generate\n(回答生成)")
+transform = d.box(445, 370, 158, 46, "transform_query\n(クエリ書換)")
+websearch = d.box(270, 370, 130, 46, "web_search\n(最大 3 件・3 試行)")
+setup = d.box(505, 620, 262, 44, "scripts/setup_index.py\n(索引作成+12 チャンク投入・1 回)")
 
-azure = d.cluster(760, 100, 1360, 695, "Azure subscription — rg-maf-ports (Japan East)", kind="azure")
-foundry = d.cluster(790, 150, 1330, 470, "Foundry: aif-mafports", kind="sub",
-                    sublabel="shared infra (AIServices S0)")
-model = d.node(930, 235, icon("model"), "Model deployment\ngpt-5.4-mini", note="shared (grade/rewrite/generate)")
-project = d.node(1215, 235, icon("project"), "Project: maf-ports", note="system MI")
-embed = d.node(930, 375, icon("model"), "Embedding deployment\ntext-embedding-3-small",
-               note="added by this port (main.bicep)")
-search = d.node(880, 590, icon("search"), "AI Search: srch-mafports\nFree SKU", note="3 indexes / 50 MB",
-                note_color=ORANGE)
-appi = d.node(1100, 590, icon("appinsights"), "App Insights\nappi-mafports")
-logw = d.node(1290, 590, icon("loganalytics"), "Log Analytics\nlog-mafports")
-d.edge(appi, logw)
-
-d.edge(cli, retrieve, label="question", label_dy=-12)
 d.edge(retrieve, grade)
-d.edge(grade, generate, label="Default:\nall relevant", label_t=0.5, label_dy=-24)
-d.edge(grade, transform, label="Case: low\nrelevance", label_t=0.5, label_dx=-52)
+d.edge(grade, generate, label="全件関連", label_dy=-14)
+d.edge(grade, transform, label="低関連あり", label_dx=-40, label_dy=0)
 d.edge(transform, websearch)
-d.edge(websearch, generate, label="1 pass, no re-grade", label_t=0.75, label_dy=30, label_dx=60)
-d.edge(websearch.port("bottom", 0.2), ddg, label="search_with_retry\n(4s/8s backoff)", label_t=0.5, label_dx=-8)
+d.edge(websearch.port("bottom", 0.75), generate.port("bottom"), via=[(302.5, 438), (632, 438)],
+       label="再採点なし", label_t=0.62, label_dy=-12)
 
-d.edge(wf.port("right", 0.2), model, label="chat: grade x docs +\nrewrite + generate / api-key",
-       label_color=BLUE, label_t=0.35, label_dy=-26)
-d.edge(wf.port("right", 0.55), embed, label="query embedding (1536-d)\napi-key", label_color=BLUE,
-       label_t=0.45, label_dy=16)
-d.edge(wf.port("right", 0.85), search, label="vector query (HNSW, k=4)\nadmin api-key", label_color=BLUE,
-       label_t=0.28, label_dy=-28)
-d.edge(setup, search, label="create index +\nupsert 11 chunks", label_t=0.45, label_dy=24)
-d.edge(local.port("right", 0.93), appi, style="dashed", color=TELEM,
-       label="OTel traces (executor +\nper-doc grader spans)", label_t=0.45, label_dy=-24)
+# --- 外部 Web(Azure 外) --------------------------------------------------------
+d.cluster(40, 680, 440, 830, "外部 Web(Azure 外)", kind="external")
+ddg = d.node(250, 748, icon("browser"), "DuckDuckGo HTML", note="キー不要")
 
-d.footer(
-    notes=[
-        "2-stage deploy: infra/main.bicep (AI Search Free + embedding deployment) -> scripts/setup_index.py "
-        "(index schema + documents = data plane, not expressible in ARM/Bicep).",
-        "$AI Search Free tier: $0/month but 3 indexes / 50 MB / no semantic ranker / no SLA / 1 free service "
-        "per subscription. Chat + embedding tokens billed per call.",
+# --- Azure(共有基盤+本ポート固有) ------------------------------------------------
+az = std_azure(d, x0=770, y0=100, x1=1520, y1=858, foundry_h=380, ja=True,
+               model_note="採点・書換・生成で共用")
+model, appi = az["model"], az["appi"]
+embed = d.node(1290, 430, icon("model"), "埋め込みデプロイ\ntext-embedding-3-small",
+               note="本ポートで追加(1536 次元)", status="GA")
+search = d.node(1145, 605, icon("search"), "AI Search(Free)\nsrch-mafports",
+                note="インデックス 3 個 / 50 MB", note_color=ORANGE)
+
+# --- 処理の流れ ------------------------------------------------------------------
+d.edge(setup.port("right"), (1113, 620), step=0, label="索引・文書", label_t=0.3, label_pos="below")
+d.edge(cli, retrieve, step=1, label="質問", label_t=0.45, label_pos="above")
+d.edge((710, 430), embed, step=2, label="埋め込み", label_color=BLUE, label_t=0.2,
+       label_pos="above")
+d.edge((710, 458), (1113, 590), via=[(750, 458), (750, 590)], step=3, label="ベクトル検索",
+       label_color=BLUE, label_t=0.62, label_pos="above")
+d.edge((710, 310), model, step=4, label="採点・書換・生成", label_color=BLUE, label_t=0.3,
+       label_pos="above")
+d.edge(websearch.port("bottom", 0.346), ddg, step=5, label="Web 検索", label_t=0.62, label_pos="left")
+d.edge(local.port("bottom", 0.93), appi, via=[(682, 750)], style="dashed", color=TELEM,
+       label="OTel トレース", label_t=0.6, label_dy=-12)
+
+d.steps_panel(40, 888, 1520, [
+    "事前に setup_index.py で 12 チャンクを投入",
+    "CLI から質問を受け取り retrieve へ",
+    "質問を text-embedding-3-small で埋め込む",
+    "AI Search のベクトル検索で上位 4 件を取得",
+    "gpt-5.4-mini で採点、書換、回答生成",
+    "低関連ありなら書換後のクエリで Web 検索(1 回)",
+], numbers=["0", "1", "2", "3", "4", "5"], columns=3)
+
+d.notes(
+    [
+        ("課金", (
+            "AI Search Free は月額 0(1 サブスクリプション 1 つ・インデックス 3 個・50 MB)。"
+            "チャットと埋め込みは呼び出しごとのトークン課金"
+        )),
+        ("制約", "Free のセマンティックランカーは無料枠のみ(従量プランは Basic 以上)。本ポートは純ベクトル検索"),
+        ("運用", "2 段デプロイ: main.bicep(AI Search+埋め込みデプロイ)→ setup_index.py(索引と文書は Bicep 外)"),
+        ("認証", "チャット・埋め込み = API キー(ラボの .env)/ AI Search = 管理キー(本番は RBAC + Key Vault)"),
+        ("閉域", "ラボ構成: パブリックエンドポイント・VNet なし(閉域版は survey architecture 07)"),
     ],
-    auth=[
-        "Auth: chat + embeddings = api-key (lab .env) / AI Search = admin api-key (lab; prod -> RBAC + Key Vault) / "
-        "DuckDuckGo = none (keyless)",
-    ],
+    source="出典: labs/maf-ports/ports/corrective-rag/README.md",
 )
 
 d.save(str(_here.parent / "architecture.png"))

@@ -1,78 +1,103 @@
-"""Architecture diagram for hn-briefing-hosted (Port 11).
+"""hn-briefing-hosted(Port 11)のアーキテクチャ図(v2 スタイル: 日本語+処理順バッジ)。
 
-Regenerate:  uv run --with diagrams,pillow python ports/hn-briefing-hosted/docs/architecture.py
+Regenerate(labs/maf-ports で):
+    uv run --with diagrams,pillow python ports/hn-briefing-hosted/docs/architecture.py
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 _here = Path(__file__).resolve()
 for _p in _here.parents:
     if (_p / "tools" / "archdiagram.py").exists():
         sys.path.insert(0, str(_p / "tools"))
         break
-from archdiagram import BLUE, ORANGE, TELEM, Diagram, icon  # noqa: E402
+from archdiagram import BLUE, ORANGE, TELEM, Diagram, icon, res
 
 d = Diagram(
-    "hn-briefing-hosted — hosted agent + Routines (Port 11)",
-    width=1400,
-    height=850,
-    subtitle="The only port that runs IN Foundry: agent executes in a managed container; the always-on glue "
-    "(scheduler, HTTP server, auth) moves to the platform",
+    "hn-briefing-hosted — hosted agent + Routines(Port 11)",
+    width=1500,
+    height=900,
+    subtitle="唯一 Foundry 上で動くポート。エージェントはマネージドコンテナで実行し、常時稼働の運用グルー"
+    "(スケジューラ・HTTP サーバー・認証)はプラットフォーム側へ移る",
 )
 
-local = d.cluster(40, 100, 380, 430, "Local machine (deploy only)", kind="local")
-op = d.node(110, 185, icon("user"), "Operator\n(az login)")
-deploy = d.box(215, 300, 290, 48, "hosting/deploy_hosted_agent.py\n(zip: main.py + requirements.txt)")
-routset = d.box(185, 370, 230, 40, "scripts/setup_routine.py\n(REST)")
+# --- ローカル(Azure 外・左): デプロイと Routine 操作だけ ----------------------------
+d.cluster(40, 110, 290, 580, "ローカル", kind="local", sublabel="デプロイ・操作のみ")
+deploy = d.box(165, 250, 214, 50, "deploy_hosted_agent.py\nzip → REMOTE_BUILD")
+op = d.node(165, 345, res("onprem/client/user.png"), "運用者(az login)", icon_size=48)
+routset = d.box(165, 450, 214, 50, "setup_routine.py\nREST(api-version=v1)")
+d.edge(op, deploy)
+d.edge(op, routset)
 
-ext = d.cluster(40, 470, 380, 650, "External web (outside Azure)", kind="external")
-hn = d.node(170, 545, icon("browser"), "HN Algolia API\n(front-page JSON)", note="keyless HTTPS")
+# --- Azure ----------------------------------------------------------------------------
+d.cluster(315, 100, 1255, 730, "Azure サブスクリプション — rg-maf-ports(Japan East)", kind="azure")
+d.cluster(335, 145, 1235, 565, "Foundry プロジェクト: maf-ports", kind="sub",
+          sublabel="aif-mafportsw2・共有基盤(AIServices S0)")
+routine = d.node(470, 450, icon("scheduler"), "Routine\nhn-briefing-daily", status="GA",
+                 note="平日 9:00 JST・検証後 disable", note_color=ORANGE)
+ha = d.cluster(600, 195, 950, 525, "hosted agent: hn-briefing-agent", kind="focus")
+hosted = d.node(790, 330, icon("containerapp"), "ResponsesHostServer\n:8088・responses 2.0.0",
+                status="GA", note="0.5 vCPU / 1 GiB・python_3_13")
+tool = d.box(790, 470, 260, 50, "関数ツール collect_ranked_stories\nコンテナ内 httpx(Toolbox 不要)")
+d.edge(hosted, tool)
+model = d.node(1110, 330, icon("model"), "モデルデプロイ\ngpt-5.4-mini", status="GA",
+               note="GlobalStandard, capacity 10")
 
-azure = d.cluster(440, 100, 1360, 720, "Azure subscription — rg-maf-ports (Japan East)", kind="azure")
-foundry = d.cluster(470, 150, 1330, 560, "Foundry: aif-mafportsw2", kind="sub",
-                    sublabel="shared infra (AIServices S0)")
-routine = d.node(590, 335, icon("scheduler"), "Routine (preview)\ncron weekdays 21:00 JST",
-                 note="disabled after validation", note_color=ORANGE)
-hosted = d.node(890, 260, icon("containerapp"), "Hosted agent: hn-briefing\nResponsesHostServer (:8088)",
-                note="per-session sandbox, $HOME persisted")
-tool = d.box(890, 445, 280, 52, "function tool: collect_ranked_stories\n(in-container httpx -> deterministic rank)")
-model = d.node(1200, 260, icon("model"), "Model deployment\ngpt-5.4-mini")
-project = d.node(1200, 445, icon("project"), "Project: maf-ports")
-appi = d.node(700, 640, icon("appinsights"), "App Insights\nappi-mafportsw2")
-logw = d.node(1000, 640, icon("loganalytics"), "Log Analytics\nlog-mafportsw2")
+appi = d.node(790, 640, icon("appinsights"), "App Insights\nappi-mafportsw2")
+logw = d.node(1060, 640, icon("loganalytics"), "Log Analytics\nlog-mafportsw2")
 d.edge(appi, logw)
 
-d.edge(op, deploy)
-d.edge(op, routset, via=[(62, 250), (62, 370)])
-d.edge(deploy, hosted.port("left", 0.15), via=[(620, 238)],
-       label="SDK create_version_from_code\n(REMOTE_BUILD) — Entra ID", label_color=BLUE,
-       label_t=0.4, label_dy=-28)
-d.edge(routset, routine.port("left", 0.5),
-       label="PUT /routines?api-version=v1\n+ Foundry-Features header — Entra ID", label_color=BLUE,
-       label_t=0.5, label_dy=56, label_dx=-40)
-d.edge(routine, hosted, label="invoke_agent_responses_api\n(1 trigger + 1 action)", label_t=0.5, label_dy=-48,
-       label_dx=-20)
-d.edge(hosted, model, label="FoundryChatClient —\nagent identity (Entra ID)", label_color=BLUE,
-       label_t=0.5, label_dy=-26)
-d.edge(hosted, tool, label="tool call", label_t=0.5, label_dx=32)
-d.edge(tool.port("left", 0.5), hn.port("right", 0.3), label="HTTPS GET (keyless)", label_t=0.6, label_dy=-16)
-d.edge(hosted, appi, style="dashed", color=TELEM, via=[(680, 340), (680, 560)],
-       label="OTel auto — conn string\ninjected by platform", label_t=0.75, label_dy=0, label_dx=-100)
+# --- 外部 Web(Azure 外・右) -------------------------------------------------------------
+d.cluster(1280, 110, 1460, 580, "外部 Web", kind="external", sublabel="Azure 外")
+hn = d.node(1370, 470, icon("browser"), "HN Algolia API\nfront_page JSON", note="キーレス HTTPS")
 
-d.footer(
-    notes=[
-        "Hosted agent + Routine are data-plane objects with no ARM type: Bicep stays existing-refs-only, deploy "
-        "is script-driven (zip -> REMOTE_BUILD -> version -> 100% routing; versions are immutable).",
-        "$Billing: active-session CPU/mem (0.5 vCPU / 1 GiB) + tokens; scale-to-zero after 15 min idle; each cron "
-        "fire pays a cold start. Routine left disabled to avoid unattended spend.",
-        "'No tool attach' constraint is about Foundry-managed tools only — this in-container httpx function tool "
-        "needed no Toolbox (proven live).",
+# --- 処理の流れ(下段) -------------------------------------------------------------------
+d.steps_panel(40, 760, 1460, [
+    "zip を REMOTE_BUILD でデプロイし 100% ルーティング",
+    "Routine を PUT(api-version=v1・プレビューヘッダーなし)",
+    "平日 9:00 JST に Responses API でエージェントを起動",
+    "関数ツールが HN を取得し、元実装の式で決定論ランク",
+    "digest からモデルがブリーフを生成(agent identity)",
+], columns=3)
+
+# --- edges ----------------------------------------------------------------------------
+d.edge(deploy, hosted, via=[(790, 250)], step=1, label="Entra ID", label_color=BLUE,
+       label_t=0.26, label_pos="above")
+d.edge(routset, routine, step=2, label="Entra ID", label_color=BLUE, label_t=0.68,
+       label_pos="above")
+d.edge(routine, hosted, via=[(625, 450), (625, 330)], step=3, label="Responses", label_t=0.15,
+       label_pos="below")
+d.edge(tool, hn, step=4, label="HTTPS GET", label_t=0.5, label_pos="above")
+d.edge(hosted, model, step=5, label="agent identity", label_color=BLUE, label_t=0.75,
+       label_pos="above")
+d.edge(ha.port("bottom", (790 - 600) / (950 - 600)), appi, style="dashed", color=TELEM,
+       label="OTel(接続文字列は自動注入)", label_t=0.72, label_dx=112, label_dy=0)
+
+d.notes(
+    [
+        ("課金", (
+            "アクティブセッションの CPU + メモリ(0.5 vCPU / 1 GiB)+ トークン。アイドル既定 15 分"
+            "(2〜60 分で設定可)でスケールゼロ、cron 発火ごとにコールドスタート"
+        )),
+        ("運用", (
+            "hosted agent と Routine は ARM 型のないデータプレーン・オブジェクト → Bicep は既存参照のみ、"
+            "デプロイはスクリプト(バージョンは不変・常に 1 バージョン 100%)"
+        )),
+        ("注意", (
+            "Routine の下流呼び出しは 1 試行 30 秒・最大 3 試行。コールドスタート込みで超えると"
+            "再試行で重複実行になりうる → run history の所要時間で確認"
+        )),
+        ("認証", (
+            "モデル = agent identity(コンテナに秘密なし)/ デプロイ・Routine 操作 = Entra ID(az login)"
+            "/ ロジック層 CLI(hn-briefing-maf)= api-key / HN = キーレス"
+        )),
+        ("閉域", (
+            "ラボ構成: パブリックエンドポイント・VNet なし(閉域版は survey architecture 07)。"
+            "egress controls(Preview)を使うなら許可先は hn.algolia.com のみ"
+        )),
     ],
-    auth=[
-        "Auth: model = agent identity (dedicated Entra ID, zero secrets in container) / deploy + routine "
-        "management = Entra ID (az login, Foundry Project Manager) / HN Algolia = keyless",
-    ],
+    source="出典: labs/maf-ports/ports/hn-briefing-hosted/README.md",
 )
 
 d.save(str(_here.parent / "architecture.png"))

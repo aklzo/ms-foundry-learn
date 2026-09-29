@@ -1,4 +1,4 @@
-"""B4: マルチエージェント(専門分化、05章)。
+"""B4: マルチエージェント(専門分化、05章)のアーキテクチャ図(v2 スタイル: 日本語+処理順バッジ)。
 
 Regenerate:  uv run --with diagrams,pillow python docs/survey/architecture/diagrams/b4-multi-agent.py
 """
@@ -9,59 +9,81 @@ import sys
 _here = Path(__file__).resolve()
 _repo = next(p for p in _here.parents if (p / "labs" / "maf-ports" / "tools" / "archdiagram.py").exists())
 sys.path.insert(0, str(_repo / "labs" / "maf-ports" / "tools"))
-from archdiagram import BLUE, ORANGE, Diagram, az, icon, res  # noqa: E402
+from archdiagram import BLUE, MUTED, RED, Diagram, az, icon, res  # noqa: E402
 
 d = Diagram(
-    "B4: Multi-agent with domain specialization — MAF workflow + hosted agents",
-    width=1400,
-    height=900,
-    subtitle="Only when per-domain prompts / knowledge / PERMISSIONS must differ, or parallel "
-    "research pays. Single agent + tools is enough for most cases (-> ch.11).",
+    "B4: マルチエージェント(専門分化)— MAF オーケストレータ + hosted agent",
+    width=1560,
+    height=800,
+    subtitle="領域ごとにプロンプト・ナレッジ・権限を分けたい / 並列に調べさせたい場合に限る。"
+    "多くの案件は単一エージェント + 複数ツールで足りる(→ 11章)",
 )
 
-user = d.node(130, 260, res("onprem/client/user.png"), "User / app")
+# --- 利用者(Azure 外・左) ----------------------------------------------------------
+d.cluster(40, 110, 230, 640, "利用者", kind="external")
+user = d.node(135, 385, res("onprem/client/user.png"), "業務アプリ / 利用者")
 
-azc = d.cluster(280, 110, 1340, 740, "Azure subscription", kind="azure")
-fc = d.cluster(310, 160, 1020, 710, "Foundry", kind="sub")
+# --- Azure --------------------------------------------------------------------------
+d.cluster(280, 100, 1290, 670, "Azure サブスクリプション", kind="azure")
+d.cluster(300, 140, 1010, 650, "Foundry プロジェクト", kind="sub")
 
-wf = d.node(440, 290, icon("workflow"), "MAF workflow\n(orchestrator, code)",
-            note="all 5 patterns built-in")
-a1 = d.node(730, 230, icon("containerapp"), "Research agent",
-            note="own Entra Agent ID + knowledge", note_color=BLUE)
-a2 = d.node(730, 410, icon("containerapp"), "Ops agent",
-            note="own tools + RBAC scope", note_color=BLUE)
-a3 = d.node(730, 590, icon("containerapp"), "Compliance agent",
-            note="read-only knowledge", note_color=BLUE)
-model = d.node(920, 410, icon("model"), "Model\ndeployment(s)", note="size per agent task")
+d.cluster(320, 180, 560, 490, "オーケストレータ", kind="sub")
+patterns = d.box(440, 250, 200, 62, "Sequential・Concurrent\nHandoff・Group chat\nMagentic(5 パターン組込み)")
+orch = d.node(440, 385, icon("workflow"), "MAF ワークフロー", note="hosted agent として配置", status="GA")
 
-ext = d.cluster(1090, 200, 1340, 450, "Partner / other org", kind="external")
-pa = d.node(1215, 300, icon("project"), "External agent",
-            note="A2A v1.0 GA / v0.3 preview")
+legacy = d.box(440, 575, 176, 44, "ポータルの\nビジュアル Workflows", fill=(242, 243, 245),
+               border=(170, 174, 180), text_color=MUTED, status="廃止予定")
+d.text(440, 606, "2026-12-01 廃止", fill=RED, anchor="ma")
 
-d.edge(user, wf)
-d.edge(wf, a1, label="sequential / concurrent /\nhandoff / group chat / magentic",
-       label_t=0.45, label_dy=-30)
-d.edge(wf.port("right", 0.3), a2)
-d.edge(wf.port("right", 0.3), a3)
-d.edge(a2, model, label="each agent -> model\n(size per task)", label_t=0.5, label_dy=-28)
-d.edge(a1, pa, label="A2A v1.0 (Entra required)", label_color=BLUE, label_t=0.55, label_dy=-16)
+d.cluster(605, 180, 865, 460, "専門エージェント", kind="focus", sublabel="hosted agent")
+ops = d.node(735, 250, icon("containerapp"), "業務エージェント", note="個別 Agent ID・更新系", note_color=BLUE)
+res_agent = d.node(735, 385, icon("containerapp"), "調査エージェント", note="個別 Agent ID・参照のみ",
+                   note_color=BLUE)
+a2a = d.box(735, 540, 150, 40, "A2A ツール(v1.0)", status="GA")
 
-d.footer(
-    notes=[
-        "Portal visual Workflows retire 2026-12-01 -> MAF (code, recommended) / Logic Apps (visual) / "
-        "A2A (simple delegation). Export the YAML before the designer disappears.",
-        "A2A: v1.0 (tool type a2a) is GA; v0.3 / a2a_preview = preview AND the default when unversioned "
-        "-> pin A2A-Version: 1.0. Still text-only, no SSE.",
-        "Prompt agents share one project identity (classic model; new object model = per-agent, check "
-        "agent.identity) -> hosted agents or separate projects.",
-        "Security trimming must be implemented in EVERY agent (official). Anti-patterns: agents "
-        "without real specialization, shared mutable state between parallel agents.",
+apim = d.node(1150, 250, az("integration/api-management.png"), "APIM / Toolbox(MCP)", note="ツールの統制",
+              status="GA")
+search = d.node(1150, 385, icon("search"), "領域別ナレッジ", note="AI Search / Foundry IQ")
+
+# --- 外部(Azure 外・右) ------------------------------------------------------------
+d.cluster(1320, 110, 1520, 330, "基幹システム", kind="external")
+erp = d.node(1420, 250, icon("browser"), "業務 API")
+d.cluster(1320, 420, 1520, 640, "他組織", kind="external")
+partner = d.node(1420, 540, icon("project"), "パートナーの\nエージェント")
+
+# --- 処理の流れ(下段) ------------------------------------------------------------------
+d.steps_panel(40, 700, 1520, [
+    "業務アプリから依頼(Responses API)",
+    "MAF がパターンに沿って専門エージェントへ振り分け",
+    "各エージェントが自分の ID・権限でツール / ナレッジを使う",
+    "他組織のエージェントへは A2A v1.0 で委譲",
+], columns=2)
+
+# --- edges --------------------------------------------------------------------------
+d.edge(user, orch, both=True, step=1, label_t=0.36)
+d.edge(orch, ops)
+d.edge(orch, res_agent, step=2, label_t=0.5)
+d.edge(orch, a2a)
+d.edge(legacy.port("top"), (440, 490), color=MUTED, label="YAML を移行", label_t=0.5,
+       label_dx=48, label_dy=0)
+d.edge(ops, apim, step=3, label_t=0.5)
+d.edge(apim, erp)
+d.edge(res_agent, search, step=3, label_t=0.5)
+d.edge(a2a, partner, color=BLUE, step=4, label="Entra 必須", label_color=BLUE, label_t=0.5,
+       label_pos="above")
+
+d.notes(
+    [
+        ("期限", "ビジュアル Workflows は 2026-12-01 廃止。デザイナーが消える前に YAML をエクスポート → MAF(推奨)/ Logic Apps / A2A"),
+        ("認証", "hosted agent はエージェントごとに Entra Agent ID。prompt agent は旧モデルだとプロジェクト共通 ID(agent.identity で確認)"),
+        ("制約", "A2A は未指定だと v0.3(プレビュー)→ A2A-Version: 1.0 を明示。テキストのみ・SSE 非対応・呼び出し側に Foundry Agent Consumer"),
+        ("注意", "セキュリティトリミングは全エージェントで実装(公式)。並列エージェント間で可変状態を共有しない"),
+        ("推奨", "Connected agents は新 Agent Service で非対応 → 新規設計は A2A か MAF に寄せる"),
     ],
-    auth=[
-        "Auth: per-agent Entra Agent ID = least privilege per domain / A2A callers need "
-        "Foundry Agent Consumer role, key auth impossible",
-    ],
-    config_note="Source: docs/survey/architecture/05 B4 (pattern selection: ch.11)",
+    source="出典: docs/survey/architecture/05 B4",
 )
 
-d.save(str(_here.parent.parent / "images" / "b4-multi-agent.png"))
+d.save(
+    str(_here.parent.parent / "images" / "b4-multi-agent.png"),
+    slide=str(_here.parent.parent / "images" / "slide" / "b4-multi-agent.png"),
+)

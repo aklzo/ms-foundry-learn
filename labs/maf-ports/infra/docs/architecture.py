@@ -1,73 +1,82 @@
-"""Shared-infra architecture diagram (shared.bicep + roles.bicep).
+"""共有基盤(shared.bicep + roles.bicep)のアーキテクチャ図(v2 スタイル: 日本語+処理順バッジ)。
 
 Regenerate:  uv run --with diagrams,pillow python infra/docs/architecture.py
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 _here = Path(__file__).resolve()
-for _p in _here.parents:
-    if (_p / "tools" / "archdiagram.py").exists():
-        sys.path.insert(0, str(_p / "tools"))
-        break
-from archdiagram import BLUE, F_EDGE, MUTED, TELEM, Diagram, icon  # noqa: E402
+_tools = next(p / "tools" for p in _here.parents if (p / "tools" / "archdiagram.py").exists())
+sys.path.insert(0, str(_tools))
+from archdiagram import BLUE, TELEM, Diagram, icon
 
 d = Diagram(
-    "maf-ports shared infra — Foundry + monitoring",
-    width=1400,
-    height=820,
-    subtitle="infra/shared.bicep (deploy once, all 12 ports) + infra/roles.bicep (2nd stage: RBAC for MIs)",
+    "maf-ports 共有基盤 — Foundry + 監視",
+    width=1500,
+    height=900,
+    subtitle="infra/shared.bicep(1 回だけデプロイ・全 14 ポート共通)+ infra/roles.bicep(第 2 段: MI への RBAC)"
+    "— Microsoft.CognitiveServices 2025-06-01",
 )
 
-# --- clusters ---------------------------------------------------------------
-local = d.cluster(40, 110, 360, 480, "Local machine (uv + MAF)", kind="local")
-azure = d.cluster(420, 100, 1360, 660, "Azure subscription — rg-maf-ports (Japan East)", kind="azure")
-foundry = d.cluster(
-    460, 150, 1010, 420, "Foundry account: aif-mafports", kind="sub",
-    sublabel="kind AIServices, SKU S0, public network, local auth on, system MI",
-)
+# --- ローカル端末 ----------------------------------------------------------------------
+d.cluster(40, 100, 380, 660, "ローカル端末", kind="local")
+azcli = d.node(210, 190, icon("cli"), "az CLI + Bicep", note="shared.bicep → roles.bicep")
+cli = d.node(210, 385, icon("cli"), "ポート CLI\n(ports/*・MAF)", note="configure_azure_monitor")
 
-# --- nodes ------------------------------------------------------------------
-cli = d.node(140, 220, icon("cli"), "MAF port CLIs\n(ports/*, Python)", note="OTel: configure_azure_monitor")
-azcli = d.node(258, 395, icon("cli"), "az CLI + Bicep", note="shared.bicep -> roles.bicep")
+# --- Azure ------------------------------------------------------------------------------
+azure = d.cluster(420, 100, 1460, 660, "Azure サブスクリプション — rg-maf-ports(Japan East)", kind="azure")
+d.cluster(450, 150, 1090, 470, "Foundry: aif-<baseName>", kind="focus",
+          sublabel="AIServices S0・公開ネットワーク・ローカル認証有効")
+model = d.node(620, 250, icon("model"), "モデルデプロイ\ngpt-5.4-mini", note="GlobalStandard・容量 10",
+               status="GA")
+project = d.node(620, 385, icon("project"), "プロジェクト: maf-ports", note="システム割り当て MI",
+                 status="GA")
+account = d.node(935, 315, icon("foundry"), "Foundry アカウント", note="システム割り当て MI・api-key 有効")
 
-project = d.node(600, 280, icon("project"), "Project: maf-ports", note="system-assigned MI")
-model = d.node(880, 280, icon("model"), "Model deployment\ngpt-5.4-mini", note="GlobalStandard, capacity 10")
+rbac = d.node(1290, 315, icon("rbac"), "roles.bicep(第 2 段)\nロール割り当て ×4",
+              note="OpenAI User + Foundry User")
+d.text(1290, 414, "× アカウント MI / プロジェクト MI", anchor="ma")
 
-rbac = d.node(
-    1200, 230, icon("rbac"),
-    "roles.bicep\n4 role assignments",
-    note="OpenAI User + Foundry User",
-)
-d.d.text((1200, rbac.y1 + 2), "x (account MI, project MI)", font=F_EDGE, fill=MUTED, anchor="ma")
+appi = d.node(620, 560, icon("appinsights"), "App Insights\nappi-<baseName>")
+logws = d.node(935, 560, icon("loganalytics"), "Log Analytics\nlog-<baseName>", note="PerGB2018・保持 30 日")
+d.edge(appi, logws, label="ワークスペース", label_dy=-12)
 
-appi = d.node(640, 560, icon("appinsights"), "App Insights\nappi-mafports")
-logws = d.node(950, 560, icon("loganalytics"), "Log Analytics\nlog-mafports", note="PerGB2018, 30 days")
+# --- 処理の流れ ----------------------------------------------------------------------
+d.edge(azcli, (azure.x0, azcli.cy), step=1, label="ARM デプロイ", label_t=0.5, label_pos="above")
+d.edge(rbac, account, step=2, label="権限付与", label_t=0.45, label_pos="above")
+d.edge(cli, model, step=3, label="api-key", label_color=BLUE, label_t=0.2, label_pos="above",
+       color=BLUE)
+d.edge(cli, project, step=4, label="Entra ID", label_color=BLUE, label_t=0.2, label_pos="below",
+       color=BLUE)
+d.edge((cli.cx, cli.y1 + 6), appi, via=[(cli.cx, appi.cy)], style="dashed", color=TELEM, step=5,
+       label="OTel", label_color=TELEM, label_t=0.75, label_pos="above")
+d.edge(project, appi, step=6, label="AppInsights 接続", label_t=0.5, label_pos="right")
 
-# --- edges ------------------------------------------------------------------
-d.edge(cli, model, label="chat (OpenAI v1 endpoint)\napi-key", label_color=BLUE, label_t=0.42)
-d.edge(cli, project, label="project endpoint (data plane)\nEntra ID (az login)", label_color=BLUE,
-       label_t=0.62, label_dy=26)
-d.edge(azcli, (azure.x0, 395), label="ARM deploy (2-stage)", label_t=0.55, label_dy=-14)
-d.edge(rbac, foundry.port("right", 0.8), label="grants data-plane roles\n(scope: account)", label_t=0.75, label_dy=26)
-d.edge(project, appi, label="AppInsights connection\n(connection string, shared to all)", label_t=0.5,
-       label_dx=8, label_dy=0)
-d.edge(appi, logws, label="workspace-based")
-d.edge(cli, appi, style="dashed", color=TELEM, label="OTel traces", route="vh", label_t=0.45, label_dy=-12)
+d.steps_panel(40, 690, 1460, [
+    "shared.bicep で基盤一式を作る(第 1 段・ARM)",
+    "roles.bicep で MI 2 つにロール 4 件(第 2 段)",
+    "ポートは v1 エンドポイントを api-key で呼ぶ",
+    "一部ポートはプロジェクト EP を Entra ID で呼ぶ",
+    "各ポートが OTel を App Insights へ直接送る",
+    "プロジェクトの接続でポータルのトレースに表示",
+], columns=3)
 
-# --- footer -----------------------------------------------------------------
-d.footer(
-    notes=[
-        "2-stage deploy: 1) shared.bicep (account + project + model + monitoring)   "
-        "2) roles.bicep with MI principalIds as params (guid seed includes pid -> survives MI rotation, no orphan assignments)",
-        "$Billing: model tokens (GlobalStandard) + App Insights / Log Analytics ingestion. "
-        "RG deleted 2026-07-31 after validation — redeploy with a new RG name (stateless design).",
+d.notes(
+    [
+        ("運用", (
+            "2 段デプロイ: MI の principalId をパラメータで受けて割り当て名の guid に含める"
+            " → 再デプロイで MI が変わっても孤児割り当てを残さない"
+        )),
+        ("認証", (
+            "モデル = api-key(既定)/ プロジェクト EP = Entra ID(利用者に Foundry User)/"
+            " Memory・評価 = MI + roles.bicep"
+        )),
+        ("課金", "すべて従量(トークン + 取り込み量)で待機コストなし。時間課金の部品はポート固有側(AI Search Basic 等)"),
+        ("注意", "RBAC 伝播に 5〜15 分。RG 削除後も aif-<baseName> は 48 時間 soft delete(purge か baseName を変える)"),
+        ("閉域", "ラボ構成: パブリックエンドポイント・VNet なし(閉域版は survey architecture 07)"),
     ],
-    auth=[
-        "Auth map: model data plane = api-key (lab default) / project data plane = Entra ID / "
-        "service-side features (Memory, evals) = account & project MI + roles.bicep RBAC",
-    ],
+    source="出典: labs/maf-ports/infra/docs/runbook.md",
 )
 
 d.save(str(_here.parent / "architecture.png"))

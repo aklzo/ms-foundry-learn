@@ -1,4 +1,6 @@
-"""C2: マルチテナント SaaS(06章)。C1/C3 は本図の部分集合(単一テナント / APIM 按分)のため個別図は作らない。
+"""C2: マルチテナント SaaS(06章)のアーキテクチャ図(v2 スタイル: 日本語+処理順バッジ)。
+
+C1 / C3 は本図の部分集合(単一テナント / APIM 按分)のため個別図は作らない。
 
 Regenerate:  uv run --with diagrams,pillow python docs/survey/architecture/diagrams/c2-multitenant-saas.py
 """
@@ -12,58 +14,70 @@ sys.path.insert(0, str(_repo / "labs" / "maf-ports" / "tools"))
 from archdiagram import BLUE, ORANGE, Diagram, az, icon, res  # noqa: E402
 
 d = Diagram(
-    "C2: Multi-tenant SaaS — shared by default, dedicated by justification",
-    width=1400,
-    height=920,
-    subtitle="Official default: shared model deployment. Dedicated per-tenant deployments only for "
-    "quota/chargeback, filter policies, model lifecycle, fine-tuning, or residency.",
+    "C2: マルチテナント SaaS — 既定は共有、専用は理由があるときだけ",
+    width=1560,
+    height=800,
+    subtitle="公式の既定は共有モデルデプロイ。専用デプロイは TPM 割当・課金按分 / フィルタ方針 / モデルの"
+    "ライフサイクル / ファインチューニング / データ所在のいずれかが要るときだけ作る",
 )
 
-t = d.cluster(40, 130, 260, 440, "Tenants", kind="external")
-ta = d.node(150, 220, res("onprem/client/user.png"), "Tenant A users")
-tb = d.node(150, 350, res("onprem/client/user.png"), "Tenant B users")
+# --- テナント(Azure 外・左) ----------------------------------------------------------
+d.cluster(40, 110, 250, 470, "テナント", kind="external")
+ta = d.node(145, 230, res("onprem/client/users.png"), "テナント A", note="小口・多数")
+tb = d.node(145, 380, res("onprem/client/users.png"), "テナント B", note="大口")
+d.box(145, 555, 196, 92, "分離の単位(3 モデル)\n① 共有 + 論理分離\n② テナント別デプロイ\n③ テナント別リソース",
+      fill=(255, 255, 255), border=(190, 198, 208), text_color=(70, 76, 82))
 
-azc = d.cluster(320, 110, 1360, 780, "Azure subscription (SaaS provider)", kind="azure")
+# --- Azure(SaaS 提供者) ------------------------------------------------------------
+d.cluster(280, 100, 1520, 640, "Azure サブスクリプション(SaaS 提供者)", kind="azure")
 
-apim = d.node(450, 270, az("integration/api-management.png"), "APIM AI gateway",
-              note="llm-emit-token-metric = per-tenant chargeback", note_color=ORANGE)
-api = d.box(450, 480, 250, 60, "API layer = gatekeeper\n(ALL tenant-data access\ngoes through here)")
+d.cluster(300, 140, 610, 620, "SaaS アプリ", kind="focus", sublabel="テナント文脈の強制点")
+app = d.node(455, 230, az("appservices/app-services.png"), "Web / API",
+             note="テナント ID はトークンから", note_color=BLUE)
+api = d.box(455, 490, 230, 56, "データ API 層\n(ゲートキーパー)")
 
-fc = d.cluster(640, 160, 1330, 420, "Foundry", kind="sub")
-shared = d.node(780, 270, icon("model"), "Shared model deployment\n(official default)",
-                note="app must enforce tenant/deployment rules")
-dedic = d.node(1040, 270, icon("model"), "Dedicated deployment\n(large tenants)",
-               note="TPM quota / filters / FT / residency")
-proj = d.node(1240, 270, icon("project"), "Project")
+apim = d.node(760, 230, az("integration/api-management.png"), "APIM(AI ゲートウェイ)",
+              note="テナント別 TPM・トークン計測", note_color=ORANGE)
 
-data = d.cluster(640, 460, 1330, 750, "Tenant data (store-per-tenant or shared+filter)", kind="sub")
-search = d.node(780, 570, icon("search"), "AI Search\nindex per tenant",
-                note="B2C-scale -> shared store + filter")
-cosmos = d.node(1020, 570, az("databases/azure-cosmos-db.png"), "Cosmos DB\npartition per tenant")
-blob = d.node(1230, 570, az("storage/storage-accounts.png"), "Blob\nper tenant")
+d.cluster(900, 140, 1500, 330, "Foundry", kind="sub")
+shared = d.node(1060, 230, icon("model"), "共有デプロイ", note="公式の既定(Standard)")
+dedic = d.node(1340, 230, icon("model"), "専用デプロイ", note="大口テナント(PTU)")
 
-d.edge(ta, apim, label="tenant ID", label_t=0.5, label_dy=-14)
-d.edge(tb, apim)
-d.edge(apim, api)
-d.edge(apim, fc.port("left", 0.4), label="rate limit / token\nmetering per tenant",
-       label_color=ORANGE, label_t=0.5, label_dy=-28)
-d.edge(api, data.port("left", 0.4), label="tenant-scoped queries +\naudit log of grounding data",
-       label_t=0.65, label_dy=30)
+d.cluster(700, 380, 1500, 620, "テナントデータ", kind="sub", sublabel="テナント専用ストア or 共有 + テナントフィルタ")
+search = d.node(850, 490, icon("search"), "AI Search", note="インデックス / テナント")
+cosmos = d.node(1100, 490, az("databases/azure-cosmos-db.png"), "Cosmos DB",
+                note="会話・response ID(テナントキー)")
+blob = d.node(1350, 490, az("storage/blob-storage.png"), "Blob", note="コンテナ / テナント")
 
-d.footer(
-    notes=[
-        "Official pitfalls: shared instances give NO per-deployment security isolation; noisy "
-        "neighbor; NEVER share an instance that hosts fine-tuned models.",
-        "Responses API weakens tenant isolation (official): scope response IDs to tenants in "
-        "YOUR store; built-in tools (Code Interpreter / MCP) need per-tenant containers/configs.",
-        "$Chargeback is app-side by design: track per-tenant tokens in the app (APIM metric "
-        "eases this). Limits: 32 deployments/resource, 100 Foundry resources/region/sub.",
+# --- 処理の流れ(下段) ------------------------------------------------------------------
+d.steps_panel(40, 670, 1520, [
+    "トークンからテナント ID を確定(LLM に伝搬させない)",
+    "データ API 層がそのテナントのデータだけを取得",
+    "APIM がテナント別に TPM 制限・トークン計測",
+    "既定は共有デプロイ、大口は専用デプロイへ",
+], columns=2)
+
+# --- edges --------------------------------------------------------------------------
+d.edge(ta, app, both=True, step=1, label_t=0.36)
+d.edge(tb, (423, 246))
+d.edge(app, api, label="直接クエリ禁止", label_t=0.55, label_dx=52, label_dy=0)
+d.edge(api, search, step=2, label_t=0.45)
+d.edge(app, apim, step=3, label_t=0.62)
+d.edge(apim, shared, step=4, label_t=0.66)
+d.edge(dedic, shared, label="スピルオーバー", label_t=0.5, label_dy=-14)
+
+d.notes(
+    [
+        ("制約", "共有リソースはデプロイ単位のセキュリティ分離を持たない → テナントとデプロイの対応はアプリが強制。FT 済みモデルのリソースは共有しない"),
+        ("注意", "Responses API はテナント分離が難しい(公式): response ID はテナントキー付きで自前保存、組込みツール(Code Interpreter / MCP)はテナント別構成に"),
+        ("課金", "テナント別按分はアプリ側の自前実装が公式回答。APIM の llm-emit-token-metric にテナント ID をカスタム次元で追加"),
+        ("制約", "hosted agent の同時セッションは sub × リージョン既定 2,000(Japan East)。閉域はサブネット IP と 1:1 → 大規模 SaaS は分割を検討"),
+        ("推奨", "B2C のように小規模テナントが多いならストア共有 + テナントフィルタ(テナント専用ストアは使わない)"),
     ],
-    auth=[
-        "Auth: never let LLM output carry tenant identity (official: don't rely on the model to "
-        "propagate tenant info); per-user conversation authz stays app responsibility",
-    ],
-    config_note="Source: docs/survey/architecture/06 C2 (C1 = single-tenant subset / C3 = APIM capacity view)",
+    source="出典: docs/survey/architecture/06 C2",
 )
 
-d.save(str(_here.parent.parent / "images" / "c2-multitenant-saas.png"))
+d.save(
+    str(_here.parent.parent / "images" / "c2-multitenant-saas.png"),
+    slide=str(_here.parent.parent / "images" / "slide" / "c2-multitenant-saas.png"),
+)

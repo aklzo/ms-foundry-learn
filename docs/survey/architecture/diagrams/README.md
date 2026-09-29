@@ -1,10 +1,24 @@
 # diagrams — アーキテクチャ図の生成
 
-`../images/*.png` は本ディレクトリの Python スクリプトから生成する。描画ヘルパーは
+`../images/*.png`(survey HTML 用)と `../images/slide/*.png`(スライド用の切り出し版)は、本ディレクトリの
+Python スクリプトから同時に生成する。描画ヘルパーは
 [labs/maf-ports/tools/archdiagram.py](../../../../labs/maf-ports/tools/archdiagram.py)
 (Pillow 自前合成。公式 Azure アイコンは `diagrams` pip パッケージ同梱のものを使用)を共有する。
-規約(実線=データ/破線=テレメトリ/青=認証/橙=課金注意、図中テキストは英語 — DejaVu に日本語グリフが無いため)も
+規約(実線=データ/破線=テレメトリ/青=認証/橙=課金注意)は
 [maf-ports 側の README](../../../../labs/maf-ports/tools/README.md) に従う。
+
+## v2 スタイル(2026-09-29〜)
+
+- **日本語ラベル**(サービス名・製品名は公式の英語表記のまま)。日本語フォントはヘルパーが自動検出
+  (Noto Sans CJK JP / Yu Gothic / Meiryo。`ARCHDIAGRAM_FONT` で上書き可)。見つからないと DejaVu になり日本語が豆腐になる(警告が出る)
+- **2 倍解像度**(`ARCHDIAGRAM_SCALE`、既定 2)。スクリプトの座標は 1 倍の論理座標のまま
+- **処理番号**: 主要な流れのエッジに `step=N` の青丸番号+図の下端に「処理の流れ」パネル(`steps_panel(columns=2〜3)`)
+- **ステータスバッジ**: Foundry 機能のノードに `status="GA" / "Preview"` 等(値は features の MD が正。推測で付けない)
+- **注記帯**: 旧来の英文 `footer()` をやめ、`notes([(タグ, 文), ...])` の 3〜5 行(タグ = 課金 / 認証 / 制約 / 閉域 / 運用 / 推奨 / 注意 / 期限 / 実測)。
+  長い説明は本文(Markdown)に書き、図には判断に効く要点だけを残す
+- **スライド用切り出し**: `d.save(images/<name>.png, slide=images/slide/<name>.png)`。スライド版はタイトル・処理の流れパネル・注記帯を除いた本体のみ
+  (スライド側で処理番号の説明を HTML で大きく書くため)。処理の流れパネルは必ず本体の**下端に全幅で**置く
+- 見本: [b2-hitl-automation.py](./b2-hitl-automation.py)
 
 ## 再生成
 
@@ -15,8 +29,9 @@ for f in docs/survey/architecture/diagrams/*.py; do
 done
 ```
 
-PNG は `docs/survey/architecture/images/` に上書き出力される。Markdown には
+PNG は `docs/survey/architecture/images/`(+ スライド用は `images/slide/`)に上書き出力される。Markdown には
 `![...](./images/<name>.png)` で埋め込み、HTML は `md2html.py` が `../images/` 参照へ自動書き換える。
+スライド(`docs/slides/`)は `images/slide/<name>.png` を全幅で使う。
 
 ## 一覧(全 18 枚)
 
@@ -54,6 +69,6 @@ PNG は `docs/survey/architecture/images/` に上書き出力される。Markdow
 
 ## 新しい図を足すとき
 
-1. 構成が近い既存スクリプトをコピーし、章の本文(ASCII 図・表)と乖離しないように描く
-2. 生成 → PNG を目視確認(ラベル・エッジの重なり)→ 対象章に `![...](./images/<name>.png)` を挿入
-3. `python3 docs/survey/tools/md2html.py` で HTML を再生成
+1. 構成が近い既存スクリプト(v2 スタイルのもの)をコピーし、章の本文(ASCII 図・表)と乖離しないように描く
+2. 生成 → **本体とスライド版の両方の PNG** を目視確認(ラベル・エッジ・アイコンの重なり、偏った余白)→ 対象章に `![...](./images/<name>.png)` を挿入
+3. `python3 docs/survey/tools/md2html.py` で HTML を再生成。スライドで使うなら `docs/slides/` の要点列(処理番号の説明)も同期
