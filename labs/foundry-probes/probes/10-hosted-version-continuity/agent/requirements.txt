@@ -1,0 +1,4 @@
+# probe 10 の検証用 hosted agent の依存(REMOTE_BUILD が zip ルートのこのファイルを pip で解決する)。
+# モデルも MAF も使わないので Agent Server SDK だけ。版は Port 15 の検証版(2.2.0)を下限にする。
+azure-ai-agentserver-core>=2.2.0,<3
+azure-ai-agentserver-responses>=2.2.0,<3

@@ -1,6 +1,6 @@
 # Foundry SI ケースブック — 要件別プレイブック・詰まりどころ索引・案件事例
 
-> **最終更新:** 2026-09-04 / 2026-09-26(月次更新) / 2026-09-29(P-A11 注記のみ) / 2026-09-30(Port 15 ライブの実測 3 件追加) / **版:** 初版
+> **最終更新:** 2026-09-04 / 2026-09-26(月次更新) / 2026-09-29(P-A11 注記のみ) / 2026-09-30(Port 15 ライブの実測 3 件+probe 10 の 1 件を追加) / **版:** 初版
 > [features](../features/README.md) が「その機能は使えるのか」、[architecture](../architecture/README.md) が「どう組むか」、[proposal](../proposal/README.md) が「どう提案するか」に答えるのに対し、本セットは **「この要件が来たら何を決め、どこで詰まるか」** に答える。公式ドキュメント調査(survey)と実装検証([tech-selection-guide](../../tech-selection-guide.md) / labs)の**間を埋める実務層**で、公開されている第三者の記事(「ハマった」「苦労した」系)も出典として扱う唯一のセット。
 
 ## ドキュメント構成
@@ -63,6 +63,7 @@
 
 | 日付 | 内容 |
 | --- | --- |
+| 2026-09-30 | **02:** foundry-probes probe 10(hosted agent の版更新と会話の継続)の実測から **P-H25**(版を切り替えても起動中の会話は旧版のまま・休止明けに新版・ロールバックも同じ・旧版削除は 409 → `force=true`)を追加し、P-H24 の「版更新をまたぐ場合は未確認」を解消 |
 | 2026-09-30 | **02:** Port 15(delegated-access-hosted)のライブ検証から実測 3 件を末尾追加 — **P-H24**(hosted agent の会話継続は利用者ごと・agent ごとに分離され 404)、**P-O12**(プラットフォーム側 `responsesapi` スパンが会話全文を記録し、コンテナ側の設定では止まらない)、**P-C12**(Foundry アカウント配下の子リソースを並列に作ると RequestConflict)。P-I01 に hosted agent 作成での再現(`agents/write`)を付記。P-O12 は公式(トレースは接続したときだけ有効・止め方は接続解除のみ・接続文字列はコンテナにも注入)と突き合わせ、対処を architecture 09 §3.6 の 3 案(集約 / 分離 / 接続しない)に接続 |
 | 2026-09-29 | features 差分更新の波及のみ。**02:** P-A11(Routines REST)に「※2026-09-29: `Foundry-Features` の値は `Routines=V2Preview`(REST 仕様では任意ヘッダー、SDK 2.5.0+ は自動付与)。V1Preview 固定のコードは外すか揃える」を注記。P-ID の追加・振り直しなし |
 | 2026-09-26 | 月次更新。**02:** 外部 URL 全件の生存確認(410 の Q&A 2 件に「リンク切れ」付記、リダイレクト 5 件と転載記事 1 件を新 URL / 原文へ差し替え)、[公式] 前提の再確認で「※2026-09-26」注記(Routines GA・リージョン拡大〈P-A11〉、Toolboxes GA〈P-H12〉、idle timeout 2〜60 分〈P-H13〉、サブネット容量表と 429 `subnet_exhausted`〈P-N05〉、egress controls〈P-N07〉、incoming A2A〈P-A06〉、Foundry IQ の per-request ヘッダーと未フィルタ返却〈P-R07〉、日本 Regional +35% の価格改定〈P-M03〉、Claude の 2 系統〈P-M05〉、state store / resilience〈P-H17・H18・F06〉、公式プロトコルライブラリの stable 化〈P-H20〉、`openai>=3` 必須化〈P-F12〉、capability settings〈P-N03〉)。**訂正:** P-C06(capabilityHosts は安定版 ARM API 2025-06-01 以降にもある)、P-H06(prompt agent も版間の % 分割なし)、P-H15(旧アダプタ名の特定)。**追加:** P-H23・A12・N20・M15・G11・F13・F14。**01:** S-02 / S-03(Routines GA)/ S-04 / S-05 / S-06(セッション上限・`x-ms-user-identity`)/ S-07 / S-10(Voice Live の面別ステータス)/ S-12(egress controls)と横断節を更新。**03:** 公式側の変化の注記のみ(API version・プロトコルライブラリ・Routines・openai 3 系) |

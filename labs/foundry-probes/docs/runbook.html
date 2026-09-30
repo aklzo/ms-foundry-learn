@@ -105,10 +105,10 @@ td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
 <body><nav class="site"><a href="../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="runbook.html" class="current">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../maf-ports/infra/docs/runbook.html">共有基盤</a><a href="../../maf-ports/ports/claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../maf-ports/ports/corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../maf-ports/ports/critique-loop/docs/runbook.html">critique-loop</a><a href="../../maf-ports/ports/data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../maf-ports/ports/db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../maf-ports/ports/delegated-access-hosted/docs/runbook.html">delegated-access-hosted</a><a href="../../maf-ports/ports/game-design-team/docs/runbook.html">game-design-team</a><a href="../../maf-ports/ports/github-mcp/docs/runbook.html">github-mcp</a><a href="../../maf-ports/ports/governed-agent/docs/runbook.html">governed-agent</a><a href="../../maf-ports/ports/hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../maf-ports/ports/mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../maf-ports/ports/research-handoff/docs/runbook.html">research-handoff</a><a href="../../maf-ports/ports/services-agency/docs/runbook.html">services-agency</a><a href="../../maf-ports/ports/travel-memory/docs/runbook.html">travel-memory</a><a href="../../maf-ports/ports/trend-analysis/docs/runbook.html">trend-analysis</a></nav>
 <main>
 <h1 id="foundry-probes-実行ガイド">foundry-probes 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このラボで確かめること">1. このラボで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン確認-azure-不要・無料">4. オフライン確認(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-probe-別の確認ポイント">6. probe 別の確認ポイント</a></li><li><a href="#7-確認観点">7. 確認観点</a></li><li><a href="#8-トレース・評価の確認">8. トレース・評価の確認</a></li><li><a href="#9-片付け">9. 片付け</a></li><li><a href="#10-トラブルシューティング">10. トラブルシューティング</a></li><li><a href="#11-関連・更新履歴">11. 関連・更新履歴</a></li></ul></div>
-<blockquote><p><strong>対象:</strong> <code>labs/foundry-probes/</code>(Foundry 機能の挙動確認 probe 9 本。アプリではなく「観点ごとにリクエストを投げて生の応答を記録する」ラボ)<br><strong>最終確認:</strong> 2026-09-29 オフライン(自動テストなし。9 本の <code>py_compile</code>・<code>ruff check</code> clean・SDK 呼び出しの AST シグネチャ照合で不一致 0。依存 openai 3.20.0 / azure-ai-projects 2.7.0)/ ライブ: 2026-08-04(japaneast・gpt-5.4-mini v2026-03-17・当時は openai 2.53.0 / azure-ai-projects 2.4.0。Azure リソースは削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。発見の一次記録は各 probe の <code>NOTES.md</code>、一覧と検証対象外の理由は <a href="../README.md">README</a>。</p></blockquote>
+<blockquote><p><strong>対象:</strong> <code>labs/foundry-probes/</code>(Foundry 機能の挙動確認 probe 10 本。アプリではなく「観点ごとにリクエストを投げて生の応答を記録する」ラボ)<br><strong>最終確認:</strong> 2026-09-29 オフライン(自動テストなし。9 本の <code>py_compile</code>・<code>ruff check</code> clean・SDK 呼び出しの AST シグネチャ照合で不一致 0。依存 openai 3.20.0 / azure-ai-projects 2.7.0)/ ライブ: 01〜09 は 2026-08-04(japaneast・gpt-5.4-mini v2026-03-17・当時は openai 2.53.0 / azure-ai-projects 2.4.0)、<strong>10 は 2026-09-30</strong>(japaneast・openai 3.20.0 / azure-ai-projects 2.7.0・専用の最小基盤)。Azure リソースは削除済み — 再デプロイ手順は §5<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。発見の一次記録は各 probe の <code>NOTES.md</code>、一覧と検証対象外の理由は <a href="../README.md">README</a>。</p></blockquote>
 <h2 id="1-このラボで確かめること">1. このラボで確かめること</h2>
 <ul>
-<li>maf-ports の 13 ポートに乗らなかった Foundry 機能(Conversations・prompt agents・File Search・Web search・Model router・Structured outputs・ガードレール・埋め込みのルーティング・継続評価)が、<strong>単純な入力に対して実際にどう振る舞うか</strong>。</li>
+<li>maf-ports の 13 ポートに乗らなかった Foundry 機能(Conversations・prompt agents・File Search・Web search・Model router・Structured outputs・ガードレール・埋め込みのルーティング・継続評価・hosted agent の版更新と会話の継続)が、<strong>単純な入力に対して実際にどう振る舞うか</strong>。</li>
 <li>各 probe は観点(A, B, C…)ごとに「リクエスト → 応答の要点」を対で標準出力に出す。<strong>失敗(<code>!!</code> 行)も観察結果</strong>で、スクリプトは例外で止まらず次の観点に進む。</li>
 <li>出力(<code>logs/&lt;probe&gt;.log</code>)が <code>NOTES.md</code> の根拠になる。再実測では「NOTES の発見と同じ形が出るか / 変わったか」を見る。</li>
 </ul>
@@ -116,7 +116,7 @@ td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
 <p>図(<code>architecture.png</code>)は本ラボには未作成(probe はクライアントから Foundry の各 API を直接叩くだけで、構成要素間の流れがない)。</p>
 <pre><code>probes/NN-*/probe.py ──(Entra ID: az login / DefaultAzureCredential)──┬─▶ プロジェクト openai/v1  {project}/openai/v1        … 01〜07, 09
                                                                       ├─▶ エージェントエンドポイント {project}/agents/&lt;name&gt;/endpoint/protocols/openai … 02, 09
-                                                                      ├─▶ プロジェクト REST(agents / evaluation_rules) … 02, 09
+                                                                      ├─▶ プロジェクト REST(agents / evaluation_rules / sessions) … 02, 09, 10
                                                                       └─▶ アカウント openai/v1  https://&lt;foundry&gt;.openai.azure.com/openai/v1 … 01(A), 08</code></pre>
 <div class="tablewrap"><table><thead><tr>
 <th>コンポーネント</th>
@@ -162,6 +162,11 @@ td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
 <td>Log Analytics + Application Insights(接続済み)</td>
 <td>09 の継続評価結果・手動 KQL</td>
 <td>取り込み従量</td>
+</tr>
+<tr>
+<td>hosted agent <code>probe-version-continuity</code>(10 が作成。v1〜v3・コードデプロイ)</td>
+<td>10</td>
+<td>セッションの実行中の CPU / メモリ(モデルは呼ばない)。休止中は課金なし</td>
 </tr>
 </tbody></table></div>
 <h2 id="3-前提">3. 前提</h2>
@@ -256,7 +261,13 @@ az cognitiveservices account deployment create -n aif-fprobes -g rg-foundry-prob
 <p><code>main.bicep</code> の出力(<code>projectEndpoint</code> / <code>openaiV1Endpoint</code> / <code>modelDeploymentName</code>)を <code>.env</code> に転記する(<code>cp .env.example .env</code> してから編集)。</p>
 <h3 id="5-2-実行">5.2 実行</h3>
 <pre><code>uv sync
-./run_all.sh                                          # 全 9 本を順に実行し logs/&lt;probe&gt;.log に保存(tee で画面にも出る)
+./run_all.sh                                          # 全 10 本を順に実行し logs/&lt;probe&gt;.log に保存(tee で画面にも出る)
+# 10 だけを専用の最小基盤で動かす場合(モデル・App Insights なし。所要 10 分前後 = 版のデプロイ 3 回+休止待ち 3 分)
+az group create -n rg-foundry-probes-p10 -l japaneast
+az deployment group create -g rg-foundry-probes-p10 -f probes/10-hosted-version-continuity/infra.bicep \
+  -p baseName=&lt;英小文字数字&gt; userObjectId=$(az ad signed-in-user show --query id -o tsv) --query properties.outputs.projectEndpoint.value -o tsv
+# Foundry User の反映に約 5 分かかる(hosted agent の作成に要る)
+FOUNDRY_PROJECT_ENDPOINT=&lt;上の出力&gt; uv run python probes/10-hosted-version-continuity/probe.py 2&gt;&amp;1 | tee logs/10-hosted-version-continuity.log
 uv run python probes/05-model-router/probe.py         # 1 本だけ(例)</code></pre>
 <p>出力の読み方: <code>== &lt;観点&gt;</code> が見出し、<code>--- &lt;ラベル&gt;</code> の下が観察値(長文は <code>…(全N文字)</code> で切り詰め)、<code>!! &lt;例外型&gt;: &lt;内容&gt;</code> はその観点で返ったエラー(観察対象。スクリプトは続行する)。</p>
 <h2 id="6-probe-別の確認ポイント">6. probe 別の確認ポイント</h2>
@@ -333,6 +344,14 @@ uv run python probes/05-model-router/probe.py         # 1 本だけ(例)</code><
 <li><strong>主要な発見</strong>: ルールは <strong>prompt agent スコープ必須</strong>(filter なしは <code>Filter.AgentName is required</code>)。2026-08-04 は自動ランが <code>evals.runs.list</code> に出なかったが、eval のデータソースが公式の継続評価の形(<code>azure_ai_source</code> / <code>scenario: responses</code>)と違っていたため、2026-09-29 に probe を修正した。<strong>修正後は未実測</strong> — 再実測で D にランが出れば NOTES の「つまりどころ」を訂正する。</li>
 <li>詳細: <a href="../probes/09-continuous-eval/NOTES.md">09 NOTES</a></li>
 </ul>
+<h3 id="6-10-10-hosted-agent-の版更新と会話の継続">6.10 10 hosted agent の版更新と会話の継続</h3>
+<ul>
+<li><strong>確かめること</strong>: hosted agent の新しい版をデプロイした後も、旧版で始まった会話を続けられるか。会話のつなぎ方 3 通り(P = <code>previous_response_id</code> だけ / S = + <code>agent_session_id</code> / C = <code>conversation</code>)× 版の操作(切り替え・移行・ロールバック・旧版の削除・休止明けの再開)</li>
+<li><strong>コマンド</strong>: §5.2 の 10 の手順(v1〜v3 を順にデプロイし、途中で idle_timeout 120 秒+60 秒待つ)</li>
+<li><strong>出力で見る所</strong>: 各ターンの <code>build=</code> と <code>history=</code>(応答した版と受け取った履歴の数)・<code>marker=</code>(<code>$HOME</code> のファイル)・<code>sessions (...)</code> の <code>version_indicator</code>、4 の <code>delete_version(v1) failed: 409</code> と <code>force=True ok</code></li>
+<li><strong>主要な発見(2026-09-30)</strong>: 会話は版をまたいで続く(履歴はエージェント単位)。<strong>起動中のセッションは旧版のまま、休止明けは現行の版で再開</strong>(明示固定したセッションも同じ — 公式の記述と食い違い)。ロールバックも同じ規則。旧版の削除はセッションが残ると 409、<code>force=true</code> で削除すると同じセッション ID のまま現行版で続き、履歴も <code>$HOME</code> も残った。App Insights 未接続では接続文字列がコンテナに注入されない</li>
+<li>詳細: <a href="../probes/10-hosted-version-continuity/NOTES.md">10 NOTES</a></li>
+</ul>
 <h2 id="7-確認観点">7. 確認観点</h2>
 <div class="tablewrap"><table><thead><tr>
 <th>確認</th>
@@ -401,8 +420,15 @@ uv run python probes/05-model-router/probe.py         # 1 本だけ(例)</code><
 <td class="chk-cell"><input type="checkbox" class="chk"></td>
 <td>9</td>
 <td>コスト・後片付け(基盤)</td>
-<td><code>az group show -n rg-foundry-probes</code></td>
+<td><code>az group show -n rg-foundry-probes</code>(10 を専用基盤で動かしたら <code>rg-foundry-probes-p10</code> も)</td>
 <td>検証後は §9 で削除し、<code>ResourceGroupNotFound</code> になる</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>10</td>
+<td>版更新と会話の継続(10)</td>
+<td><code>logs/10-hosted-version-continuity.log</code> の <code>まとめ</code></td>
+<td>P3/S3/C3 = 旧版(v1)・N1 = v2・S-mig/C-mig = v2・N2 = v2(ロールバック後も)・P4/S4/C4 = v2(v1 削除後)・休止明けの 5 = すべて v3。どれも履歴が途切れない。変わっていたら NOTES 10 と architecture 09 §6.3 の更新候補</td>
 </tr>
 </tbody></table></div>
 <h2 id="8-トレース・評価の確認">8. トレース・評価の確認</h2>
@@ -413,7 +439,10 @@ uv run python probes/05-model-router/probe.py         # 1 本だけ(例)</code><
 <li>09 の評価結果の一次確認は <code>evals.runs.list</code> の <code>report_url</code>(ポータルの評価レポート)。App Insights 側に何が出るかは未実測。</li>
 </ul>
 <h2 id="9-片付け">9. 片付け</h2>
-<pre><code>az group delete -n rg-foundry-probes --yes --no-wait   # ステートレス設計。router / Web search は従量なので放置しない</code></pre>
+<pre><code>az group delete -n rg-foundry-probes --yes --no-wait   # ステートレス設計。router / Web search は従量なので放置しない
+# 10 を専用基盤で動かした場合
+az group delete -n rg-foundry-probes-p10 --yes
+az cognitiveservices account purge -l japaneast -g rg-foundry-probes-p10 -n aif-&lt;baseName&gt;   # 同名で作り直すなら</code></pre>
 <ul>
 <li>probe が途中で落ちた場合は、残骸(<code>probe-prompt-agent</code> / <code>probe-ce-agent</code>・ベクトルストア <code>probe-store*</code>・<code>assistant-</code> ファイル・ルール <code>probe-continuous-rule</code>)が残り得る。RG ごと削除すればまとめて消える。</li>
 </ul>
@@ -474,6 +503,16 @@ uv run python probes/05-model-router/probe.py         # 1 本だけ(例)</code><
 <td>roles.bicep の実行を確認し、ポータルの Monitor で確認。NOTES 09 の 2026-09-29 追記を参照</td>
 </tr>
 <tr>
+<td>10 で hosted agent の作成が「does not have permissions … agents/write」</td>
+<td>Foundry User の反映待ち(infra.bicep が付与)</td>
+<td>約 5 分待って再実行</td>
+</tr>
+<tr>
+<td>10 の 4 で <code>409 conflict ... deletion-blocking session(s)</code></td>
+<td>仕様(版に結び付いたセッションが残っていると削除できない。休止中も 30 日の期限まで)</td>
+<td>正常。probe は続けて <code>force=True</code> で削除する</td>
+</tr>
+<tr>
 <td><code>RequestConflict</code>(デプロイ時)</td>
 <td>アカウント配下のサブリソースを並行作成</td>
 <td>main.bicep は直列化済み。手動追加(埋め込み)は前のデプロイ完了後に</td>
@@ -492,6 +531,10 @@ uv run python probes/05-model-router/probe.py         # 1 本だけ(例)</code><
 <tr>
 <td>2026-09-29</td>
 <td>初版(openai 2.53→3.20 / azure-ai-projects 2.4→2.7。09 の eval データソースを公式の継続評価の形に修正・要再実測)</td>
+</tr>
+<tr>
+<td>2026-09-30</td>
+<td>probe 10(hosted agent の版更新と会話の継続)を追加し、専用の最小基盤でライブ実測(§5.2・§6.10・§7 #10・§9・§10)</td>
 </tr>
 </tbody></table></div>
 </main>

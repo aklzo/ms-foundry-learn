@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="09-運用アーキテクチャ-キャパシティ・bcdr・可観測性・評価・コスト・ci-cd">09. 運用アーキテクチャ(キャパシティ・BCDR・可観測性・評価・コスト・CI/CD)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この章の要点-先に結論">この章の要点(先に結論)</a></li><li><a href="#1-キャパシティ設計">1. キャパシティ設計</a></li><li><a href="#2-信頼性・bcdr">2. 信頼性・BCDR</a></li><li><a href="#3-可観測性">3. 可観測性</a></li><li><a href="#4-評価と-llmops">4. 評価と LLMOps</a></li><li><a href="#5-コストアーキテクチャ">5. コストアーキテクチャ</a></li><li><a href="#6-プラットフォーム自体の-ci-cd">6. プラットフォーム自体の CI/CD</a></li><li><a href="#7-運用設計チェックリスト">7. 運用設計チェックリスト</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(hosted agent 同時セッション上限・デプロイ種別・Prompt caching・評価リージョン/シナリオ・Monitor 設定・トラフィック分割などを 2026-09 時点の一次情報で再検証)/ 2026-09-30(§3.6 hosted agent のトレースの中身と閲覧者の選定基準、§6.3 会話の続きの agent 単位の制約を Port 15 のライブ検証から追加)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(hosted agent 同時セッション上限・デプロイ種別・Prompt caching・評価リージョン/シナリオ・Monitor 設定・トラフィック分割などを 2026-09 時点の一次情報で再検証)/ 2026-09-30(§3.6 hosted agent のトレースの中身と閲覧者の選定基準、§6.3 会話の続きの agent 単位の制約を Port 15 のライブ検証から追加。同日、§6.3 に版更新・ロールバック・旧版削除と会話の継続を foundry-probes probe 10 の実測で追加)</p></blockquote>
 <p>ユースケースを問わず横断で効く運用設計をまとめる。<strong>この領域は「Foundry がやってくれない範囲」が広く、見積もりの抜けが出やすい。</strong></p>
 <h2 id="この章の要点-先に結論">この章の要点(先に結論)</h2>
 <ol>
@@ -102,6 +102,7 @@ footer {
 <li><strong>リスク・安全性評価と AI Red Teaming は日本リージョンで実行できない。</strong>評価用に別リージョンのプロジェクトを構える設計になる。</li>
 <li><strong>capabilityHost は作成後に更新できない。</strong>構成変更は <strong>capability host の削除・再作成</strong>が前提(プロジェクト削除は不要。同名+異構成での再作成は 400 になる)で、IaC の冪等更新が効かない。</li>
 <li><strong>hosted agent は App Insights を接続すると、プラットフォーム側で会話の中身(ツール結果を含む)まで記録され、コンテナ側の設定では止められない。</strong>中身を残せない要件なら「接続しない」、閲覧者を分けたいなら「App Insights を 2 つに分ける」構成を最初に選ぶ(§3.6)。</li>
+<li><strong>hosted agent の版を切り替えても、起動中の会話は旧版のまま応答し続け、休止(既定 15 分)明けに新版へ移る。</strong>履歴は版をまたいで残るので会話は続けられるが、ロールバックも起動中の会話には効かず、旧版はセッションが残る限り <code>force=true</code> なしでは削除できない(§6.3)。</li>
 </ol>
 <hr>
 <h2 id="1-キャパシティ設計">1. キャパシティ設計</h2>
@@ -761,7 +762,22 @@ Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × O
 <ul>
 <li>hosted agent には<strong>ドラフトバージョン(プレビュー)</strong>があり、<code>draft-{timestamp}</code> 版は latest 解決にもルーティング対象にもならないため、本番に影響させずに新イメージ・構成を直接呼び出して検証できる(昇格はドラフトを外して新バージョンを作成)。</li>
 </ul>
-<li><strong>会話の続きは agent 単位で、利用者ごとにも分かれる。</strong>hosted agent で <code>previous_response_id</code> を使うとき、<strong>別の hosted agent で作った response ID は 404</strong>(2026-09-30 <a href="../../../../labs/maf-ports/ports/delegated-access-hosted/README.md">Port 15</a> の実測。公式の明記はない)。<code>x-ms-user-identity</code> を送る構成では他人の response ID も 404(公式の仕様: 会話履歴は利用者ごとに分離)。<strong>同じ agent の版更新をまたいで続けられるかは未確認</strong> → 版更新の受入試験に「更新前に始めた会話の続き」を入れる。前段のルーター(上記)で<strong>別の agent に切り替える blue-green は、会話を引き継げない前提</strong>で設計する(切り替え時は新しい会話として始めてもらう)。</li>
+<li><strong>hosted agent の版を更新しても、会話は続けられる(2026-09-30 実測 — <a href="../../../../labs/foundry-probes/probes/10-hosted-version-continuity/NOTES.md">probe 10</a>)。</strong>会話履歴はエージェント+利用者の単位で保存され、どの版からも読める。ただし<strong>どの版が応答するかは、そのセッション(サンドボックス)のコンテナが起動しているかで決まる</strong>:</li>
+<ul>
+<li><strong>起動中</strong>(最後のアクセスから idle_timeout 以内。既定 15 分)の会話は、ルーティングを新版に切り替えても<strong>旧版のまま</strong>応答する。<strong>ロールバックも同じ</strong>で、戻した直後に新版で起動中の会話は新版のまま</li>
+<li><strong>休止した後の次のターンは、その時点のルーティング先の版で再開</strong>し、セッション ID・履歴・<code>$HOME</code> のファイルを引き継ぐ。<code>version_indicator</code> で版に明示固定したセッションも休止明けは現行版で再開した(公式の「固定した版を使い続ける」と食い違い)</li>
+<li><strong>旧版の削除は、結び付いたセッションが残っていると 409</strong>(休止中も、セッションの有効期限 <strong>30 日</strong>までは削除を妨げる)。<code>force=true</code> で削除すると、次のターンで同じセッション ID のまま現行版に作り直され、履歴も <code>$HOME</code> も残った</li>
+<li>新版に明示固定したセッション(<code>create_session(version_indicator=...)</code>)の ID を渡せば、起動中の会話もすぐ新版へ移せる(履歴は引き継ぎ、<code>$HOME</code> は引き継がない)</li>
+<li>一方、<strong>別の agent の response ID は 404</strong>(利用者の分離は公式の仕様、agent 単位の分離は <a href="../../../../labs/maf-ports/ports/delegated-access-hosted/README.md">Port 15</a> の実測)。前段のルーターで<strong>別の agent に切り替える blue-green は、会話を引き継げない</strong>前提で設計する</li>
+</ul>
+<li><strong>リリース手順の型(hosted agent):</strong> 通常の改修は「新版をデプロイ → ルーティング切り替え」だけでよい(話し続けている会話も、間が idle_timeout 以上空けば新版へ移る)。<strong>すべての会話をすぐ新版へ移したい修正</strong>(権限・業務ルールの不具合など)と、<strong>問題の版からの緊急退避</strong>は、その版を <code>force=true</code> で削除する(または新版に固定したセッションを中間層で渡す)。新版は旧版が書いた履歴と <code>$HOME</code> を読むので、ツール呼び出しの形式やファイル形式を変える版は後方互換を持たせる。受入試験に「更新前に始めた会話の続き」「ロールバック後の続き」「旧版削除後の続き」を入れる</li>
+<ul>
+<li><strong>用語の注意:</strong> Foundry の「セッション」はサンドボックス(コンテナ+<code>$HOME</code>)で、会話(履歴)とは別物。休止しても<strong>別のセッションにはならず</strong>、同じセッション ID(最長 30 日)のままコンテナだけが止まり、次の発言で起動し直すときに現行の版が選ばれる(Copilot Studio・AgentCore の「セッションが終わり、新しいセッションから新版」とは違う)</li>
+<li><strong>切り替わる時点の例(idle_timeout 15 分):</strong> 10:10 に修正版へ切り替えたとき、10:00 から 5 分おきに話し続けている利用者は<strong>旧版のまま</strong>(15 分以上の間が空いた後の発言から新版)、9:50 以来 30 分ぶりに戻った利用者と新しく始めた利用者は新版。旧版が残るのは「やり取りが続いている会話」だけで、日常の改修はこの自動の切り替えで足りる</li>
+<li><strong>コードを直しても、会話履歴に残った誤りは消えない。</strong>旧版が出した誤った回答・ツール結果は履歴に残り、新版はそれを文脈として読む。影響の大きいバグでは、対象の利用者に新しい会話を始めてもらうか、新版側で旧版の出力を含む会話を検知して注意を促す</li>
+<li><strong>「休止明けに新版へ移る」は公式に書かれていない挙動(1 回の実測)。</strong>公式は「セッションは作成時の版に結び付く」「版を固定すると新版を公開してもその版を使い続ける」と書いており、文書どおりに変わると旧版が最長 30 日使われ続けうる。<strong>自動の切り替えに頼らず、必ず移したい修正と緊急のロールバックでは問題の版を <code>force=true</code> で削除する</strong>ことをリリース手順に明記し、版更新のたびに再確認する</li>
+</ul>
+<li><strong>他製品の例(2026-09-30 確認):</strong> Copilot Studio は「進行中の会話を妨げないよう、公開した内容は新しいセッションから有効」(多くのチャネルは 30 分無操作でセッション終了、Teams は <code>start over</code> か公開から最大 1 時間)(<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/publication-fundamentals-publish-channels">publish channels</a> ms.date 2026-09-16)。AWS AgentCore Runtime は既存セッションが旧版のスナップショットで終了まで続く(15 分無操作・最長 8 時間)(<a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-how-it-works.html">runtime how it works</a>)。LangGraph は再デプロイした最新の graph を既存スレッドにもすぐ適用し、状態スキーマの後方互換を利用者側に求める(<a href="https://docs.langchain.com/oss/python/langgraph/backward-compatibility">backward compatibility</a>)。Foundry hosted agent は前 2 者と同じ「セッションの切れ目で新版」型で、<strong>履歴と <code>$HOME</code> が切れ目を越えて残る</strong>点が違う</li>
 <li><strong>モデルデプロイの version upgrade を自動アップグレードにしない</strong>(テストスイート検証前に応答が変わるのを防ぐ)。</li>
 <li><strong>非決定性への対処:</strong> 「Foundry Agent Service で定義したエージェントは非決定的に振る舞うため、望ましい品質水準をどう測り維持するかを決めなければならない。<strong>現実的なユーザーの質問とシナリオに対する理想的な応答をチェックするテストスイートを作って実行せよ。</strong>」→ §4 のクラウド評価を CI のゲートに組み込む形になる。</li>
 </ul>
@@ -827,7 +843,7 @@ Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × O
 <li>[ ] モデルデプロイの自動アップグレードを OFF</li>
 <li>[ ] カナリア / ブルーグリーンが要るなら<strong>ルーティング層を自前で用意</strong>(トラフィック分割は prompt / hosted とも非対応)</li>
 <li>[ ] エージェントのルーティングを「Always use latest」のままにせず、本番はバージョン固定</li>
-<li>[ ] 版更新・agent の切り替えをまたぐ会話の続きの扱いを決めた(別 agent の response ID は 404。版更新は未確認 → 受入試験に入れる。§6.3)</li>
+<li>[ ] 版更新・ロールバックのときに起動中の会話をどう扱うか決めた(既定は旧版のまま → 休止明けに新版。すぐ移すなら旧版を <code>force=true</code> で削除。別 agent への切り替えは会話を引き継げない。§6.3)</li>
 </ul>
 </main>
 <footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>

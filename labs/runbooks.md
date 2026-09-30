@@ -1,6 +1,6 @@
 # labs 実行ガイド索引
 
-> **最終更新:** 2026-09-30(Port 15 delegated-access-hosted を追加し、同日ライブ検証)/ 2026-09-29(全ラボに実行ガイドを新設。同日に全ラボを agent-framework 1.19 / openai 3.20 系でオフライン再検証)
+> **最終更新:** 2026-09-30(Port 15 delegated-access-hosted を追加し、同日ライブ検証。foundry-probes に probe 10 を追加)/ 2026-09-29(全ラボに実行ガイドを新設。同日に全ラボを agent-framework 1.19 / openai 3.20 系でオフライン再検証)
 > **正は各 `docs/runbook.md`(Markdown)。** 人間用 HTML(同じディレクトリの `runbook.html`、本ページは `runbooks.html`)は `python3 labs/tools/build_runbooks.py` で生成する。HTML は直接編集しない。
 
 各ラボ・ポートの「どう動かすか」と「何が確認できれば OK か」をまとめた実行ガイドの一覧。設計判断や移植の学びは各 README にあり、実行ガイドはそこから**手順と確認観点だけ**を切り出している。
@@ -18,7 +18,7 @@
 | ツール | [uv](https://docs.astral.sh/uv/)(Python は uv が取得)。ライブ実行は Azure CLI(`az login`)も |
 | Azure | maf-ports は**共有基盤を先に作る**([共有基盤の実行ガイド](./maf-ports/infra/docs/runbook.md))。他のラボは各ラボの `infra/` で個別に作る。検証後は RG ごと削除する運用(ステートレス設計) |
 | 接続情報 | maf-ports は `labs/maf-ports/.env`(雛形 `.env.example`。git 管理外)。他のラボは各ラボの README / 実行ガイドを参照 |
-| 検証状態 | オフライン: 2026-09-29 に全ラボ再検証済み。ライブ: 2026-07〜09 の各ラボ初回検証時のみ(**最新依存でのライブ再検証は未実施** — 各ガイドの「ライブ未検証で残るリスク」参照)。例外は Port 15 と共有基盤で、2026-09-30 に最新依存(agent-framework 1.19)でライブ確認済み |
+| 検証状態 | オフライン: 2026-09-29 に全ラボ再検証済み。ライブ: 2026-07〜09 の各ラボ初回検証時のみ(**最新依存でのライブ再検証は未実施** — 各ガイドの「ライブ未検証で残るリスク」参照)。例外は Port 15 と共有基盤で、2026-09-30 に最新依存(agent-framework 1.19)でライブ確認済み。foundry-probes の probe 10 も同日ライブ |
 
 ## 一覧
 
@@ -48,7 +48,7 @@
 | 対象 | 内容 | オフライン検証 | 実行ガイド |
 | --- | --- | --- | --- |
 | agentic-search-maf | 自己評価型リサーチエージェント(Rust 版の MAF 移植。ScriptedAgent テストパターンの出典) | 50 passed | [runbook](./agentic-search-maf/docs/runbook.md) |
-| foundry-probes | maf-ports に乗らなかった Foundry 機能 9 本の挙動確認 probe | 静的検証(py_compile・ruff・SDK シグネチャ照合) | [runbook](./foundry-probes/docs/runbook.md) |
+| foundry-probes | maf-ports に乗らなかった Foundry 機能 10 本の挙動確認 probe(10 = hosted agent の版更新と会話の継続。2026-09-30 ライブ) | 静的検証(py_compile・ruff・SDK シグネチャ照合) | [runbook](./foundry-probes/docs/runbook.md) |
 | cu-video-rag | Content Understanding 動画 × AI Search × RAG の精度検証 | コーパス検証+オフライン指標の再計算(2026-09-03 版とバイト一致) | [runbook](./cu-video-rag/docs/runbook.md) |
 
 ## 2026-09-29 の最新化チェックで変わったこと(要点)

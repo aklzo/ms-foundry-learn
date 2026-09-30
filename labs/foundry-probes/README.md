@@ -4,7 +4,7 @@
 
 目的は動くアプリを作ることではなく、**各機能が実際にどう振る舞うか(発見メモ)と、どこで詰まるか(つまりどころ)を一次記録として残す**こと。各 probe は「観点ごとにリクエストを投げて生の応答を観察する」スクリプトで、実行ログ(`logs/`)がそのまま `NOTES.md` の根拠になる。
 
-## probe 一覧(すべて 2026-08-04 ライブ実測)
+## probe 一覧(01〜09 は 2026-08-04、10 は 2026-09-30 ライブ実測)
 
 | # | 機能 | サーベイでの位置 | 主な発見 / つまりどころ | NOTES |
 | --- | --- | --- | --- | --- |
@@ -17,6 +17,7 @@
 | 07 | Guardrails / コンテンツフィルター | 06 / モデル=GA | 既定 `Microsoft.DefaultV2`・jailbreak は入力段 400・素朴な有害依頼はモデル refusal 任せ(2 レイヤ) | [NOTES](./probes/07-guardrails/NOTES.md) |
 | 08 | 埋め込みのエンドポイントルーティング | 08 の注記 | **embeddings はプロジェクト経由 404 / アカウント経由のみ成功**(chat は両方 OK)。接続情報 2 本持ちが必須 | [NOTES](./probes/08-embeddings-routing/NOTES.md) |
 | 09 | 継続評価(evaluation_rules) | 05 / プレビュー | **prompt agent スコープ必須(生 response 不可)**・配線は SDK 完結・自動ランは evals.runs に出ず Monitor 側集計(※2026-09-29: eval のデータソースが公式の継続評価の形と違っていたため probe を修正。**要再実測**) | [NOTES](./probes/09-continuous-eval/NOTES.md) |
+| 10 | hosted agent の版更新と会話の継続 | arch 09 §6.3 / hosted agent GA | **会話は版をまたいで続く**(履歴はエージェント単位)・起動中のセッションは旧版のまま、**休止明けに現行の版で再開**(版の明示固定も休止明けは効かない)・ロールバックも同じ・旧版の削除はセッションが残ると 409 → `force=true` で履歴もファイルも残して現行版へ | [NOTES](./probes/10-hosted-version-continuity/NOTES.md) |
 
 ## 検証対象外(理由つき — 今後の候補)
 
@@ -33,6 +34,8 @@
 | Global Batch / Prompt caching | GA | 低優先。probe 可能なので次サイクル候補(50% 割引・`completion_window` 固定など挙動確認価値あり) | survey 02、arch 09 |
 
 > **リソース状態:** 検証用の基盤(RG `rg-foundry-probes`)は 2026-08-04 の実測完了後に**削除済み**(コスト停止)。再実行は下記手順で新規デプロイする。NOTES と `logs/`(ローカル)が一次記録として残る。
+>
+> **probe 10 は専用の最小基盤**(`probes/10-hosted-version-continuity/infra.bicep` = Foundry アカウント+プロジェクト+実行者の Foundry User。モデル・App Insights なし)で実測し、2026-09-30 に RG `rg-foundry-probes-p10` ごと削除・アカウントを purge 済み。main.bicep の基盤でも実行できる(Foundry User の割り当て込み)。
 
 ## 実行の前提
 

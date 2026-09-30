@@ -1,12 +1,12 @@
 # foundry-probes 実行ガイド
 
-> **対象:** `labs/foundry-probes/`(Foundry 機能の挙動確認 probe 9 本。アプリではなく「観点ごとにリクエストを投げて生の応答を記録する」ラボ)
-> **最終確認:** 2026-09-29 オフライン(自動テストなし。9 本の `py_compile`・`ruff check` clean・SDK 呼び出しの AST シグネチャ照合で不一致 0。依存 openai 3.20.0 / azure-ai-projects 2.7.0)/ ライブ: 2026-08-04(japaneast・gpt-5.4-mini v2026-03-17・当時は openai 2.53.0 / azure-ai-projects 2.4.0。Azure リソースは削除済み — 再デプロイ手順は §5)
+> **対象:** `labs/foundry-probes/`(Foundry 機能の挙動確認 probe 10 本。アプリではなく「観点ごとにリクエストを投げて生の応答を記録する」ラボ)
+> **最終確認:** 2026-09-29 オフライン(自動テストなし。9 本の `py_compile`・`ruff check` clean・SDK 呼び出しの AST シグネチャ照合で不一致 0。依存 openai 3.20.0 / azure-ai-projects 2.7.0)/ ライブ: 01〜09 は 2026-08-04(japaneast・gpt-5.4-mini v2026-03-17・当時は openai 2.53.0 / azure-ai-projects 2.4.0)、**10 は 2026-09-30**(japaneast・openai 3.20.0 / azure-ai-projects 2.7.0・専用の最小基盤)。Azure リソースは削除済み — 再デプロイ手順は §5
 > **正は本 Markdown。** 人間用 HTML(同じディレクトリの `runbook.html`)は `python3 labs/tools/build_runbooks.py` で生成する(HTML は直接編集しない)。発見の一次記録は各 probe の `NOTES.md`、一覧と検証対象外の理由は [README](../README.md)。
 
 ## 1. このラボで確かめること
 
-- maf-ports の 13 ポートに乗らなかった Foundry 機能(Conversations・prompt agents・File Search・Web search・Model router・Structured outputs・ガードレール・埋め込みのルーティング・継続評価)が、**単純な入力に対して実際にどう振る舞うか**。
+- maf-ports の 13 ポートに乗らなかった Foundry 機能(Conversations・prompt agents・File Search・Web search・Model router・Structured outputs・ガードレール・埋め込みのルーティング・継続評価・hosted agent の版更新と会話の継続)が、**単純な入力に対して実際にどう振る舞うか**。
 - 各 probe は観点(A, B, C…)ごとに「リクエスト → 応答の要点」を対で標準出力に出す。**失敗(`!!` 行)も観察結果**で、スクリプトは例外で止まらず次の観点に進む。
 - 出力(`logs/<probe>.log`)が `NOTES.md` の根拠になる。再実測では「NOTES の発見と同じ形が出るか / 変わったか」を見る。
 
@@ -17,7 +17,7 @@
 ```text
 probes/NN-*/probe.py ──(Entra ID: az login / DefaultAzureCredential)──┬─▶ プロジェクト openai/v1  {project}/openai/v1        … 01〜07, 09
                                                                       ├─▶ エージェントエンドポイント {project}/agents/<name>/endpoint/protocols/openai … 02, 09
-                                                                      ├─▶ プロジェクト REST(agents / evaluation_rules) … 02, 09
+                                                                      ├─▶ プロジェクト REST(agents / evaluation_rules / sessions) … 02, 09, 10
                                                                       └─▶ アカウント openai/v1  https://<foundry>.openai.azure.com/openai/v1 … 01(A), 08
 ```
 
@@ -31,6 +31,7 @@ probes/NN-*/probe.py ──(Entra ID: az login / DefaultAzureCredential)──�
 | File Search のベクトルストア | 03(probe 内で作成・削除) | ストレージ従量(削除忘れ注意) |
 | Web search ツール | 04 | ツール呼び出し単位の別課金・**DPA 対象外** |
 | Log Analytics + Application Insights(接続済み) | 09 の継続評価結果・手動 KQL | 取り込み従量 |
+| hosted agent `probe-version-continuity`(10 が作成。v1〜v3・コードデプロイ) | 10 | セッションの実行中の CPU / メモリ(モデルは呼ばない)。休止中は課金なし |
 
 ## 3. 前提
 
@@ -97,7 +98,13 @@ az cognitiveservices account deployment create -n aif-fprobes -g rg-foundry-prob
 
 ```bash
 uv sync
-./run_all.sh                                          # 全 9 本を順に実行し logs/<probe>.log に保存(tee で画面にも出る)
+./run_all.sh                                          # 全 10 本を順に実行し logs/<probe>.log に保存(tee で画面にも出る)
+# 10 だけを専用の最小基盤で動かす場合(モデル・App Insights なし。所要 10 分前後 = 版のデプロイ 3 回+休止待ち 3 分)
+az group create -n rg-foundry-probes-p10 -l japaneast
+az deployment group create -g rg-foundry-probes-p10 -f probes/10-hosted-version-continuity/infra.bicep \
+  -p baseName=<英小文字数字> userObjectId=$(az ad signed-in-user show --query id -o tsv) --query properties.outputs.projectEndpoint.value -o tsv
+# Foundry User の反映に約 5 分かかる(hosted agent の作成に要る)
+FOUNDRY_PROJECT_ENDPOINT=<上の出力> uv run python probes/10-hosted-version-continuity/probe.py 2>&1 | tee logs/10-hosted-version-continuity.log
 uv run python probes/05-model-router/probe.py         # 1 本だけ(例)
 ```
 
@@ -179,6 +186,14 @@ uv run python probes/05-model-router/probe.py         # 1 本だけ(例)
 - **主要な発見**: ルールは **prompt agent スコープ必須**(filter なしは `Filter.AgentName is required`)。2026-08-04 は自動ランが `evals.runs.list` に出なかったが、eval のデータソースが公式の継続評価の形(`azure_ai_source` / `scenario: responses`)と違っていたため、2026-09-29 に probe を修正した。**修正後は未実測** — 再実測で D にランが出れば NOTES の「つまりどころ」を訂正する。
 - 詳細: [09 NOTES](../probes/09-continuous-eval/NOTES.md)
 
+### 6.10 10 hosted agent の版更新と会話の継続
+
+- **確かめること**: hosted agent の新しい版をデプロイした後も、旧版で始まった会話を続けられるか。会話のつなぎ方 3 通り(P = `previous_response_id` だけ / S = + `agent_session_id` / C = `conversation`)× 版の操作(切り替え・移行・ロールバック・旧版の削除・休止明けの再開)
+- **コマンド**: §5.2 の 10 の手順(v1〜v3 を順にデプロイし、途中で idle_timeout 120 秒+60 秒待つ)
+- **出力で見る所**: 各ターンの `build=` と `history=`(応答した版と受け取った履歴の数)・`marker=`(`$HOME` のファイル)・`sessions (...)` の `version_indicator`、4 の `delete_version(v1) failed: 409` と `force=True ok`
+- **主要な発見(2026-09-30)**: 会話は版をまたいで続く(履歴はエージェント単位)。**起動中のセッションは旧版のまま、休止明けは現行の版で再開**(明示固定したセッションも同じ — 公式の記述と食い違い)。ロールバックも同じ規則。旧版の削除はセッションが残ると 409、`force=true` で削除すると同じセッション ID のまま現行版で続き、履歴も `$HOME` も残った。App Insights 未接続では接続文字列がコンテナに注入されない
+- 詳細: [10 NOTES](../probes/10-hosted-version-continuity/NOTES.md)
+
 ## 7. 確認観点
 
 | 確認 | # | 観点 | 確認方法 | 期待結果 |
@@ -191,7 +206,8 @@ uv run python probes/05-model-router/probe.py         # 1 本だけ(例)
 | [ ] | 6 | 継続評価の再実測(09) | `logs/09-continuous-eval.log` の D | `自動ラン検出: continuousevalrun_...` と `report_url` が出れば 2026-09-29 の修正で解消。出なければポータルの Monitor → Recurring evaluations を確認し NOTES に記録 |
 | [ ] | 7 | 観測: 継続評価の結果の見え先 | ポータル Build → Evaluations(または Monitor タブ)/ D の `report_url` | probe-ce-agent の応答に対する coherence 評価が表示される |
 | [ ] | 8 | 後片付け(probe 内) | 各 probe の最後の観点(02 H・03 G・09 E) | エージェント・ベクトルストア・ファイル・ルール・eval の削除が `OK` / `files.delete 済み` |
-| [ ] | 9 | コスト・後片付け(基盤) | `az group show -n rg-foundry-probes` | 検証後は §9 で削除し、`ResourceGroupNotFound` になる |
+| [ ] | 9 | コスト・後片付け(基盤) | `az group show -n rg-foundry-probes`(10 を専用基盤で動かしたら `rg-foundry-probes-p10` も) | 検証後は §9 で削除し、`ResourceGroupNotFound` になる |
+| [ ] | 10 | 版更新と会話の継続(10) | `logs/10-hosted-version-continuity.log` の `まとめ` | P3/S3/C3 = 旧版(v1)・N1 = v2・S-mig/C-mig = v2・N2 = v2(ロールバック後も)・P4/S4/C4 = v2(v1 削除後)・休止明けの 5 = すべて v3。どれも履歴が途切れない。変わっていたら NOTES 10 と architecture 09 §6.3 の更新候補 |
 
 ## 8. トレース・評価の確認
 
@@ -208,6 +224,9 @@ az monitor app-insights query --app appi-fprobes -g rg-foundry-probes \
 
 ```bash
 az group delete -n rg-foundry-probes --yes --no-wait   # ステートレス設計。router / Web search は従量なので放置しない
+# 10 を専用基盤で動かした場合
+az group delete -n rg-foundry-probes-p10 --yes
+az cognitiveservices account purge -l japaneast -g rg-foundry-probes-p10 -n aif-<baseName>   # 同名で作り直すなら
 ```
 
 - probe が途中で落ちた場合は、残骸(`probe-prompt-agent` / `probe-ce-agent`・ベクトルストア `probe-store*`・`assistant-` ファイル・ルール `probe-continuous-rule`)が残り得る。RG ごと削除すればまとめて消える。
@@ -226,6 +245,8 @@ az group delete -n rg-foundry-probes --yes --no-wait   # ステートレス設�
 | 08 A も失敗 | text-embedding-3-small 未デプロイ | §5.1 の `deployment create` |
 | 09 B で 403 `preview_feature_required` | 継続評価(プレビュー)に opt-in ヘッダーが必要になった | `AIProjectClient(..., allow_preview=True)` にする(SDK が `Foundry-Features: Evaluations=V1Preview` を付ける) |
 | 09 D で自動ランが出ない | 非同期遅延・プロジェクト MI のロール不足・App Insights 未接続 | roles.bicep の実行を確認し、ポータルの Monitor で確認。NOTES 09 の 2026-09-29 追記を参照 |
+| 10 で hosted agent の作成が「does not have permissions … agents/write」 | Foundry User の反映待ち(infra.bicep が付与) | 約 5 分待って再実行 |
+| 10 の 4 で `409 conflict ... deletion-blocking session(s)` | 仕様(版に結び付いたセッションが残っていると削除できない。休止中も 30 日の期限まで) | 正常。probe は続けて `force=True` で削除する |
 | `RequestConflict`(デプロイ時) | アカウント配下のサブリソースを並行作成 | main.bicep は直列化済み。手動追加(埋め込み)は前のデプロイ完了後に |
 
 ## 11. 関連・更新履歴
@@ -237,3 +258,4 @@ az group delete -n rg-foundry-probes --yes --no-wait   # ステートレス設�
 | 日付 | 内容 |
 | --- | --- |
 | 2026-09-29 | 初版(openai 2.53→3.20 / azure-ai-projects 2.4→2.7。09 の eval データソースを公式の継続評価の形に修正・要再実測) |
+| 2026-09-30 | probe 10(hosted agent の版更新と会話の継続)を追加し、専用の最小基盤でライブ実測(§5.2・§6.10・§7 #10・§9・§10) |
