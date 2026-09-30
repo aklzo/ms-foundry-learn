@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(B2 に外部案件の現場知見を追記) / 2026-09-26(定期更新: Routines GA・A2A v1.0 GA・hosted agent の idle timeout 可変化と長時間実行〈プレビュー〉・新エージェントオブジェクトモデルの identity・Connected Agents 非対応の明記・connector namespace 型 MCP を反映) / 2026-09-29(hosted agent の OBO トークン転送〈公式ページ新設〉を認可パターンに追記)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-04(B2 に外部案件の現場知見を追記) / 2026-09-26(定期更新: Routines GA・A2A v1.0 GA・hosted agent の idle timeout 可変化と長時間実行〈プレビュー〉・新エージェントオブジェクトモデルの identity・Connected Agents 非対応の明記・connector namespace 型 MCP を反映) / 2026-09-29(hosted agent の OBO トークン転送〈公式ページ新設〉を認可パターンに追記) / 2026-09-30(実装例 Port 15 をライブ済みに更新、トレースと会話継続の注意を 09 へ接続)
 
 「検索して答える」で終わらず、**エージェントが業務システムに対して実際にアクションを起こす**類型。RAG チャットとの決定的な違いは、**誤動作が実世界に不可逆な影響を与えうる**ことで、そのため承認・監査・冪等性・権限の設計が主題になる。
 
@@ -79,7 +79,7 @@ WAF が明示している通り:
 | **Attended(OBO / 委任アクセス)** | ユーザーがアプリに認証 → アプリがユーザートークンを Agent Service に渡す → 「エージェント ID + ユーザーの委任権限」を持つトークンに交換 | **ユーザーが同意し認可されているリソースにしかアクセスできない** |
 | **Unattended(アプリケーション専用)** | blueprint を Entra に認証 → agent identity のトークン取得 → ダウンストリーム向けスコープ付きトークン | エージェント自身の RBAC のみ。人間は不在 |
 
-> **2026-09-29 追記 — hosted agent での Attended は「アプリ管理の OBO+ヘッダー転送」。**新設の [Use on-behalf-of flow with hosted agents](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-on-behalf-of-flow)(2026-09-28 公開)は、Foundry がトークン交換するのではなく**バックエンドが OBO 交換した下流トークンを `x-client-*` ヘッダー(例 `x-client-graph-access-token`)でコンテナへ転送**し、`x-ms-user-identity` でユーザーを Foundry に伝える方式を示す。バックエンドのワークロード ID に **Foundry Agent Consumer+組み込みロールに含まれないカスタム data action `…/agents/endpoints/UserIdentityImpersonation/action`** が必要で、`Authorization`(Foundry 向けトークン)はコンテナへ転送されない。下流トークンがコンテナのコードから見えるため、**バックエンドとコンテナが同一アプリの信頼境界内にある場合だけ採用**し、ツール側で認証できるなら Toolbox の認証を、データだけ要るならバックエンドが下流 API を呼ぶ方式を優先する(公式の選択表)。トークンの更新はされないので長時間処理は分割する。
+> **2026-09-29 追記 — hosted agent での Attended は「アプリ管理の OBO+ヘッダー転送」。**新設の [Use on-behalf-of flow with hosted agents](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-on-behalf-of-flow)(2026-09-28 公開)は、Foundry がトークン交換するのではなく**バックエンドが OBO 交換した下流トークンを `x-client-*` ヘッダー(例 `x-client-graph-access-token`)でコンテナへ転送**し、`x-ms-user-identity` でユーザーを Foundry に伝える方式を示す。バックエンドのワークロード ID に **Foundry Agent Consumer+組み込みロールに含まれないカスタム data action `…/agents/endpoints/UserIdentityImpersonation/action`** が必要で、`Authorization`(Foundry 向けトークン)はコンテナへ転送されない。下流トークンがコンテナのコードから見えるため、**バックエンドとコンテナが同一アプリの信頼境界内にある場合だけ採用**し、ツール側で認証できるなら Toolbox の認証を、データだけ要るならバックエンドが下流 API を呼ぶ方式を優先する(公式の選択表)。トークンの更新はされないので長時間処理は分割する。**実装例: [labs/maf-ports/ports/delegated-access-hosted](../../../labs/maf-ports/ports/delegated-access-hosted/README.md)(Port 15、2026-09-30)** — 社内文書+基幹 API を利用者のロールで制御し、最終判定点を APIM と MCP サーバー自身の両方で実装して比較(2026-09-30 にライブ検証済み。両方式で権限どおりに出し分けられ、1 問の所要時間に差はなかった)。**運用上の注意: hosted agent のプラットフォーム側トレースは会話全文(ツール結果を含む)を App Insights に記録し、コンテナ側の設定では止まらない** — 利用者の権限で絞った中身が App Insights の閲覧者には見える(casebook P-O12)。App Insights を集約 / 分離 / 接続しないのどれにするかの判断基準は [09 §3.6](./09-operations.md#3-6-トレースに会話の中身を残すか-hosted-agent-の選定基準)、会話の続きが agent 単位になる制約は [09 §6.3](./09-operations.md#6-3-エージェントのバージョニングとリリース)。MAF の `ResponsesHostServer` は要求ヘッダーをツールへ渡さないため Agent Server SDK のハンドラーで要求ごとにエージェントを組む必要がある、resilient モードは転送ヘッダー(=トークン)を永続化する、等の落とし穴は同 README。
 
 **Entra Agent ID**(公式ページに GA / プレビューのステータス表記なし)により、プロジェクトで最初のエージェントを作った時点で既定の blueprint と agent identity がプロビジョニングされる。
 

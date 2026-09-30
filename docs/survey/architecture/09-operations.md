@@ -2,7 +2,7 @@
 
 [← アーキテクチャ TOP](./README.md)
 
-> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(hosted agent 同時セッション上限・デプロイ種別・Prompt caching・評価リージョン/シナリオ・Monitor 設定・トラフィック分割などを 2026-09 時点の一次情報で再検証)
+> **最終更新:** 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(hosted agent 同時セッション上限・デプロイ種別・Prompt caching・評価リージョン/シナリオ・Monitor 設定・トラフィック分割などを 2026-09 時点の一次情報で再検証)/ 2026-09-30(§3.6 hosted agent のトレースの中身と閲覧者の選定基準、§6.3 会話の続きの agent 単位の制約を Port 15 のライブ検証から追加)
 
 ユースケースを問わず横断で効く運用設計をまとめる。**この領域は「Foundry がやってくれない範囲」が広く、見積もりの抜けが出やすい。**
 
@@ -14,6 +14,7 @@
 4. **Azure Monitor のレガシー `Latency` メトリクスを使ってはいけない。**Azure OpenAI 用に設計されておらず誤った診断になると明記されている。
 5. **リスク・安全性評価と AI Red Teaming は日本リージョンで実行できない。**評価用に別リージョンのプロジェクトを構える設計になる。
 6. **capabilityHost は作成後に更新できない。**構成変更は **capability host の削除・再作成**が前提(プロジェクト削除は不要。同名+異構成での再作成は 400 になる)で、IaC の冪等更新が効かない。
+7. **hosted agent は App Insights を接続すると、プラットフォーム側で会話の中身(ツール結果を含む)まで記録され、コンテナ側の設定では止められない。**中身を残せない要件なら「接続しない」、閲覧者を分けたいなら「App Insights を 2 つに分ける」構成を最初に選ぶ(§3.6)。
 
 ---
 
@@ -219,7 +220,7 @@ Cosmos DB の RU/s 不足は **capability host のプロビジョニング失敗
 - **保存先は App Insights。**保持期間・サンプリング・課金は App Insights / Log Analytics の設定に従う(**Foundry 側の上乗せ課金はない**)。
 - **必要ロール:** ログ参照に **Log Analytics Reader**。対象テーブルが Protected なら Privileged Monitoring Data Reader も必要。
 - **取り込みの Entra 認証(プレビュー、2026-08 新設):** 接続済み App Insights への取り込みをキーから**プロジェクトのマネージド ID** に切り替えられる(App Insights 側でローカル認証を無効化して Entra のみに強制)。`disableLocalAuth` を全面適用する規制案件で効く([trace-ingestion-entra-authentication](https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-ingestion-entra-authentication) ms.date 2026-08-06)。
-- **セキュリティ:** トレースはプロンプト・出力・ツール引数などの機微情報を含みうる。**テレメトリ到達前にマスクする**のが公式ベストプラクティス。
+- **セキュリティ:** トレースはプロンプト・出力・ツール引数などの機微情報を含みうる。**テレメトリ到達前にマスクする**のが公式ベストプラクティス。**ただし hosted agent のサーバーサイドトレースはアプリ側でマスクできない**(コンテナで内容記録をオフにしても、プラットフォーム側のスパンは会話の中身を記録する — §3.6)。
 
 ### 3.2 OpenTelemetry GenAI セマンティック規約のステータス(設計に効く)
 
@@ -267,6 +268,40 @@ Foundry ポータル → Build → エージェント → Monitor タブ。デ�
 設定パネルの内訳(2026-09-26 確認、[how-to-monitor-agents-dashboard](https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard) ms.date 2026-09-03): **Recurring evaluations(プレビュー)** / Red team scans(プレビュー)/ Alerts(プレビュー)の 3 項目に整理された(旧版の Continuous evaluation / Scheduled evaluations は **Recurring evaluations に統合**され、その中で「固定スケジュールの scheduled」と「ライブトラフィックをサンプリングする continuous」を選ぶ形。継続的評価のステータス不明瞭は解消しプレビュー確定)。ダッシュボード自体も View agent metrics (preview)。なお GA 一覧表では Red teaming 機能自体は GA だが、**Monitor 設定内の Red team scans(定期スキャン)はプレビュー表記**のまま。**継続的評価の `max_hourly_runs` 既定は 100/時**で、到達すると評価 run がスキップされる。**プロジェクトのマネージド ID に Foundry User ロールが必要**(未付与だとルール作成が失敗する)。
 
 **Foundry 外のエージェントも監視できる:** Foundry Control Plane に AI Gateway 経由で登録し、同一 App Insights に OTel GenAI 規約準拠のテレメトリを送れば、継続的評価とエラーレート追跡が使える。
+
+### 3.6 トレースに会話の中身を残すか(hosted agent の選定基準)
+
+hosted agent で「会話の中身をどこに残し、誰が読めるか」は、App Insights の**接続**の仕方で決まる。委任アクセス(利用者ごとに見える文書を絞る構成)では特に効く。2026-09-30 に [Port 15](../../../labs/maf-ports/ports/delegated-access-hosted/README.md) のライブ検証で確認し、公式([trace-data](https://learn.microsoft.com/en-us/azure/foundry/observability/concepts/trace-data) ms.date 2026-06-02 / [deploy-hosted-agent](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/deploy-hosted-agent) ms.date 2026-08-17)と突き合わせた。
+
+**仕組み — 「接続」1 つで 2 つが同時に起きる**
+
+- 「接続」は、プロジェクトに App Insights を登録する**プロジェクト側の設定**(Foundry Owner / Foundry Account Owner が行う)。トレースは既定オフで、接続したときだけ有効になる。止める公式の手段は**接続の解除だけ**(プロジェクト内の全エージェントが対象)
+- 接続すると:
+  1. **プラットフォーム側(Agent Service)のサーバーサイドトレースが有効になる。**公式は記録内容を「利用者の入力・モデルの入出力・ツール呼び出し」と明記しており、**会話の中身が入る**(実測: `cloud_RoleName == "responsesapi"` のスパンの `gen_ai.input.messages` / `gen_ai.output.messages` にツール結果まで記録された)
+  2. **同じ接続文字列が `APPLICATIONINSIGHTS_CONNECTION_STRING` としてコンテナに注入され**、ホスティングライブラリ(`azure-ai-agentserver-*`。Microsoft OpenTelemetry distro を組み込み済み)がコンテナのトレース・ログを**自動で送る**。既定の構成ではアプリ側に送信コードは要らない(自分で書くのは独自のスパン・ログだけ)
+- コンテナの `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false` が効くのは**コンテナ内の計装だけ**で、プラットフォーム側の記録は止まらない(実測)。サーバー側の中身だけを止める設定は公式に見当たらない(trace-data に「Configurable policies」とあるが具体的な手段の記載なし)
+- そのため §3.1 の「テレメトリ到達前にマスクする」は**コンテナ側にしか適用できない**。サーバー側に載るのは「モデルに渡したもの」なので、減らすにはモデルに渡す情報そのものを減らす(トークンが載らないのは、そもそもモデル入力に入れないから)
+- 逆に、アプリが**自前の接続文字列で別の App Insights に送っても「接続」にはならない**(プラットフォーム側の記録は有効にならない)
+- **会話履歴の保存とトレースは別物。**会話履歴(`store: true` の応答。`previous_response_id` で続けるため)の保存先を変えるのが Standard setup(BYO Cosmos DB 等)で、トレースに中身が入るかどうかは Basic / Standard どちらでも「接続したか」だけで決まる
+
+**選択肢**
+
+| 案 | 構成 | 向く要件 | 得るもの | 失うもの・要る作業 |
+| --- | --- | --- | --- | --- |
+| **1. 集約(既定)** | 接続した App Insights 1 つに、プラットフォーム側とコンテナ側の両方が入る | PoC。運用担当が会話の中身を読んでよいと合意できている | 設定不要。ポータルのトレース画面・Conversation ビュー・Monitor ダッシュボード・継続評価がそのまま使える | **運用担当も中身を読める。**両方が同じテーブル(AppDependencies 等)に入るので、テーブル単位の保護(Protected)では分けられない |
+| **2. 分離** | #1 = 接続先(中身入り。分析・評価用に閲覧者を絞り、Protected・短期保持)/ #2 = 別の App Insights(コンテナのログ。運用・アラート用) | 品質改善に中身を使いたいが、運用担当には見せたくない | 運用担当は中身を見ずに障害対応・アラートができ、分析担当だけが中身を見る | コンテナの OpenTelemetry 設定を自分で書く。#2 の接続文字列は**別の名前の環境変数**で渡す(プロジェクト接続の参照 `${{connections.<名前>.credentials.key}}` が使える)。注入変数は #1 を指し、公式は注入変数を再宣言しないよう書いているので上書きしない。ライブラリの自動送信(#1 行き)を残すか止めるかも決める |
+| **3. 接続しない** | プラットフォーム側のトレースなし。コンテナのログだけを自前の接続文字列で運用向け App Insights へ | 「会話の中身をログに残さない」が必須(規制・社内規程) | 中身がどこにも残らない(コンテナ側の記録をオフにしている限り) | ポータルのトレース画面・Conversation ビュー、トレースを使う Monitor ダッシュボード・継続評価が使えない。モデル呼び出しの監視は §3.3 の Azure Monitor メトリクス(中身を含まない)で代替する。自前の送信設定を忘れるとコンテナのログがどこにも届かない([casebook P-H02](../casebook/02-pitfalls-index.md)) |
+
+**選び方(ヒアリングで決める — [proposal 01 の 4-7](../proposal/01-hearing-sheet.md#phase-4-セキュリティ・規制-15分))**
+
+1. 会話の中身(利用者の入力・回答・参照した社内文書)を運用ログに残してよいか → 不可なら**案 3**
+2. 残すなら、誰が読めるか。運用担当と分析担当は同じ人たちか → 分けたいなら**案 2**
+3. 保持期間と利用者への告知。公式は、有効化した後の告知・アクセス制御・保持期間を**顧客の責任**としている
+4. 継続評価やトレースを使う評価を使うか → 使うなら案 1 か案 2(案 3 では使えない)
+
+**業界の標準との関係:** OpenTelemetry の生成 AI 規約は中身の記録を**オプトイン(既定では記録しない)**とし、Microsoft の手順書も「本番では中身の記録を無効にする」「個人データは記録前にマスク・最小化する」とする。Foundry では**接続そのものがオプトインに当たり、接続すれば中身が入る**設計。委任アクセスと組み合わせると、利用者ごとに絞った中身がトレースの閲覧者には全部見える点に注意する([casebook P-O12](../casebook/02-pitfalls-index.md))。
+
+**未検証:** 案 2・案 3 は公式の記述から組み立てた構成で、実測していない(注入変数とは別の接続文字列での送信、接続なしでプラットフォーム側のスパンが出ないこと、ライブラリの自動送信の止め方)。
 
 ---
 
@@ -414,6 +449,7 @@ PyRIT ベース。**Attack Success Rate = 成功攻撃数 ÷ 総攻撃数**を�
   > Foundry はエージェントの blue-green / canary デプロイの組み込みサポートを提供しない。これらのデプロイパターンや、ユーザーのエージェントバージョン間の制御された移行が必要なら、**エージェント API の前段に API ゲートウェイやカスタムルーターのようなルーティング層を実装せよ。**
   - **トラフィック分割は prompt agent を含め全エージェントで非対応。**`version_selector` の `FixedRatio` ルールは `traffic_percentage: 100` の 1 本だけを設定する仕様で、ルーティングは「Always use latest(既定)」か「特定バージョンに固定」の 2 択([configure-agent](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/configure-agent) ms.date 2026-09-11 の Limitations に「No traffic splitting」、[manage-hosted-agent](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/manage-hosted-agent) ms.date 2026-08-17 も同旨。旧記載「prompt agent は FixedRatio で % 指定可」は誤り)。**既定の Always use latest ではバージョン作成と同時に本番(Teams / M365 公開先を含む)に反映される**ので、本番はバージョン固定にしておく。
   - hosted agent には**ドラフトバージョン(プレビュー)**があり、`draft-{timestamp}` 版は latest 解決にもルーティング対象にもならないため、本番に影響させずに新イメージ・構成を直接呼び出して検証できる(昇格はドラフトを外して新バージョンを作成)。
+- **会話の続きは agent 単位で、利用者ごとにも分かれる。**hosted agent で `previous_response_id` を使うとき、**別の hosted agent で作った response ID は 404**(2026-09-30 [Port 15](../../../labs/maf-ports/ports/delegated-access-hosted/README.md) の実測。公式の明記はない)。`x-ms-user-identity` を送る構成では他人の response ID も 404(公式の仕様: 会話履歴は利用者ごとに分離)。**同じ agent の版更新をまたいで続けられるかは未確認** → 版更新の受入試験に「更新前に始めた会話の続き」を入れる。前段のルーター(上記)で**別の agent に切り替える blue-green は、会話を引き継げない前提**で設計する(切り替え時は新しい会話として始めてもらう)。
 - **モデルデプロイの version upgrade を自動アップグレードにしない**(テストスイート検証前に応答が変わるのを防ぐ)。
 - **非決定性への対処:** 「Foundry Agent Service で定義したエージェントは非決定的に振る舞うため、望ましい品質水準をどう測り維持するかを決めなければならない。**現実的なユーザーの質問とシナリオに対する理想的な応答をチェックするテストスイートを作って実行せよ。**」→ §4 のクラウド評価を CI のゲートに組み込む形になる。
 
@@ -450,7 +486,8 @@ PyRIT ベース。**Attack Success Rate = 成功攻撃数 ÷ 総攻撃数**を�
 - [ ] **レガシー `Latency` を使わず** `AzureOpenAITimeToResponse` / `TTLTInMS` / `NormalizedTBTInMS` を使用
 - [ ] PTU は `ProvisionedManagedUtilizationV2`(V1 は非推奨)
 - [ ] **spillover は 429 として計上されない**点をダッシュボードに明記
-- [ ] トレースの PII / シークレット redaction をテレメトリ到達前に実装
+- [ ] トレースの PII / シークレット redaction をテレメトリ到達前に実装(**コンテナ側のみ有効。hosted agent のサーバーサイドトレースはマスクできない**)
+- [ ] 会話の中身をトレースに残すか・誰が読めるかを決め、§3.6 の案 1〜3(集約 / 分離 / 接続しない)を選んだ
 - [ ] `gen_ai.*` 属性名への直接依存を 1 箇所に抽象化
 - [ ] 委任サブネットの IP 枯渇に対する合成監視
 
@@ -474,3 +511,4 @@ PyRIT ベース。**Attack Success Rate = 成功攻撃数 ÷ 総攻撃数**を�
 - [ ] モデルデプロイの自動アップグレードを OFF
 - [ ] カナリア / ブルーグリーンが要るなら**ルーティング層を自前で用意**(トラフィック分割は prompt / hosted とも非対応)
 - [ ] エージェントのルーティングを「Always use latest」のままにせず、本番はバージョン固定
+- [ ] 版更新・agent の切り替えをまたぐ会話の続きの扱いを決めた(別 agent の response ID は 404。版更新は未確認 → 受入試験に入れる。§6.3)

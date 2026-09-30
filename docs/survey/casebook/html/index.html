@@ -90,7 +90,7 @@ footer {
 <body><nav class="site"><a href="index.html" class="current">Foundry SI ケースブック</a><a href="01-scenario-playbook.html">01. 要件シナリオ別プレイブック</a><a href="02-pitfalls-index.html">02. 詰まりどころ索引</a><a href="03-case-helpdesk.html">03. 案件事例</a><a class="xset" href="../../features/html/index.html">→ features</a><a class="xset" href="../../architecture/html/index.html">→ architecture</a><a class="xset" href="../../proposal/html/index.html">→ proposal</a></nav>
 <main>
 <h1 id="foundry-si-ケースブック-要件別プレイブック・詰まりどころ索引・案件事例">Foundry SI ケースブック — 要件別プレイブック・詰まりどころ索引・案件事例</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#ドキュメント構成">ドキュメント構成</a></li><li><a href="#出典の格付け-本セット固有のルール">出典の格付け(本セット固有のルール)</a></li><li><a href="#使い方-提案フローとの対応">使い方(提案フローとの対応)</a></li><li><a href="#更新運用">更新運用</a></li><li><a href="#更新履歴">更新履歴</a></li></ul></div>
-<blockquote><p><strong>最終更新:</strong> 2026-09-04 / 2026-09-26(月次更新) / 2026-09-29(P-A11 注記のみ) / <strong>版:</strong> 初版<br><a href="../../features/html/index.html">features</a> が「その機能は使えるのか」、<a href="../../architecture/html/index.html">architecture</a> が「どう組むか」、<a href="../../proposal/html/index.html">proposal</a> が「どう提案するか」に答えるのに対し、本セットは <strong>「この要件が来たら何を決め、どこで詰まるか」</strong> に答える。公式ドキュメント調査(survey)と実装検証(<a href="../../../tech-selection-guide.md">tech-selection-guide</a> / labs)の<strong>間を埋める実務層</strong>で、公開されている第三者の記事(「ハマった」「苦労した」系)も出典として扱う唯一のセット。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-09-04 / 2026-09-26(月次更新) / 2026-09-29(P-A11 注記のみ) / 2026-09-30(Port 15 ライブの実測 3 件追加) / <strong>版:</strong> 初版<br><a href="../../features/html/index.html">features</a> が「その機能は使えるのか」、<a href="../../architecture/html/index.html">architecture</a> が「どう組むか」、<a href="../../proposal/html/index.html">proposal</a> が「どう提案するか」に答えるのに対し、本セットは <strong>「この要件が来たら何を決め、どこで詰まるか」</strong> に答える。公式ドキュメント調査(survey)と実装検証(<a href="../../../tech-selection-guide.md">tech-selection-guide</a> / labs)の<strong>間を埋める実務層</strong>で、公開されている第三者の記事(「ハマった」「苦労した」系)も出典として扱う唯一のセット。</p></blockquote>
 <h2 id="ドキュメント構成">ドキュメント構成</h2>
 <div class="tablewrap"><table><thead><tr>
 <th>#</th>
@@ -193,6 +193,10 @@ footer {
 <th>日付</th>
 <th>内容</th>
 </tr></thead><tbody>
+<tr>
+<td>2026-09-30</td>
+<td><strong>02:</strong> Port 15(delegated-access-hosted)のライブ検証から実測 3 件を末尾追加 — <strong>P-H24</strong>(hosted agent の会話継続は利用者ごと・agent ごとに分離され 404)、<strong>P-O12</strong>(プラットフォーム側 <code>responsesapi</code> スパンが会話全文を記録し、コンテナ側の設定では止まらない)、<strong>P-C12</strong>(Foundry アカウント配下の子リソースを並列に作ると RequestConflict)。P-I01 に hosted agent 作成での再現(<code>agents/write</code>)を付記。P-O12 は公式(トレースは接続したときだけ有効・止め方は接続解除のみ・接続文字列はコンテナにも注入)と突き合わせ、対処を architecture 09 §3.6 の 3 案(集約 / 分離 / 接続しない)に接続</td>
+</tr>
 <tr>
 <td>2026-09-29</td>
 <td>features 差分更新の波及のみ。<strong>02:</strong> P-A11(Routines REST)に「※2026-09-29: <code>Foundry-Features</code> の値は <code>Routines=V2Preview</code>(REST 仕様では任意ヘッダー、SDK 2.5.0+ は自動付与)。V1Preview 固定のコードは外すか揃える」を注記。P-ID の追加・振り直しなし</td>

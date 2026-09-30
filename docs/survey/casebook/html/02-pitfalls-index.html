@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="02-詰まりどころ索引-症状から引く-原因・対処・出典">02. 詰まりどころ索引 — 症状から引く「原因・対処・出典」</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#使い方">使い方</a></li><li><a href="#a-hosted-agent">A. hosted agent</a></li><li><a href="#b-agent-service-コア">B. Agent Service コア</a></li><li><a href="#c-id-と-rbac">C. ID と RBAC</a></li><li><a href="#d-ネットワークと閉域">D. ネットワークと閉域</a></li><li><a href="#e-rag-とナレッジ">E. RAG とナレッジ</a></li><li><a href="#f-モデル-クォータ-コスト">F. モデル / クォータ / コスト</a></li><li><a href="#g-観測と評価">G. 観測と評価</a></li><li><a href="#h-ガードレール">H. ガードレール</a></li><li><a href="#i-maf-とフレームワーク">I. MAF とフレームワーク</a></li><li><a href="#j-iac-cli-ci-cd">J. IaC / CLI / CI-CD</a></li><li><a href="#k-copilot-studio-m365-apim-業務連携">K. Copilot Studio / M365 / APIM / 業務連携</a></li><li><a href="#l-文書処理と音声">L. 文書処理と音声</a></li><li><a href="#公開記事が見当たらなかったトピック-2026-09-04-時点-2026-09-26-再確認">公開記事が見当たらなかったトピック(2026-09-04 時点、2026-09-26 再確認)</a></li><li><a href="#出典の取得状況-メタ情報">出典の取得状況(メタ情報)</a></li></ul></div>
 <p><a href="index.html">← ケースブック TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-09-04(初版。公開記事の実在確認 2026-09-04)/ 2026-09-26(月次更新: 全外部 URL の生存確認〈410 が 2 件 → リンク切れ付記、リダイレクト 5 件 → 新 URL〉、[公式] 前提の再確認〈Routines GA・hosted agent の idle timeout / サブネット容量表・egress controls 登場・azure-ai-projects 2.5.0 の openai&gt;=3 必須化 等を「※2026-09-26」で注記〉、2026-09-04 以降の公開記事・issue から P-H23 / P-A12 / P-N20 / P-M15 / P-G11 / P-F13 / P-F14 を追加) / 2026-09-29(P-A11 に Routines の <code>Foundry-Features</code> 値〈V2Preview〉の変化を「※2026-09-29」で注記。P-F03 に MAF 1.13 / 1.19 でのヘッダー注入の変化を注記 — labs 最新化チェックの結果)<br>機能・レイヤー別に「<strong>症状 → 原因 → 設計上の対処 → 出典</strong>」を索引化したもの。出典は <strong>[公式]</strong>(Microsoft Learn・公式ブログ・公式サンプル)/ <strong>[実測]</strong>(本リポジトリの labs、外部案件)/ <strong>[記事]</strong>(第三者の公開記事。サイト名と公開年月を併記)の 3 種(<a href="index.html#出典の格付け-本セット固有のルール">README の格付け</a>)。<br><strong>読み方の注意:</strong> [記事] は執筆時点の挙動であり、特に hosted agents は <strong>2025-11 初回プレビュー → 2026-04 新基盤プレビュー → 2026-06〜07 GA</strong> と短期間で基盤が入れ替わっている。<strong>2026-04 以前の記事は旧基盤(<code>agent.yaml</code>・<code>az cognitiveservices agent</code>・<code>from_agent_framework()</code>)前提</strong>で、現行では手順が変わっているものがある(該当行に「旧基盤」と明記)。ID(P-xx)は提案書・設計書から参照するためのもので、行の追加は末尾に足す(振り直さない)。</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-09-04(初版。公開記事の実在確認 2026-09-04)/ 2026-09-26(月次更新: 全外部 URL の生存確認〈410 が 2 件 → リンク切れ付記、リダイレクト 5 件 → 新 URL〉、[公式] 前提の再確認〈Routines GA・hosted agent の idle timeout / サブネット容量表・egress controls 登場・azure-ai-projects 2.5.0 の openai&gt;=3 必須化 等を「※2026-09-26」で注記〉、2026-09-04 以降の公開記事・issue から P-H23 / P-A12 / P-N20 / P-M15 / P-G11 / P-F13 / P-F14 を追加) / 2026-09-29(P-A11 に Routines の <code>Foundry-Features</code> 値〈V2Preview〉の変化を「※2026-09-29」で注記。P-F03 に MAF 1.13 / 1.19 でのヘッダー注入の変化を注記 — labs 最新化チェックの結果) / 2026-09-30(Port 15 のライブ検証から P-H24 / P-O12 / P-C12 を追加、P-I01 に再現を付記。P-O12 は公式の trace-data / deploy-hosted-agent と突き合わせ、選択肢を architecture 09 §3.6 に接続)<br>機能・レイヤー別に「<strong>症状 → 原因 → 設計上の対処 → 出典</strong>」を索引化したもの。出典は <strong>[公式]</strong>(Microsoft Learn・公式ブログ・公式サンプル)/ <strong>[実測]</strong>(本リポジトリの labs、外部案件)/ <strong>[記事]</strong>(第三者の公開記事。サイト名と公開年月を併記)の 3 種(<a href="index.html#出典の格付け-本セット固有のルール">README の格付け</a>)。<br><strong>読み方の注意:</strong> [記事] は執筆時点の挙動であり、特に hosted agents は <strong>2025-11 初回プレビュー → 2026-04 新基盤プレビュー → 2026-06〜07 GA</strong> と短期間で基盤が入れ替わっている。<strong>2026-04 以前の記事は旧基盤(<code>agent.yaml</code>・<code>az cognitiveservices agent</code>・<code>from_agent_framework()</code>)前提</strong>で、現行では手順が変わっているものがある(該当行に「旧基盤」と明記)。ID(P-xx)は提案書・設計書から参照するためのもので、行の追加は末尾に足す(振り直さない)。</p></blockquote>
 <h2 id="使い方">使い方</h2>
 <ul>
 <li><strong>設計レビュー前:</strong> 採用する構成のシナリオ(<a href="01-scenario-playbook.html">01</a>)が参照する P-ID を列挙し、「対処」欄が設計・見積もりに入っているかを確認する</li>
@@ -267,6 +267,13 @@ footer {
 <td>第三者 APM への二重送信が要件なら、PoC で「送信先の受信ログ」まで確認する受入項目を置く(env 登録の確認だけでは不十分)。hosting パッケージの版を固定し、更新時に再確認</td>
 <td><a href="https://github.com/microsoft/agent-framework/issues/8407">記事: agent-framework issue 2026-09(open)</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/configure-hosted-agent-telemetry">公式: hosted agent telemetry</a></td>
 </tr>
+<tr>
+<td>P-H24</td>
+<td>中間層経由で hosted agent に <code>previous_response_id</code> を付けて続きを頼むと 404。中間層が 502(「エージェントを呼び出せない」)に丸めて原因が分からない</td>
+<td>hosted agent の会話は <strong><code>x-ms-user-identity</code> の利用者ごとに分離</strong>され、他人の response ID は存在しない扱い(404)。同じ利用者でも<strong>別の hosted agent で作った response ID は続けられない</strong>(会話は agent ごとにも別。公式に明記はなく実測のみ)。保存期限切れ・agent の版更新をまたぐ場合は未確認</td>
+<td>404 は「会話が見つからない」として利用者に返し、新しい会話で聞き直してもらう(502 と区別)。agent を切り替える構成(A/B・版の並行運用)では、クライアントが保存している続き ID を agent 単位で持つ</td>
+<td><a href="../../../../labs/maf-ports/ports/delegated-access-hosted/README.md#検証結果2026-09-30-ライブ">実測: port 15 ライブ 2026-09-30</a></td>
+</tr>
 </tbody></table></div>
 <h2 id="b-agent-service-コア">B. Agent Service コア</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -374,7 +381,7 @@ footer {
 <td>Owner / Contributor なのにエージェント作成が 403(<code>agents/action</code>)、<code>agents.get()</code> は通るが <code>responses.create()</code> が "RBAC: access denied"</td>
 <td>作成・実行は<strong>データプレーン</strong>。Owner ≠ 使える。取得はコントロールプレーンなので「読めるのに実行できない」になる</td>
 <td>最小権限セットを設計書に: プロジェクトに Foundry User(旧 Azure AI User)、hosted 配布に Foundry Project Manager、推論に Cognitive Services OpenAI User</td>
-<td><a href="https://learn.microsoft.com/en-us/answers/questions/5837064/unable-to-create-agents-in-azure-ai-foundry-portal">記事: Q&amp;A 2026-03</a> / <a href="https://learn.microsoft.com/en-us/answers/questions/5779747/azure-ai-foundry-agent-returns-403-rbac-access-den">記事: Q&amp;A 2026-02</a> / <a href="https://zenn.dev/headwaters/articles/9a8a72fa41b5a6">記事: Zenn ヘッドウォータース 2026-04</a></td>
+<td><a href="https://learn.microsoft.com/en-us/answers/questions/5837064/unable-to-create-agents-in-azure-ai-foundry-portal">記事: Q&amp;A 2026-03</a> / <a href="https://learn.microsoft.com/en-us/answers/questions/5779747/azure-ai-foundry-agent-returns-403-rbac-access-den">記事: Q&amp;A 2026-02</a> / <a href="https://zenn.dev/headwaters/articles/9a8a72fa41b5a6">記事: Zenn ヘッドウォータース 2026-04</a> / <a href="../../../../labs/maf-ports/ports/delegated-access-hosted/README.md#検証結果2026-09-30-ライブ">実測: port 15 ライブ 2026-09-30(hosted agent の作成が <code>agents/write</code> 不足で拒否。サブスクリプション所有者でもデプロイ実行者に Foundry User が要り、付与後の反映に約 5 分)</a></td>
 </tr>
 <tr>
 <td>P-I02</td>
@@ -909,6 +916,13 @@ footer {
 <td><code>configure_observability=None</code> で切る</td>
 <td><a href="../../../../labs/maf-ports/ports/hn-briefing-hosted/README.md">実測: port 11</a></td>
 </tr>
+<tr>
+<td>P-O12</td>
+<td>コンテナで <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false</code> にしたのに、App Insights に<strong>会話全文(ツール結果を含む)</strong>が残る。利用者の権限で絞った文書の中身が運用者に見える</td>
+<td>プロジェクトへの App Insights の<strong>接続</strong>で 2 つが同時に起きる: ① プラットフォーム側(Agent Service)のサーバーサイドトレースが有効になり、<code>cloud_RoleName == &quot;responsesapi&quot;</code> の <code>chat</code> / <code>invoke_agent</code> スパンが <code>gen_ai.input.messages</code> / <code>gen_ai.output.messages</code> を記録する(日本語は <code>\u</code> エスケープ)② 同じ接続文字列がコンテナに注入され、コンテナのログも同じ先へ自動で送られる。環境変数が効くのは②のコンテナ内の計装だけ。公式の止め方は接続の解除のみ(プロジェクト単位)で、サーバー側の中身だけを止める設定は見当たらない</td>
+<td>設計の最初に「中身を残してよいか・誰が読めるか」を決め、App Insights を <strong>1 つに集約 / 2 つに分離(接続先 = 中身入りで閲覧者を絞る、別の App Insights = コンテナのログで運用・アラート)/ 接続しない</strong>から選ぶ(判断基準は architecture 09 §3.6)。集約なら閲覧ロールを絞る・テーブルを Protected にする・保持期間を短くする・ツール結果に本文を載せず ID と要約だけにする。受入試験で <code>responsesapi</code> のスパンに機微データが出ないかを KQL で確認</td>
+<td><a href="../../../../labs/maf-ports/ports/delegated-access-hosted/README.md#検証結果2026-09-30-ライブ">実測: port 15 ライブ 2026-09-30</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/observability/concepts/trace-data">公式: trace-data</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/deploy-hosted-agent">公式: deploy-hosted-agent(注入される環境変数)</a> / <a href="../../architecture/html/09-operations.html#3-6-トレースに会話の中身を残すか-hosted-agent-の選定基準">公式: architecture 09 §3.6</a></td>
+</tr>
 </tbody></table></div>
 <h2 id="h-ガードレール">H. ガードレール</h2>
 <div class="tablewrap"><table><thead><tr>
@@ -1187,6 +1201,13 @@ footer {
 <td>PE は別モジュール + <code>dependsOn</code>。ゾーンは <code>cognitiveservices</code> / <code>openai</code> / <code>services.ai</code> の 3 つ、<code>groupIds: [&#x27;account&#x27;]</code></td>
 <td>ポータル運用を残すなら <code>publicNetworkAccess: Enabled</code> を残すか閉じ切るかを設計初期に決める</td>
 <td><a href="https://zenn.dev/headwaters/articles/92c17d7627f21a">記事: Zenn ヘッドウォータース 2025-10</a></td>
+</tr>
+<tr>
+<td>P-C12</td>
+<td>Foundry アカウント配下のプロジェクトとモデルデプロイを 1 つの Bicep で作ると <code>RequestConflict</code>(「Another operation is in progress on the resource」)で片方が失敗し、<strong>再実行しても毎回同じ組が失敗する</strong></td>
+<td>アカウント配下の子リソースは同時に変更できないが、Bicep は依存のない子リソースを並列に作る</td>
+<td>子リソース(プロジェクト・接続・モデルデプロイ)に <code>dependsOn</code> で順序を付ける</td>
+<td><a href="../../../../labs/maf-ports/infra/shared.bicep">実測: port 15 ライブ 2026-09-30(maf-ports 共有基盤の再構築)</a></td>
 </tr>
 </tbody></table></div>
 <h2 id="k-copilot-studio-m365-apim-業務連携">K. Copilot Studio / M365 / APIM / 業務連携</h2>

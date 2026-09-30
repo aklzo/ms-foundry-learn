@@ -1,6 +1,6 @@
 # 技術選定ガイド(実装検証ベース)
 
-> **最終更新:** 2026-09-04 / **版:** 第5版(Wave 1+2+3 + 外部案件 v3 / v4 反映)/ 2026-09-26 注記追加(実測内容は書き換えず、公式側の変化で前提が崩れた箇所に「※2026-09-26」を付記: 罠 10・21・22)/ 2026-09-29 全ラボを agent-framework 1.19 / openai 3.20 でオフライン再検証(版の変化で前提が変わった箇所に「※2026-09-29」を付記: 罠 3・4・10)
+> **最終更新:** 2026-09-04 / **版:** 第5版(Wave 1+2+3 + 外部案件 v3 / v4 反映)/ 2026-09-26 注記追加(実測内容は書き換えず、公式側の変化で前提が崩れた箇所に「※2026-09-26」を付記: 罠 10・21・22)/ 2026-09-29 全ラボを agent-framework 1.19 / openai 3.20 でオフライン再検証 / 2026-09-30 §7 委任アクセス(Port 15)を追加し同日ライブ検証の結果を反映(版の変化で前提が変わった箇所に「※2026-09-29」を付記: 罠 3・4・10)
 > **出典の分離:** 本ドキュメントは **labs/ での実装検証から得たナレッジのみ**を集約する。公式ドキュメント調査由来の知見は [docs/survey/](./survey/README.md)(features / architecture / proposal)にあり、混在させない。各主張には検証元(どのラボ/ポートで実証したか)を付す。
 > **検証環境:** agent-framework 1.10〜1.13 / azure-ai-projects 2.4 / Microsoft Foundry(Japan East、gpt-5.4-mini)/ 2026-07 時点。フレームワークの進化が速いため、**版が変われば結論も変わりうる**。
 
@@ -165,6 +165,22 @@ foundry-probes(01/02/08)の発見とは独立検証で一致を確認済み。
     (retrieval hit@3 0.708 → 0.667 は誤差域、unanswerable は 0.0 → 0.2 に改善)。載せ替え判断は評価ハーネスが
     あれば 1 日で決まる — v4
 
+## 7. 委任アクセス(利用者の権限でエージェントを動かす)— Port 15、2026-09-30
+
+[labs/maf-ports/ports/delegated-access-hosted](../labs/maf-ports/ports/delegated-access-hosted/README.md)。hosted agent × アプリ管理の OBO(2026-09-28 公開の公式手順)で、社内文書(AI Search のセキュリティフィルター)と基幹 API(MCP)への操作を利用者のロールで変える。最終判定点を **APIM(方式 A)** と **MCP サーバー自身(方式 B)** の両方で実装して比較した。オフライン検証(239 テスト)と SDK ソースの確認に加え、**2026-09-30 にライブ検証済み**(japaneast・gpt-5.4-mini・新規テスト用ユーザー 2 人 × 方式 A / B。検証後に Azure・Entra のリソースは全削除)。1〜7 は実装時の知見、8〜11 はライブで分かったこと。
+
+1. **「エージェントの権限 = 利用者の権限」は Foundry の機能ではなく部品間の契約で作る。**Foundry は `x-client-*` の転送と `x-ms-user-identity` による利用者の識別(会話の分離)だけを担い、トークンの取得・同意・更新・再認証・下流の判定はアプリ側に残る。ヘッダー名・スコープ・ロール名の綴りが 1 つずれると例外でなく「権限なし」で黙って動くので、名前を 1 モジュールに集め Bicep・ポリシー・`.env.example` との一致までテストで固定する — Port 15
+2. **MAF の `ResponsesHostServer` は利用者ごとの資格情報が要るツールに使えない**(エージェントと MCP ツールを起動時に 1 回だけ接続し、要求ヘッダーをツールへ渡さない)。Agent Server SDK(`azure-ai-agentserver-responses`)のハンドラーで要求ごとに MAF Agent を組む。hosted 化の摩擦は「ツールの出所」(Port 11)に加えて「ツールの資格情報が誰のものか」でも決まる — Port 15
+3. **トークンの露出面は 7 か所**(プロンプト・ツール引数・ツール結果・ログ・例外・GenAI メッセージのトレース記録・resilient モードの永続化)。特に **resilient / durable background モードは `client_headers` を復旧用に永続化**し、**GenAI のメッセージ内容のトレース記録は SDK 既定で有効**(ツール結果がミドルウェアより前に span に載る)。前者は起動拒否、後者は `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false` を既定にした — Port 15
+4. **mcp 1.30 + MAF 1.19 では `tools/call` の HTTP 401 / 403 がツール結果にならず、セッションが死んで再接続・再送でハングする。**エージェントの HTTP トランスポートで 401 / 403 を JSON-RPC エラーに写し、403 は「権限がありません」、401 は再認証要求として中間層へ返す(アプリ権限へは切り替えない)— Port 15
+5. **ゲートウェイ判定(方式 A)は「バックエンドを APIM 以外から呼べないこと」を別途保証して初めて成立する。**APIM Consumption は VNet も静的 IP も持たないので、共有シークレットのヘッダーで迂回を塞いだ(より強い手段は APIM のマネージド ID トークン、または v2 / Premium + VNet)。APIM は本文を見ないため判定粒度は API(= MCP サーバー)単位 → **MCP サーバーの分け方が権限境界になる**。実務の結論は「入口 A(宛先・スコープ・サーバー単位のロール)+ 中身 B(文書の絞り込み・ドメイン判定・監査)」の併用 — Port 15
+6. **リードタイムはコードより管理者作業に出る。**アプリ登録 2 つ・管理者同意 3 件・アプリロール割り当て(Entra)と、`UserIdentityImpersonation/action` を含むカスタムロール(組み込みロールに無い)・Foundry Agent Consumer の割り当て(Azure RBAC)で、顧客側の担当ロールが最低 3 種類に分かれる。セットアップスクリプトを「既定 dry-run で全 Graph / ARM 呼び出しを表示」にして申請書に貼れるようにした — Port 15
+7. **一覧の取得コスト:** 利用者に見えている MCP サーバー 1 つにつき、ツール呼び出し前に約 5 要求(疎通確認+MAF の initialize / initialized / ping / tools/list)。経理担当で 1 ターン 15 要求 — APIM Consumption の呼び出し課金とレイテンシに効く — Port 15
+8. **権限による出し分けは方式 A / B ともライブで期待どおり、1 問の所要時間に差は出なかった**(A 9.7〜11.9 秒 / B 10.5〜13.7 秒、同じ質問 ×3)。時間はモデルの推論とツール往復が支配し、APIM のホップは誤差に埋もれる → **判定点の選定にレイテンシは効かない**。選定軸は統制の所有者(セキュリティ担当がポリシーを持つか)と判定の粒度(サーバー単位で足りるか)。ポリシー XML(2 段の validate-jwt・on-error の `WWW-Authenticate`・Named Values)も実 APIM で受け付けられた — Port 15
+9. **hosted agent のプラットフォーム側トレースは会話全文を記録し、コンテナ側では止められない。**コンテナで `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false` にしても、`cloud_RoleName == "responsesapi"` の `chat` / `invoke_agent` スパンが `gen_ai.input.messages` / `gen_ai.output.messages` にツール結果まで残し、経理担当にしか見えない文書 ID が App Insights に出た(トークンは 0 件)。公式と突き合わせると、プロジェクトへの App Insights の**接続**が「プラットフォーム側トレースの有効化」と「同じ接続文字列のコンテナへの注入(コンテナのログも自動で同じ先へ)」を同時に起こし、止め方は接続の解除だけ。→ **設計の最初に「中身を残してよいか・誰が読めるか」を決め、App Insights を集約 / 2 つに分離(接続先 = 中身入りで閲覧者を絞る、別の App Insights = コンテナのログで運用)/ 接続しない、から選ぶ**。判断基準は [architecture 09 §3.6](./survey/architecture/09-operations.md#36-トレースに会話の中身を残すかhosted-agent-の選定基準)、ヒアリング項目は proposal 01 の 4-7(casebook P-O12)— Port 15
+10. **会話の続きは利用者ごと・agent ごとに分かれる。**`x-ms-user-identity` が違うと他人の response ID は 404、同じ利用者でも別の hosted agent(方式 A ↔ B)で作った ID は 404。中間層はこれを 502 に丸めず「会話が見つからない」として返す。**同じ agent の版更新をまたいで続けられるかは未確認**で、前段ルーターで別の agent に切り替える blue-green は会話を引き継げない前提になる(architecture 09 §6.3、casebook P-H24)— Port 15
+11. **デプロイで踏むもの:** hosted agent の作成にはデプロイ実行者の **Foundry User** が要る(サブスクリプション所有者でも自動では付かず `agents/write` で拒否、反映まで約 5 分 — P-I01)。Foundry アカウント配下のプロジェクトとモデルデプロイを 1 つの Bicep で作ると並列実行で **RequestConflict** になり、再実行でも直らない → `dependsOn` で順序を固定(maf-ports 共有基盤を修正、P-C12)。条件付きアクセスの claims チャレンジと呼び出し中のトークン失効はライブでも未確認(P1 ライセンス・トークン寿命の都合)— Port 15
+
 ## 更新履歴
 
 | 日付 | 内容 |
@@ -172,6 +188,9 @@ foundry-probes(01/02/08)の発見とは独立検証で一致を確認済み。
 | 2026-07-31 | 初版。Wave 1(7ポート+agentic-search-maf)の実装ナレッジを集約 |
 | 2026-07-31 | 第2版。Wave 2(5ポート: Code Interpreter / クラウド評価 / Foundry IQ / hosted agent+Routines / Voice Live)の実装ナレッジを追加。ハマりどころを8点→12点に拡充 |
 | 2026-07-31 | 第3版。Wave 3(services-agency / governed-agent)を反映。**協調の分水嶺を2軸3値に改訂**(グラフ/相談型 agent-as-tool/担当交代)、middleware の知見を追加、全ポートにアーキテクチャ図を整備 |
+| 2026-09-30 | §7 を追加: 委任アクセス(Port 15 delegated-access-hosted。hosted agent × アプリ管理 OBO、判定点 APIM / MCP サーバーの比較)の実装ナレッジ 7 点。オフライン検証のみ(ライブ未検証と明記) |
+| 2026-09-30 | §7 にライブ検証の結果 4 点(8〜11: 方式 A / B のレイテンシ差なし、プラットフォーム側トレースの会話全文記録、会話継続の分離、デプロイ時の Foundry User と RequestConflict)を追加 |
+| 2026-09-30 | §7 の 9・10 を選定基準として整理: 9 はトレースの「接続」の仕組み(プラットフォーム側の記録+接続文字列の注入)と 3 案(集約 / 分離 / 接続しない)を architecture 09 §3.6・proposal 01 の 4-7 に接続、10 は版更新・agent 切り替えをまたぐ会話の扱いを追記 |
 | 2026-09-26 | 注記のみ追加(本文の実測は不変): 罠 10(Routines GA・リージョン拡大・`api-version=v1` の Learn 明記)、罠 21(公式プロトコルライブラリ `azure-ai-agentserver-*` の stable 化)、罠 22(`azure-ai-projects` 2.5.0 以降は `openai>=3` 必須) |
 | 2026-09-04 | 第5版。§6 外部案件検証 第 2 弾(v4: hosted agent + standard setup、公開+閉域 Lv3 の 2 ラウンド)を追加: api-version=v1、agent identity の Conversations 権限、閉域の VNet 注入必須、File Search の検索 API 不在、BYO Cosmos の実 RU、cold start、App Insights 接続、プレリリース lib 回避、SDK ピン、v3 / v4 品質比較。§4 に未検証領域(注入つき hosted agent)を追記。casebook(docs/survey/casebook)を新設 |
 | 2026-08-05 | 第4版。§5 外部案件検証(foundry-servicenow-helpdesk)を追加: gpt-5-mini の reasoning 系挙動、リタイア間隔 12〜18 か月の実測、evals API による groundedness バッチ、allowProjectManagement、ACA 実測値 |

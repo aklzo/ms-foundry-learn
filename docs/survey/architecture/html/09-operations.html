@@ -91,7 +91,7 @@ footer {
 <main>
 <h1 id="09-運用アーキテクチャ-キャパシティ・bcdr・可観測性・評価・コスト・ci-cd">09. 運用アーキテクチャ(キャパシティ・BCDR・可観測性・評価・コスト・CI/CD)</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#この章の要点-先に結論">この章の要点(先に結論)</a></li><li><a href="#1-キャパシティ設計">1. キャパシティ設計</a></li><li><a href="#2-信頼性・bcdr">2. 信頼性・BCDR</a></li><li><a href="#3-可観測性">3. 可観測性</a></li><li><a href="#4-評価と-llmops">4. 評価と LLMOps</a></li><li><a href="#5-コストアーキテクチャ">5. コストアーキテクチャ</a></li><li><a href="#6-プラットフォーム自体の-ci-cd">6. プラットフォーム自体の CI/CD</a></li><li><a href="#7-運用設計チェックリスト">7. 運用設計チェックリスト</a></li></ul></div>
 <p><a href="index.html">← アーキテクチャ TOP</a></p>
-<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(hosted agent 同時セッション上限・デプロイ種別・Prompt caching・評価リージョン/シナリオ・Monitor 設定・トラフィック分割などを 2026-09 時点の一次情報で再検証)</p></blockquote>
+<blockquote><p><strong>最終更新:</strong> 2026-07-30(公式ドキュメントとの突合検証で訂正) / 2026-09-26(hosted agent 同時セッション上限・デプロイ種別・Prompt caching・評価リージョン/シナリオ・Monitor 設定・トラフィック分割などを 2026-09 時点の一次情報で再検証)/ 2026-09-30(§3.6 hosted agent のトレースの中身と閲覧者の選定基準、§6.3 会話の続きの agent 単位の制約を Port 15 のライブ検証から追加)</p></blockquote>
 <p>ユースケースを問わず横断で効く運用設計をまとめる。<strong>この領域は「Foundry がやってくれない範囲」が広く、見積もりの抜けが出やすい。</strong></p>
 <h2 id="この章の要点-先に結論">この章の要点(先に結論)</h2>
 <ol>
@@ -101,6 +101,7 @@ footer {
 <li><strong>Azure Monitor のレガシー <code>Latency</code> メトリクスを使ってはいけない。</strong>Azure OpenAI 用に設計されておらず誤った診断になると明記されている。</li>
 <li><strong>リスク・安全性評価と AI Red Teaming は日本リージョンで実行できない。</strong>評価用に別リージョンのプロジェクトを構える設計になる。</li>
 <li><strong>capabilityHost は作成後に更新できない。</strong>構成変更は <strong>capability host の削除・再作成</strong>が前提(プロジェクト削除は不要。同名+異構成での再作成は 400 になる)で、IaC の冪等更新が効かない。</li>
+<li><strong>hosted agent は App Insights を接続すると、プラットフォーム側で会話の中身(ツール結果を含む)まで記録され、コンテナ側の設定では止められない。</strong>中身を残せない要件なら「接続しない」、閲覧者を分けたいなら「App Insights を 2 つに分ける」構成を最初に選ぶ(§3.6)。</li>
 </ol>
 <hr>
 <h2 id="1-キャパシティ設計">1. キャパシティ設計</h2>
@@ -417,7 +418,7 @@ Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × O
 <li><strong>保存先は App Insights。</strong>保持期間・サンプリング・課金は App Insights / Log Analytics の設定に従う(<strong>Foundry 側の上乗せ課金はない</strong>)。</li>
 <li><strong>必要ロール:</strong> ログ参照に <strong>Log Analytics Reader</strong>。対象テーブルが Protected なら Privileged Monitoring Data Reader も必要。</li>
 <li><strong>取り込みの Entra 認証(プレビュー、2026-08 新設):</strong> 接続済み App Insights への取り込みをキーから<strong>プロジェクトのマネージド ID</strong> に切り替えられる(App Insights 側でローカル認証を無効化して Entra のみに強制)。<code>disableLocalAuth</code> を全面適用する規制案件で効く(<a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-ingestion-entra-authentication">trace-ingestion-entra-authentication</a> ms.date 2026-08-06)。</li>
-<li><strong>セキュリティ:</strong> トレースはプロンプト・出力・ツール引数などの機微情報を含みうる。<strong>テレメトリ到達前にマスクする</strong>のが公式ベストプラクティス。</li>
+<li><strong>セキュリティ:</strong> トレースはプロンプト・出力・ツール引数などの機微情報を含みうる。<strong>テレメトリ到達前にマスクする</strong>のが公式ベストプラクティス。<strong>ただし hosted agent のサーバーサイドトレースはアプリ側でマスクできない</strong>(コンテナで内容記録をオフにしても、プラットフォーム側のスパンは会話の中身を記録する — §3.6)。</li>
 </ul>
 <h3 id="3-2-opentelemetry-genai-セマンティック規約のステータス-設計に効く">3.2 OpenTelemetry GenAI セマンティック規約のステータス(設計に効く)</h3>
 <p>Foundry は OpenTelemetry のセマンティック規約に従ってトレースを保存するが、<strong>規約側の成熟度は「Development(非安定)」</strong>である。<code>gen_ai.provider.name</code> / <code>gen_ai.operation.name</code> / <code>gen_ai.usage.input_tokens</code> / <code>gen_ai.conversation.id</code> / <code>gen_ai.agent.name</code> などはすべて Development バッジで、<strong><code>gen_ai.system</code> は既に非推奨(<code>gen_ai.provider.name</code> に置換)。</strong>2026 年に GenAI 規約は専用リポジトリへ分離され、コア規約とは別リリースサイクルになった。</p>
@@ -481,6 +482,60 @@ Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × O
 </ul>
 <p>設定パネルの内訳(2026-09-26 確認、<a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard">how-to-monitor-agents-dashboard</a> ms.date 2026-09-03): <strong>Recurring evaluations(プレビュー)</strong> / Red team scans(プレビュー)/ Alerts(プレビュー)の 3 項目に整理された(旧版の Continuous evaluation / Scheduled evaluations は <strong>Recurring evaluations に統合</strong>され、その中で「固定スケジュールの scheduled」と「ライブトラフィックをサンプリングする continuous」を選ぶ形。継続的評価のステータス不明瞭は解消しプレビュー確定)。ダッシュボード自体も View agent metrics (preview)。なお GA 一覧表では Red teaming 機能自体は GA だが、<strong>Monitor 設定内の Red team scans(定期スキャン)はプレビュー表記</strong>のまま。<strong>継続的評価の <code>max_hourly_runs</code> 既定は 100/時</strong>で、到達すると評価 run がスキップされる。<strong>プロジェクトのマネージド ID に Foundry User ロールが必要</strong>(未付与だとルール作成が失敗する)。</p>
 <p><strong>Foundry 外のエージェントも監視できる:</strong> Foundry Control Plane に AI Gateway 経由で登録し、同一 App Insights に OTel GenAI 規約準拠のテレメトリを送れば、継続的評価とエラーレート追跡が使える。</p>
+<h3 id="3-6-トレースに会話の中身を残すか-hosted-agent-の選定基準">3.6 トレースに会話の中身を残すか(hosted agent の選定基準)</h3>
+<p>hosted agent で「会話の中身をどこに残し、誰が読めるか」は、App Insights の<strong>接続</strong>の仕方で決まる。委任アクセス(利用者ごとに見える文書を絞る構成)では特に効く。2026-09-30 に <a href="../../../../labs/maf-ports/ports/delegated-access-hosted/README.md">Port 15</a> のライブ検証で確認し、公式(<a href="https://learn.microsoft.com/en-us/azure/foundry/observability/concepts/trace-data">trace-data</a> ms.date 2026-06-02 / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/deploy-hosted-agent">deploy-hosted-agent</a> ms.date 2026-08-17)と突き合わせた。</p>
+<p><strong>仕組み — 「接続」1 つで 2 つが同時に起きる</strong></p>
+<ul>
+<li>「接続」は、プロジェクトに App Insights を登録する<strong>プロジェクト側の設定</strong>(Foundry Owner / Foundry Account Owner が行う)。トレースは既定オフで、接続したときだけ有効になる。止める公式の手段は<strong>接続の解除だけ</strong>(プロジェクト内の全エージェントが対象)</li>
+<li>接続すると:</li>
+<ol>
+<li><strong>プラットフォーム側(Agent Service)のサーバーサイドトレースが有効になる。</strong>公式は記録内容を「利用者の入力・モデルの入出力・ツール呼び出し」と明記しており、<strong>会話の中身が入る</strong>(実測: <code>cloud_RoleName == &quot;responsesapi&quot;</code> のスパンの <code>gen_ai.input.messages</code> / <code>gen_ai.output.messages</code> にツール結果まで記録された)</li>
+<li><strong>同じ接続文字列が <code>APPLICATIONINSIGHTS_CONNECTION_STRING</code> としてコンテナに注入され</strong>、ホスティングライブラリ(<code>azure-ai-agentserver-*</code>。Microsoft OpenTelemetry distro を組み込み済み)がコンテナのトレース・ログを<strong>自動で送る</strong>。既定の構成ではアプリ側に送信コードは要らない(自分で書くのは独自のスパン・ログだけ)</li>
+</ol>
+<li>コンテナの <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false</code> が効くのは<strong>コンテナ内の計装だけ</strong>で、プラットフォーム側の記録は止まらない(実測)。サーバー側の中身だけを止める設定は公式に見当たらない(trace-data に「Configurable policies」とあるが具体的な手段の記載なし)</li>
+<li>そのため §3.1 の「テレメトリ到達前にマスクする」は<strong>コンテナ側にしか適用できない</strong>。サーバー側に載るのは「モデルに渡したもの」なので、減らすにはモデルに渡す情報そのものを減らす(トークンが載らないのは、そもそもモデル入力に入れないから)</li>
+<li>逆に、アプリが<strong>自前の接続文字列で別の App Insights に送っても「接続」にはならない</strong>(プラットフォーム側の記録は有効にならない)</li>
+<li><strong>会話履歴の保存とトレースは別物。</strong>会話履歴(<code>store: true</code> の応答。<code>previous_response_id</code> で続けるため)の保存先を変えるのが Standard setup(BYO Cosmos DB 等)で、トレースに中身が入るかどうかは Basic / Standard どちらでも「接続したか」だけで決まる</li>
+</ul>
+<p><strong>選択肢</strong></p>
+<div class="tablewrap"><table><thead><tr>
+<th>案</th>
+<th>構成</th>
+<th>向く要件</th>
+<th>得るもの</th>
+<th>失うもの・要る作業</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>1. 集約(既定)</strong></td>
+<td>接続した App Insights 1 つに、プラットフォーム側とコンテナ側の両方が入る</td>
+<td>PoC。運用担当が会話の中身を読んでよいと合意できている</td>
+<td>設定不要。ポータルのトレース画面・Conversation ビュー・Monitor ダッシュボード・継続評価がそのまま使える</td>
+<td><strong>運用担当も中身を読める。</strong>両方が同じテーブル(AppDependencies 等)に入るので、テーブル単位の保護(Protected)では分けられない</td>
+</tr>
+<tr>
+<td><strong>2. 分離</strong></td>
+<td>#1 = 接続先(中身入り。分析・評価用に閲覧者を絞り、Protected・短期保持)/ #2 = 別の App Insights(コンテナのログ。運用・アラート用)</td>
+<td>品質改善に中身を使いたいが、運用担当には見せたくない</td>
+<td>運用担当は中身を見ずに障害対応・アラートができ、分析担当だけが中身を見る</td>
+<td>コンテナの OpenTelemetry 設定を自分で書く。#2 の接続文字列は<strong>別の名前の環境変数</strong>で渡す(プロジェクト接続の参照 <code>${{connections.&lt;名前&gt;.credentials.key}}</code> が使える)。注入変数は #1 を指し、公式は注入変数を再宣言しないよう書いているので上書きしない。ライブラリの自動送信(#1 行き)を残すか止めるかも決める</td>
+</tr>
+<tr>
+<td><strong>3. 接続しない</strong></td>
+<td>プラットフォーム側のトレースなし。コンテナのログだけを自前の接続文字列で運用向け App Insights へ</td>
+<td>「会話の中身をログに残さない」が必須(規制・社内規程)</td>
+<td>中身がどこにも残らない(コンテナ側の記録をオフにしている限り)</td>
+<td>ポータルのトレース画面・Conversation ビュー、トレースを使う Monitor ダッシュボード・継続評価が使えない。モデル呼び出しの監視は §3.3 の Azure Monitor メトリクス(中身を含まない)で代替する。自前の送信設定を忘れるとコンテナのログがどこにも届かない(<a href="../../casebook/html/02-pitfalls-index.html">casebook P-H02</a>)</td>
+</tr>
+</tbody></table></div>
+<p><strong>選び方(ヒアリングで決める — <a href="../../proposal/html/01-hearing-sheet.html#phase-4-セキュリティ・規制-15分">proposal 01 の 4-7</a>)</strong></p>
+<ol>
+<li>会話の中身(利用者の入力・回答・参照した社内文書)を運用ログに残してよいか → 不可なら<strong>案 3</strong></li>
+<li>残すなら、誰が読めるか。運用担当と分析担当は同じ人たちか → 分けたいなら<strong>案 2</strong></li>
+<li>保持期間と利用者への告知。公式は、有効化した後の告知・アクセス制御・保持期間を<strong>顧客の責任</strong>としている</li>
+<li>継続評価やトレースを使う評価を使うか → 使うなら案 1 か案 2(案 3 では使えない)</li>
+</ol>
+<p><strong>業界の標準との関係:</strong> OpenTelemetry の生成 AI 規約は中身の記録を<strong>オプトイン(既定では記録しない)</strong>とし、Microsoft の手順書も「本番では中身の記録を無効にする」「個人データは記録前にマスク・最小化する」とする。Foundry では<strong>接続そのものがオプトインに当たり、接続すれば中身が入る</strong>設計。委任アクセスと組み合わせると、利用者ごとに絞った中身がトレースの閲覧者には全部見える点に注意する(<a href="../../casebook/html/02-pitfalls-index.html">casebook P-O12</a>)。</p>
+<p><strong>未検証:</strong> 案 2・案 3 は公式の記述から組み立てた構成で、実測していない(注入変数とは別の接続文字列での送信、接続なしでプラットフォーム側のスパンが出ないこと、ライブラリの自動送信の止め方)。</p>
 <hr>
 <h2 id="4-評価と-llmops">4. 評価と LLMOps</h2>
 <h3 id="4-1-評価器の選び方-公式の組み合わせ推奨">4.1 評価器の選び方(公式の組み合わせ推奨)</h3>
@@ -706,6 +761,7 @@ Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × O
 <ul>
 <li>hosted agent には<strong>ドラフトバージョン(プレビュー)</strong>があり、<code>draft-{timestamp}</code> 版は latest 解決にもルーティング対象にもならないため、本番に影響させずに新イメージ・構成を直接呼び出して検証できる(昇格はドラフトを外して新バージョンを作成)。</li>
 </ul>
+<li><strong>会話の続きは agent 単位で、利用者ごとにも分かれる。</strong>hosted agent で <code>previous_response_id</code> を使うとき、<strong>別の hosted agent で作った response ID は 404</strong>(2026-09-30 <a href="../../../../labs/maf-ports/ports/delegated-access-hosted/README.md">Port 15</a> の実測。公式の明記はない)。<code>x-ms-user-identity</code> を送る構成では他人の response ID も 404(公式の仕様: 会話履歴は利用者ごとに分離)。<strong>同じ agent の版更新をまたいで続けられるかは未確認</strong> → 版更新の受入試験に「更新前に始めた会話の続き」を入れる。前段のルーター(上記)で<strong>別の agent に切り替える blue-green は、会話を引き継げない前提</strong>で設計する(切り替え時は新しい会話として始めてもらう)。</li>
 <li><strong>モデルデプロイの version upgrade を自動アップグレードにしない</strong>(テストスイート検証前に応答が変わるのを防ぐ)。</li>
 <li><strong>非決定性への対処:</strong> 「Foundry Agent Service で定義したエージェントは非決定的に振る舞うため、望ましい品質水準をどう測り維持するかを決めなければならない。<strong>現実的なユーザーの質問とシナリオに対する理想的な応答をチェックするテストスイートを作って実行せよ。</strong>」→ §4 のクラウド評価を CI のゲートに組み込む形になる。</li>
 </ul>
@@ -743,7 +799,8 @@ Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × O
 <li>[ ] <strong>レガシー <code>Latency</code> を使わず</strong> <code>AzureOpenAITimeToResponse</code> / <code>TTLTInMS</code> / <code>NormalizedTBTInMS</code> を使用</li>
 <li>[ ] PTU は <code>ProvisionedManagedUtilizationV2</code>(V1 は非推奨)</li>
 <li>[ ] <strong>spillover は 429 として計上されない</strong>点をダッシュボードに明記</li>
-<li>[ ] トレースの PII / シークレット redaction をテレメトリ到達前に実装</li>
+<li>[ ] トレースの PII / シークレット redaction をテレメトリ到達前に実装(<strong>コンテナ側のみ有効。hosted agent のサーバーサイドトレースはマスクできない</strong>)</li>
+<li>[ ] 会話の中身をトレースに残すか・誰が読めるかを決め、§3.6 の案 1〜3(集約 / 分離 / 接続しない)を選んだ</li>
 <li>[ ] <code>gen_ai.*</code> 属性名への直接依存を 1 箇所に抽象化</li>
 <li>[ ] 委任サブネットの IP 枯渇に対する合成監視</li>
 </ul>
@@ -770,6 +827,7 @@ Normalized TPM  = Input TPM × (1 - キャッシュ率) + (output:input 比 × O
 <li>[ ] モデルデプロイの自動アップグレードを OFF</li>
 <li>[ ] カナリア / ブルーグリーンが要るなら<strong>ルーティング層を自前で用意</strong>(トラフィック分割は prompt / hosted とも非対応)</li>
 <li>[ ] エージェントのルーティングを「Always use latest」のままにせず、本番はバージョン固定</li>
+<li>[ ] 版更新・agent の切り替えをまたぐ会話の続きの扱いを決めた(別 agent の response ID は 404。版更新は未確認 → 受入試験に入れる。§6.3)</li>
 </ul>
 </main>
 <footer>このHTMLは docs/survey/architecture/*.md から docs/survey/tools/md2html.py で自動生成されています。編集はMarkdown側で行ってください。</footer></body></html>
