@@ -1,7 +1,7 @@
 # 共有基盤 実行ガイド
 
 > **対象:** `labs/maf-ports/infra/`([shared.bicep](../shared.bicep) + [roles.bicep](../roles.bicep))— 全ポート共通の Foundry アカウント+プロジェクト+モデルデプロイ+監視と、マネージド ID への RBAC(第 2 段)
-> **最終確認:** 2026-09-29 オフライン(`az bicep build` 2 本 OK・az CLI 2.87.0 / Bicep CLI 0.45.15・apiVersion とロール ID を現行 docs と照合)/ ライブ: 2026-07-31(Wave 1 は `baseName=mafports`、Wave 2 は `mafportsw2`。いずれも検証後に削除済み — 再デプロイ手順は §5)
+> **最終確認:** 2026-09-29 オフライン(`az bicep build` 2 本 OK・az CLI 2.87.0 / Bicep CLI 0.45.15・apiVersion とロール ID を現行 docs と照合)/ ライブ: 2026-07-31(Wave 1 は `baseName=mafports`、Wave 2 は `mafportsw2`)・**2026-09-30**(Port 15 のライブ検証で `baseName=dahp15`・gpt-5.4-mini `2026-03-17` として再構築。`RequestConflict` を踏んで `shared.bicep` に `dependsOn` を追加)。いずれも検証後に削除済み — 再デプロイ手順は §5
 > **正は本 Markdown。** 人間用 HTML(同じディレクトリの `runbook.html`)は `python3 labs/tools/build_runbooks.py` で生成する(HTML は直接編集しない)。ラボ全体の概要と進捗は [maf-ports README](../../README.md)、移植規約(Bicep 規約を含む)は [PORTING.md](../../PORTING.md)。
 
 ## 1. この基盤で確かめること
@@ -102,6 +102,8 @@ modelDeploymentName          gpt-5.4-mini
 appInsightsConnectionString  InstrumentationKey=...;IngestionEndpoint=https://japaneast-...
 ```
 
+- モデルデプロイはプロジェクト(と App Insights 接続)の**後**に作る(`dependsOn`)。アカウント配下の子リソースを並列に作ると `RequestConflict`(「Another operation is in progress on the resource aif-…」)で片方が失敗し、再実行しても同じ組が並列になるので毎回失敗する(2026-09-30 実測、casebook P-C12)。
+
 ### 5.3 第 2 段: roles.bicep(MI へのロール割り当て)
 
 ```bash
@@ -119,7 +121,7 @@ shared.bicep を**再デプロイしたら毎回**第 2 段もやり直す(MI �
 
 - ロール割り当てがデータプレーンに効くまで **5〜15 分**(travel-memory の実測は約 5〜7 分で、ノード間で不均一 — 片方のプローブが通った後も数分 401 が続いた)。MI でモデルを呼ぶ機能(Memory・クラウド評価)は、この間 401 / PermissionDenied になる。
 - api-key でモデルを直接呼ぶだけのポート(trend-analysis / mixture-of-agents / research-handoff など多数)は第 2 段を待たずに動く。
-- Entra ID で**プロジェクトのデータプレーン**を呼ぶポート(`FOUNDRY_PROJECT_ENDPOINT` を使う critique-loop / travel-memory / hn-briefing-hosted / governed-agent / claim-voice-live)は、サインインユーザー自身にも Foundry User が要る(サブスクリプションの所有者・共同作成者だけでは足りない):
+- Entra ID で**プロジェクトのデータプレーン**を呼ぶポート(`FOUNDRY_PROJECT_ENDPOINT` を使う critique-loop / travel-memory / hn-briefing-hosted / governed-agent / claim-voice-live / delegated-access-hosted)は、サインインユーザー自身にも Foundry User が要る(サブスクリプションの所有者・共同作成者だけでは足りない)。**hosted agent を作るポート(hn-briefing-hosted / delegated-access-hosted)は無いと作成が「does not have permissions … agents/write」で拒否される**(2026-09-30 実測。付与後の反映に約 5 分):
 
 ```bash
 az role assignment create --assignee <自分の UPN またはオブジェクト ID> --role "Foundry User" \
@@ -214,6 +216,8 @@ az cognitiveservices account purge -l japaneast -g rg-maf-ports -n aif-<baseName
 | 第 2 段で `AuthorizationFailed`(roleAssignments/write) | デプロイ実行者にロール割り当て権限がない | RG の所有者(またはロールベースアクセス制御管理者)に実行してもらう |
 | Memory・評価が 401 / PermissionDenied | RBAC 伝播待ち、または MI ローテーション後に第 2 段を流していない | 5〜15 分待つ。shared を再デプロイしたなら §5.3 をやり直し、#5 で孤児を確認 |
 | 評価 run が PermissionDenied(MI は正しい) | 提出ユーザー自身に Foundry User がない | §5.4 のコマンドでユーザーに付与 |
+| 第 1 段で `RequestConflict`(Another operation is in progress on the resource aif-…)、再実行しても失敗 | 古い `shared.bicep`(モデルデプロイに `dependsOn` がない)でプロジェクトとモデルデプロイが並列に作られた | 最新の `shared.bicep` で再実行(2026-09-30 修正) |
+| hosted agent の作成が「does not have permissions … agents/write」 | デプロイ実行者に Foundry User がない | §5.4 のコマンドで付与し、約 5 分待つ |
 | トレースがポータルの「トレース」に出ない(KQL では見える) | AppInsights 接続が別リソースを指している / 表示の遅延 | `az cognitiveservices account project connection list -n aif-<baseName> -g <rg> --project-name maf-ports -o table` で `AppInsights` 接続を確認 |
 
 ## 10. 関連・更新履歴
@@ -225,4 +229,5 @@ az cognitiveservices account purge -l japaneast -g rg-maf-ports -n aif-<baseName
 
 | 日付 | 内容 |
 | --- | --- |
+| 2026-09-30 | Port 15 のライブ検証で再構築した際に `RequestConflict` を踏み、`shared.bicep` のモデルデプロイに `dependsOn: [appInsightsConnection]` を追加(§5.2・§9)。hosted agent の作成に実行者の Foundry User が要ることを §5.4・§9 に追記 |
 | 2026-09-29 | 初版(Bicep は変更なし。apiVersion・ロール ID を現行 docs と公式サンプルに照合し据え置きを判断)。構成図を v2(日本語・処理順バッジ)に更新し、対象ポート数を 14 に訂正 |

@@ -102,10 +102,10 @@ td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
 }
 @media print { nav.site, .progress { display: none; } }
 </style></head>
-<body><nav class="site"><a href="../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="runbook.html" class="current">共有基盤</a><a href="../../ports/claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../ports/corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../ports/critique-loop/docs/runbook.html">critique-loop</a><a href="../../ports/data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../ports/db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../ports/game-design-team/docs/runbook.html">game-design-team</a><a href="../../ports/github-mcp/docs/runbook.html">github-mcp</a><a href="../../ports/governed-agent/docs/runbook.html">governed-agent</a><a href="../../ports/hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../ports/mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../ports/research-handoff/docs/runbook.html">research-handoff</a><a href="../../ports/services-agency/docs/runbook.html">services-agency</a><a href="../../ports/travel-memory/docs/runbook.html">travel-memory</a><a href="../../ports/trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<body><nav class="site"><a href="../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="runbook.html" class="current">共有基盤</a><a href="../../ports/claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../ports/corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../ports/critique-loop/docs/runbook.html">critique-loop</a><a href="../../ports/data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../ports/db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="../../ports/delegated-access-hosted/docs/runbook.html">delegated-access-hosted</a><a href="../../ports/game-design-team/docs/runbook.html">game-design-team</a><a href="../../ports/github-mcp/docs/runbook.html">github-mcp</a><a href="../../ports/governed-agent/docs/runbook.html">governed-agent</a><a href="../../ports/hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../ports/mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../ports/research-handoff/docs/runbook.html">research-handoff</a><a href="../../ports/services-agency/docs/runbook.html">services-agency</a><a href="../../ports/travel-memory/docs/runbook.html">travel-memory</a><a href="../../ports/trend-analysis/docs/runbook.html">trend-analysis</a></nav>
 <main>
 <h1 id="共有基盤-実行ガイド">共有基盤 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-この基盤で確かめること">1. この基盤で確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン検証-azure-不要・無料">4. オフライン検証(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-必要・課金あり">5. ライブ実行(Azure 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
-<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/infra/</code>(<a href="../shared.bicep">shared.bicep</a> + <a href="../roles.bicep">roles.bicep</a>)— 全ポート共通の Foundry アカウント+プロジェクト+モデルデプロイ+監視と、マネージド ID への RBAC(第 2 段)<br><strong>最終確認:</strong> 2026-09-29 オフライン(<code>az bicep build</code> 2 本 OK・az CLI 2.87.0 / Bicep CLI 0.45.15・apiVersion とロール ID を現行 docs と照合)/ ライブ: 2026-07-31(Wave 1 は <code>baseName=mafports</code>、Wave 2 は <code>mafportsw2</code>。いずれも検証後に削除済み — 再デプロイ手順は §5)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。ラボ全体の概要と進捗は <a href="../../README.md">maf-ports README</a>、移植規約(Bicep 規約を含む)は <a href="../../PORTING.md">PORTING.md</a>。</p></blockquote>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/infra/</code>(<a href="../shared.bicep">shared.bicep</a> + <a href="../roles.bicep">roles.bicep</a>)— 全ポート共通の Foundry アカウント+プロジェクト+モデルデプロイ+監視と、マネージド ID への RBAC(第 2 段)<br><strong>最終確認:</strong> 2026-09-29 オフライン(<code>az bicep build</code> 2 本 OK・az CLI 2.87.0 / Bicep CLI 0.45.15・apiVersion とロール ID を現行 docs と照合)/ ライブ: 2026-07-31(Wave 1 は <code>baseName=mafports</code>、Wave 2 は <code>mafportsw2</code>)・<strong>2026-09-30</strong>(Port 15 のライブ検証で <code>baseName=dahp15</code>・gpt-5.4-mini <code>2026-03-17</code> として再構築。<code>RequestConflict</code> を踏んで <code>shared.bicep</code> に <code>dependsOn</code> を追加)。いずれも検証後に削除済み — 再デプロイ手順は §5<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。ラボ全体の概要と進捗は <a href="../../README.md">maf-ports README</a>、移植規約(Bicep 規約を含む)は <a href="../../PORTING.md">PORTING.md</a>。</p></blockquote>
 <h2 id="1-この基盤で確かめること">1. この基盤で確かめること</h2>
 <ul>
 <li><strong>2 段デプロイ</strong>(① shared.bicep → ② roles.bicep)で、各ポートが <code>labs/maf-ports/.env</code> の 5 変数だけで Foundry に接続できる状態を作れること。</li>
@@ -276,6 +276,9 @@ projectEndpoint              https://aif-&lt;baseName&gt;.services.ai.azure.com/
 openaiV1Endpoint             https://aif-&lt;baseName&gt;.openai.azure.com/openai/v1
 modelDeploymentName          gpt-5.4-mini
 appInsightsConnectionString  InstrumentationKey=...;IngestionEndpoint=https://japaneast-...</code></pre>
+<ul>
+<li>モデルデプロイはプロジェクト(と App Insights 接続)の<strong>後</strong>に作る(<code>dependsOn</code>)。アカウント配下の子リソースを並列に作ると <code>RequestConflict</code>(「Another operation is in progress on the resource aif-…」)で片方が失敗し、再実行しても同じ組が並列になるので毎回失敗する(2026-09-30 実測、casebook P-C12)。</li>
+</ul>
 <h3 id="5-3-第-2-段-roles-bicep-mi-へのロール割り当て">5.3 第 2 段: roles.bicep(MI へのロール割り当て)</h3>
 <pre><code>RG=rg-maf-ports; BASE=&lt;baseName&gt;
 AID=$(az cognitiveservices account show -n aif-$BASE -g $RG --query identity.principalId -o tsv)
@@ -288,7 +291,7 @@ az deployment group create -g $RG -n roles -f roles.bicep \
 <ul>
 <li>ロール割り当てがデータプレーンに効くまで <strong>5〜15 分</strong>(travel-memory の実測は約 5〜7 分で、ノード間で不均一 — 片方のプローブが通った後も数分 401 が続いた)。MI でモデルを呼ぶ機能(Memory・クラウド評価)は、この間 401 / PermissionDenied になる。</li>
 <li>api-key でモデルを直接呼ぶだけのポート(trend-analysis / mixture-of-agents / research-handoff など多数)は第 2 段を待たずに動く。</li>
-<li>Entra ID で<strong>プロジェクトのデータプレーン</strong>を呼ぶポート(<code>FOUNDRY_PROJECT_ENDPOINT</code> を使う critique-loop / travel-memory / hn-briefing-hosted / governed-agent / claim-voice-live)は、サインインユーザー自身にも Foundry User が要る(サブスクリプションの所有者・共同作成者だけでは足りない):</li>
+<li>Entra ID で<strong>プロジェクトのデータプレーン</strong>を呼ぶポート(<code>FOUNDRY_PROJECT_ENDPOINT</code> を使う critique-loop / travel-memory / hn-briefing-hosted / governed-agent / claim-voice-live / delegated-access-hosted)は、サインインユーザー自身にも Foundry User が要る(サブスクリプションの所有者・共同作成者だけでは足りない)。<strong>hosted agent を作るポート(hn-briefing-hosted / delegated-access-hosted)は無いと作成が「does not have permissions … agents/write」で拒否される</strong>(2026-09-30 実測。付与後の反映に約 5 分):</li>
 </ul>
 <pre><code>az role assignment create --assignee &lt;自分の UPN またはオブジェクト ID&gt; --role &quot;Foundry User&quot; \
   --scope $(az cognitiveservices account show -n aif-$BASE -g $RG --query id -o tsv)</code></pre>
@@ -471,6 +474,16 @@ az cognitiveservices account purge -l japaneast -g rg-maf-ports -n aif-&lt;baseN
 <td>§5.4 のコマンドでユーザーに付与</td>
 </tr>
 <tr>
+<td>第 1 段で <code>RequestConflict</code>(Another operation is in progress on the resource aif-…)、再実行しても失敗</td>
+<td>古い <code>shared.bicep</code>(モデルデプロイに <code>dependsOn</code> がない)でプロジェクトとモデルデプロイが並列に作られた</td>
+<td>最新の <code>shared.bicep</code> で再実行(2026-09-30 修正)</td>
+</tr>
+<tr>
+<td>hosted agent の作成が「does not have permissions … agents/write」</td>
+<td>デプロイ実行者に Foundry User がない</td>
+<td>§5.4 のコマンドで付与し、約 5 分待つ</td>
+</tr>
+<tr>
 <td>トレースがポータルの「トレース」に出ない(KQL では見える)</td>
 <td>AppInsights 接続が別リソースを指している / 表示の遅延</td>
 <td><code>az cognitiveservices account project connection list -n aif-&lt;baseName&gt; -g &lt;rg&gt; --project-name maf-ports -o table</code> で <code>AppInsights</code> 接続を確認</td>
@@ -487,6 +500,10 @@ az cognitiveservices account purge -l japaneast -g rg-maf-ports -n aif-&lt;baseN
 <th>日付</th>
 <th>内容</th>
 </tr></thead><tbody>
+<tr>
+<td>2026-09-30</td>
+<td>Port 15 のライブ検証で再構築した際に <code>RequestConflict</code> を踏み、<code>shared.bicep</code> のモデルデプロイに <code>dependsOn: [appInsightsConnection]</code> を追加(§5.2・§9)。hosted agent の作成に実行者の Foundry User が要ることを §5.4・§9 に追記</td>
+</tr>
 <tr>
 <td>2026-09-29</td>
 <td>初版(Bicep は変更なし。apiVersion・ロール ID を現行 docs と公式サンプルに照合し据え置きを判断)。構成図を v2(日本語・処理順バッジ)に更新し、対象ポート数を 14 に訂正</td>

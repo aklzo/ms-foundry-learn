@@ -1,0 +1,47 @@
+{
+  "_comment": "架空の取引先マスタ(ラボ用)。ツールサーバーはこれをメモリに載せ、再起動で初期値に戻る。small_business_subcontract = 中小受託取引の対象先(支払サイト 60 日以内)",
+  "suppliers": [
+    {
+      "supplier_id": "S-1001",
+      "name": "株式会社サンプル精機",
+      "category": "製造部品",
+      "payment_terms_days": 60,
+      "small_business_subcontract": true
+    },
+    {
+      "supplier_id": "S-1002",
+      "name": "東和ロジスティクス株式会社",
+      "category": "物流",
+      "payment_terms_days": 30,
+      "small_business_subcontract": false
+    },
+    {
+      "supplier_id": "S-1003",
+      "name": "みなと印刷株式会社",
+      "category": "印刷",
+      "payment_terms_days": 45,
+      "small_business_subcontract": true
+    },
+    {
+      "supplier_id": "S-1004",
+      "name": "グリーンオフィス株式会社",
+      "category": "事務用品",
+      "payment_terms_days": 30,
+      "small_business_subcontract": false
+    },
+    {
+      "supplier_id": "S-1005",
+      "name": "株式会社北斗システムズ",
+      "category": "IT 保守",
+      "payment_terms_days": 90,
+      "small_business_subcontract": false
+    },
+    {
+      "supplier_id": "S-1006",
+      "name": "合同会社さくらデザイン",
+      "category": "デザイン制作",
+      "payment_terms_days": 30,
+      "small_business_subcontract": true
+    }
+  ]
+}

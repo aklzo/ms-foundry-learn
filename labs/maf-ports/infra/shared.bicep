@@ -106,6 +106,12 @@ resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-
     }
     versionUpgradeOption: 'OnceCurrentVersionExpired'
   }
+  // アカウント配下の子リソースは同時に作ると RequestConflict(「Another operation is in progress on
+  // the resource aif-…」)で片方が失敗する(2026-09-30 の再構築で実測。再実行しても同じ組が並列に
+  // 走るので毎回失敗する)。プロジェクト(+接続)の後にモデルデプロイを作るよう順序を固定する
+  dependsOn: [
+    appInsightsConnection
+  ]
 }
 
 // --- RBAC はここに置かない(roles.bicep で第2段デプロイ) ---

@@ -1,0 +1,87 @@
+<policies>
+    <!--
+      Port 15 delegated-access-hosted: 方式 A(APIM で最終判定する)の API ポリシー
+      API: docs(クライアントから見た MCP URL = <APIM ゲートウェイ>/docs/mcp)
+      判定: 委任トークン(scp に Tools.Access)なら全社員が使える。文書ごとの権限はツールサーバーが AI Search のフィルターで絞る
+
+      前提(infra/main.bicep 側):
+      - Named Values: dah-tenant-id(Entra テナント ID)、dah-tools-api-client-id(ツール API の
+        クライアント ID = トークンの aud)、dah-gateway-secret(秘密の Named Value。ツールサーバーの
+        環境変数 APIM_GATEWAY_SECRET と同じ値)。下の二重波かっこ参照は APIM がデプロイ時に置き換える
+      - API の subscriptionRequired は false(エージェントは Authorization ヘッダーしか送らない)
+      - オペレーションは POST /mcp だけ(ステートレスな Streamable HTTP + JSON 応答。GET / DELETE は来ない)
+      - バックエンド(serviceUrl)は ツールサーバー/docs。ツールサーバーは ENFORCEMENT_MODE=apim で起動する
+
+      1 つ目の validate-jwt(id=token)はトークン自体の有効性(署名・発行者・宛先・期限)を見て 401、
+      2 つ目(id=authz)は委任スコープとロールを見て 403 を返す。validate-jwt は失敗コードを 1 つしか
+      持てないので 2 段に分けた(RFC 6750: 無効なトークンは 401、権限不足は 403)。
+      app-only トークンは scp クレームを持たないので 2 つ目で 403 になる。
+      Authorization ヘッダーはそのままバックエンドへ転送される(HTTP API の既定動作。ツールサーバーは
+      同じトークンの署名を再検証し、文書の絞り込みに roles を使う)。
+      応答本文(context.Response.Body)には触れない: 触るとバッファリングが起き MCP の応答を壊しうる。
+
+      3 つ目の set-header は「APIM を経由した」ことの証明(APIM Consumption は VNet に入れられず、
+      ツールサーバーを APIM 以外から呼べてしまうため)。ツールサーバー(ENFORCEMENT_MODE=apim)は
+      このヘッダーを定数時間で比較し、欠落・不一致を 403 にする。exists-action=override なので利用者が
+      同名ヘッダーを送っても上書きされる。値は秘密: 診断ログでバックエンド要求ヘッダーを記録する設定や
+      要求トレースに x-apim-gateway-secret を含めないこと。より強い代替は authentication-managed-identity
+      で APIM のマネージド ID トークンを別ヘッダーで送り、サーバーが検証する方式(tools_server/auth.py)。
+
+      オフライン検証: src/delegated_access_maf/tools_server/apim_emulator.py がこのファイルを直接読んで
+      同じ判定を再現する(対応していない要素があると読み込み時に失敗する)。
+    -->
+    <inbound>
+        <base />
+        <!-- 1) トークンの有効性: 署名(OpenID 設定の JWKS)・発行者・宛先・期限。失敗は 401 -->
+        <validate-jwt id="token" header-name="Authorization" require-scheme="Bearer" failed-validation-httpcode="401" failed-validation-error-message="Unauthorized. The access token is missing or invalid." require-expiration-time="true" require-signed-tokens="true">
+            <openid-config url="https://login.microsoftonline.com/{{dah-tenant-id}}/v2.0/.well-known/openid-configuration" />
+            <audiences>
+                <audience>{{dah-tools-api-client-id}}</audience>
+            </audiences>
+            <issuers>
+                <issuer>https://login.microsoftonline.com/{{dah-tenant-id}}/v2.0</issuer>
+            </issuers>
+        </validate-jwt>
+        <!-- 2) 認可: 委任スコープ Tools.Access(app-only トークンは scp がないので拒否)。失敗は 403 -->
+        <validate-jwt id="authz" header-name="Authorization" require-scheme="Bearer" failed-validation-httpcode="403" failed-validation-error-message="Forbidden. The access token does not grant access to this API." require-expiration-time="true" require-signed-tokens="true">
+            <openid-config url="https://login.microsoftonline.com/{{dah-tenant-id}}/v2.0/.well-known/openid-configuration" />
+            <audiences>
+                <audience>{{dah-tools-api-client-id}}</audience>
+            </audiences>
+            <issuers>
+                <issuer>https://login.microsoftonline.com/{{dah-tenant-id}}/v2.0</issuer>
+            </issuers>
+            <required-claims>
+                <claim name="scp" match="all" separator=" ">
+                    <value>Tools.Access</value>
+                </claim>
+            </required-claims>
+        </validate-jwt>
+        <!-- 3) APIM 経由の証明: 秘密の Named Value をバックエンド向けヘッダーに付ける(判定を通った要求だけ) -->
+        <set-header name="x-apim-gateway-secret" exists-action="override">
+            <value>{{dah-gateway-secret}}</value>
+        </set-header>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+        <!-- 失敗した validate-jwt に応じて RFC 6750 の WWW-Authenticate を付ける(サーバー方式と同じ文言) -->
+        <choose>
+            <when condition='@(context.LastError.PolicyId == "token")'>
+                <set-header name="WWW-Authenticate" exists-action="override">
+                    <value>Bearer error="invalid_token", error_description="the access token is invalid"</value>
+                </set-header>
+            </when>
+            <when condition='@(context.LastError.PolicyId == "authz")'>
+                <set-header name="WWW-Authenticate" exists-action="override">
+                    <value>Bearer error="insufficient_scope", error_description="the access token does not grant access to this endpoint"</value>
+                </set-header>
+            </when>
+        </choose>
+    </on-error>
+</policies>

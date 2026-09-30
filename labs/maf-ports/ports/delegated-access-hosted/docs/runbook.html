@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>delegated-access-hosted 実行ガイド</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1c1e21; --muted: #57606a; --border: #d8dee4;
+  --accent: #0f6cbd; --code-bg: #f3f5f7; --nav-bg: #f7f9fb;
+  --ga: #1a7f37; --ga-bg: #dafbe1; --preview: #9a6700; --preview-bg: #fff8c5;
+  --dep: #cf222e; --dep-bg: #ffebe9; --unk: #57606a; --unk-bg: #eef1f4;
+  --priv: #8250df; --priv-bg: #fbefff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161a1e; --fg: #e6e8ea; --muted: #9aa4ae; --border: #3a4149;
+    --accent: #62aaf0; --code-bg: #22272d; --nav-bg: #1d2227;
+    --ga: #4ecb71; --ga-bg: #16321d; --preview: #e8bd4e; --preview-bg: #3a3016;
+    --dep: #ff7b72; --dep-bg: #3c1f1e; --unk: #a8b3bd; --unk-bg: #2a3138;
+    --priv: #c297ff; --priv-bg: #2f2440;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  font-size: 15px; line-height: 1.75;
+}
+nav.site {
+  background: var(--nav-bg); border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.2rem; display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem;
+  font-size: 0.85rem; position: sticky; top: 0; z-index: 10;
+}
+nav.site a { color: var(--muted); text-decoration: none; padding: 0.15rem 0; }
+nav.site a:hover { color: var(--accent); }
+nav.site a.current { color: var(--accent); font-weight: 600; }
+nav.site a.xset { color: var(--muted); opacity: 0.75; font-style: italic; }
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+h1 { font-size: 1.7rem; line-height: 1.35; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+h4 { font-size: 1rem; margin-top: 1.4rem; }
+a { color: var(--accent); }
+code {
+  background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.4em;
+  font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 0.86em;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.9rem 1rem; overflow-x: auto; line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 0.82em; }
+blockquote {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid var(--accent);
+  background: var(--nav-bg); border-radius: 0 6px 6px 0; color: var(--muted);
+}
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.55; }
+th, td {
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem;
+  text-align: left; vertical-align: top; min-width: 4.5em;
+}
+th { background: var(--nav-bg); white-space: nowrap; }
+tr:nth-child(even) td { background: color-mix(in srgb, var(--nav-bg) 40%, transparent); }
+.badge {
+  display: inline-block; font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  padding: 0 0.5em; border-radius: 999px; white-space: nowrap;
+}
+.badge.ga { color: var(--ga); background: var(--ga-bg); }
+.badge.preview, .badge.beta { color: var(--preview); background: var(--preview-bg); }
+.badge.private { color: var(--priv); background: var(--priv-bg); }
+.badge.deprecated, .badge.retired, .badge.no { color: var(--dep); background: var(--dep-bg); }
+.badge.unknown, .badge.na { color: var(--unk); background: var(--unk-bg); }
+.badge.ok { color: var(--ga); background: var(--ga-bg); }
+main img {
+  max-width: 100%; height: auto; display: block; margin: 1rem 0;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff;
+}
+.toc {
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; font-size: 0.9rem;
+}
+.toc strong { display: block; margin-bottom: 0.3rem; }
+.toc ul { margin: 0; padding-left: 1.2rem; columns: 2; column-gap: 2rem; }
+@media (max-width: 700px) { .toc ul { columns: 1; } }
+footer {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 2rem;
+  color: var(--muted); font-size: 0.8rem;
+}
+
+nav.site .grp { color: var(--muted); font-weight: 600; opacity: 0.8; }
+.task { list-style: none; margin-left: -1.3rem; }
+input.chk { width: 1.05rem; height: 1.05rem; vertical-align: -0.15rem; margin-right: 0.35rem; accent-color: var(--accent); }
+td.chk-cell { text-align: center; min-width: 2.5em; width: 2.5em; }
+.progress {
+  position: sticky; top: 2.6rem; z-index: 5; float: right; margin: 0 0 0.8rem 1rem;
+  background: var(--nav-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.15rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+}
+.progress button {
+  margin-left: 0.5rem; font: inherit; font-size: 0.78rem; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+@media print { nav.site, .progress { display: none; } }
+</style></head>
+<body><nav class="site"><a href="../../../../runbooks.html">索引</a><span class="grp">labs:</span><a href="../../../../agentic-search-maf/docs/runbook.html">agentic-search-maf</a><a href="../../../../cu-video-rag/docs/runbook.html">cu-video-rag</a><a href="../../../../foundry-probes/docs/runbook.html">foundry-probes</a><span class="grp">maf-ports:</span><a href="../../../infra/docs/runbook.html">共有基盤</a><a href="../../claim-voice-live/docs/runbook.html">claim-voice-live</a><a href="../../corrective-rag/docs/runbook.html">corrective-rag</a><a href="../../critique-loop/docs/runbook.html">critique-loop</a><a href="../../data-analysis-ci/docs/runbook.html">data-analysis-ci</a><a href="../../db-routing-iq/docs/runbook.html">db-routing-iq</a><a href="runbook.html" class="current">delegated-access-hosted</a><a href="../../game-design-team/docs/runbook.html">game-design-team</a><a href="../../github-mcp/docs/runbook.html">github-mcp</a><a href="../../governed-agent/docs/runbook.html">governed-agent</a><a href="../../hn-briefing-hosted/docs/runbook.html">hn-briefing-hosted</a><a href="../../mixture-of-agents/docs/runbook.html">mixture-of-agents</a><a href="../../research-handoff/docs/runbook.html">research-handoff</a><a href="../../services-agency/docs/runbook.html">services-agency</a><a href="../../travel-memory/docs/runbook.html">travel-memory</a><a href="../../trend-analysis/docs/runbook.html">trend-analysis</a></nav>
+<main>
+<h1 id="delegated-access-hosted-実行ガイド">delegated-access-hosted 実行ガイド</h1><div class="toc"><strong>このページの内容</strong><ul><li><a href="#1-このパターンで確かめること">1. このパターンで確かめること</a></li><li><a href="#2-構成">2. 構成</a></li><li><a href="#3-前提">3. 前提</a></li><li><a href="#4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</a></li><li><a href="#5-ライブ実行-azure-entra-必要・課金あり">5. ライブ実行(Azure / Entra 必要・課金あり)</a></li><li><a href="#6-確認観点">6. 確認観点</a></li><li><a href="#7-トレース・評価の確認">7. トレース・評価の確認</a></li><li><a href="#8-片付け">8. 片付け</a></li><li><a href="#9-トラブルシューティング">9. トラブルシューティング</a></li><li><a href="#10-関連・更新履歴">10. 関連・更新履歴</a></li></ul></div>
+<blockquote><p><strong>対象:</strong> <code>labs/maf-ports/ports/delegated-access-hosted/</code>(Port 15・パターン: hosted agent × 利用者の委任権限 — アプリ管理の OBO+<code>x-client-*</code> 転送+<code>x-ms-user-identity</code>、最終判定を APIM〈方式 A〉と MCP サーバー〈方式 B〉の 2 通りで実装)<br><strong>最終確認:</strong> 2026-09-30 オフライン(<strong>239 passed</strong>・<code>ruff check .</code> clean・<code>az bicep build</code> / <code>az bicep lint</code> OK・依存 agent-framework-core 1.19.0 / azure-ai-agentserver-responses 2.2.0 / azure-ai-projects 2.6.1 / mcp 1.30)/ <strong>ライブ: 2026-09-30 japaneast・gpt-5.4-mini・テスト用ユーザー 2 人で方式 A / B とも確認済み</strong>(結果は §6.1。検証後に Azure・Entra のリソースはすべて削除済み)<br><strong>正は本 Markdown。</strong> 人間用 HTML(同じディレクトリの <code>runbook.html</code>)は <code>python3 labs/tools/build_runbooks.py</code> で生成する(HTML は直接編集しない)。設計判断と学びは <a href="../README.md">README</a>。</p></blockquote>
+<h2 id="1-このパターンで確かめること">1. このパターンで確かめること</h2>
+<ul>
+<li><strong>同じ質問でも利用者で答えが変わる</strong>: 一般社員には経理向け文書が検索結果に出ず(「見つかりませんでした」)、経理担当には「与信限度額の設定基準(経理部内規)」を根拠に答える。<strong>判定は AI Search のセキュリティフィルター</strong>(委任トークンの <code>roles</code> から作る)で、モデルの判断ではない。</li>
+<li><strong>できる操作が利用者で変わる</strong>: 一般社員には更新ツール(<code>update_payment_terms</code>)が<strong>最初から見えない</strong>(supplier-admin の MCP サーバーが 403 → ツールを隠す)。経理担当は更新でき、監査ログに利用者の oid・変更前後が残る。呼び出し時点で 403 になっても別の ID で再試行しない。</li>
+<li><strong>トークンの扱い</strong>: Foundry は委任トークンを転送するだけ(交換も更新もしない)。トークンはプロンプト・ツール引数・結果・ログ・トレースに出ない。委任トークンがなければモデルを呼ばずに再サインインを促し、追加認証が要れば 401+claims チャレンジを CLI まで返す。</li>
+<li><strong>方式 A と B の差</strong>: 同じ利用者・同じ質問を 2 つの hosted agent(APIM 経由 / サーバー直)に投げ、結果・レイテンシ・ログの出方を比べる。方式 A の裏のサーバーを直接叩いても通らない(ゲートウェイ共有シークレット)。</li>
+<li>技術選定上の意味: 「エージェントの権限 = 利用者の権限」は Foundry の機能ではなく部品間の契約で作るもの。判定点をゲートウェイに置くなら迂回対策まで含めて設計する(README の学び 1・3)。</li>
+</ul>
+<h2 id="2-構成">2. 構成</h2>
+<p><img src="./architecture.png" alt="architecture" loading="lazy"></p>
+<pre><code>CLI ─①デバイスコード─▶ Entra ID(dah-backend-api / dah-tools-api)
+ │② POST /chat(Bearer 利用者トークン)
+ ▼
+中間層バックエンド(手元の uvicorn :8000)─③ OBO ─▶ Entra ID
+ │④ Authorization(Foundry 用)+ x-client-tools-access-token + x-ms-user-identity
+ ▼
+hosted agent delegated-access-apim ──⑤A──▶ APIM(Consumption)──▶ ca-dah-tools-gw(ENFORCEMENT_MODE=apim)
+hosted agent delegated-access-server ─⑤B──────────────────────────▶ ca-dah-tools-srv(ENFORCEMENT_MODE=server)
+                                                   └─ /docs/mcp → AI Search(roles で絞る)/ /suppliers/mcp / /supplier-admin/mcp</code></pre>
+<div class="tablewrap"><table><thead><tr>
+<th>コンポーネント</th>
+<th>役割</th>
+<th>課金</th>
+</tr></thead><tbody>
+<tr>
+<td>CLI(<code>delegated-access</code>、ローカル)</td>
+<td>デバイスコードでサインイン(利用者ごとに <code>.cache/</code> へ MSAL キャッシュ)、<code>/chat</code> を呼ぶ</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>中間層バックエンド(FastAPI、ローカル :8000)</td>
+<td>利用者トークンの検証、OBO、Foundry 用トークン、ヘッダー 3 つ、claims チャレンジ → 401</td>
+<td>なし(ラボでは手元で起動)</td>
+</tr>
+<tr>
+<td>Entra ID のアプリ登録 2 つ</td>
+<td><code>dah-backend-api</code>(<code>access_as_user</code>・公開クライアント・シークレット)/ <code>dah-tools-api</code>(<code>Tools.Access</code>・アプリロール 2 つ)</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>hosted agent ×2(0.5 vCPU / 1 GiB・<code>python_3_13</code>・REMOTE_BUILD)</td>
+<td>要求ごとに疎通確認 → 見えた MCP ツールだけで MAF Agent を組む</td>
+<td>アクティブセッション中の CPU/メモリ(アイドルでスケールゼロ)</td>
+</tr>
+<tr>
+<td>モデルデプロイ(共有基盤、既定 gpt-5.4-mini)</td>
+<td>hosted agent の推論(agent identity)</td>
+<td>トークン従量</td>
+</tr>
+<tr>
+<td>APIM(Consumption)<code>apim-dah-&lt;suffix&gt;</code></td>
+<td>方式 A の判定点(validate-jwt ×2)+共有シークレットを付けて転送</td>
+<td>呼び出し回数の従量(無料枠あり・待機課金なし)</td>
+</tr>
+<tr>
+<td>Container Apps 環境+アプリ ×2(<code>ca-dah-tools-srv</code> / <code>ca-dah-tools-gw</code>、0.25 vCPU / 0.5 GiB・maxReplicas 1)</td>
+<td>MCP 3 サーバーを 1 アプリに mount。方式 B の判定・文書の絞り込み・更新の監査</td>
+<td>使用量の従量(minReplicas 0 ならアイドル時はほぼなし)</td>
+</tr>
+<tr>
+<td>ACR(Basic)<code>crdah&lt;suffix&gt;</code></td>
+<td>ツールサーバーのイメージ</td>
+<td><strong>置いておくだけで日額</strong></td>
+</tr>
+<tr>
+<td>AI Search(Free)<code>srch-dah-&lt;suffix&gt;</code></td>
+<td>社内文書の索引(<code>allowed_roles</code> でセキュリティフィルター)</td>
+<td>Free は無料(<code>searchSku=basic</code> にすると時間課金)</td>
+</tr>
+<tr>
+<td>ユーザー割り当て MI <code>id-dah-tools-&lt;baseName&gt;</code></td>
+<td>ACR pull と AI Search 読み取り</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>App Insights / Log Analytics(共有基盤)</td>
+<td>hosted agent のトレース、APIM のリクエストログ、ツールサーバーの監査ログ</td>
+<td>取り込み量従量</td>
+</tr>
+</tbody></table></div>
+<h2 id="3-前提">3. 前提</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>区分</th>
+<th>必要なもの</th>
+<th>備考</th>
+</tr></thead><tbody>
+<tr>
+<td>ツール</td>
+<td>uv(Python 3.11 以上。検証は 3.13)。ライブは Azure CLI(<code>az login</code>)、<code>az bicep</code>、(任意)Docker</td>
+<td>オフライン実行は uv だけ</td>
+</tr>
+<tr>
+<td>Azure(ライブのみ)</td>
+<td>共有基盤(<a href="../../../infra/shared.bicep">infra/shared.bicep</a>)+本ポート固有(<a href="../infra/main.bicep">infra/main.bicep</a>: ACR・MI・Container Apps ×2・APIM Consumption・AI Search Free)</td>
+<td>課金あり(§5.5)</td>
+</tr>
+<tr>
+<td>Entra(ライブのみ)</td>
+<td>テスト用の<strong>既存</strong>利用者 2 名(一般社員役・経理担当役。プロジェクトと同じテナント)、アプリ登録と管理者同意ができる管理者</td>
+<td>管理者作業の一覧は §5.1</td>
+</tr>
+<tr>
+<td>権限</td>
+<td>§5.1 の表(Entra のアプリ管理系ロール+ Azure の RBAC 管理系ロール+ Foundry のエージェント作成)</td>
+<td>RBAC 伝播に 5〜15 分</td>
+</tr>
+<tr>
+<td>リージョン</td>
+<td>共有基盤の Japan East(hosted agent・APIM Consumption・Container Apps・AI Search Free とも可)</td>
+<td>APIM Consumption は一部のソブリンクラウドに無い</td>
+</tr>
+</tbody></table></div>
+<p>環境変数(ポートの <code>.env</code>。雛形は <a href="../.env.example">.env.example</a>。<strong>ライブ実行時のみ必要</strong>。ポートの <code>.env</code> → lab ルートの <code>.env</code> の順に読む):</p>
+<div class="tablewrap"><table><thead><tr>
+<th>変数</th>
+<th>用途</th>
+<th>取得元</th>
+</tr></thead><tbody>
+<tr>
+<td><code>ENTRA_TENANT_ID</code> / <code>TOOLS_API_CLIENT_ID</code> / <code>TOOLS_API_SCOPE</code></td>
+<td>共通(JWT 検証の発行者・宛先、OBO の交換先)</td>
+<td><code>setup_entra.py --apply</code> の stdout</td>
+</tr>
+<tr>
+<td><code>BACKEND_API_CLIENT_ID</code> / <code>BACKEND_CLIENT_SECRET</code></td>
+<td>中間層(利用者トークンの宛先、OBO と Foundry 用トークン)。CLI も <code>BACKEND_API_CLIENT_ID</code> を使う</td>
+<td>同上(シークレットは発行時の 1 回だけ表示)</td>
+</tr>
+<tr>
+<td><code>AGENT_RESPONSES_URL</code></td>
+<td>中間層が呼ぶ hosted agent の Responses URL 全体(方式 A / B で差し替える)</td>
+<td><code>deploy_hosted_agent.py</code> の stdout</td>
+</tr>
+<tr>
+<td><code>FOUNDRY_SCOPE</code></td>
+<td>Foundry 用トークンのスコープ(既定 <code>https://ai.azure.com/.default</code>)</td>
+<td>既定のまま</td>
+</tr>
+<tr>
+<td><code>BACKEND_URL</code> / <code>DELEGATED_ACCESS_CACHE_DIR</code></td>
+<td>CLI の接続先(既定 <code>http://localhost:8000</code>)とキャッシュ(既定 <code>.cache</code>)</td>
+<td>既定のまま</td>
+</tr>
+<tr>
+<td><code>FOUNDRY_PROJECT_ENDPOINT</code> / <code>FOUNDRY_MODEL_NAME</code></td>
+<td>hosted agent のデプロイ(コンテナの環境変数にも転記)。<code>FOUNDRY_MODEL_NAME</code> が無ければ lab 共通の <code>FOUNDRY_MODEL</code></td>
+<td>共有基盤の出力</td>
+</tr>
+<tr>
+<td><code>TOOLS_BASE_URL</code></td>
+<td>hosted agent の MCP の入口(<code>--tools-base-url</code> が優先)。ローカルで <code>hosting/main.py</code> を起動するときも使う</td>
+<td>Bicep の出力 <code>apimGatewayUrl</code>(A)/ <code>toolsServerUrl</code>(B)</td>
+</tr>
+</tbody></table></div>
+<p>コンテナ側の環境変数はデプロイ定義や Bicep が渡す(<code>.env</code> ではない): hosted agent = <code>FOUNDRY_PROJECT_ENDPOINT</code> / <code>FOUNDRY_MODEL_NAME</code> / <code>TOOLS_BASE_URL</code>(秘密なし)、ツールサーバー = <code>ENFORCEMENT_MODE</code> / <code>ENTRA_TENANT_ID</code> / <code>TOOLS_API_CLIENT_ID</code> / <code>SEARCH_ENDPOINT</code> / <code>SEARCH_INDEX</code> / <code>AZURE_CLIENT_ID</code> / <code>PORT</code>(apim モードだけ <code>APIM_GATEWAY_SECRET</code> を Container Apps の secret から)。</p>
+<h2 id="4-オフライン実行-azure-不要・無料">4. オフライン実行(Azure 不要・無料)</h2>
+<pre><code>cd labs/maf-ports/ports/delegated-access-hosted
+uv sync --extra dev --extra hosting --extra search   # hosting = Agent Server SDK / azure-ai-projects の実構築テスト
+uv run pytest          # 期待: 239 passed(ネットワーク不要。疑似 Entra・APIM エミュレーター・疑似 Graph/ARM)
+uv run ruff check .    # 期待: All checks passed!
+az bicep build -f infra/main.bicep --stdout &gt; /dev/null &amp;&amp; az bicep lint -f infra/main.bicep   # 期待: エラー・警告なし</code></pre>
+<p>送信せずに中身だけ確かめる(<strong>どれも既定は dry-run</strong> — 通信せず、実行予定の呼び出し・コマンドを表示する):</p>
+<pre><code>uv run python scripts/setup_entra.py --employee-upn alice@contoso.com --finance-upn bob@contoso.com \
+    --resource-group rg-maf-ports --base-name mafports        # Graph / ARM の呼び出し 27 件と本文
+scripts/deploy_tools_server.sh --resource-group rg-maf-ports --base-name mafports \
+    --apim-publisher-email you@example.com                    # az / curl のコマンド列
+FOUNDRY_PROJECT_ENDPOINT=https://aif-x.services.ai.azure.com/api/projects/maf-ports FOUNDRY_MODEL_NAME=gpt-5.4-mini \
+  uv run python scripts/deploy_hosted_agent.py --mode apim --tools-base-url https://apim-dah-x.azure-api.net</code></pre>
+<p>期待される出力の例(<code>setup_entra.py</code> の dry-run。stderr に呼び出し、stdout に <code>.env</code> 用の行):</p>
+<pre><code># 2. ツール API のアプリ登録 dah-tools-api(Tools.Access + アプリロール 2 つ)
+[dry-run] PATCH https://graph.microsoft.com/v1.0/applications(uniqueName=&#x27;dah-tools-api&#x27;)  [Prefer: create-if-missing]
+          { &quot;displayName&quot;: &quot;dah-tools-api&quot;, &quot;api&quot;: { &quot;requestedAccessTokenVersion&quot;: 2, ... } }
+...
+# 7. Foundry 側: バックエンドの SP に 2 ロール(スコープ: project)
+[dry-run] PUT https://management.azure.com/subscriptions/&lt;subscription-id&gt;/resourceGroups/rg-maf-ports/providers/Microsoft.CognitiveServices/accounts/aif-mafports/projects/maf-ports/providers/Microsoft.Authorization/roleAssignments/...?api-version=2022-04-01
+[dry-run] 27 件の呼び出しを表示した(送信していない)。--apply で実行する
+ENTRA_TENANT_ID=&lt;tenant-id&gt;
+TOOLS_API_CLIENT_ID=&lt;dah-tools-api:appId&gt;
+...</code></pre>
+<p>ローカルで全部品をつなぐ(Azure なし。AI Search の代わりに同梱の <code>data/docs</code> をメモリ検索、Entra の代わりに疑似 Entra — 部品の結合テストと同じ構成)は <code>uv run pytest -k &quot;e2e or eval_dataset&quot; -v</code> で見る(<code>tests/test_e2e_offline.py</code> 12 件: 利用者 2 人 × 方式 A / B で更新・文書の絞り込み・ヘッダーの出どころ・追加認証・トークン非露出 / <code>tests/test_eval_dataset.py</code> 17 件: 評価データセット 8 ケースの権限の期待値 × 方式 A / B)。</p>
+<p>オフラインテストが固定している主な挙動:</p>
+<ul>
+<li class="task"><input type="checkbox" class="chk"> ツールサーバー: 両方式 × 両利用者で tools/list の見え方(一般社員に supplier-admin は 403)、同じ検索でも経理だけ経理向け文書が出る、署名不正・宛先違い・期限切れ・スコープなし → 401 / 403、app-only → 403、経理の更新は監査に oid が残り、一般社員の更新は実行されない(<code>tests/test_tools_*.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> APIM ポリシー: エミュレーターが <code>infra/apim/policies/*.xml</code> を直接読んで判定し、XML からロール条件を消すと supplier-admin が開く(= ポリシーファイル自体をテスト)(<code>test_tools_apim_emulator.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> 中間層: <code>x-ms-user-identity</code> は検証済みトークンの oid(偽の同名ヘッダーは無視)、エージェントへの <code>Authorization</code> は Foundry 用トークン、claims チャレンジ → 401 でエージェントを呼ばない、ログにトークンが出ない(<code>tests/test_backend_*.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> hosted agent: 委任トークンなし → モデルを呼ばない、一般社員は docs+suppliers のツールだけ・経理は supplier-admin も、呼び出し時の 403 → <code>MSG_FORBIDDEN</code> で再試行なし、トークンがモデル入力・ログ・出力に出ない、2 人を続けて処理しても MCP セッションを共有しない(<code>tests/test_agent_*.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> セットアップ: 初回で全部作り 2 回目は何も増やさない(冪等)、dry-run は通信も <code>az</code> も呼ばない、シークレットはログに出ず <code>.env</code> 用の行にだけ出る、レプリケーション遅延の 404 を再試行(<code>test_provisioning_entra.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> デプロイ zip: ルートに <code>main.py</code> / <code>requirements.txt</code>、パッケージはエージェント側だけ(中間層・ツールサーバー・疑似 Entra は入れない)、zip の中身だけで <code>main.py</code> が import できる、プロトコル 2.0.0・環境変数に秘密なし、方式と URL の取り違えを拒否(<code>test_provisioning_hosted.py</code>)</li>
+<li class="task"><input type="checkbox" class="chk"> インフラの契約: Bicep の API パス = 契約パス、ポリシーが参照する Named Value はすべて Bicep が作る、ポリシーは Consumption の 16 KiB 未満、ツールサーバーのポート・環境変数・<code>maxReplicas 1</code>、<code>.env.example</code> の変数一覧(<code>test_infra_contracts.py</code>)</li>
+</ul>
+<h2 id="5-ライブ実行-azure-entra-必要・課金あり">5. ライブ実行(Azure / Entra 必要・課金あり)</h2>
+<h3 id="5-1-管理者作業の一覧-顧客環境で申請が要るもの">5.1 管理者作業の一覧(顧客環境で申請が要るもの)</h3>
+<p><strong>すべてスクリプト化してあり、既定は dry-run</strong>(表示を申請書に貼れる)。「誰がやるか」が分かれるのがこのパターンのリードタイム。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>作業</th>
+<th>対象</th>
+<th>必要な権限(最小の目安)</th>
+<th>実施手段</th>
+</tr></thead><tbody>
+<tr>
+<td>E1</td>
+<td>アプリ登録 <code>dah-tools-api</code> の作成(スコープ <code>Tools.Access</code> type=Admin、アプリロール <code>Suppliers.Write</code> / <code>Docs.Finance</code>、v2 トークン、App ID URI <code>api://&lt;appId&gt;</code>)</td>
+<td>Entra</td>
+<td>アプリケーション開発者(作成者が所有者になる)以上。アプリ登録を制限しているテナントでは クラウド アプリケーション管理者 / アプリケーション管理者</td>
+<td><code>setup_entra.py</code> 手順 2</td>
+</tr>
+<tr>
+<td>E2</td>
+<td>アプリ登録 <code>dah-backend-api</code> の作成(スコープ <code>access_as_user</code>、<strong>パブリッククライアントフロー有効</strong>、必要な権限: <code>Tools.Access</code> / 自分の <code>access_as_user</code> / Graph の <code>openid profile offline_access</code>)</td>
+<td>Entra</td>
+<td>同上</td>
+<td>手順 3</td>
+</tr>
+<tr>
+<td>E3</td>
+<td>サービスプリンシパル(エンタープライズアプリ)2 つ</td>
+<td>Entra</td>
+<td>同上</td>
+<td>手順 2・3</td>
+</tr>
+<tr>
+<td>E4</td>
+<td><code>dah-backend-api</code> のクライアントシークレット発行(既定 30 日)</td>
+<td>Entra</td>
+<td>アプリの所有者 / クラウド アプリケーション管理者</td>
+<td>手順 4</td>
+</tr>
+<tr>
+<td>E5</td>
+<td><strong>テナント全体の管理者同意 3 件</strong>(backend → tools <code>Tools.Access</code> / backend → backend <code>access_as_user</code> / backend → Graph <code>openid profile offline_access</code>)</td>
+<td>Entra</td>
+<td>クラウド アプリケーション管理者 / アプリケーション管理者</td>
+<td>手順 5</td>
+</tr>
+<tr>
+<td>E6</td>
+<td><strong>アプリロールの割り当て</strong>(経理担当に <code>Suppliers.Write</code> + <code>Docs.Finance</code>。一般社員はなし)</td>
+<td>Entra</td>
+<td>クラウド アプリケーション管理者 / アプリケーション管理者</td>
+<td>手順 6</td>
+</tr>
+<tr>
+<td>E7</td>
+<td>(任意)条件付きアクセスで <code>dah-tools-api</code> に MFA を要求 — claims チャレンジの確認用</td>
+<td>Entra</td>
+<td>条件付きアクセス管理者</td>
+<td>ポータル(スクリプト外)</td>
+</tr>
+<tr>
+<td>A1</td>
+<td>固有リソースのデプロイ(ACR・MI・Container Apps ×2・APIM・AI Search)+ MI へのロール割り当て 2 件(AcrPull / Search Index Data Reader)</td>
+<td>RG</td>
+<td><strong>所有者</strong>(または 共同作成者 + ロールベースのアクセス制御管理者)</td>
+<td><code>deploy_tools_server.sh</code></td>
+</tr>
+<tr>
+<td>A2</td>
+<td>カスタムロール「Foundry Agent User Identity Impersonation (&lt;rg&gt;)」の作成(<code>UserIdentityImpersonation/action</code> のみ、割り当て可能スコープ = RG)</td>
+<td>RG</td>
+<td>所有者 / ユーザー アクセス管理者</td>
+<td><code>setup_entra.py</code> 手順 7</td>
+</tr>
+<tr>
+<td>A3</td>
+<td><code>dah-backend-api</code> の SP に <strong>Foundry Agent Consumer</strong>(プロジェクトスコープ)</td>
+<td>Foundry プロジェクト</td>
+<td>所有者 / ユーザー アクセス管理者 / RBAC 管理者(Foundry Project Manager は Foundry User しか割り当てられない)</td>
+<td>手順 7</td>
+</tr>
+<tr>
+<td>A4</td>
+<td>同 SP に A2 のカスタムロール(プロジェクトスコープ)</td>
+<td>Foundry プロジェクト</td>
+<td>同上</td>
+<td>手順 7</td>
+</tr>
+<tr>
+<td>A5</td>
+<td>hosted agent 2 つのデプロイ(<code>create_version_from_code</code> / <code>update_details</code>)</td>
+<td>Foundry アカウント(またはプロジェクト)</td>
+<td><strong>デプロイ実行者</strong>に Foundry User 以上(エージェントの作成・更新)。サブスクリプションの所有者でも自動では付かない — ライブでは無いと <code>agents/write</code> 不足で拒否され、付与後の反映に約 5 分かかった</td>
+<td><code>deploy_hosted_agent.py</code></td>
+</tr>
+<tr>
+<td>A6</td>
+<td>AI Search のインデックス作成と文書投入</td>
+<td>AI Search</td>
+<td>Search Service Contributor + Search Index Data Contributor(または管理キー)</td>
+<td><code>scripts/setup_index.py</code></td>
+</tr>
+<tr>
+<td>A7</td>
+<td>ツールサーバーのイメージビルド(<code>az acr build</code>)/ push(<code>--local-build</code>)</td>
+<td>ACR</td>
+<td>共同作成者 / AcrPush</td>
+<td><code>deploy_tools_server.sh</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="5-2-デプロイ">5.2 デプロイ</h3>
+<pre><code>cd labs/maf-ports/ports/delegated-access-hosted
+uv sync --extra dev --extra hosting --extra search --extra live
+az login          # §5.1 の権限を持つアカウント
+
+# (0) 共有基盤(labs/maf-ports/infra の実行ガイド)+デプロイ実行者に Foundry User(A5)
+az role assignment create --assignee &lt;自分の objectId&gt; --role &quot;Foundry User&quot; \
+    --scope $(az cognitiveservices account show -g &lt;rg&gt; -n aif-&lt;baseName&gt; --query id -o tsv)
+# テスト用ユーザーを新規に作る場合(ライブ検証ではこの形で 2 人作り、§8 で完全削除した)
+#   az ad user create --display-name dah-employee --user-principal-name dah-employee@&lt;tenant&gt;.onmicrosoft.com --password &lt;初期パスワード&gt;
+
+# (1) Entra + Foundry のロール(E1〜E6・A2〜A4)。まず dry-run の表示を確認してから --apply
+uv run python scripts/setup_entra.py --employee-upn &lt;社員の UPN&gt; --finance-upn &lt;経理の UPN&gt; \
+    --resource-group &lt;rg&gt; --base-name &lt;baseName&gt;
+uv run python scripts/setup_entra.py ... --apply &gt; .env.entra   # stdout = .env 用の行(シークレット含む。.env.* は git 管理外)
+cat .env.entra &gt;&gt; .env &amp;&amp; rm .env.entra
+
+# (2) ツールサーバー・APIM・AI Search(A1・A7)。1 回目は器 → ビルド → toolsImage 付きで再デプロイ
+set -a; source .env; set +a      # TOOLS_API_CLIENT_ID を渡す
+scripts/deploy_tools_server.sh --resource-group &lt;rg&gt; --base-name &lt;baseName&gt; --apim-publisher-email &lt;mail&gt;
+scripts/deploy_tools_server.sh ... --apply         # 最後に TOOLS_BASE_URL_APIM / _SERVER を表示
+
+# (3) 文書の索引(A6)。.env の SEARCH_ENDPOINT に Bicep の出力 searchEndpoint を入れる
+#     (SEARCH_API_KEY が空なら az login の ID で Entra 認証 → A6 のロールが要る)
+az deployment group show -g &lt;rg&gt; -n dah-infra --query properties.outputs.searchEndpoint.value -o tsv
+uv run python scripts/setup_index.py               # dry-run → 確認して --apply
+
+# (4) hosted agent を方式ごとに 1 つ(A5)。最後に AGENT_RESPONSES_URL を表示
+uv run python scripts/deploy_hosted_agent.py --mode apim   --tools-base-url &lt;TOOLS_BASE_URL_APIM&gt;   --apply
+uv run python scripts/deploy_hosted_agent.py --mode server --tools-base-url &lt;TOOLS_BASE_URL_SERVER&gt; --apply</code></pre>
+<p>期待される出力の例(値は実行ごとに変わる):</p>
+<pre><code># 0. ゲートウェイ共有シークレット                    ← deploy_tools_server.sh(stderr)
+  ゲートウェイ共有シークレットを新規生成する
++ az deployment group create -g &lt;rg&gt; -n dah-infra -f .../infra/main.bicep -p @/tmp/tmp.XXXX -p baseName=... toolsImage= -o none
++ az acr build -r crdahxxxxxxxx -t dah-tools:20260930-120000 -f .../docker/tools/Dockerfile ...
+{&quot;status&quot;:&quot;ok&quot;, ...}                                ← /healthz ×2
+TOOLS_BASE_URL_APIM=https://apim-dah-xxxxxxxx.azure-api.net
+TOOLS_BASE_URL_SERVER=https://ca-dah-tools-srv.&lt;env&gt;.japaneast.azurecontainerapps.io
+
+created version 1 — provisioning...                 ← deploy_hosted_agent.py(stderr)
+  status=creating
+  status=active
+routed 100% -&gt; version 1
+AGENT_RESPONSES_URL=https://aif-&lt;baseName&gt;.services.ai.azure.com/api/projects/maf-ports/agents/delegated-access-apim/endpoint/protocols/openai/responses?api-version=v1</code></pre>
+<h3 id="5-3-実行">5.3 実行</h3>
+<pre><code># .env の AGENT_RESPONSES_URL を方式 A のものにして中間層を起動
+uv run python -m delegated_access_maf.backend.main        # :8000
+
+# 別ターミナル: 2 人分サインイン(デバイスコードの画面で別アカウントを選ぶ)
+uv run delegated-access login --user employee
+uv run delegated-access login --user finance
+
+uv run delegated-access ask --user employee &quot;与信限度額の見直し頻度は?&quot;
+uv run delegated-access ask --user finance  &quot;与信限度額の見直し頻度は?&quot;
+uv run delegated-access ask --user employee &quot;S-1002 の支払条件を 45 日に変更して&quot;
+uv run delegated-access ask --user finance  &quot;S-1002 の支払条件を 45 日に変更して&quot;
+
+uv run delegated-access ask --user finance  &quot;S-1001 の支払条件を 90 日に延ばして&quot;   # 業務ルールで拒否
+
+# 方式 B と比べる: AGENT_RESPONSES_URL を delegated-access-server のものに替えて中間層を再起動し、同じ質問
+# ライブの自動スモーク(pytest -m live)はまだない — 結果を §6 の確認観点で記録する(2026-09-30 の結果は §6.1)</code></pre>
+<p>期待される出力の例(値は実行ごとに変わる):</p>
+<pre><code>$ delegated-access ask --user employee &quot;取引先の与信限度額はどのように決めていますか?社内文書で調べて&quot;
+…つまり、与信限度額の具体的な算定基準や決定方法は、検索結果内には記載がありませんでした。
+--- 利用者: dah-employee@&lt;tenant&gt;.onmicrosoft.com / 使えたツール: docs, suppliers / 見えなかったツール: supplier-admin
+
+$ delegated-access ask --user finance &quot;与信限度額の見直し頻度は?社内文書で調べて&quot;
+社内文書「与信限度額の設定基準(経理部内規)」によると、与信限度額は年1回(4月)に決算書を取り寄せて見直す、となっています。
+--- 利用者: dah-finance@&lt;tenant&gt;.onmicrosoft.com / 使えたツール: docs, suppliers, supplier-admin / 見えなかったツール: (なし)
+
+$ delegated-access ask --user employee &quot;S-1002 の支払サイトを 60 日に変更してください&quot;
+この環境では支払条件の更新に使えるツールがありません。
+そのため、「この操作を行う権限がありません。必要であれば管理者に権限の付与を依頼してください。」
+--- 利用者: dah-employee@&lt;tenant&gt;.onmicrosoft.com / 使えたツール: docs, suppliers / 見えなかったツール: supplier-admin
+
+$ delegated-access ask --user finance &quot;S-1004 の支払サイトを 60 日に変更してください&quot;
+S-1004(グリーンオフィス株式会社)の支払サイトを 60 日に変更しました。</code></pre>
+<p>(2026-09-30 のライブ出力から抜粋。モデルの言い回しは実行ごとに変わる)</p>
+<p>終了コード(CLI): 正常 0 / 再サインインが必要(claims チャレンジ含む)3 / その他のエラー 1 / 設定不足 2。</p>
+<h3 id="5-4-ライブでしか確かめられないこと-オフラインの残リスク">5.4 ライブでしか確かめられないこと(オフラインの残リスク)</h3>
+<p>2026-09-30 のライブで確かめた結果を末尾に付けた(✅ 確認済み / ⏳ 未確認)。</p>
+<ul>
+<li>✅ 実 APIM がポリシー XML(<code>rawxml</code>・Named Value・2 段の validate-jwt・on-error の <code>WWW-Authenticate</code>)を受け付けるか、実 Entra トークンの <code>scp</code>(空白区切り)と <code>roles</code>(配列)で期待どおり判定するか(README「APIM エミュレーターでは証明できないこと」)</li>
+<li>✅ <code>x-ms-user-identity</code> が 403 にならないこと(カスタムロールの伝播)と、Foundry が <code>x-client-tools-access-token</code> をコンテナへ転送すること</li>
+<li>✅ hosted agent の REMOTE_BUILD が <code>hosting/requirements.txt</code> を解決できるか(Port 11 と違い agent-framework-foundry-hosting を入れない)</li>
+<li>✅ APIM Consumption の 30 秒上限に、ツールサーバーのコールドスタート(スケールゼロ)+AI Search が収まるか(タイムアウトは起きなかった)</li>
+<li>✅ Container Apps の Host ヘッダーで FastMCP が 421 を返さないこと(DNS リバインディング保護を外した効果)</li>
+<li>⏳ 条件付きアクセスの claims チャレンジ(Entra ID P1 が要る)/ 呼び出し中の委任トークン失効(既定の寿命 60〜90 分より検証が短い)/ ロール剥奪・カスタムロールなし(§6 #6・#8)</li>
+</ul>
+<h3 id="5-5-コスト-単価は書かない-料金ページで確認">5.5 コスト(単価は書かない。料金ページで確認)</h3>
+<ul>
+<li><strong>置いておくだけで課金</strong>: ACR Basic(日額)、AI Search を <code>basic</code> にした場合(時間課金)、Container Apps を <code>toolsMinReplicas=1</code> にした場合(アイドル時もレプリカ分)。Log Analytics はデータ取り込み量</li>
+<li><strong>使った分だけ</strong>: APIM Consumption(呼び出し回数。無料枠あり)、Container Apps(minReplicas 0 ならリクエスト処理中の vCPU・メモリ)、hosted agent(アクティブセッション中の CPU/メモリ。アイドル既定 15 分でスケールゼロ)、モデル(トークン)、ACR Tasks(ビルド時間)</li>
+<li><strong>無料</strong>: AI Search Free(1 サブスクリプション 1 つ)、Entra のアプリ登録・同意・ロール割り当て、Azure RBAC</li>
+<li>検証を終えたら §8 で片付ける。hosted agent 2 つは呼ばなければセッション課金は発生しないが、残すと誤呼び出しの的になる</li>
+</ul>
+<h2 id="6-確認観点">6. 確認観点</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>確認</th>
+<th>#</th>
+<th>観点</th>
+<th>確認方法</th>
+<th>期待結果</th>
+</tr></thead><tbody>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>1</td>
+<td>正常系: 文書の絞り込み</td>
+<td>§5.3 の「与信限度額」を 2 人で</td>
+<td>一般社員は「見つかりませんでした」、経理は経理内規を根拠に回答。方式 A / B で同じ</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>2</td>
+<td>正常系: ツールの見え方</td>
+<td>CLI の <code>--- 使えたツール / 見えなかったツール</code> 行</td>
+<td>一般社員 = docs, suppliers / 見えない supplier-admin、経理 = 3 つとも</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>3</td>
+<td>正常系: 更新と監査</td>
+<td>経理で「S-1002 を 45 日に」→ §7 の監査ログ</td>
+<td>更新成功。<code>supplier_update</code> ログに経理の oid・upn・変更前後。一般社員では更新が実行されずログもない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>4</td>
+<td>異常系: 委任トークンなし</td>
+<td>中間層を通さず hosted agent を呼ぶ(<code>az rest</code> で <code>AGENT_RESPONSES_URL</code> へ POST、または Foundry ポータルのプレイグラウンド)</td>
+<td><code>MSG_REAUTH</code> の定型文、<code>metadata.delegated_access_status=reauth_required</code>、モデル呼び出しのスパンが無い</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>5</td>
+<td>異常系: 方式 A の迂回</td>
+<td><code>toolsGatewayBackendUrl</code>(<code>ca-dah-tools-gw</code> の直 URL)の <code>/supplier-admin/mcp</code> へ <code>x-apim-gateway-secret</code> なしで POST</td>
+<td>トークンの有無にかかわらず 403(シークレットはトークン検証より先に判定)。<code>mcp_auth</code> ログの理由が <code>gateway_secret_mismatch</code>。APIM 経由では経理だけ通る</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>6</td>
+<td>異常系: ロール剥奪(呼び出し時の 403)</td>
+<td>経理の <code>Suppliers.Write</code> を外し、<code>login --user finance</code> をやり直さずに(古いトークンのまま)更新を依頼。新しいトークンでも再確認</td>
+<td>古いトークンは期限まで通る(トークンのロールは発行時点のもの)→ 取り直すと supplier-admin が見えなくなる。403 で別 ID に切り替えない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>7</td>
+<td>異常系: 追加認証(任意・E7)</td>
+<td>条件付きアクセスで <code>dah-tools-api</code> に MFA を要求 → 質問</td>
+<td>CLI に「追加の認証が必要です(claims チャレンジ)」、終了コード 3。<code>login</code> が保存済みチャレンジ付きでサインインし、再質問で成功</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>8</td>
+<td>異常系: カスタムロールなし</td>
+<td>A4 の割り当てを外して質問(伝播待ちの後)</td>
+<td>Foundry が 403(公式のトラブルシューティングどおり)。中間層は app-only に切り替えない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>9</td>
+<td>利用者の分離</td>
+<td>一般社員の <code>response_id</code> を経理の <code>ask --previous-response-id</code> に渡す</td>
+<td>Foundry が別利用者の会話の続きとして扱わない(拒否・または履歴が見えない — 実際の応答を記録する)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>10</td>
+<td>方式 A / B の比較</td>
+<td>同じ 4 問を 2 つの hosted agent で。§7 の KQL で所要時間</td>
+<td>回答は同じ。A は APIM のホップ分遅い(コールドスタート込みの実測値を README に記録)</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>11</td>
+<td>観測: トークンが残らない</td>
+<td>§7 の KQL で App Insights / Log Analytics を <code>eyJ</code> で検索</td>
+<td>0 件(トレース・ログ・APIM のリクエストログのどこにもトークンがない)。GenAI のメッセージ内容も記録されていない</td>
+</tr>
+<tr>
+<td class="chk-cell"><input type="checkbox" class="chk"></td>
+<td>12</td>
+<td>コスト・後片付け</td>
+<td>§8</td>
+<td>hosted agent 2 つ・APIM(purge)・Entra のアプリ 2 つ・カスタムロールまで消えている</td>
+</tr>
+</tbody></table></div>
+<h3 id="6-1-ライブ結果-2026-09-30">6.1 ライブ結果(2026-09-30)</h3>
+<p>japaneast・gpt-5.4-mini(Global Standard)・新規に作ったテスト用ユーザー 2 人(一般社員・経理担当)。方式 A(<code>delegated-access-apim</code>)/ 方式 B(<code>delegated-access-server</code>)の両方で実施。</p>
+<div class="tablewrap"><table><thead><tr>
+<th>#</th>
+<th>結果</th>
+<th>記録</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>✅</td>
+<td>一般社員: 検索結果に経理内規が出ず「記載がありませんでした」。経理: 「与信限度額の設定基準(経理部内規)」を根拠に「年 1 回(4 月)」。A / B で同じ</td>
+</tr>
+<tr>
+<td>2</td>
+<td>✅</td>
+<td>一般社員 = docs, suppliers(supplier-admin は事前の疎通確認で 403 → 非表示)、経理 = 3 つとも</td>
+</tr>
+<tr>
+<td>3</td>
+<td>✅</td>
+<td>経理の更新が成功し、監査ログに経理の oid と変更前後。一般社員は更新ツールが渡らず定型文。権限はあるが業務ルール違反(S-1001 を 90 日 — 中小受託取引の対象先は 60 日以内)は権限エラーと別の文言で拒否</td>
+</tr>
+<tr>
+<td>4</td>
+<td>⏳</td>
+<td>未実施</td>
+</tr>
+<tr>
+<td>5</td>
+<td>✅</td>
+<td>ゲートウェイ用アプリをシークレットなしで直接呼ぶと 403 <code>forbidden</code>。APIM にトークンなしで 401(<code>WWW-Authenticate</code> 付き)、方式 B のサーバーを直接トークンなしで 401 <code>invalid_token</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>⏳</td>
+<td>未実施</td>
+</tr>
+<tr>
+<td>7</td>
+<td>⏳</td>
+<td>未実施(条件付きアクセスに Entra ID P1 が要る)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>⏳</td>
+<td>未実施</td>
+</tr>
+<tr>
+<td>9</td>
+<td>✅</td>
+<td>同じ利用者の続き = 200。<strong>別の利用者の response ID = Foundry が 404</strong>(中間層は 404 <code>conversation_not_found</code> に写す — 当初 502 だったのを修正)。同じ利用者でも<strong>方式 B の agent の response ID を方式 A の agent で続けると 404</strong>(会話は agent ごと)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>✅</td>
+<td>回答は同じ。経理の同じ参照の質問 ×3(CLI 計測、<code>uv run</code> の起動込み): <strong>A 9.7〜11.9 秒 / B 10.5〜13.7 秒</strong> — 差は推論のばらつきに埋もれた</td>
+</tr>
+<tr>
+<td>11</td>
+<td>⚠️</td>
+<td><strong>トークンは 0 件</strong>(App Insights 1,704 レコードを JWT 形式で検索)。ただし<strong>プラットフォーム側(ロール名 <code>responsesapi</code>)のスパンが <code>gen_ai.input.messages</code> / <code>gen_ai.output.messages</code> に会話全文(ツール結果を含む)を記録</strong>していた — 経理だけに見える文書 ID <code>fin-credit-limit</code> がスパン 4 件に出現。コンテナの <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false</code> では止まらない。公式の止め方はプロジェクトから App Insights の接続を外すことだけ(接続すると同じ接続文字列がコンテナにも注入される)→ 本番は「集約 / 2 つに分離 / 接続しない」から選ぶ(<a href="../../../../../docs/survey/architecture/html/09-operations.html#3-6-トレースに会話の中身を残すか-hosted-agent-の選定基準">architecture 09 §3.6</a>)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>✅</td>
+<td>RG 削除 → Foundry アカウントと APIM の purge → カスタムロール → アプリ登録 2 つ・テスト用ユーザー 2 人(deletedItems からも完全削除)→ 手元の <code>.env</code>・<code>.cache/</code></td>
+</tr>
+</tbody></table></div>
+<p>APIM のリクエストログ(同じ時間帯): supplier-admin の 403 が 5 件(一般社員の疎通確認)、docs / supplier-admin の 401 が各 1 件(意図的なトークンなし)、残りは 200 / 202。</p>
+<h2 id="7-トレース・評価の確認">7. トレース・評価の確認</h2>
+<pre><code># hosted agent・APIM(App Insights = 共有基盤の appi-&lt;baseName&gt;)
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;union requests, dependencies | where timestamp &gt; ago(30m) | summarize count(), avg(duration) by itemType, name, resultCode | order by count_ desc&quot;
+
+# ツールサーバーの監査ログ(Container Apps → Log Analytics。環境によってはテーブル名が ContainerAppConsoleLogs)
+az monitor log-analytics query -w $(az monitor log-analytics workspace show -g &lt;rg&gt; -n log-&lt;baseName&gt; --query customerId -o tsv) \
+  --analytics-query &quot;ContainerAppConsoleLogs_CL | where TimeGenerated &gt; ago(30m) | where Log_s has &#x27;supplier_update&#x27; or Log_s has &#x27;mcp_auth&#x27; | project TimeGenerated, ContainerAppName_s, Log_s&quot;
+
+# トークンが残っていないこと(0 件が期待値)
+az monitor app-insights query --app appi-&lt;baseName&gt; -g &lt;rg&gt; \
+  --analytics-query &quot;union traces, requests, dependencies, customEvents | where timestamp &gt; ago(1h) | where tostring(pack_all()) has &#x27;eyJ&#x27; | count&quot;</code></pre>
+<ul>
+<li>hosted agent: Agent Server SDK のリクエストスパンと MAF の <code>invoke_agent</code> / <code>execute_tool &lt;ツール名&gt;</code> / <code>chat</code> が期待値。コンテナ側は <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false</code> でメッセージ内容を出さない。<strong>ただしプラットフォーム側(<code>cloud_RoleName == &quot;responsesapi&quot;</code>)のスパンは会話全文を記録する</strong>(2026-09-30 ライブ、§6.1 #11)。確認用: <code>dependencies | where cloud_RoleName == &quot;responsesapi&quot; | where tostring(customDimensions) has &quot;gen_ai.output.messages&quot; | count</code></li>
+<li>APIM: API ごとのリクエスト(<code>mcp-docs</code> / <code>mcp-suppliers</code> / <code>mcp-supplier-admin</code>)と結果コード(401 / 403 は validate-jwt の拒否)。ヘッダー・本文は記録しない設定</li>
+<li>評価: 回答品質より「誰に何が見えたか」が本題なので、<code>tests/</code> のオフラインテスト(利用者 × 方式の行列)が評価の本体。ライブではリクエストごとのメタデータ(<code>delegated_access_visible_servers</code> 等)を記録して §6 の表を埋める</li>
+</ul>
+<h2 id="8-片付け">8. 片付け</h2>
+<pre><code># hosted agent(2 つ)— データプレーンのオブジェクト。RG を消せば消える
+# ポート固有の Azure リソースだけ消す場合(共有基盤は残す)
+az containerapp delete -g &lt;rg&gt; -n ca-dah-tools-srv --yes
+az containerapp delete -g &lt;rg&gt; -n ca-dah-tools-gw --yes
+az containerapp env delete -g &lt;rg&gt; -n cae-dah-&lt;baseName&gt; --yes
+az apim delete -g &lt;rg&gt; -n apim-dah-&lt;suffix&gt; --yes
+az apim deletedservice purge --service-name apim-dah-&lt;suffix&gt; --location japaneast   # 48 時間ソフトデリートの解除
+az acr delete -g &lt;rg&gt; -n crdah&lt;suffix&gt; --yes
+az search service delete -g &lt;rg&gt; -n srch-dah-&lt;suffix&gt; --yes
+az identity delete -g &lt;rg&gt; -n id-dah-tools-&lt;baseName&gt;
+# または共有基盤ごと: az group delete -n &lt;rg&gt; --yes --no-wait
+
+# Foundry 側のロール(RG を消していない場合)とカスタムロール
+az role assignment delete --assignee &lt;dah-backend-api の SP の objectId&gt; --scope &lt;projectResourceId&gt;
+az role definition delete --name &quot;Foundry Agent User Identity Impersonation (&lt;rg&gt;)&quot;
+
+# RG ごと消した場合: Foundry アカウントも論理削除で残る(同名で作り直すと衝突)
+az cognitiveservices account purge -l japaneast -g &lt;rg&gt; -n aif-&lt;baseName&gt;
+az apim deletedservice purge --service-name apim-dah-&lt;suffix&gt; --location japaneast
+
+# Entra(RG 削除では消えない)。削除後 30 日はごみ箱に残るので deletedItems からも消す
+az ad app delete --id &lt;dah-backend-api の appId&gt;
+az ad app delete --id &lt;dah-tools-api の appId&gt;
+az rest --method DELETE --url &quot;https://graph.microsoft.com/v1.0/directory/deletedItems/&lt;アプリの objectId&gt;&quot;
+# テスト用ユーザーを作った場合
+az ad user delete --id &lt;ユーザーの objectId&gt;
+az rest --method DELETE --url &quot;https://graph.microsoft.com/v1.0/directory/deletedItems/&lt;ユーザーの objectId&gt;&quot;
+
+# 手元(シークレット・トークンキャッシュ・ログ)
+rm -f .env &amp;&amp; rm -rf .cache/</code></pre>
+<ul>
+<li>再構築は §5.2 の 4 コマンド(<code>setup_entra.py</code> → <code>deploy_tools_server.sh</code> → <code>setup_index.py</code> → <code>deploy_hosted_agent.py</code> ×2)。<code>setup_entra.py</code> は冪等で、既存のアプリがあれば差分だけ適用する(シークレットは作り直さない — 紛失時は <code>--rotate-secret</code>)</li>
+<li><code>.cache/</code>(MSAL のトークンキャッシュ)は <code>uv run delegated-access logout --user &lt;alias&gt;</code> か手で削除</li>
+</ul>
+<h2 id="9-トラブルシューティング">9. トラブルシューティング</h2>
+<div class="tablewrap"><table><thead><tr>
+<th>症状</th>
+<th>原因</th>
+<th>対処</th>
+</tr></thead><tbody>
+<tr>
+<td>中間層 → Foundry が 403</td>
+<td>中間層の SP に Foundry Agent Consumer かカスタムロールが無い / 伝播待ち</td>
+<td>§5.1 の A3・A4 を確認して 5〜15 分待つ(<code>x-ms-user-identity</code> を送るにはカスタムロールが必須)</td>
+</tr>
+<tr>
+<td>OBO が <code>AADSTS65001</code>(同意なし)</td>
+<td>E5 の管理者同意が無い、または条件付きアクセス(casebook P-H19)</td>
+<td><code>setup_entra.py --apply</code> を再実行(冪等)。CA なら claims チャレンジの経路(§6 #7)</td>
+</tr>
+<tr>
+<td>APIM が 401(トークンは有効なはず)</td>
+<td>App ID URI / v2 トークンの設定漏れで <code>iss</code> が <code>sts.windows.net</code>(v1)、または時刻のずれ(<code>clock-skew</code> 既定 0 秒)</td>
+<td><code>requestedAccessTokenVersion=2</code> と <code>identifierUris=api://&lt;appId&gt;</code> を確認。ずれならポリシーに <code>clock-skew</code></td>
+</tr>
+<tr>
+<td>APIM のデプロイで API ポリシーの保存に失敗</td>
+<td>ポリシーが参照する Named Value が無い</td>
+<td><code>dah-tenant-id</code> / <code>dah-tools-api-client-id</code> / <code>dah-gateway-secret</code> の 3 つ(apim.bicep が作る)。<code>test_infra_contracts.py</code> が同じことを検査する</td>
+</tr>
+<tr>
+<td>APIM 経由だけ 504 / タイムアウト</td>
+<td>Consumption の 1 要求 30 秒にコールドスタートが食い込む</td>
+<td><code>--min-replicas 1</code>(アイドル課金あり)、または 1 回目は捨てて再実行</td>
+</tr>
+<tr>
+<td>MCP が 421 Misdirected Request</td>
+<td>FastMCP の DNS リバインディング保護(Host ヘッダー)</td>
+<td>ツールサーバーのイメージが古い。再ビルド(保護は無効化済み)</td>
+</tr>
+<tr>
+<td>方式 A だけ全部 403(<code>mcp_auth</code> の理由が <code>gateway_secret_mismatch</code>。直 URL の <code>/healthz</code> は 200)</td>
+<td>APIM の Named Value とアプリの <code>APIM_GATEWAY_SECRET</code> がずれた</td>
+<td><code>deploy_tools_server.sh --apply</code> を再実行(両方に同じ値を入れ直す)</td>
+</tr>
+<tr>
+<td>Container Apps のリビジョンが起動しない</td>
+<td>AcrPull の伝播待ち / ポートの不一致(8080)</td>
+<td>数分待って再デプロイ。<code>az containerapp logs show -n &lt;app&gt; -g &lt;rg&gt;</code></td>
+</tr>
+<tr>
+<td>文書検索が 403 / 空</td>
+<td>AI Search がキー認証のみ、または MI に Search Index Data Reader が無い / インデックス未作成</td>
+<td>Bicep の <code>authOptions.aadOrApiKey</code> とロール割り当て、<code>setup_index.py --apply</code></td>
+</tr>
+<tr>
+<td>AI Search Free の作成に失敗</td>
+<td>Free は 1 サブスクリプション 1 つ(corrective-rag 等で使用中)</td>
+<td><code>deploy_tools_server.sh --search-sku basic</code>(時間課金)</td>
+</tr>
+<tr>
+<td>APIM の作成が名前の衝突で失敗</td>
+<td>前回削除した同名の APIM がソフトデリート中(48 時間)</td>
+<td><code>az apim deletedservice purge</code></td>
+</tr>
+<tr>
+<td><code>az acr build</code> が失敗(タスク実行不可)</td>
+<td>無料クレジットのサブスクリプションで ACR Tasks が一時停止</td>
+<td><code>--local-build</code>(docker build + push)</td>
+</tr>
+<tr>
+<td>カスタムロール作成が <code>RoleDefinitionWithSameNameExists</code></td>
+<td>テナント内に同名のロール</td>
+<td><code>setup_entra.py</code> は名前に RG を付ける。別 RG の残骸なら <code>az role definition delete</code></td>
+</tr>
+<tr>
+<td>hosted agent の version が <code>failed</code></td>
+<td>REMOTE_BUILD の pip 解決失敗 / zip の同梱漏れ</td>
+<td><code>get_version</code> の <code>error.message</code>。<code>test_staged_code_imports_on_its_own</code> で同梱漏れを先に検出</td>
+</tr>
+<tr>
+<td>hosted agent の作成が「does not have permissions … agents/write」</td>
+<td>デプロイ実行者に Foundry User が無い(サブスクリプションの所有者でも自動では付かない)</td>
+<td>§5.2 (0) の割り当て。反映まで約 5 分</td>
+</tr>
+<tr>
+<td>共有基盤のデプロイが <code>RequestConflict</code>(Another operation is in progress on the resource aif-…)</td>
+<td>古い <code>shared.bicep</code> でプロジェクトとモデルデプロイが並列に作られた</td>
+<td>最新の <code>shared.bicep</code>(モデルデプロイに <code>dependsOn</code>)で再実行</td>
+</tr>
+<tr>
+<td>続きの質問が 404 <code>conversation_not_found</code></td>
+<td>別の利用者・別の hosted agent(方式 A ↔ B)の response ID(保存期限切れでも同じになると思われるが未確認)</td>
+<td><code>--previous-response-id</code> を付けずに新しい会話で。中間層を方式 A ↔ B で切り替えたら <code>.cache/state-&lt;alias&gt;.json</code> の続き ID は使えない</td>
+</tr>
+<tr>
+<td><code>login</code> が「デバイスコードの有効期限が切れました」</td>
+<td>表示から 15 分以内にサインインしなかった</td>
+<td>もう一度 <code>login</code></td>
+</tr>
+</tbody></table></div>
+<h2 id="10-関連・更新履歴">10. 関連・更新履歴</h2>
+<ul>
+<li>設計判断と学び: <a href="../README.md">README</a></li>
+<li>hosted agent の前例(デプロイ経路・プロトコル 2.0.0): <a href="../../hn-briefing-hosted/docs/runbook.html">Port 11 hn-briefing-hosted</a></li>
+<li>認可の設計(app-only と OBO、hosted agent の Attended): <a href="../../../../../docs/survey/architecture/html/05-usecase-agent-automation.html">architecture/05-usecase-agent-automation.md</a></li>
+<li>詰まりどころ(P-H19 CA と OBO / P-X11 Teams から OBO / P-X20 MCP の OAuth パススルー): <a href="../../../../../docs/survey/casebook/html/02-pitfalls-index.html">casebook/02-pitfalls-index.md</a></li>
+<li>公式: <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/use-on-behalf-of-flow">use-on-behalf-of-flow</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agent-permissions">hosted-agent-permissions</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agent-contract">hosted-agent-contract</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/tool-authentication">tool-authentication</a> / <a href="https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-on-behalf-of-flow">Entra OBO</a> / <a href="https://learn.microsoft.com/en-us/azure/api-management/validate-jwt-policy">APIM validate-jwt</a></li>
+</ul>
+<div class="tablewrap"><table><thead><tr>
+<th>日付</th>
+<th>内容</th>
+</tr></thead><tbody>
+<tr>
+<td>2026-09-30</td>
+<td>初版(オフライン実装。Bicep・Entra セットアップ・デプロイスクリプトは dry-run まで確認、ライブ未実施)</td>
+</tr>
+<tr>
+<td>2026-09-30</td>
+<td>ライブ検証(§6.1)。会話継続の 404 を 502 と区別・CLI のデバイスコード失効メッセージ・デプロイ実行者の Foundry User・共有基盤の <code>dependsOn</code> を反映</td>
+</tr>
+</tbody></table></div>
+</main>
+<footer>この HTML は labs/maf-ports/ports/delegated-access-hosted/docs/runbook.md から labs/tools/build_runbooks.py で自動生成されています。編集は Markdown 側で行ってください。</footer>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input.chk'));
+  if (!boxes.length) return;
+  var key = 'runbook:' + location.pathname;
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
+  var bar = document.createElement('div');
+  bar.className = 'progress';
+  var main = document.querySelector('main');
+  main.insertBefore(bar, main.firstChild);
+  function render() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    bar.innerHTML = '確認済み ' + n + ' / ' + boxes.length + '<button type="button">リセット</button>';
+    bar.querySelector('button').onclick = function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save(); render();
+    };
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b, i) { if (b.checked) s[i] = 1; });
+    try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) { /* 保存不可の環境では表示のみ */ }
+  }
+  boxes.forEach(function (b, i) {
+    b.checked = !!state[i];
+    b.addEventListener('change', function () { save(); render(); });
+  });
+  render();
+})();
+</script>
+</body></html>

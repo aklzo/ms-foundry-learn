@@ -1,0 +1,17 @@
+# docker/tools/Dockerfile のビルドコンテキスト(ポートのルート)から除外する。
+# 秘密(.env・MSAL のトークンキャッシュ .cache)を ACR のビルドへ送らないことが最重要
+.env
+.env.*
+!.env.example
+.cache
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+tests
+docs
+hosting
+infra
+scripts
+*.zip

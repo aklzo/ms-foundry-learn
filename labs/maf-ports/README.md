@@ -13,7 +13,7 @@
 | [infra/shared.bicep](./infra/shared.bicep) | 共有基盤(Foundry リソース+プロジェクト+モデル+App Insights)。**課金あり・1回だけデプロイ** |
 | [infra/docs/architecture.png](./infra/docs/architecture.png) | 共有基盤のアーキテクチャ図(各ポートの図は `ports/<port>/docs/architecture.png`。再生成手順は [tools/README.md](./tools/README.md)) |
 
-## 進捗(Wave 1: #1-7 / Wave 2: #8-12 / Wave 3: #13-14)
+## 進捗(Wave 1: #1-7 / Wave 2: #8-12 / Wave 3: #13-14 / 新規パターン: #15)
 
 **実行ガイド(runbook):** 各ポートの実行手順と確認観点は `ports/<port>/docs/runbook.md`(人間用 HTML は同じディレクトリの `runbook.html`、全ラボの索引は [../runbooks.md](../runbooks.md))。**2026-09-29 に全ポートを agent-framework 1.19 / openai 3.20 でオフライン再検証済み**(ライブ再検証は未実施。改修点は各 README の「検証結果(2026-09-29 最新化チェック)」)。
 
@@ -34,6 +34,7 @@
 | 12 | claim-voice-live | voice/insurance_claim_live_agent_team | Voice Live | 済 | 済(77件) | 済 | 済(3本: コア/WS接続/ツールループ) | [済](./ports/claim-voice-live/README.md) | [runbook](./ports/claim-voice-live/docs/runbook.md) |
 | 13 | services-agency | agent_teams/ai_services_agency | 通信グラフ制約(agent-as-tool) | 済 | 済(69件) | 済 | 済(グラフ内通信75s+入れ子トレース) | [済](./ports/services-agency/README.md) | [runbook](./ports/services-agency/docs/runbook.md) |
 | 14 | governed-agent | advanced_ai_agents/single_agent_apps/ai_agent_governance + multi_agent_apps/trust_gated_agent_team | ガバナンス(middleware 3 種+監査) | 済 | 済(65件) | 済 | 済(スモーク 2 本: 承認完走/実行前遮断) | [済](./ports/governed-agent/README.md) | [runbook](./ports/governed-agent/docs/runbook.md) |
+| 15 | delegated-access-hosted | なし(新規パターン — hosted agent の OBO 公式手順 2026-09-28 に基づく) | 利用者の委任権限でのアクセス制御(アプリ管理 OBO+`x-client-*` 転送、判定点 APIM / MCP サーバーの比較) | 済 | 済(239件) | 済 | 済(2026-09-30: 方式 A / B × 利用者 2 人の出し分け+迂回 403+会話分離 404。検証後に全削除) | [済](./ports/delegated-access-hosted/README.md) | [runbook](./ports/delegated-access-hosted/docs/runbook.md) |
 
 ## 実行の前提
 

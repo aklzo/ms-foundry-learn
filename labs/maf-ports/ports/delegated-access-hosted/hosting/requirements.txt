@@ -1,0 +1,16 @@
+# hosted agent コンテナの依存(REMOTE_BUILD がこのファイルを zip ルートから読み pip で解決する)。
+# pyproject の hosting extra と揃えること(test_agent_hosting がインポート網羅を固定)。
+#
+# Port 11 と違い agent-framework-foundry-hosting(ResponsesHostServer)は入れない —
+# リクエストごとに MCP ツールを作り直すため Agent Server SDK のハンドラーを直接使う。
+# そのため invocations protocol ライブラリも不要(Port 11 の版解決の罠は起きない)。
+agent-framework-core>=1.19
+agent-framework-foundry>=1.13.1
+azure-ai-agentserver-core>=2.2.0
+azure-ai-agentserver-responses>=2.2.0
+azure-identity>=1.25
+# MCP クライアント。MAF 1.19 自身が <2 を要求する
+mcp>=1.30,<2
+httpx>=0.28
+python-dotenv>=1.0
+typing-extensions>=4.10

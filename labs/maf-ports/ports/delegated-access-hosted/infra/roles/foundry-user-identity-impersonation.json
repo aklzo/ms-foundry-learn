@@ -1,0 +1,14 @@
+{
+  "Name": "Foundry Agent User Identity Impersonation",
+  "IsCustom": true,
+  "Description": "Lets a trusted middle-tier service delegate the end-user identity to a hosted agent via the x-ms-user-identity header.",
+  "Actions": [],
+  "NotActions": [],
+  "DataActions": [
+    "Microsoft.CognitiveServices/accounts/AIServices/agents/endpoints/UserIdentityImpersonation/action"
+  ],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/<subscription-id>/resourceGroups/<resource-group>"
+  ]
+}
